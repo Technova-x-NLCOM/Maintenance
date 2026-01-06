@@ -2,7 +2,16 @@
 
 A full-stack inventory management system built with Laravel (Backend) and Angular (Frontend), using MySQL as the database.
 
-## 📋 Prerequisites
+## � Documentation
+
+**New to this project?** Start here:
+
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick overview and common queries
+- **[DATABASE_DOCUMENTATION.md](DATABASE_DOCUMENTATION.md)** - Complete database technical documentation
+- **[database_schema.txt](database_schema.txt)** - Visual database structure diagram
+- **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** - Step-by-step guide for RBAC and Backup/Restore
+
+## �📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
 
@@ -83,14 +92,22 @@ Frontend will run at: `http://localhost:4200`
 1. Start XAMPP Control Panel
 2. Start Apache and MySQL services
 3. Open phpMyAdmin: `http://localhost/phpmyadmin`
-4. Create new database: `inventory_backend`
+4. Create new database: `inventory_database`
 
 **Option 2: MySQL Command Line**
 ```bash
 mysql -u root -p
-CREATE DATABASE inventory_backend;
+CREATE DATABASE inventory_database;
 exit;
 ```
+
+**Option 3: Import Complete Database (Recommended)**
+```bash
+# Import the pre-configured database with all tables and sample data
+mysql -u root -p inventory_database.sql
+```
+
+> **Note:** `inventory_database.sql` contains a complete database schema with 10 tables, 3 views, and sample data. See [DATABASE_DOCUMENTATION.md](DATABASE_DOCUMENTATION.md) for details.
 
 ## 🏗️ Project Structure
 
