@@ -1,1 +1,192 @@
-# Maintenance
+# Inventory Management System
+
+A full-stack inventory management system built with Laravel (Backend) and Angular (Frontend), using MySQL as the database.
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **PHP** >= 8.2
+- **Composer** (https://getcomposer.org/)
+- **Node.js** >= 18.x and npm (https://nodejs.org/)
+- **MySQL** (via XAMPP or standalone)
+- **Git**
+- **Angular CLI**: `npm install -g @angular/cli`
+
+## 🚀 Setup Instructions
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/Technova-x-NLCOM/Maintenance.git
+cd Maintenance
+```
+
+### 2️⃣ Backend Setup (Laravel)
+
+```bash
+# Navigate to backend directory
+cd backend/inventory-backend
+
+# Install PHP dependencies
+composer install
+
+# Copy environment file
+cp .env.example .env
+
+# Generate application key
+php artisan key:generate
+
+# Configure your .env file with database credentials:
+# DB_CONNECTION=mysql
+# DB_HOST=127.0.0.1
+# DB_PORT=3306
+# DB_DATABASE=inventory_backend
+# DB_USERNAME=root
+# DB_PASSWORD=
+
+# Create the database (using MySQL client or phpMyAdmin)
+# Database name: inventory_backend
+
+# Run migrations
+php artisan migrate
+
+# (Optional) Seed database with sample data
+php artisan db:seed
+
+# Start Laravel development server
+php artisan serve
+```
+
+Backend will run at: `http://localhost:8000`
+
+### 3️⃣ Frontend Setup (Angular)
+
+Open a new terminal:
+
+```bash
+# Navigate to frontend directory
+cd frontend/inventory-frontend
+
+# Install Node dependencies
+npm install
+
+# Start Angular development server
+ng serve
+```
+
+Frontend will run at: `http://localhost:4200`
+
+### 4️⃣ Database Setup
+
+**Option 1: Using XAMPP**
+1. Start XAMPP Control Panel
+2. Start Apache and MySQL services
+3. Open phpMyAdmin: `http://localhost/phpmyadmin`
+4. Create new database: `inventory_backend`
+
+**Option 2: MySQL Command Line**
+```bash
+mysql -u root -p
+CREATE DATABASE inventory_backend;
+exit;
+```
+
+## 🏗️ Project Structure
+
+```
+Maintenance/
+├── backend/
+│   └── inventory-backend/    # Laravel API
+│       ├── app/              # Application logic
+│       ├── routes/           # API routes
+│       ├── database/         # Migrations & seeders
+│       └── config/           # Configuration files
+├── frontend/
+│   └── inventory-frontend/   # Angular Application
+│       ├── src/
+│       │   ├── app/          # Components & services
+│       │   └── assets/       # Static files
+│       └── angular.json      # Angular configuration
+└── README.md
+```
+
+## 🔧 Configuration
+
+### CORS Setup
+To allow Angular to communicate with Laravel:
+
+Edit `backend/inventory-backend/config/cors.php`:
+```php
+'allowed_origins' => ['http://localhost:4200'],
+```
+
+### API URL Configuration
+In Angular, configure the API base URL in your environment files:
+```typescript
+// frontend/inventory-frontend/src/environments/environment.ts
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8000/api'
+};
+```
+
+## 📦 Common Commands
+
+### Backend (Laravel)
+```bash
+php artisan serve              # Start server
+php artisan migrate           # Run migrations
+php artisan migrate:fresh     # Fresh migration
+php artisan db:seed           # Seed database
+php artisan make:model Model  # Create model
+php artisan make:controller Controller  # Create controller
+```
+
+### Frontend (Angular)
+```bash
+ng serve                      # Start dev server
+ng build                      # Build for production
+ng generate component name    # Generate component
+ng test                       # Run tests
+```
+
+## 🐛 Troubleshooting
+
+**Port already in use:**
+- Laravel: `php artisan serve --port=8001`
+- Angular: `ng serve --port=4201`
+
+**Database connection error:**
+- Verify MySQL is running
+- Check .env credentials
+- Ensure database `inventory_backend` exists
+
+**Composer dependencies error:**
+- Run: `composer update`
+- Clear cache: `php artisan cache:clear`
+
+**Node modules error:**
+- Delete `node_modules` and `package-lock.json`
+- Run: `npm install`
+
+## 👥 Team Collaboration
+
+**For teammates pulling the repo:**
+1. Follow the setup instructions above
+2. Pull latest changes: `git pull origin main`
+3. Update dependencies:
+   - Backend: `composer install`
+   - Frontend: `npm install`
+4. Run migrations: `php artisan migrate`
+
+## 📝 License
+
+This project is proprietary software.
+
+## 🤝 Contributing
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Commit changes: `git commit -m 'Add some feature'`
+3. Push to branch: `git push origin feature/your-feature`
+4. Open a Pull Request
