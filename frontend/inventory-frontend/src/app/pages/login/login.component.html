@@ -14,6 +14,12 @@
     <div class="role-tabs">
       <button 
         class="role-tab" 
+        [class.active]="userRole === 'super admin'"
+        (click)="switchRole('super admin')">
+        👑 Super Admin
+      </button>
+      <button 
+        class="role-tab" 
         [class.active]="userRole === 'admin'"
         (click)="switchRole('admin')">
         🔐 Administrator
@@ -96,7 +102,7 @@
         type="button"
         class="demo-button"
         (click)="fillDemoCredentials()">
-        Fill {{ userRole === 'admin' ? 'Admin' : 'Staff' }} Credentials
+        Fill {{ userRole === 'super admin' ? 'Super Admin' : (userRole === 'admin' ? 'Admin' : 'Staff') }} Credentials
       </button>
       <div class="credentials-display">
         <div class="credential-item">
