@@ -19,11 +19,11 @@ export class LoginComponent implements OnInit {
 
   demoCredentials = {
     admin: {
-      email: 'admin@humanitarian.org',
+      email: 'admin@nlcom.org',
       password: 'admin123'
     },
     staff: {
-      email: 'staff@humanitarian.org',
+      email: 'staff@nlcom.org',
       password: 'staff123'
     }
   };
