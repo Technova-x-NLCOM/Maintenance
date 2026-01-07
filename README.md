@@ -22,6 +22,34 @@ Before you begin, ensure you have the following installed:
 - **Git**
 - **Angular CLI**: `npm install -g @angular/cli`
 
+## ⚡ Quick Start
+
+**Already have prerequisites?** Run these commands:
+
+```bash
+# Backend
+cd backend/inventory-backend
+composer install
+cp .env.example .env
+php artisan key:generate
+# Configure DB in .env (DB_DATABASE=inventory_backend, DB_USERNAME=root, DB_PASSWORD=)
+php artisan migrate --seed
+php artisan jwt:secret
+php artisan serve
+
+# Frontend (new terminal)
+cd frontend/inventory-frontend
+npm install
+ng serve
+```
+
+**Demo accounts:**
+- Super Admin: `superadmin@nlcom.org` / `superadmin123`
+- Admin: `admin@nlcom.org` / `admin123`
+- Staff: `staff@nlcom.org` / `staff123`
+
+Access: Backend `http://127.0.0.1:8000` | Frontend `http://localhost:4200`
+
 ## 🚀 Setup Instructions
 
 ### 1️⃣ Clone the Repository
