@@ -1,0 +1,102 @@
+<div class="profile-container">
+  <div class="profile-card">
+    <!-- Profile Header -->
+    <div class="profile-header">
+      <div class="profile-avatar">{{ (user?.first_name?.charAt(0) || 'U').toUpperCase() }}</div>
+      <div class="profile-basic">
+        <h1>{{ user?.first_name }} {{ user?.last_name }}</h1>
+        <p class="profile-role">{{ user?.role | titlecase }} User</p>
+        <p class="profile-status" [class.active]="user?.is_active">
+          <span class="status-dot"></span>
+          {{ user?.is_active ? 'Active' : 'Inactive' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Profile Information -->
+    <div class="profile-section">
+      <h2>Account Information</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <label>Username</label>
+          <p>{{ user?.username }}</p>
+        </div>
+        <div class="info-item">
+          <label>Email</label>
+          <p>{{ user?.email }}</p>
+        </div>
+        <div class="info-item">
+          <label>First Name</label>
+          <p>{{ user?.first_name }}</p>
+        </div>
+        <div class="info-item">
+          <label>Last Name</label>
+          <p>{{ user?.last_name }}</p>
+        </div>
+        <div class="info-item">
+          <label>Contact Info</label>
+          <p>{{ user?.contact_info || 'Not provided' }}</p>
+        </div>
+        <div class="info-item">
+          <label>Role</label>
+          <p class="role-badge" [class]="user?.role">{{ user?.role | titlecase }}</p>
+        </div>
+        <div class="info-item">
+          <label>Member Since</label>
+          <p>{{ user?.created_at | date: 'MMM dd, yyyy' }}</p>
+        </div>
+        <div class="info-item">
+          <label>Last Updated</label>
+          <p>{{ user?.updated_at | date: 'MMM dd, yyyy HH:mm' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="profile-actions">
+      <button class="btn btn-secondary">
+        <span class="icon">✏️</span>
+        <span>Edit Profile</span>
+      </button>
+      <button class="btn btn-secondary">
+        <span class="icon">🔐</span>
+        <span>Change Password</span>
+      </button>
+      <button class="btn btn-danger" (click)="logout()">
+        <span class="icon">🚪</span>
+        <span>Logout</span>
+      </button>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="profile-section">
+      <h2>Account Settings</h2>
+      <div class="settings-list">
+        <div class="setting-item">
+          <div class="setting-info">
+            <p class="setting-label">Email Notifications</p>
+            <p class="setting-desc">Receive updates via email</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <p class="setting-label">Two-Factor Authentication</p>
+            <p class="setting-desc">Enhanced security for your account</p>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

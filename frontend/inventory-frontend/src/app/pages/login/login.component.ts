@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -31,7 +32,8 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -76,21 +78,15 @@ export class LoginComponent implements OnInit {
     this.isLoading = true;
     const { email, password } = this.loginForm.value;
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any valid email/password
-      if (email && password) {
-        // Store user info in sessionStorage
-        sessionStorage.setItem('userRole', this.userRole);
-        sessionStorage.setItem('userEmail', email);
-        sessionStorage.setItem('isLoggedIn', 'true');
-        
-        // Redirect to dashboard
+    this.authService.login(email, password).subscribe({
+      next: (response) => {
+        this.isLoading = false;
         this.router.navigate(['/dashboard']);
-      } else {
-        this.errorMessage = 'Invalid credentials';
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.errorMessage = error.error?.message || 'Invalid credentials or server error';
       }
-      this.isLoading = false;
-    }, 1000);
+    });
   }
 }

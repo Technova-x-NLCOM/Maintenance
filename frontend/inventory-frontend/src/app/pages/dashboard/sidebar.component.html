@@ -1,0 +1,61 @@
+<div class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar-header">
+    <div class="logo">🏥</div>
+    <h2>Inventory</h2>
+  </div>
+
+  <!-- User Info -->
+  <div class="user-info" *ngIf="user">
+    <div class="user-avatar">{{ user.first_name.charAt(0).toUpperCase() }}</div>
+    <div class="user-details">
+      <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
+      <p class="user-role">{{ user.role | titlecase }}</p>
+    </div>
+  </div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <p class="nav-label">Main</p>
+      <a routerLink="/dashboard/home" 
+         routerLinkActive="active" 
+         [routerLinkActiveOptions]="{ exact: true }"
+         class="nav-item">
+        <span class="icon">📊</span>
+        <span class="label">Dashboard</span>
+      </a>
+      <a routerLink="/dashboard/profile" 
+         routerLinkActive="active" 
+         class="nav-item">
+        <span class="icon">👤</span>
+        <span class="label">Profile</span>
+      </a>
+    </div>
+
+    <!-- Admin Only -->
+    <div class="nav-section" *ngIf="user?.role === 'admin'">
+      <p class="nav-label">Admin</p>
+      <a routerLink="/dashboard/users" 
+         routerLinkActive="active" 
+         class="nav-item">
+        <span class="icon">👥</span>
+        <span class="label">Users</span>
+      </a>
+      <a routerLink="/dashboard/settings" 
+         routerLinkActive="active" 
+         class="nav-item">
+        <span class="icon">⚙️</span>
+        <span class="label">Settings</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Logout Button -->
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logout()">
+      <span class="icon">🚪</span>
+      <span class="label">Logout</span>
+    </button>
+  </div>
+</div>
