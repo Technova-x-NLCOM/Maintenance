@@ -13,13 +13,13 @@ import { AuthService } from '../../services/auth.service';
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
-  userRole: 'super admin' | 'admin' | 'staff' = 'staff';
+  userRole: 'super_admin' | 'admin' | 'staff' = 'staff';
   showPassword = false;
   isLoading = false;
   errorMessage = '';
 
   demoCredentials = {
-    'super admin': {
+    'super_admin': {
       email: 'superadmin@nlcom.org',
       password: 'superadmin123'
     },
@@ -43,7 +43,7 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     // Check if role is passed as query parameter
     this.route.queryParams.subscribe(params => {
-      if (params['role'] === 'super admin' || params['role'] === 'admin' || params['role'] === 'staff') {
+      if (params['role'] === 'super_admin' || params['role'] === 'admin' || params['role'] === 'staff') {
         this.userRole = params['role'];
       }
     });
@@ -59,7 +59,7 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  switchRole(role: 'super admin' | 'admin' | 'staff') {
+  switchRole(role: 'super_admin' | 'admin' | 'staff') {
     this.userRole = role;
     this.errorMessage = '';
     this.loginForm.reset();

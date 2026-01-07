@@ -9,7 +9,7 @@ export interface User {
   first_name: string;
   last_name: string;
   contact_info: string | null;
-  role: 'super admin' | 'admin' | 'staff';
+  role: 'super_admin' | 'admin' | 'staff';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -35,7 +35,7 @@ export interface RegisterRequest {
   first_name: string;
   last_name: string;
   contact_info?: string;
-  role?: 'super admin' | 'admin' | 'staff';
+  role?: 'super_admin' | 'admin' | 'staff';
 }
 
 @Injectable({

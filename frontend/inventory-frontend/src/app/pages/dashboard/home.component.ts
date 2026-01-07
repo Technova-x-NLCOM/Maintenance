@@ -10,7 +10,7 @@ import { SuperAdminDashboardComponent } from './super-admin/super-admin-dashboar
   standalone: true,
   imports: [CommonModule, AdminDashboardComponent, StaffDashboardComponent, SuperAdminDashboardComponent],
   template: `
-    <app-super-admin-dashboard *ngIf="user?.role === 'super admin'" />
+    <app-super-admin-dashboard *ngIf="user?.role === 'super_admin'" />
     <app-admin-dashboard *ngIf="user?.role === 'admin'" />
     <app-staff-dashboard *ngIf="user?.role === 'staff'" />
   `
