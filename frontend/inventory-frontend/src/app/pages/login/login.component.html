@@ -1,0 +1,125 @@
+<div class="login-container">
+  <div class="login-card">
+    <!-- Header -->
+    <div class="login-header">
+      <div class="logo-section">
+        <div class="heart-logo">❤️</div>
+        <h1>Humanitarian Relief</h1>
+      </div>
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Sign in to access the system</p>
+    </div>
+
+    <!-- Role Tabs -->
+    <div class="role-tabs">
+      <button 
+        class="role-tab" 
+        [class.active]="userRole === 'admin'"
+        (click)="switchRole('admin')">
+        🔐 Administrator
+      </button>
+      <button 
+        class="role-tab"
+        [class.active]="userRole === 'staff'"
+        (click)="switchRole('staff')">
+        👤 Staff Member
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="errorMessage">
+      <span class="error-icon">⚠️</span>
+      {{ errorMessage }}
+    </div>
+
+    <!-- Login Form -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="email">Username or Email</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          class="form-control"
+        />
+        <span class="error" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          Please enter a valid email
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="Enter your password"
+            class="form-control"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            title="Toggle password visibility">
+            {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <span class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          Password must be at least 6 characters
+        </span>
+      </div>
+
+      <div class="form-group checkbox">
+        <input
+          type="checkbox"
+          id="rememberMe"
+          formControlName="rememberMe"
+        />
+        <label for="rememberMe">Remember me</label>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary btn-login"
+        [disabled]="isLoading"
+      >
+        {{ isLoading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+
+    <!-- Demo Credentials -->
+    <div class="demo-section">
+      <p class="demo-title">Demo Credentials:</p>
+      <button 
+        type="button"
+        class="demo-button"
+        (click)="fillDemoCredentials()">
+        Fill {{ userRole === 'admin' ? 'Admin' : 'Staff' }} Credentials
+      </button>
+      <div class="credentials-display">
+        <div class="credential-item">
+          <span class="label">Email:</span>
+          <span class="value">{{ demoCredentials[userRole].email }}</span>
+        </div>
+        <div class="credential-item">
+          <span class="label">Password:</span>
+          <span class="value">{{ demoCredentials[userRole].password }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Links -->
+    <div class="form-footer">
+      <a href="#forgot-password" class="link">Forgot Password?</a>
+      <span class="divider">•</span>
+      <a routerLink="/signup" class="link">Create Account</a>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="back-home">
+      <a routerLink="/" class="link-home">← Back to Home</a>
+    </div>
+  </div>
+</div>

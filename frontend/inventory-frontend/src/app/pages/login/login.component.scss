@@ -1,0 +1,375 @@
+$primary-color: #0052cc;
+$secondary-color: #f5f5f5;
+$text-dark: #333;
+$text-light: #666;
+$error-color: #dc3545;
+$success-color: #28a745;
+$border-radius: 12px;
+
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0052cc 0%, #004399 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.login-card {
+  background: white;
+  border-radius: $border-radius;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 40px;
+  width: 100%;
+  max-width: 450px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-section {
+  margin-bottom: 15px;
+}
+
+.heart-logo {
+  font-size: 40px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.login-header h1 {
+  font-size: 1.5em;
+  margin: 5px 0;
+  color: $text-dark;
+}
+
+.login-header h2 {
+  font-size: 1.8em;
+  margin: 20px 0 10px;
+  color: $text-dark;
+}
+
+.subtitle {
+  color: $text-light;
+  font-size: 0.95em;
+}
+
+/* Role Tabs */
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.role-tab {
+  padding: 12px 15px;
+  border: 2px solid $secondary-color;
+  background: white;
+  border-radius: $border-radius;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  color: $text-light;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: $primary-color;
+    color: $primary-color;
+  }
+
+  &.active {
+    background: $primary-color;
+    color: white;
+    border-color: $primary-color;
+  }
+}
+
+/* Error Message */
+.error-message {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 12px 15px;
+  border-radius: $border-radius;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+.error-icon {
+  font-size: 1.1em;
+}
+
+/* Form */
+form {
+  margin-bottom: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: $text-dark;
+    font-weight: 500;
+    font-size: 0.95em;
+  }
+
+  &.checkbox {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25px;
+
+    input {
+      margin-right: 8px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+
+    label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+      color: $text-light;
+    }
+  }
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid $secondary-color;
+  border-radius: $border-radius;
+  font-size: 1em;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+  }
+
+  &:invalid:not(:placeholder-shown) {
+    border-color: $error-color;
+  }
+}
+
+.password-input-wrapper {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 5px;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+.error {
+  color: $error-color;
+  font-size: 0.85em;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Buttons */
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: $border-radius;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.btn-primary {
+    background-color: $primary-color;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: #0042a3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 82, 204, 0.3);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  &.btn-login {
+    width: 100%;
+  }
+}
+
+/* Demo Section */
+.demo-section {
+  background-color: $secondary-color;
+  border-radius: $border-radius;
+  padding: 20px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.demo-title {
+  font-size: 0.9em;
+  color: $text-light;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.demo-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: $border-radius;
+  cursor: pointer;
+  font-size: 0.95em;
+  font-weight: 500;
+  margin-bottom: 12px;
+  width: 100%;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #218838;
+  }
+}
+
+.credentials-display {
+  background: white;
+  border-radius: $border-radius;
+  padding: 12px;
+  text-align: left;
+  font-size: 0.85em;
+}
+
+.credential-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid $secondary-color;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .label {
+    color: $text-light;
+    font-weight: 500;
+  }
+
+  .value {
+    color: $text-dark;
+    font-family: 'Courier New', monospace;
+  }
+}
+
+/* Form Footer */
+.form-footer {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-top: 20px;
+  border-top: 1px solid $secondary-color;
+}
+
+.link {
+  color: $primary-color;
+  text-decoration: none;
+  font-size: 0.95em;
+  transition: color 0.3s ease;
+
+  &:hover {
+    color: #0042a3;
+    text-decoration: underline;
+  }
+}
+
+.divider {
+  color: $text-light;
+  margin: 0 8px;
+}
+
+/* Back to Home */
+.back-home {
+  text-align: center;
+}
+
+.link-home {
+  color: $text-light;
+  text-decoration: none;
+  font-size: 0.9em;
+  transition: all 0.3s ease;
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 30px 20px;
+  }
+
+  .login-header h2 {
+    font-size: 1.5em;
+  }
+
+  .role-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .form-footer {
+    font-size: 0.9em;
+  }
+
+  .divider {
+    display: block;
+    margin: 8px 0;
+  }
+}
