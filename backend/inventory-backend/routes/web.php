@@ -21,3 +21,14 @@ Route::prefix('api/auth')->group(function () {
                 ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         });
 });
+
+    Route::prefix('api/rbac')->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('roles', [\App\Http\Controllers\RBACController::class, 'roles']);
+            Route::post('roles', [\App\Http\Controllers\RBACController::class, 'createRole']);
+            Route::post('assign-role', [\App\Http\Controllers\RBACController::class, 'assignRole']);
+            Route::get('permissions', [\App\Http\Controllers\RBACController::class, 'permissions']);
+            Route::post('give-permission', [\App\Http\Controllers\RBACController::class, 'givePermission']);
+            Route::post('revoke-permission', [\App\Http\Controllers\RBACController::class, 'revokePermission']);
+        });
+    });
