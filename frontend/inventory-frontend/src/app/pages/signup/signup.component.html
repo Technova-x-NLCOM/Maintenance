@@ -1,0 +1,200 @@
+<div class="signup-container">
+  <div class="signup-card">
+    <!-- Header -->
+    <div class="signup-header">
+      <div class="logo-section">
+        <div class="heart-logo">❤️</div>
+        <h1>Humanitarian Relief</h1>
+      </div>
+      <h2>Create Account</h2>
+      <p class="subtitle">Join our team and help make a difference</p>
+    </div>
+
+    <!-- Success Message -->
+    <div class="success-message" *ngIf="successMessage">
+      <span class="success-icon">✓</span>
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="errorMessage">
+      <span class="error-icon">⚠️</span>
+      {{ errorMessage }}
+    </div>
+
+    <!-- Signup Form -->
+    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+      <!-- Name Fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            type="text"
+            id="firstName"
+            formControlName="firstName"
+            placeholder="Enter your first name"
+            class="form-control"
+          />
+          <span class="error" *ngIf="signupForm.get('firstName')?.invalid && signupForm.get('firstName')?.touched">
+            First name is required (at least 2 characters)
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input
+            type="text"
+            id="lastName"
+            formControlName="lastName"
+            placeholder="Enter your last name"
+            class="form-control"
+          />
+          <span class="error" *ngIf="signupForm.get('lastName')?.invalid && signupForm.get('lastName')?.touched">
+            Last name is required (at least 2 characters)
+          </span>
+        </div>
+      </div>
+
+      <!-- Email Field -->
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          placeholder="Enter your email"
+          class="form-control"
+        />
+        <span class="error" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+          Please enter a valid email address
+        </span>
+      </div>
+
+      <!-- Phone Field -->
+      <div class="form-group">
+        <label for="phone">Phone Number</label>
+        <input
+          type="tel"
+          id="phone"
+          formControlName="phone"
+          placeholder="Enter your phone number"
+          class="form-control"
+        />
+        <span class="error" *ngIf="signupForm.get('phone')?.invalid && signupForm.get('phone')?.touched">
+          Please enter a valid phone number (at least 10 digits)
+        </span>
+      </div>
+
+      <!-- Department Field -->
+      <div class="form-group">
+        <label for="department">Department</label>
+        <select
+          id="department"
+          formControlName="department"
+          class="form-control"
+        >
+          <option value="">Select your department</option>
+          <option value="logistics">Logistics</option>
+          <option value="distribution">Distribution</option>
+          <option value="warehouse">Warehouse Management</option>
+          <option value="admin">Administration</option>
+          <option value="other">Other</option>
+        </select>
+        <span class="error" *ngIf="signupForm.get('department')?.invalid && signupForm.get('department')?.touched">
+          Please select a department
+        </span>
+      </div>
+
+      <!-- Password Field -->
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            placeholder="Create a strong password"
+            class="form-control"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()">
+            {{ showPassword ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <span class="error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">
+          Password must be at least 8 characters
+        </span>
+        <div class="password-strength" *ngIf="signupForm.get('password')?.value">
+          <span class="strength-label">Strength:</span>
+          <span class="strength-meter" [class]="getPasswordStrength()">
+            {{ getPasswordStrength().toUpperCase() }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Confirm Password Field -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            placeholder="Confirm your password"
+            class="form-control"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleConfirmPasswordVisibility()">
+            {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
+        <span class="error" *ngIf="signupForm.get('confirmPassword')?.invalid && signupForm.get('confirmPassword')?.touched">
+          Please confirm your password
+        </span>
+        <span class="error" *ngIf="signupForm.errors?.['passwordMismatch'] && signupForm.get('confirmPassword')?.touched">
+          Passwords do not match
+        </span>
+      </div>
+
+      <!-- Terms Checkbox -->
+      <div class="form-group checkbox">
+        <input
+          type="checkbox"
+          id="agreeTerms"
+          formControlName="agreeTerms"
+        />
+        <label for="agreeTerms">
+          I agree to the Terms and Conditions and Privacy Policy
+        </label>
+      </div>
+      <span class="error" *ngIf="signupForm.get('agreeTerms')?.invalid && signupForm.get('agreeTerms')?.touched">
+        You must agree to the terms to continue
+      </span>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-signup"
+        [disabled]="isLoading || signupForm.invalid"
+      >
+        {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+      </button>
+    </form>
+
+    <!-- Form Footer -->
+    <div class="form-footer">
+      <p>Already have an account?
+        <a routerLink="/login" class="link">Sign In</a>
+      </p>
+    </div>
+
+    <!-- Back to Home -->
+    <div class="back-home">
+      <a routerLink="/" class="link-home">← Back to Home</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,104 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="logo-section">
+        <div class="heart-logo">❤️</div>
+        <h1>Humanitarian Relief</h1>
+      </div>
+      <h2>Inventory Management System</h2>
+      <p class="mission">
+        Our mission is to efficiently manage and distribute essential resources to communities in need, 
+        ensuring every item reaches those who need it most.
+      </p>
+      <div class="cta-buttons">
+        <button class="btn btn-primary" routerLink="/login">
+          Sign In
+        </button>
+        <button class="btn btn-secondary" routerLink="/signup">
+          Create Account
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section class="values">
+    <div class="values-content">
+      <div class="value-item">
+        <h3>Respond</h3>
+        <p>Quick response to emergency situations and resource needs</p>
+      </div>
+      <div class="value-item">
+        <h3>Reach Out</h3>
+        <p>Extending our reach to communities across regions</p>
+      </div>
+      <div class="value-item">
+        <h3>Rebuild</h3>
+        <p>Helping communities rebuild and recover from crises</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="section-title">
+      <h2>Key Features</h2>
+      <p>Powerful tools to manage your inventory effectively</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card" *ngFor="let feature of features">
+        <div class="feature-icon">{{ feature.icon }}</div>
+        <h3>{{ feature.title }}</h3>
+        <p>{{ feature.description }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- User Types Section -->
+  <section class="user-types">
+    <div class="section-title">
+      <h2>For Everyone</h2>
+      <p>Access tailored to your role</p>
+    </div>
+    <div class="user-types-grid">
+      <div class="user-card admin-card">
+        <div class="user-icon">🔐</div>
+        <h3>Administrator</h3>
+        <p>Full system control and user management</p>
+        <ul>
+          <li>Manage inventory and categories</li>
+          <li>User account administration</li>
+          <li>Generate comprehensive reports</li>
+          <li>System configuration</li>
+        </ul>
+        <button class="btn btn-primary" routerLink="/login?role=admin">Login as Admin</button>
+      </div>
+
+      <div class="user-card staff-card">
+        <div class="user-icon">👤</div>
+        <h3>Staff Member</h3>
+        <p>Manage daily inventory operations</p>
+        <ul>
+          <li>View and update inventory</li>
+          <li>Process distributions</li>
+          <li>Submit reports</li>
+          <li>Track item movements</li>
+        </ul>
+        <button class="btn btn-primary" routerLink="/login?role=staff">Login as Staff</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2024 Humanitarian Relief - Inventory Management System. All rights reserved.</p>
+      <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+        <a href="#privacy">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+</div>

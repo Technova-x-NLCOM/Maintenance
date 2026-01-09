@@ -21,7 +21,10 @@ class DatabaseSeeder extends Seeder
         // Seed categories (no dependencies)
         $this->call(CategorySeeder::class);
 
-        // Seed users (no dependencies)
+        // Seed roles before users (users depend on roles)
+        $this->call(RoleSeeder::class);
+
+        // Seed users (depends on roles)
         $this->call(UserSeeder::class);
 
         // Seed system settings (depends on users)
