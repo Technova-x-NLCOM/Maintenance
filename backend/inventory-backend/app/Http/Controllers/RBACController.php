@@ -20,7 +20,7 @@ class RBACController extends Controller
     public function createRole(Request $request)
     {
         $user = auth()->user();
-        if (!$user || !$user->hasRole('super_admin')) {
+        if (!$user || (!$user->hasRole('super_admin') && ! $user->hasPermission('manage_roles'))) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -39,7 +39,7 @@ class RBACController extends Controller
     public function assignRole(Request $request)
     {
         $user = auth()->user();
-        if (!$user || !$user->hasRole('super_admin')) {
+        if (!$user || (!$user->hasRole('super_admin') && ! $user->hasPermission('manage_roles'))) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -66,7 +66,7 @@ class RBACController extends Controller
     public function givePermission(Request $request)
     {
         $user = auth()->user();
-        if (!$user || !$user->hasRole('super_admin')) {
+        if (!$user || (!$user->hasRole('super_admin') && ! $user->hasPermission('manage_permissions'))) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -93,7 +93,7 @@ class RBACController extends Controller
     public function revokePermission(Request $request)
     {
         $user = auth()->user();
-        if (!$user || !$user->hasRole('super_admin')) {
+        if (!$user || (!$user->hasRole('super_admin') && ! $user->hasPermission('manage_permissions'))) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
