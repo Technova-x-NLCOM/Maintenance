@@ -1,23 +1,35 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, NgIf, NgForOf } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService, RegisterRequest } from '../../services/auth.service';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-signup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, NgIf],
   templateUrl: './signup.component.html',
-  styleUrl: './signup.component.scss'
+  styleUrls: ['./signup.component.scss']
 })
-export class SignupComponent implements OnInit {
+export class SignupComponent implements OnInit, OnDestroy {
   signupForm!: FormGroup;
   showPassword = false;
   showConfirmPassword = false;
   isLoading = false;
   successMessage = '';
   errorMessage = '';
+
+  // Password validation
+  passwordValidation = {
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    symbol: false
+  };
+  showPasswordValidation = false;
+  private destroy = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -36,6 +48,14 @@ export class SignupComponent implements OnInit {
       confirmPassword: ['', Validators.required],
       agreeTerms: [false, Validators.requiredTrue]
     }, { validators: this.passwordMatchValidator });
+
+    // Setup password validation with debounce
+    // Validation is handled on input events (see template handler)
+  }
+
+  ngOnDestroy() {
+    this.destroy.next();
+    this.destroy.complete();
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -55,6 +75,12 @@ export class SignupComponent implements OnInit {
 
   toggleConfirmPasswordVisibility() {
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  onPasswordInput(e: Event) {
+    const pw = (e.target as HTMLInputElement).value || '';
+    this.showPasswordValidation = pw.length > 0;
+    this.validatePasswordRules(pw);
   }
 
   onSubmit() {
@@ -107,5 +133,28 @@ export class SignupComponent implements OnInit {
     if (strength < 3) return 'fair';
     if (strength < 4) return 'good';
     return 'strong';
+  }
+
+  private validatePasswordRules(password: string): void {
+    this.passwordValidation = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      symbol: /[^A-Za-z0-9]/.test(password)
+    };
+    // Enforce password rules on the form control so the form stays invalid
+    const control = this.signupForm?.get('password');
+    if (control) {
+      if (this.isPasswordValid()) {
+        control.setErrors(null);
+      } else {
+        control.setErrors({ passwordRules: true });
+      }
+    }
+  }
+
+  isPasswordValid(): boolean {
+    return Object.values(this.passwordValidation).every(v => v);
   }
 }
