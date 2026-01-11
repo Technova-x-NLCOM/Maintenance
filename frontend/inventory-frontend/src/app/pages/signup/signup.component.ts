@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
+import { AuthService, RegisterRequest } from '../../services/auth.service';
 
 @Component({
   selector: 'app-signup',
@@ -17,20 +18,20 @@ export class SignupComponent implements OnInit {
   isLoading = false;
   successMessage = '';
   errorMessage = '';
-  userRole: 'staff' = 'staff';
 
   constructor(
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
     this.signupForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2)]],
-      lastName: ['', [Validators.required, Validators.minLength(2)]],
+      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10,}$/)]],
-      department: ['', Validators.required],
+      first_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      contact_info: ['', [Validators.maxLength(100)]],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
       agreeTerms: [false, Validators.requiredTrue]
@@ -63,24 +64,33 @@ export class SignupComponent implements OnInit {
     }
 
     this.isLoading = true;
+    this.errorMessage = '';
     const formData = this.signupForm.value;
 
-    // Simulate API call
-    setTimeout(() => {
-      // Store user info
-      sessionStorage.setItem('userRole', this.userRole);
-      sessionStorage.setItem('userEmail', formData.email);
-      sessionStorage.setItem('isLoggedIn', 'true');
-      
-      this.successMessage = 'Account created successfully! Redirecting...';
-      
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        this.router.navigate(['/dashboard']);
-      }, 2000);
-      
-      this.isLoading = false;
-    }, 1500);
+    // Prepare payload for backend
+    const registerPayload: RegisterRequest = {
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      contact_info: formData.contact_info || null,
+      role: 'staff' // New users default to staff role
+    };
+
+    this.authService.register(registerPayload).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        this.successMessage = 'Account created successfully! Redirecting...';
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 2000);
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.errorMessage = error.error?.message || error.error?.error || 'Registration failed';
+      }
+    });
   }
 
   getPasswordStrength(): string {
