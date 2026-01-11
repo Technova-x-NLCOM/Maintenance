@@ -30,5 +30,6 @@ Route::prefix('api/auth')->group(function () {
             Route::get('permissions', [\App\Http\Controllers\RBACController::class, 'permissions']);
             Route::post('give-permission', [\App\Http\Controllers\RBACController::class, 'givePermission'])->middleware('permission:manage_permissions');
             Route::post('revoke-permission', [\App\Http\Controllers\RBACController::class, 'revokePermission'])->middleware('permission:manage_permissions');
+            Route::patch('role-permission', [\App\Http\Controllers\RBACController::class, 'updatePermissionFlags'])->middleware('permission:manage_permissions');
         });
     });

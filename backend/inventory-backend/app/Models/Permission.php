@@ -28,6 +28,6 @@ class Permission extends Model
             'role_permissions',
             'permission_id',
             'role_id'
-        )->withTimestamps();
+        )->withPivot('can_create', 'can_read', 'can_update', 'can_delete')->withTimestamps();
     }
 }

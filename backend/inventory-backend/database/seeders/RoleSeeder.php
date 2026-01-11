@@ -45,7 +45,14 @@ class RoleSeeder extends Seeder
                     ['permission_name' => $p['permission_name']],
                     ['display_name' => $p['display_name'], 'description' => $p['description'], 'module' => $p['module']]
                 );
-                $super->permissions()->syncWithoutDetaching([$perm->permission_id]);
+                $super->permissions()->syncWithoutDetaching([
+                    $perm->permission_id => [
+                        'can_create' => true,
+                        'can_read' => true,
+                        'can_update' => true,
+                        'can_delete' => true,
+                    ]
+                ]);
             }
         }
     }
