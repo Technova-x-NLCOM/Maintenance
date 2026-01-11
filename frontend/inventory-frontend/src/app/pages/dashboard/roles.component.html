@@ -1,0 +1,24 @@
+<div class="roles-page">
+  <div class="header">
+    <h2>Roles & Permissions</h2>
+    <p class="subtitle">Overview of system roles and their attached permissions.</p>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading roles…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div class="roles-grid" *ngIf="!loading && !error">
+    <div class="role-card" *ngFor="let role of roles">
+      <div class="role-header">
+        <h3>{{ role.display_name || role.role_name }}</h3>
+        <small class="muted">{{ role.role_name }}</small>
+      </div>
+      <p class="desc" *ngIf="role.description">{{ role.description }}</p>
+
+      <div class="permissions">
+        <span class="perm" *ngFor="let p of (role.permissions || [])">{{ p.display_name || p.permission_name }}</span>
+        <span class="no-perms" *ngIf="!(role.permissions || []).length">No permissions</span>
+      </div>
+    </div>
+  </div>
+</div>
