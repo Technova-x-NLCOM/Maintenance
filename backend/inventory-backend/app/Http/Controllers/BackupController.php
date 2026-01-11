@@ -266,10 +266,8 @@ class BackupController extends Controller
                 ], 500);
             }
             
-            DB::beginTransaction();
-            
+            // Drop all tables first (without transaction since exec() operates outside Laravel's connection)
             try {
-                // Drop all tables
                 $tables = DB::select('SELECT table_name FROM information_schema.tables WHERE table_schema = ?', [$dbName]);
                 
                 DB::statement('SET FOREIGN_KEY_CHECKS=0');
@@ -279,39 +277,41 @@ class BackupController extends Controller
                 }
                 
                 DB::statement('SET FOREIGN_KEY_CHECKS=1');
-                
-                // Restore from backup
-                $command = sprintf(
-                    '%s --host=%s --user=%s --password=%s %s < %s',
-                    escapeshellarg($mysqlBin),
-                    escapeshellarg($host),
-                    escapeshellarg($user),
-                    escapeshellarg($password),
-                    escapeshellarg($dbName),
-                    escapeshellarg($backupPath)
-                );
-                
-                exec($command, $output, $returnVar);
-                
-                if ($returnVar !== 0) {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Failed to restore MySQL database. Ensure mysql client is installed and accessible.'
-                    ], 500);
-                }
-                
-                DB::commit();
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Database restored successfully from backup'
-                ]);
-                
             } catch (Exception $e) {
-                DB::rollBack();
-                throw $e;
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to drop existing tables: ' . $e->getMessage()
+                ], 500);
             }
+            
+            // Restore from backup using mysql CLI
+            $command = sprintf(
+                '%s --host=%s --user=%s --password=%s %s < %s',
+                escapeshellarg($mysqlBin),
+                escapeshellarg($host),
+                escapeshellarg($user),
+                escapeshellarg($password),
+                escapeshellarg($dbName),
+                escapeshellarg($backupPath)
+            );
+            
+            exec($command, $output, $returnVar);
+            
+            if ($returnVar !== 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to restore MySQL database. Ensure mysql client is installed and accessible. Command return code: ' . $returnVar
+                ], 500);
+            }
+            
+            // Reconnect to reload schema cache after restore
+            DB::purge('mysql');
+            DB::reconnect('mysql');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Database restored successfully from backup'
+            ]);
             
         } catch (Exception $e) {
             return response()->json([
@@ -516,10 +516,19 @@ class BackupController extends Controller
     {
         try {
             $request->validate([
-                'backup_file' => 'required|file|mimes:sql,sqlite|max:102400' // Max 100MB
+                'backup_file' => 'required|file|mimetypes:text/plain,text/x-sql,application/x-sqlite3,application/octet-stream|max:102400' // Max 100MB
             ]);
 
             $uploadedFile = $request->file('backup_file');
+            
+            // Validate file extension
+            $extension = strtolower($uploadedFile->getClientOriginalExtension());
+            if (!in_array($extension, ['sql', 'sqlite'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid file type. Only .sql and .sqlite files are accepted.'
+                ], 400);
+            }
             
             // Create temp directory if not exists
             $tempDir = storage_path('app/temp');
