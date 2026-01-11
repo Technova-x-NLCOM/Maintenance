@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RbacService, Role } from '../../rbac/services/rbac.service';
+import { RbacService, Role, Permission } from '../../rbac/services/rbac.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-roles',
@@ -11,6 +12,7 @@ import { RbacService, Role } from '../../rbac/services/rbac.service';
 })
 export class RolesComponent implements OnInit {
   roles: Role[] = [];
+  permissions: Permission[] = [];
   loading = false;
   error: string | null = null;
   // editing state per role
@@ -27,14 +29,15 @@ export class RolesComponent implements OnInit {
   loadRoles(): void {
     this.loading = true;
     this.error = null;
-    this.rbac.getRoles().subscribe({
-      next: (data) => {
-        this.roles = data;
+    forkJoin({ roles: this.rbac.getRoles(), permissions: this.rbac.getPermissions() }).subscribe({
+      next: ({ roles, permissions }) => {
+        this.roles = roles || [];
+        this.permissions = permissions || [];
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.error = err?.message || 'Failed to load roles';
+        this.error = err?.message || 'Failed to load roles & permissions';
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -44,12 +47,18 @@ export class RolesComponent implements OnInit {
   startEdit(role: Role) {
     this.editingRoleId = role.role_id;
     this.editPermissions = {};
-    (role.permissions || []).forEach(p => {
-      this.editPermissions[p.permission_id] = {
-        can_create: !!p.pivot?.can_create,
-        can_read: typeof p.pivot?.can_read === 'undefined' ? true : !!p.pivot?.can_read,
-        can_update: !!p.pivot?.can_update,
-        can_delete: !!p.pivot?.can_delete,
+    // Initialize all known permissions; default to false if role doesn't have it in DB
+    const attached = new Map<number, Permission>();
+    (role.permissions || []).forEach(p => attached.set(p.permission_id, p));
+
+    (this.permissions || []).forEach(perm => {
+      const existing = attached.get(perm.permission_id);
+      this.editPermissions[perm.permission_id] = {
+        can_create: !!existing?.pivot?.can_create,
+        // Default missing perms to false (no access) as requested
+        can_read: !!existing?.pivot?.can_read,
+        can_update: !!existing?.pivot?.can_update,
+        can_delete: !!existing?.pivot?.can_delete,
       };
     });
     this.cdr.detectChanges();
@@ -68,11 +77,23 @@ export class RolesComponent implements OnInit {
   saveRolePermissions(role: Role) {
     if (!this.editingRoleId || this.editingRoleId !== role.role_id) return;
     this.savingRoles[role.role_id] = true;
-
-    const updates = Object.keys(this.editPermissions).map(pid => {
-      const permissionId = Number(pid);
+    const attachedIds = new Set((role.permissions || []).map(p => p.permission_id));
+    const updates = Object.keys(this.editPermissions).map(async pidStr => {
+      const permissionId = Number(pidStr);
       const flags = this.editPermissions[permissionId];
-      return this.rbac.updatePermissionFlags(role.role_id, permissionId, flags).toPromise();
+      const permMeta = (this.permissions || []).find(p => p.permission_id === permissionId);
+      if (!permMeta) return;
+
+      // If role already has this permission, update flags
+      if (attachedIds.has(permissionId)) {
+        await this.rbac.updatePermissionFlags(role.role_id, permissionId, flags).toPromise();
+      } else {
+        // Only attach if any flag is true; otherwise keep as no permission
+        const wantsAny = !!flags.can_create || !!flags.can_read || !!flags.can_update || !!flags.can_delete;
+        if (wantsAny) {
+          await this.rbac.givePermission(role.role_id, permMeta.permission_name, flags).toPromise();
+        }
+      }
     });
 
     Promise.all(updates)
@@ -87,5 +108,11 @@ export class RolesComponent implements OnInit {
         this.error = err?.message || 'Failed to update permissions';
         this.cdr.detectChanges();
       });
+  }
+
+  // Helper: find pivot for a role+permission by id
+  pivotFor(role: Role, permissionId: number) {
+    const p = (role.permissions || []).find(x => x.permission_id === permissionId);
+    return p?.pivot;
   }
 }

@@ -61,4 +61,16 @@ export class RbacService {
     if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
     return this.http.patch(`${this.API_URL}/role-permission`, payload, { headers: this.authHeaders() });
   }
+
+  /**
+   * Attach a permission to a role and set flags. Uses permission_name as required by backend.
+   */
+  givePermission(role_id: number, permission_name: string, flags: { can_create?: boolean; can_read?: boolean; can_update?: boolean; can_delete?: boolean; }) {
+    const payload: any = { role_id, permission_name };
+    if (typeof flags.can_create !== 'undefined') payload.can_create = !!flags.can_create;
+    if (typeof flags.can_read !== 'undefined') payload.can_read = !!flags.can_read;
+    if (typeof flags.can_update !== 'undefined') payload.can_update = !!flags.can_update;
+    if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
+    return this.http.post(`${this.API_URL}/give-permission`, payload, { headers: this.authHeaders() });
+  }
 }
