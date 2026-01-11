@@ -47,8 +47,8 @@
       <p>Powerful tools to manage your inventory effectively</p>
     </div>
     <div class="features-grid">
-      <div class="feature-card" *ngFor="let feature of features">
-        <div class="feature-icon">{{ feature.icon }}</div>
+      <div class="feature-card" *ngFor="let feature of features; let i = index" [attr.data-index]="i">
+        <div class="feature-icon-wrapper"></div>
         <h3>{{ feature.title }}</h3>
         <p>{{ feature.description }}</p>
       </div>
@@ -63,7 +63,7 @@
     </div>
     <div class="user-types-grid">
       <div class="user-card admin-card">
-        <div class="user-icon">🔐</div>
+        <div class="user-icon-wrapper"></div>
         <h3>Administrator</h3>
         <p>Full system control and user management</p>
         <ul>
@@ -76,7 +76,7 @@
       </div>
 
       <div class="user-card staff-card">
-        <div class="user-icon">👤</div>
+        <div class="user-icon-wrapper"></div>
         <h3>Staff Member</h3>
         <p>Manage daily inventory operations</p>
         <ul>
