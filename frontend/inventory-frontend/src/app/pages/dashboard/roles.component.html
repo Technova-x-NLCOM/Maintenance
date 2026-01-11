@@ -16,8 +16,59 @@
       <p class="desc" *ngIf="role.description">{{ role.description }}</p>
 
       <div class="permissions">
-        <span class="perm" *ngFor="let p of (role.permissions || [])">{{ p.display_name || p.permission_name }}</span>
-        <span class="no-perms" *ngIf="!(role.permissions || []).length">No permissions</span>
+        <div class="permissions-actions">
+          <button *ngIf="editingRoleId !== role.role_id" (click)="startEdit(role)">Edit</button>
+          <ng-container *ngIf="editingRoleId === role.role_id">
+            <button (click)="saveRolePermissions(role)" [disabled]="savingRoles[role.role_id]">{{ savingRoles[role.role_id] ? 'Saving…' : 'Save' }}</button>
+            <button (click)="cancelEdit()">Cancel</button>
+          </ng-container>
+        </div>
+
+        <ng-container *ngIf="(role.permissions || []).length; else noPerms">
+          <table class="perms-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th class="center">C</th>
+                <th class="center">R</th>
+                <th class="center">U</th>
+                <th class="center">D</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of (role.permissions || [])">
+                <td>{{ p.display_name || p.permission_name }}</td>
+                <td class="center">
+                  <ng-container *ngIf="editingRoleId === role.role_id; else viewCreate">
+                    <input type="checkbox" [checked]="editPermissions[p.permission_id]?.can_create" (change)="toggleFlag(p.permission_id, 'can_create')" />
+                  </ng-container>
+                  <ng-template #viewCreate>{{ p.pivot?.can_create ? '✓' : '—' }}</ng-template>
+                </td>
+                <td class="center">
+                  <ng-container *ngIf="editingRoleId === role.role_id; else viewRead">
+                    <input type="checkbox" [checked]="editPermissions[p.permission_id]?.can_read" (change)="toggleFlag(p.permission_id, 'can_read')" />
+                  </ng-container>
+                  <ng-template #viewRead>{{ p.pivot?.can_read ? '✓' : '—' }}</ng-template>
+                </td>
+                <td class="center">
+                  <ng-container *ngIf="editingRoleId === role.role_id; else viewUpdate">
+                    <input type="checkbox" [checked]="editPermissions[p.permission_id]?.can_update" (change)="toggleFlag(p.permission_id, 'can_update')" />
+                  </ng-container>
+                  <ng-template #viewUpdate>{{ p.pivot?.can_update ? '✓' : '—' }}</ng-template>
+                </td>
+                <td class="center">
+                  <ng-container *ngIf="editingRoleId === role.role_id; else viewDelete">
+                    <input type="checkbox" [checked]="editPermissions[p.permission_id]?.can_delete" (change)="toggleFlag(p.permission_id, 'can_delete')" />
+                  </ng-container>
+                  <ng-template #viewDelete>{{ p.pivot?.can_delete ? '✓' : '—' }}</ng-template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </ng-container>
+        <ng-template #noPerms>
+          <span class="no-perms">No permissions</span>
+        </ng-template>
       </div>
     </div>
   </div>

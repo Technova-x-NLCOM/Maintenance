@@ -7,6 +7,16 @@ export interface Permission {
   permission_name: string;
   display_name?: string | null;
   description?: string | null;
+  pivot?: {
+    role_id: number;
+    permission_id: number;
+    can_create?: boolean;
+    can_read?: boolean;
+    can_update?: boolean;
+    can_delete?: boolean;
+    created_at?: string;
+    updated_at?: string;
+  };
 }
 
 export interface Role {
@@ -41,5 +51,14 @@ export class RbacService {
 
   getPermissions(): Observable<Permission[]> {
     return this.http.get<Permission[]>(`${this.API_URL}/permissions`, { headers: this.authHeaders() });
+  }
+
+  updatePermissionFlags(role_id: number, permission_id: number, flags: { can_create?: boolean; can_read?: boolean; can_update?: boolean; can_delete?: boolean; }) {
+    const payload: any = { role_id, permission_id };
+    if (typeof flags.can_create !== 'undefined') payload.can_create = !!flags.can_create;
+    if (typeof flags.can_read !== 'undefined') payload.can_read = !!flags.can_read;
+    if (typeof flags.can_update !== 'undefined') payload.can_update = !!flags.can_update;
+    if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
+    return this.http.patch(`${this.API_URL}/role-permission`, payload, { headers: this.authHeaders() });
   }
 }
