@@ -50,6 +50,13 @@ class BackupController extends Controller
             $user = $database['username'];
             $password = $database['password'];
             $dbName = $database['database'];
+            $dumpBin = $this->getMySqlDumpBin();
+            if (!$dumpBin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'mysqldump not found. Install MySQL client tools or set MYSQLDUMP_PATH in .env (e.g., C:\\xampp\\mysql\\bin\\mysqldump.exe).'
+                ], 500);
+            }
             
             // Create backups directory if it doesn't exist
             $backupDir = storage_path('app/backups');
@@ -57,12 +64,13 @@ class BackupController extends Controller
                 mkdir($backupDir, 0755, true);
             }
             
-            $timestamp = Carbon::now()->format('Y-m-d');
+            $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
             $backupFile = $backupDir . '/backup_' . $dbName . '_' . $timestamp . '.sql';
             
             // Build mysqldump command
             $command = sprintf(
-                'mysqldump --host=%s --user=%s --password=%s %s > %s',
+                '%s --host=%s --user=%s --password=%s %s > %s',
+                escapeshellarg($dumpBin),
                 escapeshellarg($host),
                 escapeshellarg($user),
                 escapeshellarg($password),
@@ -76,7 +84,7 @@ class BackupController extends Controller
             if ($returnVar !== 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create MySQL backup'
+                    'message' => 'Failed to create MySQL backup. Ensure mysqldump is installed and accessible.'
                 ], 500);
             }
             
@@ -250,6 +258,13 @@ class BackupController extends Controller
             $user = $database['username'];
             $password = $database['password'];
             $dbName = $database['database'];
+            $mysqlBin = $this->getMySqlClientBin();
+            if (!$mysqlBin) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'mysql client not found. Install MySQL client tools or set MYSQL_CLIENT_PATH in .env (e.g., C:\\xampp\\mysql\\bin\\mysql.exe).'
+                ], 500);
+            }
             
             DB::beginTransaction();
             
@@ -267,7 +282,8 @@ class BackupController extends Controller
                 
                 // Restore from backup
                 $command = sprintf(
-                    'mysql --host=%s --user=%s --password=%s %s < %s',
+                    '%s --host=%s --user=%s --password=%s %s < %s',
+                    escapeshellarg($mysqlBin),
                     escapeshellarg($host),
                     escapeshellarg($user),
                     escapeshellarg($password),
@@ -281,7 +297,7 @@ class BackupController extends Controller
                     DB::rollBack();
                     return response()->json([
                         'success' => false,
-                        'message' => 'Failed to restore MySQL database'
+                        'message' => 'Failed to restore MySQL database. Ensure mysql client is installed and accessible.'
                     ], 500);
                 }
                 
@@ -303,6 +319,54 @@ class BackupController extends Controller
                 'message' => 'MySQL restore error: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function getMySqlDumpBin()
+    {
+        $envPath = env('MYSQLDUMP_PATH');
+        if ($envPath && file_exists($envPath)) {
+            return $envPath;
+        }
+        $candidates = [
+            'mysqldump',
+            'C:\\xampp\\mysql\\bin\\mysqldump.exe',
+            'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe',
+            '/usr/bin/mysqldump',
+            '/usr/local/bin/mysqldump'
+        ];
+        foreach ($candidates as $path) {
+            if ($path === 'mysqldump') {
+                return $path;
+            }
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        return null;
+    }
+
+    private function getMySqlClientBin()
+    {
+        $envPath = env('MYSQL_CLIENT_PATH');
+        if ($envPath && file_exists($envPath)) {
+            return $envPath;
+        }
+        $candidates = [
+            'mysql',
+            'C:\\xampp\\mysql\\bin\\mysql.exe',
+            'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql.exe',
+            '/usr/bin/mysql',
+            '/usr/local/bin/mysql'
+        ];
+        foreach ($candidates as $path) {
+            if ($path === 'mysql') {
+                return $path;
+            }
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+        return null;
     }
 
     /**
@@ -443,5 +507,62 @@ class BackupController extends Controller
         $bytes /= (1 << (10 * $pow));
         
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    /**
+     * Restore database from uploaded backup file
+     */
+    public function restoreFromUpload(Request $request)
+    {
+        try {
+            $request->validate([
+                'backup_file' => 'required|file|mimes:sql,sqlite|max:102400' // Max 100MB
+            ]);
+
+            $uploadedFile = $request->file('backup_file');
+            
+            // Create temp directory if not exists
+            $tempDir = storage_path('app/temp');
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            // Save uploaded file temporarily
+            $tempPath = $tempDir . '/' . uniqid('restore_') . '_' . $uploadedFile->getClientOriginalName();
+            $uploadedFile->move($tempDir, basename($tempPath));
+
+            $dbDriver = config('database.default');
+            
+            try {
+                if ($dbDriver === 'mysql') {
+                    $result = $this->restoreMySQL($tempPath);
+                } elseif ($dbDriver === 'sqlite') {
+                    $result = $this->restoreSQLite($tempPath);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unsupported database driver: ' . $dbDriver
+                    ], 400);
+                }
+
+                // Clean up temp file after restore
+                if (file_exists($tempPath)) {
+                    unlink($tempPath);
+                }
+
+                return $result;
+            } catch (Exception $e) {
+                // Clean up temp file on error
+                if (file_exists($tempPath)) {
+                    unlink($tempPath);
+                }
+                throw $e;
+            }
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Restore from upload failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
