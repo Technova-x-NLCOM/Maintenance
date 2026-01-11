@@ -1,0 +1,76 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+export interface Permission {
+  permission_id: number;
+  permission_name: string;
+  display_name?: string | null;
+  description?: string | null;
+  pivot?: {
+    role_id: number;
+    permission_id: number;
+    can_create?: boolean;
+    can_read?: boolean;
+    can_update?: boolean;
+    can_delete?: boolean;
+    created_at?: string;
+    updated_at?: string;
+  };
+}
+
+export interface Role {
+  role_id: number;
+  role_name: string;
+  display_name?: string | null;
+  description?: string | null;
+  is_system_role?: boolean;
+  permissions?: Permission[];
+}
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RbacService {
+  private readonly API_URL = 'http://127.0.0.1:8000/api/rbac';
+
+  constructor(private http: HttpClient) {}
+
+  private authHeaders(): HttpHeaders {
+    const token = localStorage.getItem('access_token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
+  getRoles(): Observable<Role[]> {
+    return this.http.get<Role[]>(`${this.API_URL}/roles`, { headers: this.authHeaders() });
+  }
+
+  getPermissions(): Observable<Permission[]> {
+    return this.http.get<Permission[]>(`${this.API_URL}/permissions`, { headers: this.authHeaders() });
+  }
+
+  updatePermissionFlags(role_id: number, permission_id: number, flags: { can_create?: boolean; can_read?: boolean; can_update?: boolean; can_delete?: boolean; }) {
+    const payload: any = { role_id, permission_id };
+    if (typeof flags.can_create !== 'undefined') payload.can_create = !!flags.can_create;
+    if (typeof flags.can_read !== 'undefined') payload.can_read = !!flags.can_read;
+    if (typeof flags.can_update !== 'undefined') payload.can_update = !!flags.can_update;
+    if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
+    return this.http.patch(`${this.API_URL}/role-permission`, payload, { headers: this.authHeaders() });
+  }
+
+  /**
+   * Attach a permission to a role and set flags. Uses permission_name as required by backend.
+   */
+  givePermission(role_id: number, permission_name: string, flags: { can_create?: boolean; can_read?: boolean; can_update?: boolean; can_delete?: boolean; }) {
+    const payload: any = { role_id, permission_name };
+    if (typeof flags.can_create !== 'undefined') payload.can_create = !!flags.can_create;
+    if (typeof flags.can_read !== 'undefined') payload.can_read = !!flags.can_read;
+    if (typeof flags.can_update !== 'undefined') payload.can_update = !!flags.can_update;
+    if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
+    return this.http.post(`${this.API_URL}/give-permission`, payload, { headers: this.authHeaders() });
+  }
+}

@@ -49,6 +49,17 @@
         <span class="label">Settings</span>
       </a>
     </div>
+
+    <!-- Super Admin Only -->
+    <div class="nav-section" *ngIf="user?.role === 'super_admin'">
+      <p class="nav-label">Super Admin</p>
+      <a routerLink="/dashboard/roles" 
+         routerLinkActive="active" 
+         class="nav-item">
+        <span class="icon">🔐</span>
+        <span class="label">Roles & Permissions</span>
+      </a>
+    </div>
   </nav>
 
   <!-- Logout Button -->
