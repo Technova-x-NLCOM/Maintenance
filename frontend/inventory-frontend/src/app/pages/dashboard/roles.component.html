@@ -11,13 +11,16 @@
     <div class="role-card" *ngFor="let role of roles">
       <div class="role-header">
         <h3>{{ role.display_name || role.role_name }}</h3>
-        <small class="muted">{{ role.role_name }}</small>
+        <div class="role-meta">
+          <small class="muted">{{ role.role_name }}</small>
+          <span *ngIf="role.role_name === 'super_admin'" class="badge protected">Protected</span>
+        </div>
       </div>
       <p class="desc" *ngIf="role.description">{{ role.description }}</p>
 
       <div class="permissions">
         <div class="permissions-actions">
-          <button *ngIf="editingRoleId !== role.role_id" (click)="startEdit(role)">Edit</button>
+          <button *ngIf="editingRoleId !== role.role_id && role.role_name !== 'super_admin'" (click)="startEdit(role)">Edit</button>
           <ng-container *ngIf="editingRoleId === role.role_id">
             <button (click)="saveRolePermissions(role)" [disabled]="savingRoles[role.role_id]">{{ savingRoles[role.role_id] ? 'Saving…' : 'Save' }}</button>
             <button (click)="cancelEdit()">Cancel</button>

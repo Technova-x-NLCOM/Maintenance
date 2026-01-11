@@ -29,30 +29,43 @@ class RoleSeeder extends Seeder
             );
         }
 
-        // Seed initial permissions and attach to super_admin
-        $super = Role::where('role_name', 'super_admin')->first();
-        if ($super) {
-            $permissions = [
-                ['permission_name' => 'manage_users', 'display_name' => 'Manage Users', 'description' => 'Create, update, delete users', 'module' => 'system'],
-                ['permission_name' => 'manage_roles', 'display_name' => 'Manage Roles', 'description' => 'Create and assign roles', 'module' => 'system'],
-                ['permission_name' => 'manage_permissions', 'display_name' => 'Manage Permissions', 'description' => 'Create and assign permissions', 'module' => 'system'],
-                ['permission_name' => 'view_reports', 'display_name' => 'View Reports', 'description' => 'Access reporting features', 'module' => 'reports'],
-                ['permission_name' => 'manage_inventory', 'display_name' => 'Manage Inventory', 'description' => 'CRUD inventory items and stock', 'module' => 'inventory'],
-            ];
+        // Seed initial permissions and attach to super_admin; ensure all role-permission rows exist (default false for non-super roles)
+        $permissions = [
+            ['permission_name' => 'manage_users', 'display_name' => 'Manage Users', 'description' => 'Create, update, delete users', 'module' => 'system'],
+            ['permission_name' => 'manage_roles', 'display_name' => 'Manage Roles', 'description' => 'Create and assign roles', 'module' => 'system'],
+            ['permission_name' => 'manage_permissions', 'display_name' => 'Manage Permissions', 'description' => 'Create and assign permissions', 'module' => 'system'],
+            ['permission_name' => 'view_reports', 'display_name' => 'View Reports', 'description' => 'Access reporting features', 'module' => 'reports'],
+            ['permission_name' => 'manage_inventory', 'display_name' => 'Manage Inventory', 'description' => 'CRUD inventory items and stock', 'module' => 'inventory'],
+        ];
 
-            foreach ($permissions as $p) {
-                $perm = Permission::updateOrCreate(
-                    ['permission_name' => $p['permission_name']],
-                    ['display_name' => $p['display_name'], 'description' => $p['description'], 'module' => $p['module']]
+        foreach ($permissions as $p) {
+            Permission::updateOrCreate(
+                ['permission_name' => $p['permission_name']],
+                ['display_name' => $p['display_name'], 'description' => $p['description'], 'module' => $p['module']]
+            );
+        }
+
+        $allPermissions = Permission::all();
+        $allRoles = Role::all();
+        $now = now();
+
+        foreach ($allRoles as $role) {
+            foreach ($allPermissions as $perm) {
+                // Super admin: full CRUD; others default to no access (all flags false)
+                $pivotData = $role->role_name === 'super_admin'
+                    ? ['can_create' => true, 'can_read' => true, 'can_update' => true, 'can_delete' => true]
+                    : ['can_create' => false, 'can_read' => false, 'can_update' => false, 'can_delete' => false];
+
+                DB::table('role_permissions')->updateOrInsert(
+                    [
+                        'role_id' => $role->role_id,
+                        'permission_id' => $perm->permission_id,
+                    ],
+                    array_merge($pivotData, [
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ])
                 );
-                $super->permissions()->syncWithoutDetaching([
-                    $perm->permission_id => [
-                        'can_create' => true,
-                        'can_read' => true,
-                        'can_update' => true,
-                        'can_delete' => true,
-                    ]
-                ]);
             }
         }
     }

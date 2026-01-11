@@ -170,8 +170,15 @@ class RBACController extends Controller
             ];
         }
 
-        // Update existing pivot
-        $role->permissions()->updateExistingPivot($data['permission_id'], $pivotData);
+        // If the pivot does not exist yet, attach it so updates are persisted
+        $hasPivot = $role->permissions()->where('permissions.permission_id', $data['permission_id'])->exists();
+        if ($hasPivot) {
+            $role->permissions()->updateExistingPivot($data['permission_id'], $pivotData);
+        } else {
+            $role->permissions()->syncWithoutDetaching([
+                $data['permission_id'] => $pivotData,
+            ]);
+        }
 
         return response()->json(['message' => 'Role-permission flags updated']);
     }

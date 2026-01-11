@@ -45,6 +45,10 @@ export class RolesComponent implements OnInit {
   }
 
   startEdit(role: Role) {
+    // Do not allow editing super_admin
+    if (role.role_name === 'super_admin') {
+      return;
+    }
     this.editingRoleId = role.role_id;
     this.editPermissions = {};
     // Initialize all known permissions; default to false if role doesn't have it in DB
