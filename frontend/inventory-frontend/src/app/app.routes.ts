@@ -7,6 +7,7 @@ import { HomeComponent as DashboardHomeComponent } from './pages/dashboard/home.
 import { ProfileComponent } from './pages/dashboard/profile.component';
 import { authGuard } from './guards/auth.guard';
 import { RolesComponent } from './pages/dashboard/roles.component';
+import { BackupComponent } from './pages/dashboard/backup/backup.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -20,6 +21,7 @@ export const routes: Routes = [
       { path: 'home', component: DashboardHomeComponent },
       { path: 'profile', component: ProfileComponent },
         { path: 'roles', component: RolesComponent },
+      { path: 'backup', component: BackupComponent },
       { path: '', redirectTo: 'home', pathMatch: 'full' }
     ]
   },

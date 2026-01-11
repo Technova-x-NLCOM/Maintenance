@@ -36,6 +36,7 @@ class RoleSeeder extends Seeder
             ['permission_name' => 'manage_permissions', 'display_name' => 'Manage Permissions', 'description' => 'Create and assign permissions', 'module' => 'system'],
             ['permission_name' => 'view_reports', 'display_name' => 'View Reports', 'description' => 'Access reporting features', 'module' => 'reports'],
             ['permission_name' => 'manage_inventory', 'display_name' => 'Manage Inventory', 'description' => 'CRUD inventory items and stock', 'module' => 'inventory'],
+            ['permission_name' => 'manage_backups', 'display_name' => 'Manage Backups', 'description' => 'Manage database backups and restores', 'module' => 'system'],
         ];
 
         foreach ($permissions as $p) {

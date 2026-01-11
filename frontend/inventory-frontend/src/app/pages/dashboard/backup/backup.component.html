@@ -1,0 +1,54 @@
+<div class="backup-container">
+  <div class="backup-header">
+    <h1>Database Backups</h1>
+    <p class="subtitle">Create, restore, and manage database backups</p>
+  </div>
+
+  <div class="actions-bar">
+    <button 
+      class="btn btn-primary"
+      (click)="createBackup()"
+      [disabled]="creating || loading">
+      <span *ngIf="!creating">💾 Create & Download Backup</span>
+      <span *ngIf="creating">⏳ Creating...</span>
+    </button>
+  </div>
+
+  <!-- Upload Backup Section -->
+  <div class="upload-section">
+    <h3>📤 Restore from Uploaded File</h3>
+    <p class="upload-description">Upload a backup file from your device to restore the database</p>
+    <div class="upload-controls">
+      <input 
+        type="file" 
+        id="backup-file-input"
+        accept=".sql,.sqlite"
+        (change)="onFileSelected($event)"
+        class="file-input">
+      <label for="backup-file-input" class="btn btn-file">
+        📁 Choose File
+      </label>
+      <span class="file-name" *ngIf="uploadingFile">{{ uploadingFile.name }}</span>
+      <button 
+        class="btn btn-upload"
+        (click)="restoreFromUploadedFile()"
+        [disabled]="!uploadingFile || restoring">
+        <span *ngIf="!restoring">🔄 Restore from File</span>
+        <span *ngIf="restoring">⏳ Restoring...</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="alert alert-warning">
+    <strong>⚠️ Warning:</strong> Restoring a backup will replace all current database data. Always create a backup before restoring.
+  </div>
+
+  <div class="alert alert-danger" *ngIf="error">
+    <strong>Error:</strong> {{ error }}
+    <button class="close-btn" (click)="error = null">×</button>
+  </div>
+
+  <!-- Server backups list removed: focusing on upload-based restore and direct download creation. -->
+</div>

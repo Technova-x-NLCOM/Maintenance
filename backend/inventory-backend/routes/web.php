@@ -35,3 +35,16 @@ Route::prefix('api/auth')->group(function () {
                 Route::patch('role-permission', [\App\Http\Controllers\RBACController::class, 'updatePermissionFlags'])->middleware('permission:manage_permissions');
             });
         });
+
+Route::prefix('api/backup')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::post('create', [\App\Http\Controllers\BackupController::class, 'backup'])->middleware('permission:manage_backups');
+                Route::get('list', [\App\Http\Controllers\BackupController::class, 'listBackups'])->middleware('permission:manage_backups');
+                Route::post('restore', [\App\Http\Controllers\BackupController::class, 'restore'])->middleware('permission:manage_backups');
+                Route::post('restore-upload', [\App\Http\Controllers\BackupController::class, 'restoreFromUpload'])->middleware('permission:manage_backups');
+                Route::post('download', [\App\Http\Controllers\BackupController::class, 'downloadBackup'])->middleware('permission:manage_backups');
+                Route::post('delete', [\App\Http\Controllers\BackupController::class, 'deleteBackup'])->middleware('permission:manage_backups');
+            });
+        });
