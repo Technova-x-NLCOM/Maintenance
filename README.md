@@ -194,6 +194,40 @@ Maintenance/
 
 ## 🔧 Configuration
 
+### MySQL client tools (Windows / XAMPP)
+
+If you're running the backend on Windows (for example with XAMPP) the `mysqldump` and `mysql` CLI tools may not be on your system `PATH`. The backup/restore code looks for these binaries and will return a clear error if they're not found.
+
+Add the following to your backend `.env` if you need to point to the executables explicitly:
+
+```env
+MYSQLDUMP_PATH=C:\\xampp\\mysql\\bin\\mysqldump.exe
+MYSQL_CLIENT_PATH=C:\\xampp\\mysql\\bin\\mysql.exe
+```
+
+After updating `.env` reload Laravel config and restart the dev server:
+
+```bash
+cd backend/inventory-backend
+php artisan config:clear
+php artisan serve
+```
+
+Alternatively add the MySQL `bin` folder to your Windows PATH so `mysqldump` and `mysql` are available globally:
+
+1. Open System Properties → Environment Variables → Path → Edit
+2. Add `C:\\xampp\\mysql\\bin` (or your MySQL bin folder)
+3. Restart your terminal / editor
+
+To verify in a terminal:
+
+```powershell
+where mysqldump
+where mysql
+```
+
+If those commands return a path, the backup endpoints should work without further configuration.
+
 ### JWT + CORS Notes
 - With JWT, no cookies are used; Angular sends an `Authorization: Bearer <token>` header.
 - Ensure Angular points to the same host as Laravel (use `127.0.0.1` consistently to avoid CORS/cache mismatches).
