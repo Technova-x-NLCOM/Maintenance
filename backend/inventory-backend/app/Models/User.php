@@ -72,6 +72,13 @@ class User extends Authenticatable implements JWTSubject
         return $this->roles()->where('role_name', $roleName)->exists();
     }
 
+    public function hasPermission($permissionName)
+    {
+        return $this->roles()
+            ->whereHas('permissions', function ($q) use ($permissionName) {
+                $q->where('permission_name', $permissionName);
+            })->exists();
+    }
     public function getRoleAttribute()
     {
         $primaryRole = $this->primaryRole()->first();
