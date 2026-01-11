@@ -73,4 +73,14 @@ export class RbacService {
     if (typeof flags.can_delete !== 'undefined') payload.can_delete = !!flags.can_delete;
     return this.http.post(`${this.API_URL}/give-permission`, payload, { headers: this.authHeaders() });
   }
+
+  /**
+   * Check if a role has a specific permission
+   */
+  roleHasPermission(role: Role | undefined | null, permissionName: string): boolean {
+    if (!role || !role.permissions) {
+      return false;
+    }
+    return role.permissions.some(perm => perm.permission_name === permissionName);
+  }
 }
