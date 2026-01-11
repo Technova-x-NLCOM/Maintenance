@@ -10,28 +10,6 @@
       <p class="subtitle">Sign in to access the system</p>
     </div>
 
-    <!-- Role Tabs -->
-    <div class="role-tabs">
-      <button 
-        class="role-tab" 
-        [class.active]="userRole === 'super_admin'"
-        (click)="switchRole('super_admin')">
-        👑 Super Admin
-      </button>
-      <button 
-        class="role-tab" 
-        [class.active]="userRole === 'admin'"
-        (click)="switchRole('admin')">
-        🔐 Administrator
-      </button>
-      <button 
-        class="role-tab"
-        [class.active]="userRole === 'staff'"
-        (click)="switchRole('staff')">
-        👤 Staff Member
-      </button>
-    </div>
-
     <!-- Error Message -->
     <div class="error-message" *ngIf="errorMessage">
       <span class="error-icon">⚠️</span>
@@ -41,16 +19,16 @@
     <!-- Login Form -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
-        <label for="email">Username or Email</label>
+        <label for="identifier">Username or Email</label>
         <input
-          type="email"
-          id="email"
-          formControlName="email"
-          placeholder="Enter your email"
+          type="text"
+          id="identifier"
+          formControlName="identifier"
+          placeholder="Enter your username or email"
           class="form-control"
         />
-        <span class="error" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-          Please enter a valid email
+        <span class="error" *ngIf="loginForm.get('identifier')?.invalid && loginForm.get('identifier')?.touched">
+          Please enter your username or email
         </span>
       </div>
 
@@ -77,14 +55,14 @@
         </span>
       </div>
 
-      <div class="form-group checkbox">
+      <!-- <div class="form-group checkbox">
         <input
           type="checkbox"
           id="rememberMe"
           formControlName="rememberMe"
         />
         <label for="rememberMe">Remember me</label>
-      </div>
+      </div> -->
 
       <button
         type="submit"
@@ -97,23 +75,28 @@
 
     <!-- Demo Credentials -->
     <div class="demo-section">
-      <p class="demo-title">Demo Credentials:</p>
-      <button 
-        type="button"
-        class="demo-button"
-        (click)="fillDemoCredentials()">
-        Fill {{ userRole === 'super_admin' ? 'Super Admin' : (userRole === 'admin' ? 'Admin' : 'Staff') }} Credentials
-      </button>
-      <div class="credentials-display">
-        <div class="credential-item">
-          <span class="label">Email:</span>
-          <span class="value">{{ demoCredentials[userRole].email }}</span>
-        </div>
-        <div class="credential-item">
-          <span class="label">Password:</span>
-          <span class="value">{{ demoCredentials[userRole].password }}</span>
-        </div>
+      <p class="demo-note">💡 Tip: Click on a demo account above to fill in the credentials instantly!</p>
+    <!-- Role Tabs -->
+    <div class="demo-accounts-section">
+      <p class="demo-title">Demo Accounts</p>
+      <div class="demo-list">
+        <button 
+          type="button"
+          class="demo-account-card"
+          *ngFor="let account of demoAccounts"
+          (click)="fillDemoCredentials(account)"
+          title="Click to fill credentials">
+          <div class="demo-icon">{{ account.icon }}</div>
+          <div class="demo-info">
+            <div class="demo-role">{{ account.role }}</div>
+            <div class="demo-desc">{{ account.description }}</div>
+            <div class="demo-creds">
+              <span class="cred">{{ account.identifier }}</span>
+            </div>
+          </div>
+        </button>
       </div>
+    </div>
     </div>
 
     <!-- Links -->

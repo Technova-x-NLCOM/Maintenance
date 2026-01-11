@@ -24,35 +24,19 @@
 
     <!-- Signup Form -->
     <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-      <!-- Name Fields -->
-      <div class="form-row">
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
-            type="text"
-            id="firstName"
-            formControlName="firstName"
-            placeholder="Enter your first name"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('firstName')?.invalid && signupForm.get('firstName')?.touched">
-            First name is required (at least 2 characters)
-          </span>
-        </div>
-
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input
-            type="text"
-            id="lastName"
-            formControlName="lastName"
-            placeholder="Enter your last name"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('lastName')?.invalid && signupForm.get('lastName')?.touched">
-            Last name is required (at least 2 characters)
-          </span>
-        </div>
+      <!-- Username Field -->
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          placeholder="Enter a unique username"
+          class="form-control"
+        />
+        <span class="error" *ngIf="signupForm.get('username')?.invalid && signupForm.get('username')?.touched">
+          Username is required (3-50 characters)
+        </span>
       </div>
 
       <!-- Email Field -->
@@ -70,39 +54,47 @@
         </span>
       </div>
 
-      <!-- Phone Field -->
-      <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input
-          type="tel"
-          id="phone"
-          formControlName="phone"
-          placeholder="Enter your phone number"
-          class="form-control"
-        />
-        <span class="error" *ngIf="signupForm.get('phone')?.invalid && signupForm.get('phone')?.touched">
-          Please enter a valid phone number (at least 10 digits)
-        </span>
+      <!-- Name Fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="first_name">First Name</label>
+          <input
+            type="text"
+            id="first_name"
+            formControlName="first_name"
+            placeholder="Enter your first name"
+            class="form-control"
+          />
+          <span class="error" *ngIf="signupForm.get('first_name')?.invalid && signupForm.get('first_name')?.touched">
+            First name is required (at least 2 characters)
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="last_name">Last Name</label>
+          <input
+            type="text"
+            id="last_name"
+            formControlName="last_name"
+            placeholder="Enter your last name"
+            class="form-control"
+          />
+          <span class="error" *ngIf="signupForm.get('last_name')?.invalid && signupForm.get('last_name')?.touched">
+            Last name is required (at least 2 characters)
+          </span>
+        </div>
       </div>
 
-      <!-- Department Field -->
+      <!-- Contact Info Field -->
       <div class="form-group">
-        <label for="department">Department</label>
-        <select
-          id="department"
-          formControlName="department"
+        <label for="contact_info">Contact Information (Optional)</label>
+        <input
+          type="text"
+          id="contact_info"
+          formControlName="contact_info"
+          placeholder="Phone number, address, or other contact details"
           class="form-control"
-        >
-          <option value="">Select your department</option>
-          <option value="logistics">Logistics</option>
-          <option value="distribution">Distribution</option>
-          <option value="warehouse">Warehouse Management</option>
-          <option value="admin">Administration</option>
-          <option value="other">Other</option>
-        </select>
-        <span class="error" *ngIf="signupForm.get('department')?.invalid && signupForm.get('department')?.touched">
-          Please select a department
-        </span>
+        />
       </div>
 
       <!-- Password Field -->
@@ -115,6 +107,7 @@
             formControlName="password"
             placeholder="Create a strong password"
             class="form-control"
+            (input)="onPasswordInput($event)"
           />
           <button
             type="button"
@@ -123,15 +116,34 @@
             {{ showPassword ? '👁️' : '👁️‍🗨️' }}
           </button>
         </div>
-        <span class="error" *ngIf="signupForm.get('password')?.invalid && signupForm.get('password')?.touched">
-          Password must be at least 8 characters
+        <span class="error" *ngIf="showPasswordValidation">
+          <ng-container *ngIf="isPasswordValid(); else checklist">
+            <span class="success-icon">✓</span>
+            <span class="success-text">Password meets all requirements</span>
+          </ng-container>
+          <ng-template #checklist>
+            <span class="validation-item" *ngIf="!passwordValidation.length">
+              <span class="validation-icon">○</span>
+              <span>At least 8 characters</span>
+            </span>
+            <span class="validation-item" *ngIf="!passwordValidation.uppercase">
+              <span class="validation-icon">○</span>
+              <span>At least 1 uppercase letter (A-Z)</span>
+            </span>
+            <span class="validation-item" *ngIf="!passwordValidation.lowercase">
+              <span class="validation-icon">○</span>
+              <span>At least 1 lowercase letter (a-z)</span>
+            </span>
+            <span class="validation-item" *ngIf="!passwordValidation.number">
+              <span class="validation-icon">○</span>
+              <span>At least 1 number (0-9)</span>
+            </span>
+            <span class="validation-item" *ngIf="!passwordValidation.symbol">
+              <span class="validation-icon">○</span>
+              <span>At least 1 symbol (!@#$%^&*)</span>
+            </span>
+          </ng-template>
         </span>
-        <div class="password-strength" *ngIf="signupForm.get('password')?.value">
-          <span class="strength-label">Strength:</span>
-          <span class="strength-meter" [class]="getPasswordStrength()">
-            {{ getPasswordStrength().toUpperCase() }}
-          </span>
-        </div>
       </div>
 
       <!-- Confirm Password Field -->

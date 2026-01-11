@@ -19,11 +19,11 @@ $border-radius: 12px;
 .signup-card {
   background: white;
   border-radius: $border-radius;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   padding: 40px;
   width: 100%;
-  max-width: 550px;
-  animation: slideIn 0.3s ease;
+  max-width: 600px;
+  animation: slideIn 0.4s ease;
   max-height: 90vh;
   overflow-y: auto;
 }
@@ -42,7 +42,9 @@ $border-radius: 12px;
 /* Header */
 .signup-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 35px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid $secondary-color;
 }
 
 .logo-section {
@@ -125,6 +127,11 @@ form {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
+  margin-bottom: 20px;
+
+  .form-group {
+    margin-bottom: 0;
+  }
 }
 
 .form-group {
@@ -171,6 +178,7 @@ form {
   font-size: 1em;
   transition: all 0.3s ease;
   font-family: inherit;
+  box-sizing: border-box;
 
   &:focus {
     outline: none;
@@ -248,12 +256,106 @@ select.form-control {
   }
 }
 
+/* Password Validation Checklist */
+.password-validation {
+  margin-top: 12px;
+  padding: 15px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  animation: slideDown 0.3s ease;
+}
+
+.password-success {
+  margin-top: 12px;
+  padding: 15px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  color: #155724;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.3s ease;
+  font-weight: 500;
+}
+
+.success-icon {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #28a745;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.validation-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 0.9em;
+  color: $text-light;
+  transition: color 0.2s ease;
+
+  &.valid {
+    color: #155724;
+    font-weight: 500;
+  }
+}
+
+.validation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  font-weight: bold;
+  font-size: 1.1em;
+
+  .validation-item.valid & {
+    color: #28a745;
+  }
+
+  .validation-item:not(.valid) & {
+    color: #ccc;
+  }
+}
+
 .error {
   color: $error-color;
   font-size: 0.85em;
   margin-top: 5px;
   display: block;
 }
+
+/* When validation items are shown inside the .error span, style unmet rules and success explicitly */
+.error .validation-item {
+  display: block;
+  color: $error-color;
+  padding: 4px 0;
+  font-size: 0.95em;
+}
+
+.error .validation-icon {
+  color: $error-color;
+  margin-right: 8px;
+}
+
+.error .success-icon,
+.error .success-text {
+  color: $success-color;
+  font-weight: 600;
+}
+
+.error .success-text { margin-left: 6px; }
 
 /* Buttons */
 .btn {
