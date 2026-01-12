@@ -48,3 +48,18 @@ Route::prefix('api/backup')
                 Route::post('delete', [\App\Http\Controllers\BackupController::class, 'deleteBackup'])->middleware('permission:manage_backups');
             });
         });
+
+// Maintenance API routes
+Route::prefix('api/maintenance')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('tables', [\App\Http\Controllers\MaintenanceController::class, 'listTables']);
+            Route::get('{table}/schema', [\App\Http\Controllers\MaintenanceController::class, 'schema']);
+            Route::get('{table}/rows', [\App\Http\Controllers\MaintenanceController::class, 'listRows']);
+            Route::post('{table}/rows', [\App\Http\Controllers\MaintenanceController::class, 'create']);
+            Route::put('{table}/rows/{id}', [\App\Http\Controllers\MaintenanceController::class, 'update']);
+            Route::delete('{table}/rows/{id}', [\App\Http\Controllers\MaintenanceController::class, 'delete']);
+            Route::post('{table}/rows/{id}/restore', [\App\Http\Controllers\MaintenanceController::class, 'restore']);
+        });
+    });
