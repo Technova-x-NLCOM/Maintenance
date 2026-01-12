@@ -16,6 +16,7 @@ export class SidebarComponent implements OnInit {
   @Input() user: User | null = null;
   currentRole: Role | null = null;
   loadingRole = false;
+  showLogoutModal = false;
 
   constructor(
     private authService: AuthService,
@@ -36,7 +37,16 @@ export class SidebarComponent implements OnInit {
     });
   }
 
-  logout() {
+  openLogoutModal() {
+    this.showLogoutModal = true;
+  }
+
+  closeLogoutModal() {
+    this.showLogoutModal = false;
+  }
+
+  confirmLogout() {
+    this.showLogoutModal = false;
     this.authService.logout().subscribe({
       next: () => {
         this.router.navigate(['/login']);
