@@ -1,0 +1,55 @@
+<div class="table-form">
+  <div class="form-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2>{{ isNew ? 'Create' : 'Edit' }} {{ selectedTable }}</h2>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" class="form-container">
+    <div class="form-grid">
+      <div *ngFor="let col of schema?.columns" class="form-group" [class.readonly]="isReadonly(col)">
+        <label [for]="col">
+          {{ col }}
+          <span *ngIf="isRequired(col)" class="required-indicator">*</span>
+        </label>
+
+        <!-- Readonly fields display -->
+        <div *ngIf="isReadonly(col)" class="readonly-value">
+          {{ formData[col] || '—' }}
+        </div>
+
+        <!-- Foreign Key dropdown -->
+        <select
+          *ngIf="!isReadonly(col) && isForeignKey(col)"
+          [id]="col"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          class="fk-select"
+        >
+          <option [value]="null">-- Select {{ col }} --</option>
+          <option *ngFor="let opt of getForeignKeyOptions(col)" [value]="opt.id">
+            {{ opt.label }}
+          </option>
+        </select>
+
+        <!-- Regular text input -->
+        <input
+          *ngIf="!isReadonly(col) && !isForeignKey(col)"
+          [id]="col"
+          type="text"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          placeholder="Enter {{ col }}"
+        />
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="cancel-btn" (click)="goBack()">Cancel</button>
+      <button type="submit" class="submit-btn" [disabled]="loading">
+        {{ loading ? 'Saving...' : 'Save' }}
+      </button>
+    </div>
+  </form>
+</div>

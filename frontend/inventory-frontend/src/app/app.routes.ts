@@ -8,6 +8,7 @@ import { ProfileComponent } from './pages/dashboard/profile.component';
 import { authGuard } from './guards/auth.guard';
 import { RolesComponent } from './pages/dashboard/roles.component';
 import { BackupComponent } from './pages/dashboard/backup/backup.component';
+import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -22,6 +23,7 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
         { path: 'roles', component: RolesComponent },
       { path: 'backup', component: BackupComponent },
+      { path: 'maintenance', component: MaintenanceComponent },
       { path: '', redirectTo: 'home', pathMatch: 'full' }
     ]
   },

@@ -1,0 +1,5 @@
+<div class="maintenance-container">
+  <app-maintenance-home *ngIf="currentView === 'home'" [parent]="this"></app-maintenance-home>
+  <app-table-list *ngIf="currentView === 'table-list'" [parent]="this"></app-table-list>
+  <app-table-form *ngIf="currentView === 'table-form'" [parent]="this"></app-table-form>
+</div>

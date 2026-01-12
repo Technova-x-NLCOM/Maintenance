@@ -48,3 +48,23 @@ Route::prefix('api/backup')
                 Route::post('delete', [\App\Http\Controllers\BackupController::class, 'deleteBackup'])->middleware('permission:manage_backups');
             });
         });
+
+// Maintenance API routes
+Route::prefix('api/maintenance')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            // Home - List all tables
+            Route::get('tables', [\App\Http\Controllers\Maintenance\MaintenanceHomeController::class, 'listTables']);
+            
+            // Table List - View and manage rows
+            Route::get('{table}/schema', [\App\Http\Controllers\Maintenance\TableListController::class, 'schema']);
+            Route::get('{table}/rows', [\App\Http\Controllers\Maintenance\TableListController::class, 'listRows']);
+            Route::delete('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableListController::class, 'delete']);
+            Route::post('{table}/rows/{id}/restore', [\App\Http\Controllers\Maintenance\TableListController::class, 'restore']);
+            
+            // Table Form - Create and update
+            Route::post('{table}/rows', [\App\Http\Controllers\Maintenance\TableFormController::class, 'create']);
+            Route::put('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableFormController::class, 'update']);
+        });
+    });

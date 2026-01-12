@@ -228,6 +228,81 @@ where mysql
 
 If those commands return a path, the backup endpoints should work without further configuration.
 
+
+## Timezone Setup (Windows + XAMPP)
+
+Ensure MariaDB, PHP, and Laravel use the same timezone so timestamps (created_at/updated_at) are correct.
+
+### 1) Laravel timezone
+- We read timezone from `.env` using `APP_TIMEZONE`.
+- Set it and clear config cache:
+
+```bash
+php artisan config:clear
+```
+
+Add or update in `.env`:
+
+```env
+APP_TIMEZONE=Asia/Manila
+```
+
+Verify in tinker:
+
+```bash
+php artisan tinker
+>>> config('app.timezone')
+>>> now()
+```
+
+### 2) PHP timezone (XAMPP)
+- Edit `C:/xampp/php/php.ini`
+- Set: `date.timezone = Asia/Manila`
+- Restart Apache in XAMPP Control Panel.
+
+Verify with a phpinfo() page or:
+
+```bash
+php -i | findstr /I timezone
+```
+
+### 3) MariaDB timezone
+Check current DB time and settings in your SQL client (phpMyAdmin or mysql CLI):
+
+```sql
+SELECT NOW() AS db_now, UTC_TIMESTAMP() AS utc_now, TIMEDIFF(NOW(), UTC_TIMESTAMP()) AS db_offset;
+SHOW VARIABLES LIKE 'time_zone';
+SHOW VARIABLES LIKE 'system_time_zone';
+SELECT @@global.time_zone AS global_tz, @@session.time_zone AS session_tz;
+```
+
+Set timezone (Windows best: use offset):
+
+- Permanent (edit `C:/xampp/mysql/bin/my.ini`, section `[mysqld]`):
+
+```
+default-time-zone = '+08:00'
+```
+
+Then restart MySQL in XAMPP Control Panel.
+
+- Temporary (until restart), run:
+
+```sql
+SET GLOBAL time_zone = '+08:00';
+SET time_zone = '+08:00';
+```
+
+Re-verify:
+
+```sql
+SELECT NOW(), @@global.time_zone, @@session.time_zone, @@system.time_zone;
+```
+
+Notes:
+- Using a named timezone like `Asia/Manila` requires loaded timezone tables; on Windows, the offset string is simpler.
+- Keep DB, PHP, and Laravel on the same timezone to avoid mixed timestamps.
+
 ### JWT + CORS Notes
 - With JWT, no cookies are used; Angular sends an `Authorization: Bearer <token>` header.
 - Ensure Angular points to the same host as Laravel (use `127.0.0.1` consistently to avoid CORS/cache mismatches).
