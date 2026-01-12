@@ -1,7 +1,151 @@
 <div class="dashboard-wrapper">
+  <!-- Welcome Header -->
   <div class="welcome-header">
-    <h1>Welcome, {{ user?.first_name }}!</h1>
-    <p class="subtitle">You are logged in as Administrator</p>
-    <p class="description">You have full access to manage users, inventory, and system settings.</p>
+    <div class="welcome-text">
+      <h1>Welcome, {{ user?.first_name }}!</h1>
+      <p class="subtitle">Administrator Dashboard</p>
+    </div>
+    <div class="header-actions">
+      <button class="refresh-btn" (click)="loadDashboardData()" [disabled]="loading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card users">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats?.totalUsers || 0 }}</span>
+        <span class="stat-label">Total Users</span>
+        <span class="stat-sub">{{ stats?.activeUsers || 0 }} active</span>
+      </div>
+    </div>
+
+    <div class="stat-card inventory">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats?.totalItems || 0 }}</span>
+        <span class="stat-label">Inventory Items</span>
+        <span class="stat-sub warning" *ngIf="stats?.lowStockItems">{{ stats?.lowStockItems }} low stock</span>
+      </div>
+    </div>
+
+    <div class="stat-card transactions">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats?.totalTransactions || 0 }}</span>
+        <span class="stat-label">Transactions</span>
+        <span class="stat-sub">This month</span>
+      </div>
+    </div>
+
+    <div class="stat-card alerts">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <span class="stat-value">{{ stats?.pendingAlerts || 0 }}</span>
+        <span class="stat-label">Pending Alerts</span>
+        <span class="stat-sub warning" *ngIf="stats?.expiringItems">{{ stats?.expiringItems }} expiring soon</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- System Alerts -->
+    <div class="card system-alerts">
+      <h2 class="card-title">
+        System Alerts
+        <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
+      </h2>
+      <div class="alerts-list" *ngIf="systemAlerts.length; else noAlerts">
+        <div class="alert-item" *ngFor="let alert of systemAlerts" [ngClass]="getAlertClass(alert.severity)">
+          <div class="alert-icon">
+            <svg *ngIf="alert.severity === 'critical'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <svg *ngIf="alert.severity === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <svg *ngIf="alert.severity === 'info'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ alert.message }}</span>
+            <span class="alert-time">{{ formatDate(alert.created_at) }}</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noAlerts>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>No active alerts</span>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="card recent-activity">
+      <h2 class="card-title">Recent Activity</h2>
+      <div class="activity-list" *ngIf="recentActivity.length; else noActivity">
+        <div class="activity-item" *ngFor="let log of recentActivity">
+          <div class="activity-badge" [ngClass]="getActionClass(log.action)">
+            {{ log.action }}
+          </div>
+          <div class="activity-content">
+            <span class="activity-table">{{ log.table_name }}</span>
+            <span class="activity-user">by {{ log.performed_by_name || 'System' }}</span>
+          </div>
+          <span class="activity-time">{{ formatDate(log.created_at) }}</span>
+        </div>
+      </div>
+      <ng-template #noActivity>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>No recent activity</span>
+        </div>
+      </ng-template>
+    </div>
   </div>
 </div>
