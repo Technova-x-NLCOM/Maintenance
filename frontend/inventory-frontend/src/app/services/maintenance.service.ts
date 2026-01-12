@@ -11,7 +11,7 @@ export interface MaintenanceTableInfo {
 
 @Injectable({ providedIn: 'root' })
 export class MaintenanceService {
-  private baseUrl = 'api/maintenance';
+  private baseUrl = 'http://127.0.0.1:8000/api/maintenance';
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
