@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../../services/maintenance.service';
@@ -19,7 +19,10 @@ export class TableListComponent implements OnInit {
   showDeleted = false;
   loading = false;
 
-  constructor(private api: MaintenanceService) {}
+  constructor(
+    private api: MaintenanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.selectedTable = this.parent.selectedTable;
@@ -31,31 +34,51 @@ export class TableListComponent implements OnInit {
 
   loadSchema(): void {
     if (!this.selectedTable) return;
-    this.api.getSchema(this.selectedTable).subscribe(s => {
-      this.schema = s;
-      this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+    this.api.getSchema(this.selectedTable).subscribe({
+      next: (s) => {
+        this.schema = s;
+        this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error loading schema:', err)
     });
   }
 
   fetchRows(): void {
     if (!this.selectedTable) return;
     this.loading = true;
-    this.api.listRows(this.selectedTable, { showDeleted: this.showDeleted }).subscribe(({ data }) => {
-      this.rows = data;
-      this.loading = false;
+    this.cdr.markForCheck();
+    this.api.listRows(this.selectedTable, { showDeleted: this.showDeleted }).subscribe({
+      next: ({ data }) => {
+        this.rows = data;
+        this.loading = false;
+        console.log('Loaded rows:', data);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error loading rows:', err);
+        this.loading = false;
+        this.cdr.markForCheck();
+      }
     });
   }
 
   deleteRow(row: any): void {
     if (!this.selectedTable || !this.pkKey) return;
     if (confirm('Are you sure?')) {
-      this.api.deleteRow(this.selectedTable, row[this.pkKey]).subscribe(() => this.fetchRows());
+      this.api.deleteRow(this.selectedTable, row[this.pkKey]).subscribe({
+        next: () => this.fetchRows(),
+        error: (err) => console.error('Error deleting row:', err)
+      });
     }
   }
 
   restoreRow(row: any): void {
     if (!this.selectedTable || !this.pkKey) return;
-    this.api.restoreRow(this.selectedTable, row[this.pkKey]).subscribe(() => this.fetchRows());
+    this.api.restoreRow(this.selectedTable, row[this.pkKey]).subscribe({
+      next: () => this.fetchRows(),
+      error: (err) => console.error('Error restoring row:', err)
+    });
   }
 
   goBack(): void {

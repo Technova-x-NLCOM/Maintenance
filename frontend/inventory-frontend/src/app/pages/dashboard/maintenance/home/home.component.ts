@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaintenanceService, MaintenanceTableInfo } from '../../../../services/maintenance.service';
 
@@ -13,14 +13,26 @@ export class HomeComponent implements OnInit {
   @Input() parent: any;
   tables: MaintenanceTableInfo[] = [];
 
-  constructor(private api: MaintenanceService) {}
+  constructor(
+    private api: MaintenanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadTables();
   }
 
   loadTables(): void {
-    this.api.listTables().subscribe(t => (this.tables = t));
+    this.api.listTables().subscribe({
+      next: (t) => {
+        this.tables = t;
+        console.log('Loaded tables:', t);
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Error loading tables:', err);
+      }
+    });
   }
 
   onSelectTable(tableName: string): void {

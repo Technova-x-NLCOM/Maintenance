@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../../services/maintenance.service';
@@ -19,7 +19,10 @@ export class TableFormComponent implements OnInit {
   isNew = true;
   loading = false;
 
-  constructor(private api: MaintenanceService) {}
+  constructor(
+    private api: MaintenanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.selectedTable = this.parent.selectedTable;
@@ -34,12 +37,16 @@ export class TableFormComponent implements OnInit {
 
   loadSchema(): void {
     if (!this.selectedTable) return;
-    this.api.getSchema(this.selectedTable).subscribe(s => {
-      this.schema = s;
-      this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
-      if (this.isNew) {
-        this.initializeForm();
-      }
+    this.api.getSchema(this.selectedTable).subscribe({
+      next: (s) => {
+        this.schema = s;
+        this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+        if (this.isNew) {
+          this.initializeForm();
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error loading schema:', err)
     });
   }
 
@@ -63,18 +70,33 @@ export class TableFormComponent implements OnInit {
   onSubmit(): void {
     if (!this.selectedTable || !this.schema) return;
     this.loading = true;
+    this.cdr.markForCheck();
     const payload = this.buildPayload();
 
     if (this.isNew) {
-      this.api.createRow(this.selectedTable, payload).subscribe(() => {
-        this.loading = false;
-        this.parent.goToTableListView();
+      this.api.createRow(this.selectedTable, payload).subscribe({
+        next: () => {
+          this.loading = false;
+          this.parent.goToTableListView();
+        },
+        error: (err) => {
+          console.error('Error creating row:', err);
+          this.loading = false;
+          this.cdr.markForCheck();
+        }
       });
     } else {
       const id = this.formData[this.pkKey!];
-      this.api.updateRow(this.selectedTable, id, payload).subscribe(() => {
-        this.loading = false;
-        this.parent.goToTableListView();
+      this.api.updateRow(this.selectedTable, id, payload).subscribe({
+        next: () => {
+          this.loading = false;
+          this.parent.goToTableListView();
+        },
+        error: (err) => {
+          console.error('Error updating row:', err);
+          this.loading = false;
+          this.cdr.markForCheck();
+        }
       });
     }
   }
