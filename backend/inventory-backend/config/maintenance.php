@@ -52,5 +52,13 @@ return [
             'primary_key' => ['user_id', 'role_id'],
             'soft_deletes' => true,
         ],
+        'role_permissions' => [
+            'primary_key' => ['role_id', 'permission_id'],
+            'soft_deletes' => true,
+        ],
+        'audit_log' => [
+            'primary_key' => 'log_id',
+            'soft_deletes' => false, // audit logs should not be soft deleted
+        ],
     ],
 ];

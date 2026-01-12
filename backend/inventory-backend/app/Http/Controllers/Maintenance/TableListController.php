@@ -1,15 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Maintenance;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 
-class MaintenanceController extends Controller
+class TableListController extends Controller
 {
     private array $tables;
 
@@ -18,19 +17,9 @@ class MaintenanceController extends Controller
         $this->tables = config('maintenance.tables', []);
     }
 
-    public function listTables(): JsonResponse
-    {
-        $list = [];
-        foreach ($this->tables as $name => $meta) {
-            $list[] = [
-                'name' => $name,
-                'primary_key' => $meta['primary_key'],
-                'soft_deletes' => (bool)($meta['soft_deletes'] ?? false),
-            ];
-        }
-        return response()->json($list);
-    }
-
+    /**
+     * Get table schema
+     */
     public function schema(string $table): JsonResponse
     {
         $this->assertAllowedTable($table);
@@ -44,6 +33,9 @@ class MaintenanceController extends Controller
         ]);
     }
 
+    /**
+     * List rows from a table
+     */
     public function listRows(Request $request, string $table): JsonResponse
     {
         $this->assertAllowedTable($table);
@@ -74,34 +66,9 @@ class MaintenanceController extends Controller
         ]);
     }
 
-    public function create(Request $request, string $table): JsonResponse
-    {
-        $this->assertAllowedTable($table);
-        $data = $this->sanitizePayload($table, $request->all());
-
-        // Remove auto timestamps if present to let DB defaults apply
-        foreach (['created_at', 'updated_at'] as $ts) {
-            if (array_key_exists($ts, $data) && $data[$ts] === null) {
-                unset($data[$ts]);
-            }
-        }
-
-        $id = DB::table($table)->insertGetId($data);
-        return response()->json(['id' => $id], 201);
-    }
-
-    public function update(Request $request, string $table, $id): JsonResponse
-    {
-        $this->assertAllowedTable($table);
-        $pk = $this->tables[$table]['primary_key'];
-        if (is_array($pk)) {
-            return response()->json(['error' => 'Composite keys must be provided via query string'], 400);
-        }
-        $data = $this->sanitizePayload($table, $request->all());
-        DB::table($table)->where($pk, $id)->update($data);
-        return response()->json(['status' => 'ok']);
-    }
-
+    /**
+     * Soft delete or hard delete a row
+     */
     public function delete(string $table, $id): JsonResponse
     {
         $this->assertAllowedTable($table);
@@ -118,6 +85,9 @@ class MaintenanceController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
+    /**
+     * Restore a soft-deleted row
+     */
     public function restore(string $table, $id): JsonResponse
     {
         $this->assertAllowedTable($table);
@@ -138,17 +108,5 @@ class MaintenanceController extends Controller
         if (!array_key_exists($table, $this->tables)) {
             abort(404, 'Table not allowed');
         }
-    }
-
-    private function sanitizePayload(string $table, array $input): array
-    {
-        $columns = Schema::getColumnListing($table);
-        // Only keep known columns, exclude PK if auto-increment
-        $pk = $this->tables[$table]['primary_key'];
-        $filtered = Arr::only($input, $columns);
-        if (!is_array($pk)) {
-            unset($filtered[$pk]);
-        }
-        return $filtered;
     }
 }
