@@ -1,3 +1,10 @@
+// Elderly-friendly staff dashboard - Blue Theme HIGH CONTRAST
+$primary-color: #1d4ed8;
+$primary-dark: #1e40af;
+$accent-color: #3b82f6;
+$text-dark: #111827;
+$text-medium: #1f2937;
+
 .dashboard-wrapper {
   max-width: 1400px;
   margin: 0 auto;
@@ -6,18 +13,20 @@
 .welcome-header {
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 3px solid #e5e7eb;
 
   h1 {
-    margin: 0 0 8px 0;
-    font-size: 32px;
-    color: #333;
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+    color: $text-dark;
+    font-weight: 700;
   }
 
   .subtitle {
     margin: 0;
-    font-size: 16px;
-    color: #666;
+    font-size: 1.125rem;
+    color: $text-medium;
+    font-weight: 500;
   }
 }
 
@@ -28,26 +37,28 @@
 
 .stats-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
 
   .stat-card {
     background: white;
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px;
     display: flex;
     align-items: center;
     gap: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid #e5e7eb;
     transition: all 0.3s ease;
 
     &:hover {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
       transform: translateY(-2px);
+      border-color: $primary-color;
     }
 
     .stat-icon {
-      font-size: 48px;
+      font-size: 52px;
       flex-shrink: 0;
     }
 
@@ -56,18 +67,18 @@
 
       h3 {
         margin: 0 0 8px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #666;
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: $text-medium;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
 
       .stat-number {
         margin: 0;
-        font-size: 32px;
+        font-size: 2.25rem;
         font-weight: 700;
-        color: #667eea;
+        color: $primary-color;
       }
     }
   }
@@ -76,19 +87,21 @@
 .actions-section {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e5e7eb;
 
   h2 {
-    margin: 0 0 20px 0;
-    font-size: 20px;
-    color: #333;
+    margin: 0 0 24px 0;
+    font-size: 1.375rem;
+    color: $text-dark;
+    font-weight: 700;
   }
 
   .action-buttons {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
   }
 
   .action-btn {
@@ -96,37 +109,38 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 15px 20px;
+    padding: 16px 22px;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
 
     .icon {
-      font-size: 20px;
+      font-size: 1.375rem;
     }
 
     &.primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background-color: $primary-color;
       color: white;
 
       &:hover {
+        background-color: $primary-dark;
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
       }
     }
 
     &.secondary {
-      background: #f5f5f5;
-      color: #333;
-      border: 1px solid #ddd;
+      background: #f3f4f6;
+      color: $text-dark;
+      border: 2px solid #d1d5db;
 
       &:hover {
         background: white;
-        border-color: #667eea;
-        color: #667eea;
+        border-color: $primary-color;
+        color: $primary-color;
       }
     }
   }
@@ -135,65 +149,68 @@
 .tasks-section {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e5e7eb;
 
   h2 {
-    margin: 0 0 20px 0;
-    font-size: 20px;
-    color: #333;
+    margin: 0 0 24px 0;
+    font-size: 1.375rem;
+    color: $text-dark;
+    font-weight: 700;
   }
 
   .task-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
   .task-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 15px;
-    background: #f9f9f9;
+    gap: 14px;
+    padding: 16px;
+    background: #f9fafb;
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border-left: 5px solid $primary-color;
 
     input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       cursor: pointer;
       flex-shrink: 0;
     }
 
     .task-text {
       flex: 1;
-      font-size: 14px;
-      color: #333;
+      font-size: 1rem;
+      color: $text-dark;
+      font-weight: 500;
     }
 
     .task-badge {
-      font-size: 11px;
-      padding: 4px 10px;
-      background: #e3f2fd;
-      color: #1976d2;
+      font-size: 0.8125rem;
+      padding: 6px 12px;
+      background: #dbeafe;
+      color: #1d4ed8;
       border-radius: 12px;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
 
     &.completed {
-      opacity: 0.6;
+      opacity: 0.7;
 
       .task-text {
         text-decoration: line-through;
-        color: #999;
+        color: $text-medium;
       }
 
       .task-badge {
-        background: #e8f5e9;
-        color: #388e3c;
+        background: #ecfdf5;
+        color: #15803d;
       }
     }
   }
@@ -202,32 +219,34 @@
 .transactions-section {
   background: white;
   border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 2px solid #e5e7eb;
 
   h2 {
-    margin: 0 0 20px 0;
-    font-size: 20px;
-    color: #333;
+    margin: 0 0 24px 0;
+    font-size: 1.375rem;
+    color: $text-dark;
+    font-weight: 700;
   }
 
   .transaction-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }
 
   .transaction-item {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: #f9f9f9;
+    gap: 16px;
+    padding: 16px;
+    background: #f9fafb;
     border-radius: 8px;
-    border-left: 4px solid #667eea;
+    border-left: 5px solid $primary-color;
 
     .transaction-icon {
-      font-size: 32px;
+      font-size: 36px;
       flex-shrink: 0;
     }
 
@@ -235,22 +254,22 @@
       flex: 1;
 
       .transaction-title {
-        margin: 0 0 4px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #333;
+        margin: 0 0 6px 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: $text-dark;
       }
 
       .transaction-time {
         margin: 0;
-        font-size: 12px;
-        color: #999;
+        font-size: 0.9375rem;
+        color: $text-medium;
       }
     }
 
     .transaction-amount {
       margin: 0;
-      font-size: 16px;
+      font-size: 1.125rem;
       font-weight: 700;
       min-width: 60px;
       text-align: right;
