@@ -8,17 +8,35 @@
     <div class="form-grid">
       <div *ngFor="let col of schema?.columns" class="form-group" [class.readonly]="isReadonly(col)">
         <label [for]="col">{{ col }}</label>
+
+        <!-- Readonly fields display -->
+        <div *ngIf="isReadonly(col)" class="readonly-value">
+          {{ formData[col] || '—' }}
+        </div>
+
+        <!-- Foreign Key dropdown -->
+        <select
+          *ngIf="!isReadonly(col) && isForeignKey(col)"
+          [id]="col"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          class="fk-select"
+        >
+          <option [value]="null">-- Select {{ col }} --</option>
+          <option *ngFor="let opt of getForeignKeyOptions(col)" [value]="opt.id">
+            {{ opt.label }}
+          </option>
+        </select>
+
+        <!-- Regular text input -->
         <input
-          *ngIf="!isReadonly(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col)"
           [id]="col"
           type="text"
           [(ngModel)]="formData[col]"
           [name]="col"
           placeholder="Enter {{ col }}"
         />
-        <div *ngIf="isReadonly(col)" class="readonly-value">
-          {{ formData[col] || '—' }}
-        </div>
       </div>
     </div>
 

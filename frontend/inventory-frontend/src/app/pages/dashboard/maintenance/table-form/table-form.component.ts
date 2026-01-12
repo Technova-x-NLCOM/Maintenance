@@ -13,11 +13,12 @@ import { MaintenanceService } from '../../../../services/maintenance.service';
 export class TableFormComponent implements OnInit {
   @Input() parent: any;
   selectedTable: string | null = null;
-  schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean } | null = null;
+  schema: any | null = null;
   pkKey: string | null = null;
   formData: any = {};
   isNew = true;
   loading = false;
+  lookups: { [key: string]: { [id: string]: string } } = {};
 
   constructor(
     private api: MaintenanceService,
@@ -40,6 +41,7 @@ export class TableFormComponent implements OnInit {
     this.api.getSchema(this.selectedTable).subscribe({
       next: (s) => {
         this.schema = s;
+        this.lookups = s.lookups || {};
         this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
         if (this.isNew) {
           this.initializeForm();
@@ -58,13 +60,26 @@ export class TableFormComponent implements OnInit {
   initializeForm(): void {
     if (!this.schema) return;
     this.formData = {};
-    this.schema.columns.forEach(c => {
+    this.schema.columns.forEach((c: string) => {
       this.formData[c] = null;
     });
   }
 
   isReadonly(column: string): boolean {
     return column === this.pkKey || column === 'deleted_at' || column === 'created_at' || column === 'updated_at';
+  }
+
+  isForeignKey(column: string): boolean {
+    return this.lookups && column in this.lookups;
+  }
+
+  getForeignKeyOptions(column: string): { id: string; label: string }[] {
+    const lookup = this.lookups[column];
+    if (!lookup) return [];
+    return Object.entries(lookup).map(([id, label]) => ({
+      id,
+      label: String(label)
+    }));
   }
 
   onSubmit(): void {
@@ -104,7 +119,7 @@ export class TableFormComponent implements OnInit {
   private buildPayload(): any {
     if (!this.schema) return {};
     const payload: any = {};
-    this.schema.columns.forEach(c => {
+    this.schema.columns.forEach((c: string) => {
       if (!this.isReadonly(c)) {
         payload[c] = this.formData[c] ?? null;
       }

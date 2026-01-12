@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HomeComponent } from './home/home.component';
 import { TableListComponent } from './table-list/table-list.component';
@@ -18,26 +18,32 @@ export class MaintenanceComponent {
   selectedTable: string | null = null;
   editingRow: any | null = null;
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   goToHome(): void {
     this.currentView = 'home';
     this.selectedTable = null;
     this.editingRow = null;
+    this.cdr.markForCheck();
   }
 
   goToTableList(tableName: string): void {
     this.selectedTable = tableName;
     this.editingRow = null;
     this.currentView = 'table-list';
+    this.cdr.markForCheck();
   }
 
   goToForm(row: any | null): void {
     this.editingRow = row;
     this.currentView = 'table-form';
+    this.cdr.markForCheck();
   }
 
   goToTableListView(): void {
     this.editingRow = null;
     this.currentView = 'table-list';
+    this.cdr.markForCheck();
   }
 }
 

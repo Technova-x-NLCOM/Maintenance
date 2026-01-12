@@ -25,14 +25,20 @@ class TableFormController extends Controller
     {
         $this->assertAllowedTable($table);
         $data = $this->sanitizePayload($table, $request->all());
-
-        // Remove auto timestamps if present to let DB defaults apply
-        foreach (['created_at', 'updated_at'] as $ts) {
-            if (array_key_exists($ts, $data) && $data[$ts] === null) {
-                unset($data[$ts]);
-            }
+        // Ensure timestamps are set when columns exist
+        if (Schema::hasColumn($table, 'created_at') && !array_key_exists('created_at', $data)) {
+            $data['created_at'] = now();
+        }
+        if (Schema::hasColumn($table, 'updated_at') && !array_key_exists('updated_at', $data)) {
+            $data['updated_at'] = now();
         }
 
+        // Insert row (avoid insertGetId for composite PK tables)
+        $pk = $this->tables[$table]['primary_key'];
+        if (is_array($pk)) {
+            DB::table($table)->insert($data);
+            return response()->json(['status' => 'created'], 201);
+        }
         $id = DB::table($table)->insertGetId($data);
         return response()->json(['id' => $id], 201);
     }
@@ -48,6 +54,10 @@ class TableFormController extends Controller
             return response()->json(['error' => 'Composite keys must be provided via query string'], 400);
         }
         $data = $this->sanitizePayload($table, $request->all());
+        // Always update updated_at when present
+        if (Schema::hasColumn($table, 'updated_at')) {
+            $data['updated_at'] = now();
+        }
         DB::table($table)->where($pk, $id)->update($data);
         return response()->json(['status' => 'ok']);
     }
