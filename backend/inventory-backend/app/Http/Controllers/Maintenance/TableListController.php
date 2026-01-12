@@ -28,6 +28,16 @@ class TableListController extends Controller
         // Pull relations mapping from config, if any
         $relations = $this->tables[$table]['relations'] ?? [];
 
+        // Get column details including nullable information
+        $columnDetails = [];
+        foreach ($columns as $col) {
+            $columnInfo = DB::select("SHOW COLUMNS FROM `{$table}` WHERE Field = ?", [$col])[0] ?? null;
+            $columnDetails[$col] = [
+                'nullable' => $columnInfo ? ($columnInfo->Null === 'YES') : true,
+                'type' => $columnInfo->Type ?? 'text',
+            ];
+        }
+
         // Build simple lookup maps for foreign keys to display labels
         $lookups = [];
         foreach ($relations as $col => $rel) {
@@ -55,6 +65,7 @@ class TableListController extends Controller
             'soft_deletes' => (bool)($this->tables[$table]['soft_deletes'] ?? false),
             'relations' => $relations,
             'lookups' => $lookups,
+            'column_details' => $columnDetails,
         ]);
     }
 

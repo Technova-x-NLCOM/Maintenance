@@ -19,6 +19,7 @@ export class TableFormComponent implements OnInit {
   isNew = true;
   loading = false;
   lookups: { [key: string]: { [id: string]: string } } = {};
+  columnDetails: { [key: string]: { nullable: boolean; type: string } } = {};
 
   constructor(
     private api: MaintenanceService,
@@ -42,6 +43,7 @@ export class TableFormComponent implements OnInit {
       next: (s) => {
         this.schema = s;
         this.lookups = s.lookups || {};
+        this.columnDetails = s.column_details || {};
         this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
         if (this.isNew) {
           this.initializeForm();
@@ -71,6 +73,12 @@ export class TableFormComponent implements OnInit {
 
   isForeignKey(column: string): boolean {
     return this.lookups && column in this.lookups;
+  }
+
+  isRequired(column: string): boolean {
+    if (this.isReadonly(column)) return false;
+    const details = this.columnDetails[column];
+    return details ? !details.nullable : false;
   }
 
   getForeignKeyOptions(column: string): { id: string; label: string }[] {

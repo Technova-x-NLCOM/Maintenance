@@ -69,6 +69,12 @@
   text-transform: capitalize;
 }
 
+.required-indicator {
+  color: #e53e3e;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
 .form-group input {
   padding: 12px 14px;
   border: 2px solid #e2e8f0;
