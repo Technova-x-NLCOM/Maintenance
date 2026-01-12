@@ -1,0 +1,42 @@
+<div class="table-list">
+  <div class="list-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2>{{ selectedTable }}</h2>
+    <button class="add-btn" (click)="goToForm(null)">+ Add New</button>
+  </div>
+
+  <div class="toolbar">
+    <label>
+      <input type="checkbox" [(ngModel)]="showDeleted" (change)="fetchRows()" />
+      Show deleted
+    </label>
+  </div>
+
+  <div *ngIf="schema && rows.length" class="rows-container">
+    <table>
+      <thead>
+        <tr>
+          <th *ngFor="let c of schema.columns">{{ c }}</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows">
+          <td *ngFor="let c of schema.columns">{{ row[c] }}</td>
+          <td class="actions">
+            <button class="edit-btn" (click)="goToForm(row)">Edit</button>
+            <button class="delete-btn" (click)="deleteRow(row)">
+              {{ schema.soft_deletes ? 'Soft Delete' : 'Delete' }}
+            </button>
+            <button *ngIf="schema.soft_deletes && row['deleted_at']" class="restore-btn" (click)="restoreRow(row)">
+              Restore
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!rows.length && !loading" class="empty">No rows found</div>
+  <div *ngIf="loading" class="loading">Loading...</div>
+</div>

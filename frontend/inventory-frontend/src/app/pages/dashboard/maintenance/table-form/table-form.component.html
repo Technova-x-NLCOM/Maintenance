@@ -1,0 +1,30 @@
+<div class="table-form">
+  <div class="form-header">
+    <button class="back-btn" (click)="goBack()">← Back</button>
+    <h2>{{ isNew ? 'Add New' : 'Edit' }} {{ selectedTable }}</h2>
+  </div>
+
+  <div *ngIf="schema" class="form-container">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-grid">
+        <div *ngFor="let c of schema.columns" class="form-group" [class.readonly]="isReadonly(c)">
+          <label>{{ c }}</label>
+          <input
+            *ngIf="!isReadonly(c)"
+            [(ngModel)]="formData[c]"
+            [name]="c"
+            type="text"
+          />
+          <span *ngIf="isReadonly(c)" class="readonly-value">{{ formData[c] }}</span>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="submit-btn">{{ isNew ? 'Create' : 'Update' }}</button>
+        <button type="button" class="cancel-btn" (click)="goBack()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div *ngIf="loading" class="loading">Loading...</div>
+</div>

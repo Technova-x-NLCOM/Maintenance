@@ -1,0 +1,12 @@
+<div class="maintenance-home">
+  <h2>Database Tables</h2>
+  <div class="tables-grid">
+    <div *ngFor="let t of tables" class="table-card" (click)="onSelectTable(t.name)">
+      <div class="table-name">{{ t.name }}</div>
+      <div class="table-meta">
+        <span class="badge">PK: {{ formatPrimaryKey(t.primary_key) }}</span>
+        <span *ngIf="t.soft_deletes" class="badge soft-deletes">Soft Deletes</span>
+      </div>
+    </div>
+  </div>
+</div>

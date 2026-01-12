@@ -1,0 +1,97 @@
+.table-list {
+  padding: 16px;
+  max-width: 1400px;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.list-header h2 {
+  margin: 0;
+  flex: 1;
+  color: #333;
+}
+
+.back-btn, .add-btn, .edit-btn, .delete-btn, .restore-btn {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover, .edit-btn:hover, .restore-btn:hover {
+  background: #f5f5f5;
+}
+
+.add-btn {
+  background: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+.add-btn:hover {
+  background: #45a049;
+}
+
+.delete-btn {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.delete-btn:hover {
+  background: #da190b;
+}
+
+.toolbar {
+  margin-bottom: 16px;
+}
+
+.rows-container {
+  overflow-x: auto;
+  margin-top: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+th {
+  background: #f5f5f5;
+  font-weight: 600;
+}
+
+tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.actions {
+  white-space: nowrap;
+  display: flex;
+  gap: 4px;
+}
+
+.actions button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.loading, .empty {
+  padding: 16px;
+  color: #666;
+}
