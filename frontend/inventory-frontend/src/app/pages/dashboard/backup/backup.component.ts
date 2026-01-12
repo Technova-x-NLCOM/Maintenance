@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { timeout, catchError, of } from 'rxjs';
 
 interface Backup {
   name: string;
@@ -25,9 +24,16 @@ export class BackupComponent implements OnInit {
   creating = false;
   restoring = false;
   uploadingFile: File | null = null;
+  
+  // Modal states
+  showCreateConfirm = false;
+  showRestoreConfirm = false;
+  showBackupSuccess = false;
+  showRestoreSuccess = false;
+  
   private readonly API_URL = 'http://127.0.0.1:8000/api/backup';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     // No server-side list; wait for user to upload a file.
@@ -41,17 +47,40 @@ export class BackupComponent implements OnInit {
     });
   }
 
-  // Removed server backups listing; focusing on upload-based restore.
+  // Confirmation Modal Methods
+  showCreateConfirmModal(): void {
+    this.showCreateConfirm = true;
+  }
+
+  closeCreateConfirmModal(): void {
+    this.showCreateConfirm = false;
+  }
+
+  showRestoreConfirmModal(): void {
+    if (!this.uploadingFile) return;
+    this.showRestoreConfirm = true;
+  }
+
+  closeRestoreConfirmModal(): void {
+    this.showRestoreConfirm = false;
+  }
+
+  // Success Modal Methods
+  closeBackupSuccessModal(): void {
+    this.showBackupSuccess = false;
+  }
+
+  closeRestoreSuccessModal(): void {
+    this.showRestoreSuccess = false;
+  }
 
   createBackup(): void {
     if (this.creating) return;
     
-    if (!confirm('Create a new database backup? This will download the backup file.')) {
-      return;
-    }
-
+    this.showCreateConfirm = false;
     this.creating = true;
     this.error = null;
+    this.cdr.detectChanges();
     
     this.http.post(
       `${this.API_URL}/create`,
@@ -86,11 +115,19 @@ export class BackupComponent implements OnInit {
           window.URL.revokeObjectURL(url);
         }
         
-        this.creating = false;
+        // Use setTimeout to ensure UI updates
+        setTimeout(() => {
+          this.creating = false;
+          this.showBackupSuccess = true;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
-        this.error = err?.error?.message || 'Failed to create backup';
-        this.creating = false;
+        setTimeout(() => {
+          this.error = err?.error?.message || 'Failed to create backup';
+          this.creating = false;
+          this.cdr.detectChanges();
+        }, 0);
       }
     });
   }
@@ -120,6 +157,7 @@ export class BackupComponent implements OnInit {
       },
       error: (err) => {
         this.error = err?.error?.message || 'Failed to download backup';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -127,12 +165,9 @@ export class BackupComponent implements OnInit {
   restoreBackup(backupName: string): void {
     if (this.restoring) return;
 
-    if (!confirm(`⚠️ WARNING: This will DROP all existing tables and restore from "${backupName}".\n\nThis action cannot be undone. Are you absolutely sure?`)) {
-      return;
-    }
-
     this.restoring = true;
     this.error = null;
+    this.cdr.detectChanges();
 
     this.http.post<{ success: boolean; message: string }>(
       `${this.API_URL}/restore`,
@@ -140,12 +175,18 @@ export class BackupComponent implements OnInit {
       { headers: this.getAuthHeaders() }
     ).subscribe({
       next: (response) => {
-        alert(response.message || 'Database restored successfully!');
-        this.restoring = false;
+        setTimeout(() => {
+          this.restoring = false;
+          this.showRestoreSuccess = true;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
-        this.error = err?.error?.message || 'Failed to restore backup';
-        this.restoring = false;
+        setTimeout(() => {
+          this.error = err?.error?.message || 'Failed to restore backup';
+          this.restoring = false;
+          this.cdr.detectChanges();
+        }, 0);
       }
     });
   }
@@ -160,12 +201,10 @@ export class BackupComponent implements OnInit {
   restoreFromUploadedFile(): void {
     if (!this.uploadingFile || this.restoring) return;
 
-    if (!confirm(`⚠️ WARNING: This will DROP all existing tables and restore from the uploaded file "${this.uploadingFile.name}".\n\nThis action cannot be undone. Are you absolutely sure?`)) {
-      return;
-    }
-
+    this.showRestoreConfirm = false;
     this.restoring = true;
     this.error = null;
+    this.cdr.detectChanges();
 
     const formData = new FormData();
     formData.append('backup_file', this.uploadingFile);
@@ -180,25 +219,29 @@ export class BackupComponent implements OnInit {
       { headers }
     ).subscribe({
       next: (response) => {
-        alert(response.message || 'Database restored successfully from uploaded file!');
-        this.restoring = false;
-        this.uploadingFile = null;
         // Reset file input
         const fileInput = document.getElementById('backup-file-input') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
+        
+        // Use setTimeout to ensure UI updates
+        setTimeout(() => {
+          this.restoring = false;
+          this.uploadingFile = null;
+          this.showRestoreSuccess = true;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
-        this.error = err?.error?.message || 'Failed to restore from uploaded file';
-        this.restoring = false;
+        setTimeout(() => {
+          this.error = err?.error?.message || 'Failed to restore from uploaded file';
+          this.restoring = false;
+          this.cdr.detectChanges();
+        }, 0);
       }
     });
   }
 
   deleteBackup(backupName: string): void {
-    if (!confirm(`Delete backup "${backupName}"? This action cannot be undone.`)) {
-      return;
-    }
-
     this.http.post<{ success: boolean; message: string }>(
       `${this.API_URL}/delete`,
       { backup_file: backupName },
@@ -209,6 +252,7 @@ export class BackupComponent implements OnInit {
       },
       error: (err) => {
         this.error = err?.error?.message || 'Failed to delete backup';
+        this.cdr.detectChanges();
       }
     });
   }
