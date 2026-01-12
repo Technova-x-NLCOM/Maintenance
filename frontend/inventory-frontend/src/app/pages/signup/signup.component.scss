@@ -1,14 +1,20 @@
-$primary-color: #0052cc;
-$secondary-color: #f5f5f5;
-$text-dark: #333;
-$text-light: #666;
-$error-color: #dc3545;
-$success-color: #28a745;
+// Elderly-friendly Blue color palette with HIGH CONTRAST
+$primary-color: #1d4ed8;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$accent-color: #60a5fa;
+$secondary-color: #f3f4f6;
+$bg-light: #f8fafc;
+$text-dark: #111827;
+$text-medium: #1f2937;
+$text-light: #374151;
+$error-color: #991b1b;
+$success-color: #065f46;
 $border-radius: 12px;
 
 .signup-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0052cc 0%, #004399 100%);
+  background-color: $bg-light;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,13 +25,11 @@ $border-radius: 12px;
 .signup-card {
   background: white;
   border-radius: $border-radius;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 28px 35px;
   width: 100%;
-  max-width: 600px;
-  animation: slideIn 0.4s ease;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 520px;
+  border: 3px solid #e5e7eb;
 }
 
 @keyframes slideIn {
@@ -39,94 +43,248 @@ $border-radius: 12px;
   }
 }
 
-/* Header */
 .signup-header {
   text-align: center;
-  margin-bottom: 35px;
-  padding-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 2px solid $secondary-color;
 }
 
 .logo-section {
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .heart-logo {
-  font-size: 40px;
+  font-size: 36px;
   display: inline-block;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .signup-header h1 {
-  font-size: 1.5em;
+  font-size: 1.25rem;
   margin: 5px 0;
   color: $text-dark;
+  font-weight: 700;
 }
 
 .signup-header h2 {
-  font-size: 1.8em;
-  margin: 20px 0 10px;
+  font-size: 1.5rem;
+  margin: 12px 0 8px;
   color: $text-dark;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: $text-light;
-  font-size: 0.95em;
+  color: $text-medium;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
 }
 
-/* Messages */
+.step-indicator {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.step-progress {
+  position: absolute;
+  top: 18px;
+  left: 40px;
+  right: 40px;
+  height: 3px;
+  background: #d1d5db;
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: $primary-color;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.steps {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+
+  &:hover:not(.pending) {
+    .step-circle {
+      transform: scale(1.1);
+    }
+  }
+
+  &.pending {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: $text-light;
+  transition: all 0.3s ease;
+  border: 3px solid white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+
+  .step.active & {
+    background: $primary-color;
+    color: white;
+    box-shadow: 0 3px 10px rgba(29, 78, 216, 0.4);
+  }
+
+  .step.completed & {
+    background: $success-color;
+    color: white;
+  }
+}
+
+.step-title {
+  margin-top: 6px;
+  font-size: 0.8125rem;
+  color: $text-medium;
+  font-weight: 600;
+  text-align: center;
+
+  .step.active & {
+    color: $primary-color;
+    font-weight: 700;
+  }
+
+  .step.completed & {
+    color: $success-color;
+  }
+}
+
+.form-step {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.step-heading {
+  font-size: 1.0625rem;
+  color: $text-dark;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid $secondary-color;
+  font-weight: 600;
+}
+
+.form-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $secondary-color;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: $text-medium;
+  border: 2px solid #d1d5db;
+  font-weight: 600;
+
+  &:hover {
+    background: $secondary-color;
+    border-color: #9ca3af;
+  }
+}
+
 .success-message {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  color: #155724;
-  padding: 12px 15px;
+  background-color: #ecfdf5;
+  border: 2px solid #86efac;
+  color: $success-color;
+  padding: 14px 16px;
   border-radius: $border-radius;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: slideIn 0.3s ease;
+  font-size: 1rem;
+  font-weight: 500;
+
+  .success-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    stroke: $success-color;
+  }
 }
 
 .error-message {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-  padding: 12px 15px;
+  background-color: #fef2f2;
+  border: 2px solid #fca5a5;
+  color: $error-color;
+  padding: 14px 16px;
   border-radius: $border-radius;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: shake 0.3s ease;
+  font-size: 1rem;
+  font-weight: 500;
+
+  .error-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    stroke: $error-color;
+  }
 }
 
 @keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
-  }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
 }
 
 .success-icon,
 .error-icon {
-  font-size: 1.1em;
+  font-size: 1.25rem;
 }
 
-/* Form */
 form {
-  margin-bottom: 25px;
+  margin-bottom: 15px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 16px;
   margin-bottom: 20px;
 
   .form-group {
@@ -135,36 +293,36 @@ form {
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 
   label {
     display: block;
     margin-bottom: 8px;
     color: $text-dark;
-    font-weight: 500;
-    font-size: 0.95em;
+    font-weight: 600;
+    font-size: 1rem;
   }
 
   &.checkbox {
     display: flex;
     align-items: flex-start;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 
     input {
-      margin-right: 8px;
+      margin-right: 10px;
       margin-top: 3px;
       cursor: pointer;
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       flex-shrink: 0;
     }
 
     label {
       margin: 0;
-      font-weight: normal;
+      font-weight: 500;
       cursor: pointer;
-      color: $text-light;
-      font-size: 0.95em;
+      color: $text-medium;
+      font-size: 0.9375rem;
       line-height: 1.4;
     }
   }
@@ -172,22 +330,24 @@ form {
 
 .form-control {
   width: 100%;
-  padding: 12px 15px;
-  border: 2px solid $secondary-color;
+  padding: 12px 14px;
+  border: 3px solid #9ca3af;
   border-radius: $border-radius;
-  font-size: 1em;
+  font-size: 1rem;
+  color: $text-dark;
   transition: all 0.3s ease;
   font-family: inherit;
   box-sizing: border-box;
+  background: white;
 
   &:focus {
     outline: none;
     border-color: $primary-color;
-    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.2);
   }
 
-  &:invalid:not(:placeholder-shown) {
-    border-color: $error-color;
+  &::placeholder {
+    color: #6b7280;
   }
 }
 
@@ -201,99 +361,94 @@ select.form-control {
 
 .password-toggle {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2em;
   padding: 5px;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     opacity: 0.7;
   }
+
+  .eye-icon {
+    width: 24px;
+    height: 24px;
+    stroke: $text-medium;
+  }
 }
 
 .password-strength {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.85em;
+  font-size: 0.9375rem;
 }
 
 .strength-label {
-  color: $text-light;
-  font-weight: 500;
+  color: $text-medium;
+  font-weight: 600;
 }
 
 .strength-meter {
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: 20px;
-  font-weight: 600;
-  font-size: 0.8em;
+  font-weight: 700;
+  font-size: 0.875rem;
 
   &.weak {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: #fef2f2;
+    color: $error-color;
   }
 
   &.fair {
-    background-color: #fff3cd;
-    color: #856404;
+    background-color: #fffbeb;
+    color: #b45309;
   }
 
   &.good {
-    background-color: #d1ecf1;
-    color: #0c5460;
+    background-color: #eff6ff;
+    color: #1d4ed8;
   }
 
   &.strong {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: #ecfdf5;
+    color: $success-color;
   }
 }
 
-/* Password Validation Checklist */
 .password-validation {
-  margin-top: 12px;
-  padding: 15px;
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
+  margin-top: 14px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
   border-radius: 8px;
-  animation: slideDown 0.3s ease;
 }
 
 .password-success {
-  margin-top: 12px;
-  padding: 15px;
-  background: #d4edda;
-  border: 1px solid #c3e6cb;
+  margin-top: 14px;
+  padding: 16px;
+  background: #ecfdf5;
+  border: 2px solid #86efac;
   border-radius: 8px;
-  color: #155724;
+  color: $success-color;
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: slideDown 0.3s ease;
-  font-weight: 500;
-}
+  font-weight: 600;
 
-.success-icon {
-  font-size: 1.2em;
-  font-weight: bold;
-  color: #28a745;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .success-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    stroke: $success-color;
   }
 }
 
@@ -302,13 +457,13 @@ select.form-control {
   align-items: center;
   gap: 10px;
   padding: 8px 0;
-  font-size: 0.9em;
+  font-size: 0.9375rem;
   color: $text-light;
   transition: color 0.2s ease;
 
   &.valid {
-    color: #155724;
-    font-weight: 500;
+    color: $success-color;
+    font-weight: 600;
   }
 }
 
@@ -316,32 +471,32 @@ select.form-control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
+  min-width: 22px;
   font-weight: bold;
-  font-size: 1.1em;
+  font-size: 1.125rem;
 
   .validation-item.valid & {
-    color: #28a745;
+    color: $success-color;
   }
 
   .validation-item:not(.valid) & {
-    color: #ccc;
+    color: #9ca3af;
   }
 }
 
 .error {
   color: $error-color;
-  font-size: 0.85em;
-  margin-top: 5px;
+  font-size: 0.875rem;
+  margin-top: 6px;
   display: block;
+  font-weight: 500;
 }
 
-/* When validation items are shown inside the .error span, style unmet rules and success explicitly */
 .error .validation-item {
   display: block;
   color: $error-color;
   padding: 4px 0;
-  font-size: 0.95em;
+  font-size: 0.9375rem;
 }
 
 .error .validation-icon {
@@ -352,18 +507,17 @@ select.form-control {
 .error .success-icon,
 .error .success-text {
   color: $success-color;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .error .success-text { margin-left: 6px; }
 
-/* Buttons */
 .btn {
   padding: 12px 20px;
   border: none;
   border-radius: $border-radius;
-  font-size: 1em;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -372,9 +526,9 @@ select.form-control {
     color: white;
 
     &:hover:not(:disabled) {
-      background-color: #0042a3;
+      background-color: $primary-dark;
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(0, 82, 204, 0.3);
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
     }
 
     &:disabled {
@@ -385,40 +539,41 @@ select.form-control {
 
   &.btn-signup {
     width: 100%;
+    padding: 16px 20px;
+    font-size: 1.125rem;
   }
 }
 
-/* Form Footer */
 .form-footer {
   text-align: center;
-  margin-bottom: 20px;
-  padding-top: 20px;
-  border-top: 1px solid $secondary-color;
-  color: $text-light;
-  font-size: 0.95em;
+  margin-bottom: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+  color: $text-medium;
+  font-size: 1rem;
 }
 
 .link {
   color: $primary-color;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   transition: color 0.3s ease;
 
   &:hover {
-    color: #0042a3;
+    color: $primary-dark;
     text-decoration: underline;
   }
 }
 
-/* Back to Home */
 .back-home {
   text-align: center;
 }
 
 .link-home {
-  color: $text-light;
+  color: $text-medium;
   text-decoration: none;
-  font-size: 0.9em;
+  font-size: 0.9375rem;
+  font-weight: 500;
   transition: all 0.3s ease;
 
   &:hover {
@@ -426,14 +581,13 @@ select.form-control {
   }
 }
 
-/* Responsive Design */
 @media (max-width: 480px) {
   .signup-card {
     padding: 30px 20px;
   }
 
   .signup-header h2 {
-    font-size: 1.5em;
+    font-size: 1.5rem;
   }
 
   .form-row {
@@ -442,13 +596,41 @@ select.form-control {
   }
 
   .form-footer {
-    font-size: 0.9em;
+    font-size: 0.9375rem;
+  }
+
+  .step-title {
+    font-size: 0.75rem;
+  }
+
+  .step-circle {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9375rem;
+  }
+
+  .step-progress {
+    left: 30px;
+    right: 30px;
+    top: 17px;
+  }
+
+  .form-navigation {
+    flex-direction: column;
+    gap: 12px;
+
+    .btn {
+      width: 100%;
+    }
+
+    .spacer {
+      display: none;
+    }
   }
 }
 
-/* Scrollbar styling for signup card */
 .signup-card::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 .signup-card::-webkit-scrollbar-track {
@@ -457,10 +639,10 @@ select.form-control {
 }
 
 .signup-card::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: #9ca3af;
   border-radius: $border-radius;
 
   &:hover {
-    background: #999;
+    background: #6b7280;
   }
 }
