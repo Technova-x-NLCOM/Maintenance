@@ -183,6 +183,22 @@ class RBACController extends Controller
         return response()->json(['message' => 'Role-permission flags updated']);
     }
 
+    // Return the authenticated user's primary role with permissions
+    public function currentRolePermissions()
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $role = $user->primaryRole()->with('permissions')->first();
+
+        return response()->json([
+            'role' => $role,
+            'permissions' => $role ? $role->permissions : [],
+        ]);
+    }
+
     // List permissions
     public function permissions()
     {

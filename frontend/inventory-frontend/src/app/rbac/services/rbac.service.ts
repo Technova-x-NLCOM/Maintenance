@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 export interface Permission {
   permission_id: number;
@@ -53,6 +53,12 @@ export class RbacService {
     return this.http.get<Permission[]>(`${this.API_URL}/permissions`, { headers: this.authHeaders() });
   }
 
+  getCurrentRole(): Observable<Role | null> {
+    return this.http
+      .get<{ role: Role | null }>(`${this.API_URL}/me/permissions`, { headers: this.authHeaders() })
+      .pipe(map((res) => res.role ?? null));
+  }
+
   updatePermissionFlags(role_id: number, permission_id: number, flags: { can_create?: boolean; can_read?: boolean; can_update?: boolean; can_delete?: boolean; }) {
     const payload: any = { role_id, permission_id };
     if (typeof flags.can_create !== 'undefined') payload.can_create = !!flags.can_create;
@@ -81,6 +87,10 @@ export class RbacService {
     if (!role || !role.permissions) {
       return false;
     }
-    return role.permissions.some(perm => perm.permission_name === permissionName);
+    return role.permissions.some((perm) => {
+      if (perm.permission_name !== permissionName) return false;
+      const pivot = perm.pivot;
+      return pivot ? !!(pivot.can_read || pivot.can_create || pivot.can_update || pivot.can_delete) : true;
+    });
   }
 }
