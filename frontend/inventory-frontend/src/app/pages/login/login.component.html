@@ -2,14 +2,6 @@
   <div class="login-card">
     <!-- Header -->
     <div class="login-header">
-      <div class="logo-section">
-        <div class="heart-logo">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </div>
-        <h1>Humanitarian Relief</h1>
-      </div>
       <h2>Welcome Back</h2>
       <p class="subtitle">Sign in to access the system</p>
     </div>
@@ -88,38 +80,7 @@
       </button>
     </form>
 
-    <!-- Demo Credentials -->
-    <div class="demo-section">
-      <p class="demo-note">
-        <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-        Tip: Click on a demo account above to fill in the credentials instantly!
-      </p>
-    <!-- Role Tabs -->
-    <div class="demo-accounts-section">
-      <p class="demo-title">Demo Accounts</p>
-      <div class="demo-list">
-        <button 
-          type="button"
-          class="demo-account-card"
-          *ngFor="let account of demoAccounts"
-          (click)="fillDemoCredentials(account)"
-          title="Click to fill credentials">
-          <div class="demo-icon">{{ account.icon }}</div>
-          <div class="demo-info">
-            <div class="demo-role">{{ account.role }}</div>
-            <div class="demo-desc">{{ account.description }}</div>
-            <div class="demo-creds">
-              <span class="cred">{{ account.identifier }}</span>
-            </div>
-          </div>
-        </button>
-      </div>
-    </div>
-    </div>
+
 
     <!-- Links -->
     <div class="form-footer">
