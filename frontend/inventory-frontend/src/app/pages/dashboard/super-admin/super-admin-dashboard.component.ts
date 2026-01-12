@@ -77,9 +77,11 @@ export class SuperAdminDashboardComponent implements OnInit {
     this.http.get<DashboardStats>(`${this.API_URL}/super-admin/stats`, { headers: this.getAuthHeaders() })
       .subscribe({
         next: (stats: DashboardStats) => {
+          console.log('Super Admin Stats loaded:', stats);
           this.stats = stats;
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error loading super admin stats:', err);
           this.stats = {
             totalUsers: 0,
             activeUsers: 0,
@@ -99,7 +101,8 @@ export class SuperAdminDashboardComponent implements OnInit {
           this.recentActivity = activity;
           this.loading = false;
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error loading activity:', err);
           this.recentActivity = [];
           this.loading = false;
         }
@@ -110,7 +113,8 @@ export class SuperAdminDashboardComponent implements OnInit {
         next: (alerts: SystemAlert[]) => {
           this.systemAlerts = alerts;
         },
-        error: () => {
+        error: (err) => {
+          console.error('Error loading alerts:', err);
           this.systemAlerts = [];
         }
       });
