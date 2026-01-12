@@ -50,6 +50,28 @@ Route::prefix('api/backup')
             });
         });
 
+// Profile API routes
+Route::prefix('api/profile')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::put('update', [\App\Http\Controllers\ProfileController::class, 'update']);
+            Route::put('password', [\App\Http\Controllers\ProfileController::class, 'changePassword']);
+        });
+    });
+
+// Super Admin Dashboard API routes
+Route::prefix('api/super-admin')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('stats', [\App\Http\Controllers\SuperAdminController::class, 'stats']);
+            Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity']);
+            Route::get('alerts', [\App\Http\Controllers\SuperAdminController::class, 'alerts']);
+            Route::post('alerts/{alertId}/acknowledge', [\App\Http\Controllers\SuperAdminController::class, 'acknowledgeAlert']);
+        });
+    });
+
 // Maintenance API routes
 Route::prefix('api/maintenance')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
