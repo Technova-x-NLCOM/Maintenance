@@ -25,11 +25,36 @@ class TableListController extends Controller
         $this->assertAllowedTable($table);
 
         $columns = Schema::getColumnListing($table);
+        // Pull relations mapping from config, if any
+        $relations = $this->tables[$table]['relations'] ?? [];
+
+        // Build simple lookup maps for foreign keys to display labels
+        $lookups = [];
+        foreach ($relations as $col => $rel) {
+            $refTable = $rel['ref_table'] ?? null;
+            $refKey = $rel['ref_key'] ?? null;
+            $labelCol = $rel['label_column'] ?? null;
+            if ($refTable && $refKey && $labelCol && Schema::hasTable($refTable)) {
+                try {
+                    $rows = DB::table($refTable)->select([$refKey, $labelCol])->get();
+                    $map = [];
+                    foreach ($rows as $r) {
+                        $map[$r->{$refKey}] = $r->{$labelCol};
+                    }
+                    $lookups[$col] = $map;
+                } catch (\Throwable $e) {
+                    // Skip lookup if any error occurs
+                }
+            }
+        }
+
         return response()->json([
             'table' => $table,
             'columns' => $columns,
             'primary_key' => $this->tables[$table]['primary_key'],
             'soft_deletes' => (bool)($this->tables[$table]['soft_deletes'] ?? false),
+            'relations' => $relations,
+            'lookups' => $lookups,
         ]);
     }
 

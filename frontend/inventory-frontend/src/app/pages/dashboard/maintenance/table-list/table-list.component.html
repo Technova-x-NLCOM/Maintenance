@@ -22,7 +22,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let row of rows">
-          <td *ngFor="let c of schema.columns">{{ row[c] }}</td>
+          <td *ngFor="let c of schema.columns">{{ formatCell(c, row) }}</td>
           <td class="actions">
             <button class="edit-btn" (click)="goToForm(row)">Edit</button>
             <button class="delete-btn" (click)="deleteRow(row)">

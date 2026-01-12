@@ -13,7 +13,7 @@ import { MaintenanceService } from '../../../../services/maintenance.service';
 export class TableListComponent implements OnInit {
   @Input() parent: any;
   selectedTable: string | null = null;
-  schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean } | null = null;
+  schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean; relations?: Record<string, { ref_table: string; ref_key: string; label_column: string }>; lookups?: Record<string, Record<string | number, string>> } | null = null;
   pkKey: string | null = null;
   rows: any[] = [];
   showDeleted = false;
@@ -87,5 +87,18 @@ export class TableListComponent implements OnInit {
 
   goToForm(row: any | null): void {
     this.parent.goToForm(row);
+  }
+
+  formatCell(column: string, row: any): any {
+    if (!this.schema) return row[column];
+    const lookups = this.schema.lookups || {};
+    const map = lookups[column];
+    if (map) {
+      const key = row[column];
+      if (key !== undefined && key !== null && map[key] !== undefined) {
+        return map[key];
+      }
+    }
+    return row[column];
   }
 }
