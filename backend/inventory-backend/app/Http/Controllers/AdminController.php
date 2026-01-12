@@ -5,17 +5,39 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SuperAdminController extends Controller
+class AdminController extends Controller
 {
     /**
-     * Get dashboard statistics for super admin
+     * Get dashboard statistics for admin
      */
     public function stats()
     {
         try {
-            // Total and active users
-            $totalUsers = DB::table('users')->count();
-            $activeUsers = DB::table('users')->where('is_active', 1)->count();
+            // Total and active users (excluding super admins)
+            $superAdminUserIds = [];
+            try {
+                $superAdminUserIds = DB::table('user_roles')
+                    ->join('roles', 'user_roles.role_id', '=', 'roles.role_id')
+                    ->where('roles.role_name', 'Super Admin')
+                    ->pluck('user_roles.user_id')
+                    ->toArray();
+            } catch (\Exception $e) {
+                $superAdminUserIds = [];
+            }
+
+            if (count($superAdminUserIds) > 0) {
+                $totalUsers = DB::table('users')
+                    ->whereNotIn('user_id', $superAdminUserIds)
+                    ->count();
+                
+                $activeUsers = DB::table('users')
+                    ->where('is_active', 1)
+                    ->whereNotIn('user_id', $superAdminUserIds)
+                    ->count();
+            } else {
+                $totalUsers = DB::table('users')->count();
+                $activeUsers = DB::table('users')->where('is_active', 1)->count();
+            }
 
             // Total items
             $totalItems = DB::table('items')->where('is_active', 1)->count();
@@ -147,7 +169,7 @@ class SuperAdminController extends Controller
             $alerts[] = $alert;
         }
 
-        // Low stock alerts (generated dynamically)
+        // Low stock alerts
         $lowStockItems = DB::table('items as i')
             ->leftJoin('inventory_batches as ib', function ($join) {
                 $join->on('i.item_id', '=', 'ib.item_id')
@@ -177,34 +199,12 @@ class SuperAdminController extends Controller
             ];
         }
 
-        // Sort by severity (critical first)
+        // Sort by severity
         usort($alerts, function ($a, $b) {
             $severityOrder = ['critical' => 0, 'warning' => 1, 'info' => 2];
             return ($severityOrder[$a->severity] ?? 3) - ($severityOrder[$b->severity] ?? 3);
         });
 
         return response()->json(array_slice($alerts, 0, 15));
-    }
-
-    /**
-     * Acknowledge an alert
-     */
-    public function acknowledgeAlert(Request $request, $alertId)
-    {
-        $user = auth('api')->user();
-
-        $updated = DB::table('expiry_alerts')
-            ->where('alert_id', $alertId)
-            ->update([
-                'status' => 'acknowledged',
-                'acknowledged_by' => $user->user_id,
-                'acknowledged_at' => now(),
-            ]);
-
-        if ($updated) {
-            return response()->json(['message' => 'Alert acknowledged']);
-        }
-
-        return response()->json(['message' => 'Alert not found'], 404);
     }
 }

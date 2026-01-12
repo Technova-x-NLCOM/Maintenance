@@ -72,6 +72,17 @@ Route::prefix('api/super-admin')
         });
     });
 
+// Admin Dashboard API routes
+Route::prefix('api/admin')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('stats', [\App\Http\Controllers\AdminController::class, 'stats']);
+            Route::get('activity', [\App\Http\Controllers\AdminController::class, 'activity']);
+            Route::get('alerts', [\App\Http\Controllers\AdminController::class, 'alerts']);
+        });
+    });
+
 // Maintenance API routes
 Route::prefix('api/maintenance')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
