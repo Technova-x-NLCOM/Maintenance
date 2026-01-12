@@ -54,7 +54,7 @@ return [
         ],
         'role_permissions' => [
             'primary_key' => ['role_id', 'permission_id'],
-            'soft_deletes' => true,
+            'soft_deletes' => false,
         ],
         'audit_log' => [
             'primary_key' => 'log_id',
