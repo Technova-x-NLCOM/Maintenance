@@ -29,6 +29,7 @@ Route::prefix('api/auth')->group(function () {
                 Route::get('roles', [\App\Http\Controllers\RBACController::class, 'roles']);
                 Route::post('roles', [\App\Http\Controllers\RBACController::class, 'createRole'])->middleware('permission:manage_roles');
                 Route::post('assign-role', [\App\Http\Controllers\RBACController::class, 'assignRole'])->middleware('permission:manage_roles');
+                Route::get('me/permissions', [\App\Http\Controllers\RBACController::class, 'currentRolePermissions']);
                 Route::get('permissions', [\App\Http\Controllers\RBACController::class, 'permissions']);
                 Route::post('give-permission', [\App\Http\Controllers\RBACController::class, 'givePermission'])->middleware('permission:manage_permissions');
                 Route::post('revoke-permission', [\App\Http\Controllers\RBACController::class, 'revokePermission'])->middleware('permission:manage_permissions');
@@ -53,7 +54,7 @@ Route::prefix('api/backup')
 Route::prefix('api/maintenance')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->group(function () {
-        Route::middleware(['auth:api'])->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_maintenance'])->group(function () {
             // Home - List all tables
             Route::get('tables', [\App\Http\Controllers\Maintenance\MaintenanceHomeController::class, 'listTables']);
             
