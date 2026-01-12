@@ -24,6 +24,10 @@ export class TableListComponent implements OnInit {
   perPage = 15;
   total = 0;
   totalPages = 0;
+  
+  // Column visibility
+  visibleColumns: Set<string> = new Set();
+  columnSelectorOpen = false;
 
   constructor(
     private api: MaintenanceService,
@@ -44,6 +48,8 @@ export class TableListComponent implements OnInit {
       next: (s) => {
         this.schema = s;
         this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+        // Initialize all columns as visible
+        this.visibleColumns = new Set(s.columns);
         this.cdr.markForCheck();
       },
       error: (err) => console.error('Error loading schema:', err)
@@ -128,5 +134,27 @@ export class TableListComponent implements OnInit {
     if (this.currentPage > 1) {
       this.goToPage(this.currentPage - 1);
     }
+  }
+
+  toggleColumnVisibility(column: string): void {
+    if (this.visibleColumns.has(column)) {
+      this.visibleColumns.delete(column);
+    } else {
+      this.visibleColumns.add(column);
+    }
+    this.cdr.markForCheck();
+  }
+
+  isColumnVisible(column: string): boolean {
+    return this.visibleColumns.has(column);
+  }
+
+  getVisibleColumns(): string[] {
+    if (!this.schema) return [];
+    return this.schema.columns.filter(col => this.visibleColumns.has(col));
+  }
+
+  toggleColumnSelector(): void {
+    this.columnSelectorOpen = !this.columnSelectorOpen;
   }
 }

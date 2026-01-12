@@ -6,23 +6,42 @@
   </div>
 
   <div class="toolbar">
-    <label>
-      <input type="checkbox" [(ngModel)]="showDeleted" (change)="fetchRows()" />
-      Show deleted
-    </label>
+    <div class="toolbar-left">
+      <label>
+        <input type="checkbox" [(ngModel)]="showDeleted" (change)="fetchRows()" />
+        Show deleted
+      </label>
+    </div>
+    <div class="toolbar-right">
+      <button class="column-toggle-btn" (click)="toggleColumnSelector()">
+        <span class="icon">⚙️</span>
+        Columns
+      </button>
+    </div>
+  </div>
+
+  <div class="column-selector" *ngIf="columnSelectorOpen">
+    <div class="column-selector-header">Show/Hide Columns</div>
+    <div class="column-list">
+      <label *ngFor="let col of schema?.columns" class="column-option">
+        <input type="checkbox" [checked]="isColumnVisible(col)" (change)="toggleColumnVisibility(col)" />
+        <span class="column-name">{{ col }}</span>
+      </label>
+    </div>
+    <button class="close-selector-btn" (click)="toggleColumnSelector()">Done</button>
   </div>
 
   <div *ngIf="schema && rows.length" class="rows-container">
     <table>
       <thead>
         <tr>
-          <th *ngFor="let c of schema.columns">{{ c }}</th>
+          <th *ngFor="let c of getVisibleColumns()">{{ c }}</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let row of rows">
-          <td *ngFor="let c of schema.columns">{{ formatCell(c, row) }}</td>
+          <td *ngFor="let c of getVisibleColumns()">{{ formatCell(c, row) }}</td>
           <td class="actions">
             <button class="edit-btn" (click)="goToForm(row)">Edit</button>
             <button class="delete-btn" (click)="deleteRow(row)">
