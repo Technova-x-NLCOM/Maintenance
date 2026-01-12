@@ -2,6 +2,10 @@ import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../../services/maintenance.service';
+import { 
+  getFriendlyTableName as getTableName,
+  getFriendlyColumnName as getColName
+} from '../table-config';
 
 @Component({
   selector: 'app-table-list',
@@ -156,5 +160,14 @@ export class TableListComponent implements OnInit {
 
   toggleColumnSelector(): void {
     this.columnSelectorOpen = !this.columnSelectorOpen;
+  }
+
+  // Friendly name helpers
+  getFriendlyTableName(): string {
+    return this.selectedTable ? getTableName(this.selectedTable) : '';
+  }
+
+  getFriendlyColumnName(column: string): string {
+    return this.selectedTable ? getColName(this.selectedTable, column) : column;
   }
 }

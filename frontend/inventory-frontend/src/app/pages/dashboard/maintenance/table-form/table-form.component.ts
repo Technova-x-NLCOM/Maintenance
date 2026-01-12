@@ -2,6 +2,12 @@ import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../../services/maintenance.service';
+import { 
+  getFriendlyTableName as getTableName,
+  getFriendlyColumnName as getColName,
+  getColumnDescription as getColDesc,
+  getColumnPlaceholder as getColPlaceholder
+} from '../table-config';
 
 @Component({
   selector: 'app-table-form',
@@ -67,6 +73,24 @@ export class TableFormComponent implements OnInit {
     });
   }
 
+  // Friendly name helpers
+  getFriendlyTableName(): string {
+    return this.selectedTable ? getTableName(this.selectedTable) : '';
+  }
+
+  getFriendlyColumnName(column: string): string {
+    return this.selectedTable ? getColName(this.selectedTable, column) : column;
+  }
+
+  getColumnDescription(column: string): string {
+    return this.selectedTable ? getColDesc(this.selectedTable, column) : '';
+  }
+
+  getColumnPlaceholder(column: string): string {
+    return this.selectedTable ? getColPlaceholder(this.selectedTable, column) : `Enter ${column}`;
+  }
+
+  // Field type helpers
   isReadonly(column: string): boolean {
     return column === this.pkKey || column === 'deleted_at' || column === 'created_at' || column === 'updated_at';
   }
@@ -79,6 +103,67 @@ export class TableFormComponent implements OnInit {
     if (this.isReadonly(column)) return false;
     const details = this.columnDetails[column];
     return details ? !details.nullable : false;
+  }
+
+  isBooleanField(column: string): boolean {
+    const details = this.columnDetails[column];
+    if (!details) return false;
+    const type = details.type?.toLowerCase() || '';
+    return type.includes('tinyint') || type.includes('boolean') || 
+           column === 'is_active' || column === 'is_primary' ||
+           column.startsWith('can_') || column.startsWith('is_');
+  }
+
+  isDateField(column: string): boolean {
+    const details = this.columnDetails[column];
+    if (!details) return false;
+    const type = details.type?.toLowerCase() || '';
+    return type.includes('date') || type.includes('timestamp') ||
+           column.endsWith('_date') || column.endsWith('_at');
+  }
+
+  isNumberField(column: string): boolean {
+    const details = this.columnDetails[column];
+    if (!details) return false;
+    const type = details.type?.toLowerCase() || '';
+    return type.includes('int') || type.includes('decimal') || 
+           type.includes('float') || type.includes('double') ||
+           column.includes('quantity') || column.includes('value') ||
+           column.includes('level') || column.includes('price');
+  }
+
+  isTextArea(column: string): boolean {
+    const details = this.columnDetails[column];
+    if (!details) return false;
+    const type = details.type?.toLowerCase() || '';
+    return type.includes('text') || type.includes('longtext') ||
+           column === 'description' || column === 'remarks' || 
+           column === 'notes' || column === 'particular' ||
+           column === 'old_values' || column === 'new_values';
+  }
+
+  isFullWidth(column: string): boolean {
+    return this.isTextArea(column) || column === 'description' || 
+           column === 'remarks' || column === 'notes';
+  }
+
+  formatReadonlyValue(column: string, value: any): string {
+    if (value === null || value === undefined) return '—';
+    if (this.isDateField(column) && value) {
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
   }
 
   getForeignKeyOptions(column: string): { id: string; label: string }[] {

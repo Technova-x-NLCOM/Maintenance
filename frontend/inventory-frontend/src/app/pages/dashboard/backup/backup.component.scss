@@ -1,3 +1,10 @@
+// Elderly-friendly backup page - Blue Theme HIGH CONTRAST
+$primary-color: #1d4ed8;
+$primary-dark: #1e40af;
+$accent-color: #3b82f6;
+$text-dark: #111827;
+$text-medium: #1f2937;
+
 .backup-container {
   padding: 2rem;
   max-width: 1200px;
@@ -9,14 +16,14 @@
   
   h1 {
     font-size: 2rem;
-    font-weight: 600;
-    color: #1a202c;
+    font-weight: 700;
+    color: $text-dark;
     margin-bottom: 0.5rem;
   }
   
   .subtitle {
-    color: #718096;
-    font-size: 1rem;
+    color: $text-medium;
+    font-size: 1.125rem;
   }
 }
 
@@ -27,16 +34,28 @@
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.75rem;
   border: none;
   border-radius: 0.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+
+  .btn-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
   
   &:disabled {
     opacity: 0.5;
@@ -44,92 +63,107 @@
   }
   
   &.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: $primary-color;
     color: white;
     
     &:hover:not(:disabled) {
+      background-color: $primary-dark;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.35);
     }
   }
   
   &.btn-secondary {
-    background: #e2e8f0;
-    color: #4a5568;
+    background: #e5e7eb;
+    color: $text-dark;
     
     &:hover:not(:disabled) {
-      background: #cbd5e0;
+      background: #d1d5db;
     }
   }
   
   &.btn-sm {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
   }
   
   &.btn-download {
-    background: #4299e1;
+    background: $primary-color;
     color: white;
     
     &:hover {
-      background: #3182ce;
+      background: $primary-dark;
     }
   }
   
   &.btn-restore {
-    background: #48bb78;
+    background: #16a34a;
     color: white;
     
     &:hover:not(:disabled) {
-      background: #38a169;
+      background: #15803d;
     }
   }
   
   &.btn-delete {
-    background: #f56565;
+    background: #dc2626;
     color: white;
     
     &:hover {
-      background: #e53e3e;
+      background: #b91c1c;
     }
   }
 
   &.btn-file {
-    background: #805ad5;
+    background: #7c3aed;
     color: white;
     cursor: pointer;
     
     &:hover {
-      background: #6b46c1;
+      background: #6d28d9;
     }
   }
 
   &.btn-upload {
-    background: #38b2ac;
+    background: #0d9488;
     color: white;
     
     &:hover:not(:disabled) {
-      background: #319795;
+      background: #0f766e;
     }
   }
 }
 
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
 .upload-section {
-  background: #f7fafc;
-  border: 2px dashed #cbd5e0;
+  background: #f9fafb;
+  border: 3px dashed #d1d5db;
   border-radius: 0.75rem;
   padding: 2rem;
   margin-bottom: 2rem;
   
   h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2d3748;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $text-dark;
     margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .section-icon {
+      width: 24px;
+      height: 24px;
+      stroke: $primary-color;
+    }
   }
   
   .upload-description {
-    color: #718096;
+    color: $text-medium;
+    font-size: 1rem;
     margin-bottom: 1.5rem;
   }
   
@@ -145,65 +179,88 @@
   }
   
   .file-name {
-    color: #4a5568;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
+    color: $text-dark;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
     background: white;
     border-radius: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 2px solid #e5e7eb;
     flex: 1;
     min-width: 200px;
+    font-size: 1rem;
   }
 }
 
 .divider {
-  height: 1px;
-  background: linear-gradient(to right, transparent, #cbd5e0, transparent);
+  height: 2px;
+  background: linear-gradient(to right, transparent, #d1d5db, transparent);
   margin: 2rem 0;
 }
 
 .backups-section {
   h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2d3748;
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $text-dark;
     margin-bottom: 0.5rem;
   }
   
   .section-description {
-    color: #718096;
+    color: $text-medium;
+    font-size: 1rem;
     margin-bottom: 1.5rem;
   }
 }
 
 .alert {
-  padding: 1rem;
+  padding: 1.125rem;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+
+  .alert-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
   
   &.alert-warning {
-    background: #fef5e7;
-    border: 1px solid #f39c12;
-    color: #8b5a00;
+    background: #fffbeb;
+    border: 2px solid #f59e0b;
+    color: #b45309;
+
+    .alert-icon {
+      stroke: #f59e0b;
+    }
   }
   
   &.alert-danger {
-    background: #fee;
-    border: 1px solid #f56565;
-    color: #c53030;
+    background: #fef2f2;
+    border: 2px solid #ef4444;
+    color: #b91c1c;
+
+    .alert-icon {
+      stroke: #ef4444;
+    }
   }
   
   .close-btn {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     cursor: pointer;
     color: inherit;
     padding: 0;
-    margin-left: 1rem;
+    margin-left: 0.5rem;
+    line-height: 1;
   }
 }
 
@@ -215,17 +272,18 @@
   padding: 4rem 2rem;
   
   .spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid #e2e8f0;
-    border-top-color: #667eea;
+    width: 52px;
+    height: 52px;
+    border: 5px solid #e5e7eb;
+    border-top-color: $primary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
   
   p {
     margin-top: 1rem;
-    color: #718096;
+    color: $text-medium;
+    font-size: 1rem;
   }
 }
 
@@ -244,24 +302,26 @@
   padding: 4rem 2rem;
   
   .empty-icon {
-    font-size: 4rem;
+    font-size: 4.5rem;
     margin-bottom: 1rem;
   }
   
   h3 {
     font-size: 1.5rem;
-    color: #4a5568;
+    color: $text-dark;
     margin-bottom: 0.5rem;
+    font-weight: 700;
   }
   
   p {
-    color: #718096;
+    color: $text-medium;
+    font-size: 1rem;
   }
 }
 
 .backup-card {
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #e5e7eb;
   border-radius: 0.75rem;
   padding: 1.5rem;
   display: flex;
@@ -271,7 +331,7 @@
   
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: #cbd5e0;
+    border-color: #d1d5db;
   }
 }
 
@@ -282,21 +342,21 @@
   flex: 1;
   
   .backup-icon {
-    font-size: 2rem;
-    width: 60px;
-    height: 60px;
+    font-size: 2.25rem;
+    width: 64px;
+    height: 64px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-color: $primary-color;
     border-radius: 0.75rem;
   }
   
   .backup-details {
     h3 {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #2d3748;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: $text-dark;
       margin-bottom: 0.5rem;
     }
     
@@ -305,8 +365,8 @@
       gap: 1.5rem;
       
       .meta-item {
-        color: #718096;
-        font-size: 0.875rem;
+        color: $text-medium;
+        font-size: 1rem;
       }
     }
   }
@@ -314,7 +374,7 @@
 
 .backup-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 @media (max-width: 768px) {
@@ -352,5 +412,203 @@
     .file-name {
       width: 100%;
     }
+  }
+}
+
+
+// Modal Styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.confirm-modal {
+  .modal-header {
+    padding: 24px 24px 16px;
+    text-align: center;
+
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: 32px;
+        height: 32px;
+      }
+
+      &.info {
+        background: #dbeafe;
+        border: 3px solid #3b82f6;
+        svg { stroke: $primary-color; }
+      }
+
+      &.warning {
+        background: #fef3c7;
+        border: 3px solid #f59e0b;
+        svg { stroke: #d97706; }
+      }
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: $text-dark;
+    }
+  }
+
+  .modal-body {
+    padding: 0 24px 24px;
+    text-align: center;
+
+    p {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: $text-medium;
+      line-height: 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    .modal-note {
+      font-size: 0.9375rem;
+      color: #6b7280;
+    }
+
+    .warning-text {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    .file-highlight {
+      background: #f3f4f6;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9375rem;
+      color: $primary-color;
+      font-weight: 600;
+      margin: 12px 0;
+      word-break: break-all;
+    }
+
+    .danger-text {
+      color: #dc2626;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 16px 24px 24px;
+
+    .btn {
+      padding: 12px 24px;
+      min-width: 120px;
+    }
+  }
+}
+
+.success-modal {
+  max-width: 400px;
+  text-align: center;
+
+  .success-content {
+    padding: 40px 30px;
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: #ecfdf5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #6ee7b7;
+
+      svg {
+        width: 44px;
+        height: 44px;
+        stroke: #059669;
+      }
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $text-dark;
+    }
+
+    p {
+      margin: 0 0 28px 0;
+      font-size: 1.0625rem;
+      color: $text-medium;
+      line-height: 1.5;
+    }
+
+    .btn-success {
+      background: #059669;
+      color: white;
+      border: 2px solid #059669;
+      padding: 14px 40px;
+      font-size: 1.0625rem;
+
+      &:hover {
+        background: #047857;
+        border-color: #047857;
+      }
+    }
+  }
+}
+
+.btn-cancel {
+  background: white;
+  color: $text-dark;
+  border: 2px solid #d1d5db;
+
+  &:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: 2px solid #dc2626;
+
+  &:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
   }
 }

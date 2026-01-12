@@ -1,6 +1,12 @@
 import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MaintenanceService, MaintenanceTableInfo } from '../../../../services/maintenance.service';
+import { 
+  getFriendlyTableName, 
+  getTableDescription, 
+  getTableIcon, 
+  getTableCategory 
+} from '../table-config';
 
 @Component({
   selector: 'app-maintenance-home',
@@ -12,6 +18,8 @@ import { MaintenanceService, MaintenanceTableInfo } from '../../../../services/m
 export class HomeComponent implements OnInit {
   @Input() parent: any;
   tables: MaintenanceTableInfo[] = [];
+  loading = true;
+  error = '';
 
   constructor(
     private api: MaintenanceService,
@@ -23,14 +31,24 @@ export class HomeComponent implements OnInit {
   }
 
   loadTables(): void {
+    this.loading = true;
+    this.error = '';
     this.api.listTables().subscribe({
       next: (t) => {
-        this.tables = t;
-        console.log('Loaded tables:', t);
-        this.cdr.markForCheck();
+        setTimeout(() => {
+          this.tables = t;
+          this.loading = false;
+          console.log('Loaded tables:', t);
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: (err) => {
-        console.error('Error loading tables:', err);
+        setTimeout(() => {
+          console.error('Error loading tables:', err);
+          this.error = err?.error?.message || 'Failed to load tables. Please check your permissions.';
+          this.loading = false;
+          this.cdr.detectChanges();
+        }, 0);
       }
     });
   }
@@ -39,7 +57,27 @@ export class HomeComponent implements OnInit {
     this.parent.goToTableList(tableName);
   }
 
-  formatPrimaryKey(pk: string | string[]): string {
-    return Array.isArray(pk) ? pk.join(', ') : pk;
+  // Helper methods for template
+  getFriendlyTableName(tableName: string): string {
+    return getFriendlyTableName(tableName);
+  }
+
+  getTableDescription(tableName: string): string {
+    return getTableDescription(tableName);
+  }
+
+  getTableIcon(tableName: string): string {
+    return getTableIcon(tableName);
+  }
+
+  getTableCategory(tableName: string): string {
+    return getTableCategory(tableName);
+  }
+
+  hasUncategorizedTables(): boolean {
+    return this.tables.some(t => {
+      const cat = this.getTableCategory(t.name);
+      return cat !== 'inventory' && cat !== 'users' && cat !== 'system';
+    });
   }
 }

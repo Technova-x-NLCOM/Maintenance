@@ -20,6 +20,11 @@ export class SignupComponent implements OnInit, OnDestroy {
   successMessage = '';
   errorMessage = '';
 
+  // Multi-step form
+  currentStep = 1;
+  totalSteps = 3;
+  stepTitles = ['Account Info', 'Personal Info', 'Security'];
+
   // Password validation
   passwordValidation = {
     length: false,
@@ -156,5 +161,51 @@ export class SignupComponent implements OnInit, OnDestroy {
 
   isPasswordValid(): boolean {
     return Object.values(this.passwordValidation).every(v => v);
+  }
+
+  // Step navigation methods
+  nextStep(): void {
+    if (this.isCurrentStepValid() && this.currentStep < this.totalSteps) {
+      this.currentStep++;
+      this.errorMessage = '';
+    }
+  }
+
+  prevStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+      this.errorMessage = '';
+    }
+  }
+
+  goToStep(step: number): void {
+    // Only allow going to previous steps or current step
+    if (step <= this.currentStep && step >= 1) {
+      this.currentStep = step;
+      this.errorMessage = '';
+    }
+  }
+
+  isCurrentStepValid(): boolean {
+    switch (this.currentStep) {
+      case 1:
+        const username = this.signupForm.get('username');
+        const email = this.signupForm.get('email');
+        return !!(username?.valid && email?.valid);
+      case 2:
+        const firstName = this.signupForm.get('first_name');
+        const lastName = this.signupForm.get('last_name');
+        return !!(firstName?.valid && lastName?.valid);
+      case 3:
+        return this.signupForm.valid;
+      default:
+        return false;
+    }
+  }
+
+  getStepStatus(step: number): string {
+    if (step < this.currentStep) return 'completed';
+    if (step === this.currentStep) return 'active';
+    return 'pending';
   }
 }

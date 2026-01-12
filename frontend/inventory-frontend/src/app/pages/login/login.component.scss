@@ -1,14 +1,20 @@
-$primary-color: #0052cc;
-$secondary-color: #f5f5f5;
-$text-dark: #333;
-$text-light: #666;
-$error-color: #dc3545;
-$success-color: #28a745;
+// Elderly-friendly Blue color palette with HIGH CONTRAST
+$primary-color: #1d4ed8; // Rich blue
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$accent-color: #60a5fa; // Light blue for accents
+$secondary-color: #f3f4f6;
+$bg-light: #f8fafc;
+$text-dark: #111827; // Very dark for maximum readability
+$text-medium: #1f2937;
+$text-light: #374151; // Darker than before for better contrast
+$error-color: #991b1b;
+$success-color: #065f46;
 $border-radius: 12px;
 
 .login-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0052cc 0%, #004399 100%);
+  background-color: $bg-light;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,11 +25,11 @@ $border-radius: 12px;
 .login-card {
   background: white;
   border-radius: $border-radius;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: 40px;
   width: 100%;
-  max-width: 500px;
-  animation: slideIn 0.4s ease;
+  max-width: 520px;
+  border: 3px solid #e5e7eb;
 }
 
 @keyframes slideIn {
@@ -37,7 +43,6 @@ $border-radius: 12px;
   }
 }
 
-/* Header */
 .login-header {
   text-align: center;
   margin-bottom: 35px;
@@ -50,74 +55,72 @@ $border-radius: 12px;
 }
 
 .heart-logo {
-  font-size: 40px;
+  width: 56px;
+  height: 56px;
   display: inline-block;
   margin-bottom: 10px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    fill: #991b1b;
+  }
 }
 
 .login-header h1 {
-  font-size: 1.5em;
+  font-size: 1.5rem;
   margin: 5px 0;
   color: $text-dark;
+  font-weight: 700;
 }
 
 .login-header h2 {
-  font-size: 1.8em;
+  font-size: 1.875rem;
   margin: 20px 0 10px;
   color: $text-dark;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: $text-light;
-  font-size: 0.95em;
+  color: $text-medium;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
-/* Role Tabs - REMOVED, using demo accounts list instead */
-
-/* Error Message */
 .error-message {
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  color: #721c24;
-  padding: 12px 15px;
+  background-color: #fef2f2;
+  border: 2px solid #fca5a5;
+  color: $error-color;
+  padding: 14px 16px;
   border-radius: $border-radius;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: shake 0.3s ease;
-}
+  font-size: 1rem;
+  font-weight: 500;
 
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  25% {
-    transform: translateX(-5px);
-  }
-  75% {
-    transform: translateX(5px);
+  .error-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    stroke: $error-color;
   }
 }
 
-.error-icon {
-  font-size: 1.1em;
-}
-
-/* Form */
 form {
   margin-bottom: 25px;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 
   label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     color: $text-dark;
-    font-weight: 500;
-    font-size: 0.95em;
+    font-weight: 600;
+    font-size: 1rem;
   }
 
   &.checkbox {
@@ -126,37 +129,39 @@ form {
     margin-bottom: 25px;
 
     input {
-      margin-right: 8px;
+      margin-right: 10px;
       cursor: pointer;
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
     }
 
     label {
       margin: 0;
-      font-weight: normal;
+      font-weight: 500;
       cursor: pointer;
-      color: $text-light;
+      color: $text-medium;
     }
   }
 }
 
 .form-control {
   width: 100%;
-  padding: 12px 15px;
-  border: 2px solid $secondary-color;
+  padding: 14px 16px;
+  border: 3px solid #9ca3af;
   border-radius: $border-radius;
-  font-size: 1em;
+  font-size: 1.0625rem;
+  color: $text-dark;
   transition: all 0.3s ease;
+  background: white;
 
   &:focus {
     outline: none;
     border-color: $primary-color;
-    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.2);
   }
 
-  &:invalid:not(:placeholder-shown) {
-    border-color: $error-color;
+  &::placeholder {
+    color: #6b7280;
   }
 }
 
@@ -166,35 +171,43 @@ form {
 
 .password-toggle {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2em;
   padding: 5px;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     opacity: 0.7;
+  }
+
+  .eye-icon {
+    width: 24px;
+    height: 24px;
+    stroke: $text-medium;
   }
 }
 
 .error {
   color: $error-color;
-  font-size: 0.85em;
-  margin-top: 5px;
+  font-size: 0.9375rem;
+  margin-top: 6px;
   display: block;
+  font-weight: 500;
 }
 
-/* Buttons */
 .btn {
-  padding: 12px 20px;
+  padding: 14px 24px;
   border: none;
   border-radius: $border-radius;
-  font-size: 1em;
-  font-weight: 600;
+  font-size: 1.0625rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -203,9 +216,9 @@ form {
     color: white;
 
     &:hover:not(:disabled) {
-      background-color: #0042a3;
+      background-color: $primary-dark;
       transform: translateY(-2px);
-      box-shadow: 0 5px 20px rgba(0, 82, 204, 0.3);
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
     }
 
     &:disabled {
@@ -216,19 +229,20 @@ form {
 
   &.btn-login {
     width: 100%;
+    padding: 18px 24px;
+    font-size: 1.1875rem;
   }
 }
 
-/* Demo Accounts Section */
 .demo-accounts-section {
   margin-bottom: 30px;
 }
 
 .demo-title {
-  font-size: 0.9em;
-  color: $text-light;
+  font-size: 1rem;
+  color: $text-medium;
   margin-bottom: 15px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -244,7 +258,7 @@ form {
   display: flex;
   align-items: flex-start;
   gap: 15px;
-  padding: 15px;
+  padding: 16px;
   background: $secondary-color;
   border: 2px solid transparent;
   border-radius: $border-radius;
@@ -255,13 +269,13 @@ form {
 
   &:hover {
     border-color: $primary-color;
-    background: #f0f6ff;
+    background: #eff6ff;
     transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0, 82, 204, 0.15);
+    box-shadow: 0 4px 12px rgba(29, 78, 216, 0.15);
   }
 
   .demo-icon {
-    font-size: 2em;
+    font-size: 2.25rem;
     flex-shrink: 0;
     min-width: 50px;
     display: flex;
@@ -275,83 +289,94 @@ form {
   }
 
   .demo-role {
-    font-weight: 600;
+    font-weight: 700;
     color: $text-dark;
-    font-size: 0.95em;
+    font-size: 1rem;
     margin-bottom: 4px;
   }
 
   .demo-desc {
-    font-size: 0.85em;
-    color: $text-light;
+    font-size: 0.9375rem;
+    color: $text-medium;
     margin-bottom: 8px;
-    line-height: 1.3;
+    line-height: 1.4;
   }
 
   .demo-creds {
-    font-size: 0.8em;
+    font-size: 0.875rem;
     font-family: 'Courier New', monospace;
-    color: #666;
+    color: $text-medium;
   }
 
   .cred {
     background: white;
-    padding: 2px 6px;
+    padding: 3px 8px;
     border-radius: 4px;
     display: inline-block;
   }
 }
 
-/* Demo Section */
 .demo-section {
-  background-color: #f0f6ff;
+  background-color: #eff6ff;
   border-left: 4px solid $primary-color;
   border-radius: 8px;
-  padding: 15px;
+  padding: 16px;
   margin-bottom: 20px;
   text-align: center;
 }
 
 .demo-note {
-  font-size: 0.9em;
+  font-size: 1rem;
   color: $text-dark;
   margin: 0;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  .tip-icon {
+    width: 20px;
+    height: 20px;
+    stroke: $primary-color;
+    flex-shrink: 0;
+  }
 }
 
-/* Form Footer */
 .form-footer {
   text-align: center;
   margin-bottom: 20px;
   padding-top: 20px;
-  border-top: 1px solid $secondary-color;
+  border-top: 1px solid #e5e7eb;
 }
 
 .link {
   color: $primary-color;
   text-decoration: none;
-  font-size: 0.95em;
+  font-size: 1rem;
+  font-weight: 600;
   transition: color 0.3s ease;
 
   &:hover {
-    color: #0042a3;
+    color: $primary-dark;
     text-decoration: underline;
   }
 }
 
 .divider {
-  color: $text-light;
-  margin: 0 8px;
+  color: $text-medium;
+  margin: 0 10px;
 }
 
-/* Back to Home */
 .back-home {
   text-align: center;
 }
 
 .link-home {
-  color: $text-light;
+  color: $text-medium;
   text-decoration: none;
-  font-size: 0.9em;
+  font-size: 1rem;
+  font-weight: 500;
   transition: all 0.3s ease;
 
   &:hover {
@@ -359,7 +384,6 @@ form {
   }
 }
 
-/* Responsive Design */
 @media (max-width: 480px) {
   .login-card {
     padding: 30px 20px;
@@ -367,7 +391,7 @@ form {
   }
 
   .login-header h2 {
-    font-size: 1.5em;
+    font-size: 1.5rem;
   }
 
   .demo-account-card {
@@ -377,7 +401,7 @@ form {
     gap: 10px;
 
     .demo-icon {
-      font-size: 2.5em;
+      font-size: 2.5rem;
     }
 
     .demo-info {
@@ -386,7 +410,7 @@ form {
   }
 
   .form-footer {
-    font-size: 0.85em;
+    font-size: 0.9375rem;
   }
 
   .divider {

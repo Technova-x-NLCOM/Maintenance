@@ -7,16 +7,42 @@
   <div class="actions-bar">
     <button 
       class="btn btn-primary"
-      (click)="createBackup()"
+      (click)="showCreateConfirmModal()"
       [disabled]="creating || loading">
-      <span *ngIf="!creating">💾 Create & Download Backup</span>
-      <span *ngIf="creating">⏳ Creating...</span>
+      <span *ngIf="!creating" class="btn-content">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Create & Download Backup
+      </span>
+      <span *ngIf="creating" class="btn-content">
+        <svg class="btn-icon spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="2" x2="12" y2="6"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="6" y2="12"/>
+          <line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
+        Creating...
+      </span>
     </button>
   </div>
 
   <!-- Upload Backup Section -->
   <div class="upload-section">
-    <h3>📤 Restore from Uploaded File</h3>
+    <h3>
+      <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      Restore from Uploaded File
+    </h3>
     <p class="upload-description">Upload a backup file from your device to restore the database</p>
     <div class="upload-controls">
       <input 
@@ -26,15 +52,36 @@
         (change)="onFileSelected($event)"
         class="file-input">
       <label for="backup-file-input" class="btn btn-file">
-        📁 Choose File
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        Choose File
       </label>
       <span class="file-name" *ngIf="uploadingFile">{{ uploadingFile.name }}</span>
       <button 
         class="btn btn-upload"
-        (click)="restoreFromUploadedFile()"
+        (click)="showRestoreConfirmModal()"
         [disabled]="!uploadingFile || restoring">
-        <span *ngIf="!restoring">🔄 Restore from File</span>
-        <span *ngIf="restoring">⏳ Restoring...</span>
+        <span *ngIf="!restoring" class="btn-content">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Restore from File
+        </span>
+        <span *ngIf="restoring" class="btn-content">
+          <svg class="btn-icon spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="2" x2="12" y2="6"/>
+            <line x1="12" y1="18" x2="12" y2="22"/>
+            <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+            <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+            <line x1="2" y1="12" x2="6" y2="12"/>
+            <line x1="18" y1="12" x2="22" y2="12"/>
+            <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+            <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+          </svg>
+          Restoring...
+        </span>
       </button>
     </div>
   </div>
@@ -42,13 +89,117 @@
   <div class="divider"></div>
 
   <div class="alert alert-warning">
-    <strong>⚠️ Warning:</strong> Restoring a backup will replace all current database data. Always create a backup before restoring.
+    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    <span><strong>Warning:</strong> Restoring a backup will replace all current database data. Always create a backup before restoring.</span>
   </div>
 
   <div class="alert alert-danger" *ngIf="error">
-    <strong>Error:</strong> {{ error }}
+    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+    <span><strong>Error:</strong> {{ error }}</span>
     <button class="close-btn" (click)="error = null">×</button>
   </div>
+</div>
 
-  <!-- Server backups list removed: focusing on upload-based restore and direct download creation. -->
+<!-- Create Backup Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showCreateConfirm" (click)="closeCreateConfirmModal()">
+  <div class="modal confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+      </div>
+      <h2>Create Backup</h2>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to create a new database backup?</p>
+      <p class="modal-note">The backup file will be downloaded to your device.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeCreateConfirmModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="createBackup()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Create Backup
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showRestoreConfirm" (click)="closeRestoreConfirmModal()">
+  <div class="modal confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icon warning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h2>Restore Database</h2>
+    </div>
+    <div class="modal-body">
+      <p class="warning-text">This action will DROP all existing tables and restore from:</p>
+      <p class="file-highlight">{{ uploadingFile?.name }}</p>
+      <p class="danger-text">This action cannot be undone!</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" (click)="closeRestoreConfirmModal()">Cancel</button>
+      <button class="btn btn-danger" (click)="restoreFromUploadedFile()">
+        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Yes, Restore Database
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup Success Modal -->
+<div class="modal-overlay" *ngIf="showBackupSuccess" (click)="closeBackupSuccessModal()">
+  <div class="modal success-modal" (click)="$event.stopPropagation()">
+    <div class="success-content">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <h2>Backup Created!</h2>
+      <p>Your database backup has been created and downloaded successfully.</p>
+      <button class="btn btn-success" (click)="closeBackupSuccessModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore Success Modal -->
+<div class="modal-overlay" *ngIf="showRestoreSuccess" (click)="closeRestoreSuccessModal()">
+  <div class="modal success-modal" (click)="$event.stopPropagation()">
+    <div class="success-content">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <h2>Database Restored!</h2>
+      <p>Your database has been successfully restored from the backup file.</p>
+      <button class="btn btn-success" (click)="closeRestoreSuccessModal()">Done</button>
+    </div>
+  </div>
 </div>

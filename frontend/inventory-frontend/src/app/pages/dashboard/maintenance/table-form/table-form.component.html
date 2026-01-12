@@ -1,20 +1,35 @@
 <div class="table-form">
   <div class="form-header">
-    <button class="back-btn" (click)="goBack()">← Back</button>
-    <h2>{{ isNew ? 'Create' : 'Edit' }} {{ selectedTable }}</h2>
+    <button class="back-btn" (click)="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Back to List
+    </button>
+    <div class="header-title">
+      <h2>{{ isNew ? 'Add New' : 'Edit' }} {{ getFriendlyTableName() }}</h2>
+      <p class="header-subtitle" *ngIf="isNew">Fill in the information below to create a new record</p>
+      <p class="header-subtitle" *ngIf="!isNew">Update the information below</p>
+    </div>
   </div>
 
   <form (ngSubmit)="onSubmit()" class="form-container">
     <div class="form-grid">
-      <div *ngFor="let col of schema?.columns" class="form-group" [class.readonly]="isReadonly(col)">
+      <div *ngFor="let col of schema?.columns" 
+           class="form-group" 
+           [class.readonly]="isReadonly(col)"
+           [class.full-width]="isFullWidth(col)">
         <label [for]="col">
-          {{ col }}
+          {{ getFriendlyColumnName(col) }}
           <span *ngIf="isRequired(col)" class="required-indicator">*</span>
         </label>
+        <p class="field-description" *ngIf="getColumnDescription(col)">
+          {{ getColumnDescription(col) }}
+        </p>
 
         <!-- Readonly fields display -->
         <div *ngIf="isReadonly(col)" class="readonly-value">
-          {{ formData[col] || '—' }}
+          {{ formatReadonlyValue(col, formData[col]) }}
         </div>
 
         <!-- Foreign Key dropdown -->
@@ -26,28 +41,96 @@
           [required]="isRequired(col)"
           class="fk-select"
         >
-          <option [value]="null">-- Select {{ col }} --</option>
+          <option [value]="null">-- Select {{ getFriendlyColumnName(col) }} --</option>
           <option *ngFor="let opt of getForeignKeyOptions(col)" [value]="opt.id">
             {{ opt.label }}
           </option>
         </select>
 
+        <!-- Boolean/Checkbox input -->
+        <div *ngIf="!isReadonly(col) && !isForeignKey(col) && isBooleanField(col)" class="checkbox-wrapper">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [id]="col"
+              [(ngModel)]="formData[col]"
+              [name]="col"
+            />
+            <span class="checkbox-text">{{ formData[col] ? 'Yes' : 'No' }}</span>
+          </label>
+        </div>
+
+        <!-- Date input -->
+        <input
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && isDateField(col)"
+          [id]="col"
+          type="date"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          [placeholder]="getColumnPlaceholder(col)"
+        />
+
+        <!-- Number input -->
+        <input
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && isNumberField(col)"
+          [id]="col"
+          type="number"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          [placeholder]="getColumnPlaceholder(col)"
+          step="any"
+        />
+
+        <!-- Textarea for long text -->
+        <textarea
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && isTextArea(col)"
+          [id]="col"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          [placeholder]="getColumnPlaceholder(col)"
+          rows="3"
+        ></textarea>
+
         <!-- Regular text input -->
         <input
-          *ngIf="!isReadonly(col) && !isForeignKey(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && !isTextArea(col)"
           [id]="col"
           type="text"
           [(ngModel)]="formData[col]"
           [name]="col"
           [required]="isRequired(col)"
-          placeholder="Enter {{ col }}"
+          [placeholder]="getColumnPlaceholder(col)"
         />
       </div>
     </div>
 
     <div class="form-actions">
-      <button type="button" class="cancel-btn" (click)="goBack()">Cancel</button>
+      <button type="button" class="cancel-btn" (click)="goBack()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Cancel
+      </button>
       <button type="submit" class="submit-btn" [disabled]="loading">
+        <svg *ngIf="!loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>
+        <svg *ngIf="loading" class="spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="2" x2="12" y2="6"/>
+          <line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="6" y2="12"/>
+          <line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
         {{ loading ? 'Saving...' : 'Save' }}
       </button>
     </div>

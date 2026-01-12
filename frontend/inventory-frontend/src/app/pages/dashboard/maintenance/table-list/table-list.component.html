@@ -1,31 +1,51 @@
 <div class="table-list">
   <div class="list-header">
-    <button class="back-btn" (click)="goBack()">← Back</button>
-    <h2>{{ selectedTable }}</h2>
-    <button class="add-btn" (click)="goToForm(null)">+ Add New</button>
+    <button class="back-btn" (click)="goBack()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Back to Tables
+    </button>
+    <div class="header-title">
+      <h2>{{ getFriendlyTableName() }}</h2>
+      <p class="record-count" *ngIf="total > 0">{{ total }} record{{ total !== 1 ? 's' : '' }} found</p>
+    </div>
+    <button class="add-btn" (click)="goToForm(null)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Add New Record
+    </button>
   </div>
 
   <div class="toolbar">
     <div class="toolbar-left">
-      <label>
+      <label class="checkbox-label" *ngIf="schema?.soft_deletes">
         <input type="checkbox" [(ngModel)]="showDeleted" (change)="fetchRows()" />
-        Show deleted
+        <span>Show deleted records</span>
       </label>
     </div>
     <div class="toolbar-right">
       <button class="column-toggle-btn" (click)="toggleColumnSelector()">
-        <span class="icon">⚙️</span>
-        Columns
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Choose Columns
       </button>
     </div>
   </div>
 
   <div class="column-selector" *ngIf="columnSelectorOpen">
-    <div class="column-selector-header">Show/Hide Columns</div>
+    <div class="column-selector-header">
+      <h3>Show/Hide Columns</h3>
+      <p>Select which columns to display in the table</p>
+    </div>
     <div class="column-list">
       <label *ngFor="let col of schema?.columns" class="column-option">
         <input type="checkbox" [checked]="isColumnVisible(col)" (change)="toggleColumnVisibility(col)" />
-        <span class="column-name">{{ col }}</span>
+        <span class="column-name">{{ getFriendlyColumnName(col) }}</span>
       </label>
     </div>
     <button class="close-selector-btn" (click)="toggleColumnSelector()">Done</button>
@@ -35,19 +55,33 @@
     <table>
       <thead>
         <tr>
-          <th *ngFor="let c of getVisibleColumns()">{{ c }}</th>
-          <th>Actions</th>
+          <th *ngFor="let c of getVisibleColumns()">{{ getFriendlyColumnName(c) }}</th>
+          <th class="actions-header">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of rows">
+        <tr *ngFor="let row of rows" [class.deleted-row]="row['deleted_at']">
           <td *ngFor="let c of getVisibleColumns()">{{ formatCell(c, row) }}</td>
           <td class="actions">
-            <button class="edit-btn" (click)="goToForm(row)">Edit</button>
-            <button class="delete-btn" (click)="deleteRow(row)">
-              {{ schema.soft_deletes ? 'Soft Delete' : 'Delete' }}
+            <button class="edit-btn" (click)="goToForm(row)" title="Edit this record">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              Edit
             </button>
-            <button *ngIf="schema.soft_deletes && row['deleted_at']" class="restore-btn" (click)="restoreRow(row)">
+            <button class="delete-btn" (click)="deleteRow(row)" title="Delete this record">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              {{ schema.soft_deletes ? 'Delete' : 'Delete' }}
+            </button>
+            <button *ngIf="schema.soft_deletes && row['deleted_at']" class="restore-btn" (click)="restoreRow(row)" title="Restore this record">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
               Restore
             </button>
           </td>
@@ -56,12 +90,33 @@
     </table>
   </div>
 
-  <div *ngIf="!rows.length && !loading" class="empty">No rows found</div>
-  <div *ngIf="loading" class="loading">Loading...</div>
+  <div *ngIf="!rows.length && !loading" class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+      <polyline points="13 2 13 9 20 9"/>
+    </svg>
+    <p>No records found</p>
+    <button class="add-first-btn" (click)="goToForm(null)">Add First Record</button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading records...</p>
+  </div>
 
   <div class="pagination" *ngIf="totalPages > 1">
-    <button (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
-    <span class="page-info">Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
-    <button (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    <button class="page-btn" (click)="previousPage()" [disabled]="currentPage === 1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Previous
+    </button>
+    <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+    <button class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </button>
   </div>
 </div>
