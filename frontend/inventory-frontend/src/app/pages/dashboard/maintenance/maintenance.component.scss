@@ -1,0 +1,47 @@
+.maintenance {
+  display: flex;
+  gap: 16px;
+}
+.sidebar {
+  width: 240px;
+  border-right: 1px solid #ddd;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.sidebar li.active {
+  background: #eef;
+}
+.content {
+  flex: 1;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.new-row .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 12px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+}
+.actions button {
+  margin-right: 6px;
+}
+.loading, .empty {
+  padding: 12px;
+}

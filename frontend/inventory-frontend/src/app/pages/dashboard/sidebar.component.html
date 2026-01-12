@@ -61,6 +61,17 @@
       </a>
     </div>
 
+    <!-- Maintenance (Admin & Super Admin Only) -->
+    <div class="nav-section" *ngIf="canManageBackups()">
+      <p class="nav-label">Maintenance</p>
+      <a routerLink="/dashboard/maintenance"
+         routerLinkActive="active"
+         class="nav-item">
+        <span class="icon">🛠️</span>
+        <span class="label">Maintenance</span>
+      </a>
+    </div>
+
     <!-- Super Admin Only -->
     <div class="nav-section" *ngIf="user?.role === 'super_admin'">
       <p class="nav-label">Super Admin</p>
