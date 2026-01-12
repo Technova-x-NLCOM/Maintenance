@@ -39,4 +39,10 @@
 
   <div *ngIf="!rows.length && !loading" class="empty">No rows found</div>
   <div *ngIf="loading" class="loading">Loading...</div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+    <span class="page-info">Page {{ currentPage }} of {{ totalPages }} ({{ total }} total)</span>
+    <button (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+  </div>
 </div>

@@ -77,6 +77,7 @@ class TableListController extends Controller
         $this->assertAllowedTable($table);
         $soft = (bool)($this->tables[$table]['soft_deletes'] ?? false);
         $showDeleted = filter_var($request->query('showDeleted', 'false'), FILTER_VALIDATE_BOOLEAN);
+        $pk = $this->tables[$table]['primary_key'];
 
         $query = DB::table($table);
         if ($soft) {
@@ -85,8 +86,13 @@ class TableListController extends Controller
             }
         }
 
+        // Sort descending by primary key to show latest first
+        if (is_string($pk)) {
+            $query->orderBy($pk, 'desc');
+        }
+
         // Basic pagination
-        $perPage = (int)$request->query('perPage', 50);
+        $perPage = (int)$request->query('perPage', 15);
         $page = max(1, (int)$request->query('page', 1));
         $offset = ($page - 1) * $perPage;
 

@@ -18,6 +18,12 @@ export class TableListComponent implements OnInit {
   rows: any[] = [];
   showDeleted = false;
   loading = false;
+  
+  // Pagination
+  currentPage = 1;
+  perPage = 15;
+  total = 0;
+  totalPages = 0;
 
   constructor(
     private api: MaintenanceService,
@@ -48,9 +54,13 @@ export class TableListComponent implements OnInit {
     if (!this.selectedTable) return;
     this.loading = true;
     this.cdr.markForCheck();
-    this.api.listRows(this.selectedTable, { showDeleted: this.showDeleted }).subscribe({
-      next: ({ data }) => {
+    this.api.listRows(this.selectedTable, { showDeleted: this.showDeleted, page: this.currentPage, perPage: this.perPage }).subscribe({
+      next: ({ data, page, perPage, total }) => {
         this.rows = data;
+        this.currentPage = page;
+        this.perPage = perPage;
+        this.total = total;
+        this.totalPages = Math.ceil(total / perPage);
         this.loading = false;
         console.log('Loaded rows:', data);
         this.cdr.markForCheck();
@@ -100,5 +110,23 @@ export class TableListComponent implements OnInit {
       }
     }
     return row[column];
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.fetchRows();
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.goToPage(this.currentPage + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.goToPage(this.currentPage - 1);
+    }
   }
 }
