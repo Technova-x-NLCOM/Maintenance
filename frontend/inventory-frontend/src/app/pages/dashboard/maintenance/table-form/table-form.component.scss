@@ -69,6 +69,36 @@ $danger: #dc2626;
   border: 1px solid #e5e7eb;
 }
 
+// Success and Error Messages
+.message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 1rem;
+  font-weight: 600;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+}
+
+.success-message {
+  background: rgba(5, 150, 105, 0.1);
+  border: 2px solid $success;
+  color: $success;
+}
+
+.error-message {
+  background: rgba(220, 38, 38, 0.1);
+  border: 2px solid $danger;
+  color: $danger;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

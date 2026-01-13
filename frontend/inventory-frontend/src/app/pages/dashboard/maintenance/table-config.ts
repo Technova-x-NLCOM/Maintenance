@@ -232,6 +232,7 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
   'roles': {
     'role_id': { friendlyName: 'Role ID', description: 'Unique identifier' },
     'role_name': { friendlyName: 'Role Name', description: 'Name of role', placeholder: 'Enter role name' },
+    'display_name': { friendlyName: 'Display Name', description: 'Friendly display name', placeholder: 'Enter display name' },
     'description': { friendlyName: 'Description', description: 'Role description', placeholder: 'Describe this role' },
     'created_at': { friendlyName: 'Date Created', description: 'When created' },
     'updated_at': { friendlyName: 'Last Updated', description: 'When updated' }
@@ -239,6 +240,7 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
   'permissions': {
     'permission_id': { friendlyName: 'Permission ID', description: 'Unique identifier' },
     'permission_name': { friendlyName: 'Permission Name', description: 'Name of permission', placeholder: 'Enter permission name' },
+    'display_name': { friendlyName: 'Display Name', description: 'Friendly display name', placeholder: 'Enter display name' },
     'description': { friendlyName: 'Description', description: 'What does this allow?', placeholder: 'Describe the permission' },
     'created_at': { friendlyName: 'Date Created', description: 'When created' }
   },

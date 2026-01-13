@@ -5,22 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SuperAdminController extends Controller
+class StaffController extends Controller
 {
     /**
-     * Get dashboard statistics for super admin
+     * Get dashboard statistics for staff
+     * Staff sees inventory-focused stats (no user management)
      */
     public function stats()
     {
         try {
-            // Total and active users
-            $totalUsers = DB::table('users')->count();
-            $activeUsers = DB::table('users')->where('is_active', 1)->count();
-
-            // Total items
+            $user = auth('api')->user();
+            
+            // Total active items
             $totalItems = DB::table('items')->where('is_active', 1)->count();
 
-            // Low stock items - simplified query
+            // Low stock items
             $lowStockItems = 0;
             try {
                 $lowStockItems = DB::table('items as i')
@@ -40,6 +39,13 @@ class SuperAdminController extends Controller
 
             // Total transactions this month
             $totalTransactions = DB::table('inventory_transactions')
+                ->whereMonth('transaction_date', now()->month)
+                ->whereYear('transaction_date', now()->year)
+                ->count();
+
+            // My transactions this month (by current user)
+            $myTransactions = DB::table('inventory_transactions')
+                ->where('performed_by', $user->user_id)
                 ->whereMonth('transaction_date', now()->month)
                 ->whereYear('transaction_date', now()->year)
                 ->count();
@@ -64,38 +70,45 @@ class SuperAdminController extends Controller
                 $expiringItems = 0;
             }
 
+            // Total active batches
+            $activeBatches = DB::table('inventory_batches')
+                ->where('status', 'active')
+                ->count();
+
             return response()->json([
-                'totalUsers' => $totalUsers,
-                'activeUsers' => $activeUsers,
                 'totalItems' => $totalItems,
                 'lowStockItems' => $lowStockItems,
                 'totalTransactions' => $totalTransactions,
+                'myTransactions' => $myTransactions,
                 'pendingAlerts' => $pendingAlerts,
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
+                'activeBatches' => $activeBatches,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'totalUsers' => 0,
-                'activeUsers' => 0,
                 'totalItems' => 0,
                 'lowStockItems' => 0,
                 'totalTransactions' => 0,
+                'myTransactions' => 0,
                 'pendingAlerts' => 0,
                 'totalCategories' => 0,
                 'expiringItems' => 0,
+                'activeBatches' => 0,
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get recent audit log activity
+     * Get recent activity (staff's own activity)
      */
     public function activity(Request $request)
     {
         $limit = $request->input('limit', 10);
+        $user = auth('api')->user();
 
+        // Show recent transactions and audit logs related to inventory
         $activity = DB::table('audit_log as al')
             ->leftJoin('users as u', 'al.performed_by', '=', 'u.user_id')
             ->select(
@@ -108,6 +121,7 @@ class SuperAdminController extends Controller
                 'al.ip_address',
                 'al.created_at'
             )
+            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'distributions'])
             ->orderBy('al.created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -116,7 +130,7 @@ class SuperAdminController extends Controller
     }
 
     /**
-     * Get system alerts (expiry alerts + low stock)
+     * Get alerts relevant to staff (expiry and low stock)
      */
     public function alerts()
     {
@@ -147,7 +161,7 @@ class SuperAdminController extends Controller
             $alerts[] = $alert;
         }
 
-        // Low stock alerts (generated dynamically)
+        // Low stock alerts
         $lowStockItems = DB::table('items as i')
             ->leftJoin('inventory_batches as ib', function ($join) {
                 $join->on('i.item_id', '=', 'ib.item_id')
@@ -193,34 +207,12 @@ class SuperAdminController extends Controller
             ];
         }
 
-        // Sort by severity (critical first)
+        // Sort by severity
         usort($alerts, function ($a, $b) {
             $severityOrder = ['critical' => 0, 'warning' => 1, 'info' => 2];
             return ($severityOrder[$a->severity] ?? 3) - ($severityOrder[$b->severity] ?? 3);
         });
 
         return response()->json(array_slice($alerts, 0, 15));
-    }
-
-    /**
-     * Acknowledge an alert
-     */
-    public function acknowledgeAlert(Request $request, $alertId)
-    {
-        $user = auth('api')->user();
-
-        $updated = DB::table('expiry_alerts')
-            ->where('alert_id', $alertId)
-            ->update([
-                'status' => 'acknowledged',
-                'acknowledged_by' => $user->user_id,
-                'acknowledged_at' => now(),
-            ]);
-
-        if ($updated) {
-            return response()->json(['message' => 'Alert acknowledged']);
-        }
-
-        return response()->json(['message' => 'Alert not found'], 404);
     }
 }

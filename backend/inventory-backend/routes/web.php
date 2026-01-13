@@ -83,6 +83,17 @@ Route::prefix('api/admin')
         });
     });
 
+// Staff Dashboard API routes
+Route::prefix('api/staff')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('stats', [\App\Http\Controllers\StaffController::class, 'stats']);
+            Route::get('activity', [\App\Http\Controllers\StaffController::class, 'activity']);
+            Route::get('alerts', [\App\Http\Controllers\StaffController::class, 'alerts']);
+        });
+    });
+
 // Maintenance API routes
 Route::prefix('api/maintenance')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])

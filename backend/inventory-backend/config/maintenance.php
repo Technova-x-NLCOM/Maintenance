@@ -6,7 +6,7 @@ return [
     'tables' => [
         'categories' => [
             'primary_key' => 'category_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column in this table
             'relations' => [
                 // parent_category_id references categories.category_id -> categories.category_name
                 'parent_category_id' => [
@@ -18,11 +18,11 @@ return [
         ],
         'item_types' => [
             'primary_key' => 'item_type_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column in this table
         ],
         'items' => [
             'primary_key' => 'item_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column - uses is_active instead
             'relations' => [
                 'item_type_id' => [
                     'ref_table' => 'item_types',
@@ -43,7 +43,7 @@ return [
         ],
         'inventory_batches' => [
             'primary_key' => 'batch_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column - uses status field instead
             'relations' => [
                 'item_id' => [
                     'ref_table' => 'items',
@@ -54,7 +54,7 @@ return [
         ],
         'inventory_snapshots' => [
             'primary_key' => 'snapshot_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
             'relations' => [
                 'item_id' => [
                     'ref_table' => 'items',
@@ -75,7 +75,7 @@ return [
         ],
         'inventory_transactions' => [
             'primary_key' => 'transaction_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column - transactions should not be deleted
             'relations' => [
                 'item_id' => [
                     'ref_table' => 'items',
@@ -101,7 +101,7 @@ return [
         ],
         'expiry_alerts' => [
             'primary_key' => 'alert_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
             'relations' => [
                 'batch_id' => [
                     'ref_table' => 'inventory_batches',
@@ -117,7 +117,7 @@ return [
         ],
         'system_settings' => [
             'primary_key' => 'setting_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
             'relations' => [
                 'updated_by' => [
                     'ref_table' => 'users',
@@ -128,19 +128,20 @@ return [
         ],
         'permissions' => [
             'primary_key' => 'permission_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
         ],
         'roles' => [
             'primary_key' => 'role_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
         ],
         'users' => [
             'primary_key' => 'user_id',
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column - uses is_active instead
+            'hidden_columns' => ['password_hash'], // Hide sensitive columns
         ],
         'user_roles' => [
             'primary_key' => ['user_id', 'role_id'],
-            'soft_deletes' => true,
+            'soft_deletes' => false, // No deleted_at column
             'relations' => [
                 'user_id' => [
                     'ref_table' => 'users',
@@ -150,7 +151,7 @@ return [
                 'role_id' => [
                     'ref_table' => 'roles',
                     'ref_key' => 'role_id',
-                    'label_column' => 'display_name',
+                    'label_column' => 'role_name',
                 ],
             ],
         ],
@@ -161,12 +162,12 @@ return [
                 'role_id' => [
                     'ref_table' => 'roles',
                     'ref_key' => 'role_id',
-                    'label_column' => 'display_name',
+                    'label_column' => 'role_name',
                 ],
                 'permission_id' => [
                     'ref_table' => 'permissions',
                     'ref_key' => 'permission_id',
-                    'label_column' => 'display_name',
+                    'label_column' => 'permission_name',
                 ],
             ],
         ],

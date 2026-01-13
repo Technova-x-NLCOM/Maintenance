@@ -189,11 +189,27 @@ class AdminController extends Controller
             ->get();
 
         foreach ($lowStockItems as $item) {
+            // Create user-friendly message based on stock level
+            $currentStock = (int) $item->current_stock;
+            $reorderLevel = (int) $item->reorder_level;
+            
+            if ($currentStock == 0) {
+                $message = "{$item->item_description} is OUT OF STOCK! Please restock immediately.";
+                $severity = 'critical';
+            } else if ($currentStock < $reorderLevel) {
+                $message = "{$item->item_description} is running low. Only {$currentStock} left (minimum should be {$reorderLevel}).";
+                $severity = 'warning';
+            } else {
+                // Stock equals reorder level - needs attention soon
+                $message = "{$item->item_description} has reached minimum stock level ({$currentStock}). Consider restocking soon.";
+                $severity = 'info';
+            }
+            
             $alerts[] = (object)[
                 'alert_id' => 'low_stock_' . $item->item_id,
                 'type' => 'low_stock',
-                'message' => "{$item->item_description} is low on stock ({$item->current_stock}/{$item->reorder_level})",
-                'severity' => $item->current_stock == 0 ? 'critical' : 'warning',
+                'message' => $message,
+                'severity' => $severity,
                 'created_at' => now()->toDateTimeString(),
                 'acknowledged' => false,
             ];

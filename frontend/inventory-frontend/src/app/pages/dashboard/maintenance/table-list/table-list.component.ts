@@ -108,11 +108,16 @@ export class TableListComponent implements OnInit {
       return;
     }
     
-    if (confirm('Are you sure you want to delete this record?')) {
+    const tableName = this.getFriendlyTableName();
+    const confirmMessage = `Are you sure you want to delete this ${tableName} record?\n\nThis action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
       // For composite keys, use the first key value
       const id = this.pkKey ? row[this.pkKey] : row[this.pkKeys[0]];
       this.api.deleteRow(this.selectedTable, id).subscribe({
-        next: () => this.fetchRows(),
+        next: () => {
+          this.fetchRows();
+        },
         error: (err) => {
           console.error('Error deleting row:', err);
           alert('Error deleting record: ' + (err.error?.message || err.error?.error || 'Unknown error'));

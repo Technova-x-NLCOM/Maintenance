@@ -25,13 +25,22 @@ class TableListController extends Controller
         $this->assertAllowedTable($table);
 
         $columns = Schema::getColumnListing($table);
+        
+        // Get hidden columns from config
+        $hiddenColumns = $this->tables[$table]['hidden_columns'] ?? [];
+        
+        // Filter out hidden columns
+        $visibleColumns = array_values(array_filter($columns, function($col) use ($hiddenColumns) {
+            return !in_array($col, $hiddenColumns);
+        }));
+        
         // Pull relations mapping from config, if any
         $relations = $this->tables[$table]['relations'] ?? [];
 
         // Get column details including nullable information and enum values
         $columnDetails = [];
         $enumValues = [];
-        foreach ($columns as $col) {
+        foreach ($visibleColumns as $col) {
             $columnInfo = DB::select("SHOW COLUMNS FROM `{$table}` WHERE Field = ?", [$col])[0] ?? null;
             $type = $columnInfo->Type ?? 'text';
             $columnDetails[$col] = [
@@ -71,7 +80,7 @@ class TableListController extends Controller
 
         return response()->json([
             'table' => $table,
-            'columns' => $columns,
+            'columns' => $visibleColumns,
             'primary_key' => $this->tables[$table]['primary_key'],
             'soft_deletes' => (bool)($this->tables[$table]['soft_deletes'] ?? false),
             'relations' => $relations,

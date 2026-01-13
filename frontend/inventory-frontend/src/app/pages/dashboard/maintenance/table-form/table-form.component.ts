@@ -28,6 +28,8 @@ export class TableFormComponent implements OnInit {
   lookups: { [key: string]: { [id: string]: string } } = {};
   columnDetails: { [key: string]: { nullable: boolean; type: string } } = {};
   enumValues: { [key: string]: string[] } = {};
+  successMessage = '';
+  errorMessage = '';
 
   constructor(
     private api: MaintenanceService,
@@ -214,6 +216,27 @@ export class TableFormComponent implements OnInit {
 
   onSubmit(): void {
     if (!this.selectedTable || !this.schema) return;
+    
+    // Clear previous messages
+    this.successMessage = '';
+    this.errorMessage = '';
+    
+    // Validate required fields
+    const missingFields: string[] = [];
+    this.schema.columns.forEach((col: string) => {
+      if (this.isRequired(col) && !this.isReadonly(col)) {
+        const value = this.formData[col];
+        if (value === null || value === undefined || value === '') {
+          missingFields.push(this.getFriendlyColumnName(col));
+        }
+      }
+    });
+    
+    if (missingFields.length > 0) {
+      this.errorMessage = `Please fill in the required fields: ${missingFields.join(', ')}`;
+      return;
+    }
+    
     this.loading = true;
     this.cdr.markForCheck();
     const payload = this.buildPayload();
@@ -222,11 +245,14 @@ export class TableFormComponent implements OnInit {
       this.api.createRow(this.selectedTable, payload).subscribe({
         next: () => {
           this.loading = false;
-          this.parent.goToTableListView();
+          this.successMessage = 'Record created successfully!';
+          setTimeout(() => {
+            this.parent.goToTableListView();
+          }, 1000);
         },
         error: (err) => {
           console.error('Error creating row:', err);
-          alert('Error creating record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
+          this.errorMessage = 'Error creating record: ' + (err.error?.message || err.error?.error || 'Unknown error');
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -248,11 +274,14 @@ export class TableFormComponent implements OnInit {
       this.api.updateRow(this.selectedTable, id, payload).subscribe({
         next: () => {
           this.loading = false;
-          this.parent.goToTableListView();
+          this.successMessage = 'Record updated successfully!';
+          setTimeout(() => {
+            this.parent.goToTableListView();
+          }, 1000);
         },
         error: (err) => {
           console.error('Error updating row:', err);
-          alert('Error updating record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
+          this.errorMessage = 'Error updating record: ' + (err.error?.message || err.error?.error || 'Unknown error');
           this.loading = false;
           this.cdr.markForCheck();
         }
