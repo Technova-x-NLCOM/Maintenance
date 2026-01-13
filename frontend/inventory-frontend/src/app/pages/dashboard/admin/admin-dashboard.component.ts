@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../../services/auth.service';
+import { Subscription, filter, forkJoin, catchError, of } from 'rxjs';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -42,18 +43,23 @@ export interface SystemAlert {
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss'
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, OnDestroy {
   user: User | null = null;
   stats: DashboardStats | null = null;
   recentActivity: AuditLogEntry[] = [];
   systemAlerts: SystemAlert[] = [];
   loading = true;
+  private routerSubscription: Subscription | null = null;
 
   private readonly API_URL = 'http://127.0.0.1:8000/api';
 
   constructor(
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit() {
@@ -61,6 +67,22 @@ export class AdminDashboardComponent implements OnInit {
       this.user = user;
     });
     this.loadDashboardData();
+    
+    // Refresh data when navigating back to this component
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        // Check if this component's route is active
+        if (this.route.snapshot.component === AdminDashboardComponent) {
+          this.loadDashboardData();
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -74,50 +96,50 @@ export class AdminDashboardComponent implements OnInit {
   loadDashboardData() {
     this.loading = true;
     
-    this.http.get<DashboardStats>(`${this.API_URL}/admin/stats`, { headers: this.getAuthHeaders() })
-      .subscribe({
-        next: (stats: DashboardStats) => {
-          console.log('Admin Stats loaded:', stats);
+    const stats$ = this.http.get<DashboardStats>(`${this.API_URL}/admin/stats`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading admin stats:', err);
+        return of({
+          totalUsers: 0,
+          activeUsers: 0,
+          totalItems: 0,
+          lowStockItems: 0,
+          totalTransactions: 0,
+          pendingAlerts: 0,
+          totalCategories: 0,
+          expiringItems: 0
+        } as DashboardStats);
+      }));
+
+    const activity$ = this.http.get<AuditLogEntry[]>(`${this.API_URL}/admin/activity?limit=10`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading activity:', err);
+        return of([] as AuditLogEntry[]);
+      }));
+
+    const alerts$ = this.http.get<SystemAlert[]>(`${this.API_URL}/admin/alerts`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading alerts:', err);
+        return of([] as SystemAlert[]);
+      }));
+
+    forkJoin([stats$, activity$, alerts$]).subscribe({
+      next: ([stats, activity, alerts]) => {
+        this.ngZone.run(() => {
           this.stats = stats;
-        },
-        error: (err) => {
-          console.error('Error loading admin stats:', err);
-          this.stats = {
-            totalUsers: 0,
-            activeUsers: 0,
-            totalItems: 0,
-            lowStockItems: 0,
-            totalTransactions: 0,
-            pendingAlerts: 0,
-            totalCategories: 0,
-            expiringItems: 0
-          };
-        }
-      });
-
-    this.http.get<AuditLogEntry[]>(`${this.API_URL}/admin/activity?limit=10`, { headers: this.getAuthHeaders() })
-      .subscribe({
-        next: (activity: AuditLogEntry[]) => {
           this.recentActivity = activity;
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error loading activity:', err);
-          this.recentActivity = [];
-          this.loading = false;
-        }
-      });
-
-    this.http.get<SystemAlert[]>(`${this.API_URL}/admin/alerts`, { headers: this.getAuthHeaders() })
-      .subscribe({
-        next: (alerts: SystemAlert[]) => {
           this.systemAlerts = alerts;
-        },
-        error: (err) => {
-          console.error('Error loading alerts:', err);
-          this.systemAlerts = [];
-        }
-      });
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
+      }
+    });
   }
 
   getActionClass(action: string): string {
