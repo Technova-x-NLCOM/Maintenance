@@ -1,0 +1,57 @@
+===============================================================================
+Backup & Restore Commands (MySQL/MariaDB)
+Database: inventory_database
+===============================================================================
+
+# Backup (Full) - CLI
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> \
+  --single-transaction --routines --triggers \
+  inventory_database > backup_inventory_database_$(date +%F_%H-%M-%S).sql
+
+# Backup (Windows PowerShell example)
+$ts = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> --single-transaction --routines --triggers `
+  inventory_database > "C:\\backups\\backup_inventory_database_$ts.sql"
+
+# Restore (from .sql dump)
+mysql -u <USER> -p<PASSWORD> -h <HOST> inventory_database < backup_inventory_database_YYYY-MM-DD_HH-MM-SS.sql
+
+# Verify restore (row counts)
+mysql -u <USER> -p<PASSWORD> -h <HOST> -e "USE inventory_backend; SHOW TABLE STATUS;"
+
+# One-liner to list backups (Linux)
+ls -lh backup_inventory_database_*.sql
+
+# One-liner to list backups (PowerShell)
+Get-ChildItem "C:\\backups\\backup_inventory_database_*.sql" | Select Name,Length,LastWriteTime
+
+# Safety tip
+# Always take a fresh backup before running a restore:
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> --single-transaction inventory_database > pre_restore_$(date +%F_%H-%M-%S).sql
+
+# Optional compression
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> --single-transaction inventory_database | gzip > backup_inventory_database_$(date +%F_%H-%M-%S).sql.gz
+
+# Restore compressed backup
+gunzip -c backup_inventory_database_YYYY-MM-DD_HH-MM-SS.sql.gz | mysql -u <USER> -p<PASSWORD> -h <HOST> inventory_database
+
+# Minimal logical backup for schema only
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> --no-data inventory_database > schema_only.sql
+
+# Minimal logical backup for data only
+mysqldump -u <USER> -p<PASSWORD> -h <HOST> --no-create-info inventory_database > data_only.sql
+
+# Docker example
+# Backup from container named mysql:
+docker exec mysql sh -c 'mysqldump -u<USER> -p<PASSWORD> --single-transaction inventory_database' > backup_inventory_database_$(date +%F_%H-%M-%S).sql
+
+# Restore into container
+docker exec -i mysql sh -c 'mysql -u<USER> -p<PASSWORD> inventory_database' < backup_inventory_database_YYYY-MM-DD_HH-MM-SS.sql
+
+===============================================================================
+Notes
+- Replace <USER>/<PASSWORD>/<HOST> with actual credentials.
+-- Ensure target database exists before restore (run ddl_inventory_backend.sql if needed).
+- Run restores in a test database first to validate.
+- Use offsite/offline copies for 3-2-1 backup compliance.
+===============================================================================

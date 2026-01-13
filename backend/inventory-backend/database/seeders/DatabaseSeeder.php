@@ -30,6 +30,9 @@ class DatabaseSeeder extends Seeder
         // Seed system settings (depends on users)
         $this->call(SystemSettingsSeeder::class);
 
+        // Seed sample inventory data (items, batches, transactions, snapshots)
+        $this->call(InventorySampleDataSeeder::class);
+
         $this->command->info('✅ Database seeding completed successfully!');
     }
 }
