@@ -28,14 +28,25 @@ class TableListController extends Controller
         // Pull relations mapping from config, if any
         $relations = $this->tables[$table]['relations'] ?? [];
 
-        // Get column details including nullable information
+        // Get column details including nullable information and enum values
         $columnDetails = [];
+        $enumValues = [];
         foreach ($columns as $col) {
             $columnInfo = DB::select("SHOW COLUMNS FROM `{$table}` WHERE Field = ?", [$col])[0] ?? null;
+            $type = $columnInfo->Type ?? 'text';
             $columnDetails[$col] = [
                 'nullable' => $columnInfo ? ($columnInfo->Null === 'YES') : true,
-                'type' => $columnInfo->Type ?? 'text',
+                'type' => $type,
             ];
+            
+            // Extract ENUM values if the column is an ENUM type
+            if (preg_match("/^enum\((.+)\)$/i", $type, $matches)) {
+                // Parse enum values: 'value1','value2','value3'
+                preg_match_all("/'([^']+)'/", $matches[1], $enumMatches);
+                if (!empty($enumMatches[1])) {
+                    $enumValues[$col] = $enumMatches[1];
+                }
+            }
         }
 
         // Build simple lookup maps for foreign keys to display labels
@@ -66,6 +77,7 @@ class TableListController extends Controller
             'relations' => $relations,
             'lookups' => $lookups,
             'column_details' => $columnDetails,
+            'enum_values' => $enumValues,
         ]);
     }
 
@@ -111,26 +123,55 @@ class TableListController extends Controller
     /**
      * Soft delete or hard delete a row
      */
-    public function delete(string $table, $id): JsonResponse
+    public function delete(Request $request, string $table, $id): JsonResponse
     {
         $this->assertAllowedTable($table);
         $pk = $this->tables[$table]['primary_key'];
-        if (is_array($pk)) {
-            return response()->json(['error' => 'Composite keys must be provided via query string'], 400);
-        }
         $soft = (bool)($this->tables[$table]['soft_deletes'] ?? false);
-        if ($soft) {
-            DB::table($table)->where($pk, $id)->update(['deleted_at' => now()]);
-        } else {
-            DB::table($table)->where($pk, $id)->delete();
+        
+        // Get old values for audit log
+        $oldValues = null;
+        if (!is_array($pk)) {
+            $oldValues = (array) DB::table($table)->where($pk, $id)->first();
         }
+        
+        if (is_array($pk)) {
+            // Handle composite primary key - expect keys as query parameters
+            $query = DB::table($table);
+            foreach ($pk as $key) {
+                $value = $request->query($key);
+                if ($value !== null) {
+                    $query->where($key, $value);
+                }
+            }
+            // If no query params provided, try to use the id for the first key
+            if (!$request->query()) {
+                $query->where($pk[0], $id);
+            }
+            
+            if ($soft) {
+                $query->update(['deleted_at' => now()]);
+            } else {
+                $query->delete();
+            }
+        } else {
+            if ($soft) {
+                DB::table($table)->where($pk, $id)->update(['deleted_at' => now()]);
+            } else {
+                DB::table($table)->where($pk, $id)->delete();
+            }
+        }
+        
+        // Log audit
+        $this->logAudit($table, $id, 'DELETE', $oldValues, null, $request);
+        
         return response()->json(['status' => 'ok']);
     }
 
     /**
      * Restore a soft-deleted row
      */
-    public function restore(string $table, $id): JsonResponse
+    public function restore(Request $request, string $table, $id): JsonResponse
     {
         $this->assertAllowedTable($table);
         $pk = $this->tables[$table]['primary_key'];
@@ -138,10 +179,34 @@ class TableListController extends Controller
         if (!$soft) {
             return response()->json(['error' => 'Soft deletes not enabled for this table'], 400);
         }
-        if (is_array($pk)) {
-            return response()->json(['error' => 'Composite keys must be provided via query string'], 400);
+        
+        // Get old values for audit log
+        $oldValues = null;
+        if (!is_array($pk)) {
+            $oldValues = (array) DB::table($table)->where($pk, $id)->first();
         }
-        DB::table($table)->where($pk, $id)->update(['deleted_at' => null]);
+        
+        if (is_array($pk)) {
+            // Handle composite primary key - expect keys as query parameters
+            $query = DB::table($table);
+            foreach ($pk as $key) {
+                $value = $request->query($key);
+                if ($value !== null) {
+                    $query->where($key, $value);
+                }
+            }
+            // If no query params provided, try to use the id for the first key
+            if (!$request->query()) {
+                $query->where($pk[0], $id);
+            }
+            $query->update(['deleted_at' => null]);
+        } else {
+            DB::table($table)->where($pk, $id)->update(['deleted_at' => null]);
+        }
+        
+        // Log audit (UPDATE action for restore)
+        $this->logAudit($table, $id, 'UPDATE', $oldValues, ['deleted_at' => null], $request);
+        
         return response()->json(['status' => 'ok']);
     }
 
@@ -149,6 +214,29 @@ class TableListController extends Controller
     {
         if (!array_key_exists($table, $this->tables)) {
             abort(404, 'Table not allowed');
+        }
+    }
+
+    /**
+     * Log an audit entry
+     */
+    private function logAudit(string $table, $recordId, string $action, ?array $oldValues, ?array $newValues, Request $request): void
+    {
+        try {
+            $user = auth('api')->user();
+            DB::table('audit_log')->insert([
+                'table_name' => $table,
+                'record_id' => is_numeric($recordId) ? (int)$recordId : 0,
+                'action' => $action,
+                'old_values' => $oldValues ? json_encode($oldValues) : null,
+                'new_values' => $newValues ? json_encode($newValues) : null,
+                'performed_by' => $user ? $user->user_id : null,
+                'ip_address' => $request->ip(),
+                'created_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Silently fail - don't break the main operation if audit logging fails
+            \Log::error('Audit log failed: ' . $e->getMessage());
         }
     }
 }
