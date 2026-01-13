@@ -90,12 +90,24 @@ class TableListController extends Controller
         $soft = (bool)($this->tables[$table]['soft_deletes'] ?? false);
         $showDeleted = filter_var($request->query('showDeleted', 'false'), FILTER_VALIDATE_BOOLEAN);
         $pk = $this->tables[$table]['primary_key'];
+        $search = $request->query('search');
 
         $query = DB::table($table);
         if ($soft) {
             if (!$showDeleted) {
                 $query->whereNull('deleted_at');
             }
+        }
+
+        // Apply search filter across all columns
+        if ($search && trim($search) !== '') {
+            $columns = Schema::getColumnListing($table);
+            $searchTerm = '%' . trim($search) . '%';
+            $query->where(function ($q) use ($columns, $searchTerm) {
+                foreach ($columns as $col) {
+                    $q->orWhere($col, 'LIKE', $searchTerm);
+                }
+            });
         }
 
         // Sort descending by primary key to show latest first

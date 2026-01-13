@@ -31,11 +31,12 @@ export class MaintenanceService {
     return this.http.get<any>(`${this.baseUrl}/${table}/schema`, { headers: this.getHeaders() });
   }
 
-  listRows(table: string, opts: { page?: number; perPage?: number; showDeleted?: boolean } = {}): Observable<any> {
+  listRows(table: string, opts: { page?: number; perPage?: number; showDeleted?: boolean; search?: string } = {}): Observable<any> {
     let params = new HttpParams();
     if (opts.page) params = params.set('page', String(opts.page));
     if (opts.perPage) params = params.set('perPage', String(opts.perPage));
     if (opts.showDeleted) params = params.set('showDeleted', String(opts.showDeleted));
+    if (opts.search) params = params.set('search', opts.search);
     return this.http.get<any>(`${this.baseUrl}/${table}/rows`, { params, headers: this.getHeaders() });
   }
 

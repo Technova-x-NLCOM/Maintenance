@@ -33,6 +33,10 @@ export class TableListComponent implements OnInit {
   // Column visibility
   visibleColumns: Set<string> = new Set();
   columnSelectorOpen = false;
+  
+  // Search
+  searchQuery = '';
+  private searchTimeout: any;
 
   constructor(
     private api: MaintenanceService,
@@ -72,7 +76,12 @@ export class TableListComponent implements OnInit {
     if (!this.selectedTable) return;
     this.loading = true;
     this.cdr.markForCheck();
-    this.api.listRows(this.selectedTable, { showDeleted: this.showDeleted, page: this.currentPage, perPage: this.perPage }).subscribe({
+    this.api.listRows(this.selectedTable, { 
+      showDeleted: this.showDeleted, 
+      page: this.currentPage, 
+      perPage: this.perPage,
+      search: this.searchQuery || undefined
+    }).subscribe({
       next: ({ data, page, perPage, total }) => {
         this.rows = data;
         this.currentPage = page;
@@ -213,6 +222,24 @@ export class TableListComponent implements OnInit {
 
   toggleColumnSelector(): void {
     this.columnSelectorOpen = !this.columnSelectorOpen;
+  }
+
+  // Search methods
+  onSearchChange(): void {
+    // Debounce search to avoid too many API calls
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+    this.searchTimeout = setTimeout(() => {
+      this.currentPage = 1; // Reset to first page on search
+      this.fetchRows();
+    }, 300);
+  }
+
+  clearSearch(): void {
+    this.searchQuery = '';
+    this.currentPage = 1;
+    this.fetchRows();
   }
 
   // Friendly name helpers
