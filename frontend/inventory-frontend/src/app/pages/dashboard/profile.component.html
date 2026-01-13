@@ -2,7 +2,6 @@
   <div class="profile-card">
     <!-- Profile Header -->
     <div class="profile-header">
-      <div class="profile-avatar">{{ (user?.first_name?.charAt(0) || 'U').toUpperCase() }}</div>
       <div class="profile-basic">
         <h1>{{ user?.first_name }} {{ user?.last_name }}</h1>
         <p class="profile-role">{{ user?.role | titlecase }} User</p>
