@@ -151,6 +151,12 @@ $danger: #dc2626;
     background-position: right 12px center;
     background-size: 20px;
     padding-right: 44px;
+
+    &.boolean-select,
+    &.enum-select {
+      // Specific styling for Yes/No and ENUM dropdowns
+      font-weight: 600;
+    }
   }
 
   .readonly-value {

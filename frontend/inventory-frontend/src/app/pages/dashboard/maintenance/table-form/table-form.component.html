@@ -47,22 +47,37 @@
           </option>
         </select>
 
-        <!-- Boolean/Checkbox input -->
-        <div *ngIf="!isReadonly(col) && !isForeignKey(col) && isBooleanField(col)" class="checkbox-wrapper">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              [id]="col"
-              [(ngModel)]="formData[col]"
-              [name]="col"
-            />
-            <span class="checkbox-text">{{ formData[col] ? 'Yes' : 'No' }}</span>
-          </label>
-        </div>
+        <!-- Boolean/Select input with Yes/No options -->
+        <select
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isEnumField(col) && isBooleanField(col)"
+          [id]="col"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          class="boolean-select"
+        >
+          <option [ngValue]="null">-- Select --</option>
+          <option [ngValue]="1">Yes</option>
+          <option [ngValue]="0">No</option>
+        </select>
+
+        <!-- ENUM dropdown -->
+        <select
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && isEnumField(col)"
+          [id]="col"
+          [(ngModel)]="formData[col]"
+          [name]="col"
+          [required]="isRequired(col)"
+          class="enum-select"
+        >
+          <option [ngValue]="null">-- Select {{ getFriendlyColumnName(col) }} --</option>
+          <option *ngFor="let opt of getEnumOptions(col)" [value]="opt">
+            {{ formatEnumLabel(opt) }}
+          </option>
+        </select>
 
         <!-- Date input -->
         <input
-          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && isDateField(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isEnumField(col) && !isBooleanField(col) && isDateField(col)"
           [id]="col"
           type="date"
           [(ngModel)]="formData[col]"
@@ -73,7 +88,7 @@
 
         <!-- Number input -->
         <input
-          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && isNumberField(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isEnumField(col) && !isBooleanField(col) && !isDateField(col) && isNumberField(col)"
           [id]="col"
           type="number"
           [(ngModel)]="formData[col]"
@@ -85,7 +100,7 @@
 
         <!-- Textarea for long text -->
         <textarea
-          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && isTextArea(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isEnumField(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && isTextArea(col)"
           [id]="col"
           [(ngModel)]="formData[col]"
           [name]="col"
@@ -96,7 +111,7 @@
 
         <!-- Regular text input -->
         <input
-          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && !isTextArea(col)"
+          *ngIf="!isReadonly(col) && !isForeignKey(col) && !isEnumField(col) && !isBooleanField(col) && !isDateField(col) && !isNumberField(col) && !isTextArea(col)"
           [id]="col"
           type="text"
           [(ngModel)]="formData[col]"

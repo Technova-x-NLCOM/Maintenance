@@ -17,8 +17,9 @@ import {
 export class TableListComponent implements OnInit {
   @Input() parent: any;
   selectedTable: string | null = null;
-  schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean; relations?: Record<string, { ref_table: string; ref_key: string; label_column: string }>; lookups?: Record<string, Record<string | number, string>> } | null = null;
+  schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean; relations?: Record<string, { ref_table: string; ref_key: string; label_column: string }>; lookups?: Record<string, Record<string | number, string>>; column_details?: Record<string, { nullable: boolean; type: string }> } | null = null;
   pkKey: string | null = null;
+  pkKeys: string[] = []; // For composite primary keys
   rows: any[] = [];
   showDeleted = false;
   loading = false;
@@ -51,7 +52,14 @@ export class TableListComponent implements OnInit {
     this.api.getSchema(this.selectedTable).subscribe({
       next: (s) => {
         this.schema = s;
-        this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+        // Handle both single and composite primary keys
+        if (typeof s.primary_key === 'string') {
+          this.pkKey = s.primary_key;
+          this.pkKeys = [s.primary_key];
+        } else if (Array.isArray(s.primary_key)) {
+          this.pkKey = null;
+          this.pkKeys = s.primary_key;
+        }
         // Initialize all columns as visible
         this.visibleColumns = new Set(s.columns);
         this.cdr.markForCheck();
@@ -84,21 +92,47 @@ export class TableListComponent implements OnInit {
   }
 
   deleteRow(row: any): void {
-    if (!this.selectedTable || !this.pkKey) return;
-    if (confirm('Are you sure?')) {
-      this.api.deleteRow(this.selectedTable, row[this.pkKey]).subscribe({
+    if (!this.selectedTable) return;
+    // Check if we have a valid primary key
+    if (!this.pkKey && this.pkKeys.length === 0) {
+      alert('Cannot delete: No primary key defined for this table');
+      return;
+    }
+    
+    if (confirm('Are you sure you want to delete this record?')) {
+      // For composite keys, use the first key value
+      const id = this.pkKey ? row[this.pkKey] : row[this.pkKeys[0]];
+      this.api.deleteRow(this.selectedTable, id).subscribe({
         next: () => this.fetchRows(),
-        error: (err) => console.error('Error deleting row:', err)
+        error: (err) => {
+          console.error('Error deleting row:', err);
+          alert('Error deleting record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
+        }
       });
     }
   }
 
   restoreRow(row: any): void {
-    if (!this.selectedTable || !this.pkKey) return;
-    this.api.restoreRow(this.selectedTable, row[this.pkKey]).subscribe({
+    if (!this.selectedTable) return;
+    // Check if we have a valid primary key
+    if (!this.pkKey && this.pkKeys.length === 0) {
+      alert('Cannot restore: No primary key defined for this table');
+      return;
+    }
+    
+    // For composite keys, use the first key value
+    const id = this.pkKey ? row[this.pkKey] : row[this.pkKeys[0]];
+    this.api.restoreRow(this.selectedTable, id).subscribe({
       next: () => this.fetchRows(),
-      error: (err) => console.error('Error restoring row:', err)
+      error: (err) => {
+        console.error('Error restoring row:', err);
+        alert('Error restoring record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
+      }
     });
+  }
+
+  canDelete(): boolean {
+    return this.pkKey !== null || this.pkKeys.length > 0;
   }
 
   goBack(): void {
@@ -111,6 +145,15 @@ export class TableListComponent implements OnInit {
 
   formatCell(column: string, row: any): any {
     if (!this.schema) return row[column];
+    const value = row[column];
+    
+    // Handle boolean fields - display as Yes/No
+    if (this.isBooleanField(column)) {
+      if (value === 1 || value === true || value === '1') return 'Yes';
+      if (value === 0 || value === false || value === '0') return 'No';
+      return '—';
+    }
+    
     const lookups = this.schema.lookups || {};
     const map = lookups[column];
     if (map) {
@@ -119,7 +162,17 @@ export class TableListComponent implements OnInit {
         return map[key];
       }
     }
-    return row[column];
+    return value;
+  }
+
+  isBooleanField(column: string): boolean {
+    const columnDetails = this.schema?.column_details || {};
+    const details = columnDetails[column];
+    if (!details) return false;
+    const type = details.type?.toLowerCase() || '';
+    return type.includes('tinyint') || type.includes('boolean') || 
+           column === 'is_active' || column === 'is_primary' ||
+           column.startsWith('can_') || column.startsWith('is_');
   }
 
   goToPage(page: number): void {

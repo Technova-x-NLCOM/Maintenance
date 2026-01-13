@@ -21,11 +21,13 @@ export class TableFormComponent implements OnInit {
   selectedTable: string | null = null;
   schema: any | null = null;
   pkKey: string | null = null;
+  pkKeys: string[] = []; // For composite primary keys
   formData: any = {};
   isNew = true;
   loading = false;
   lookups: { [key: string]: { [id: string]: string } } = {};
   columnDetails: { [key: string]: { nullable: boolean; type: string } } = {};
+  enumValues: { [key: string]: string[] } = {};
 
   constructor(
     private api: MaintenanceService,
@@ -50,7 +52,15 @@ export class TableFormComponent implements OnInit {
         this.schema = s;
         this.lookups = s.lookups || {};
         this.columnDetails = s.column_details || {};
-        this.pkKey = typeof s.primary_key === 'string' ? s.primary_key : null;
+        this.enumValues = s.enum_values || {};
+        // Handle both single and composite primary keys
+        if (typeof s.primary_key === 'string') {
+          this.pkKey = s.primary_key;
+          this.pkKeys = [s.primary_key];
+        } else if (Array.isArray(s.primary_key)) {
+          this.pkKey = null;
+          this.pkKeys = s.primary_key;
+        }
         if (this.isNew) {
           this.initializeForm();
         }
@@ -92,7 +102,19 @@ export class TableFormComponent implements OnInit {
 
   // Field type helpers
   isReadonly(column: string): boolean {
-    return column === this.pkKey || column === 'deleted_at' || column === 'created_at' || column === 'updated_at';
+    // For composite primary keys, only make them readonly when editing (not when creating new)
+    if (this.pkKeys.includes(column) && !this.isNew) {
+      return true;
+    }
+    // Single primary key is always readonly
+    if (column === this.pkKey) {
+      return true;
+    }
+    return column === 'deleted_at' || column === 'created_at' || column === 'updated_at';
+  }
+
+  isPrimaryKeyField(column: string): boolean {
+    return this.pkKeys.includes(column) || column === this.pkKey;
   }
 
   isForeignKey(column: string): boolean {
@@ -109,9 +131,24 @@ export class TableFormComponent implements OnInit {
     const details = this.columnDetails[column];
     if (!details) return false;
     const type = details.type?.toLowerCase() || '';
+    // Don't treat as boolean if it's an enum field
+    if (this.isEnumField(column)) return false;
     return type.includes('tinyint') || type.includes('boolean') || 
            column === 'is_active' || column === 'is_primary' ||
            column.startsWith('can_') || column.startsWith('is_');
+  }
+
+  isEnumField(column: string): boolean {
+    return this.enumValues && column in this.enumValues && this.enumValues[column].length > 0;
+  }
+
+  getEnumOptions(column: string): string[] {
+    return this.enumValues[column] || [];
+  }
+
+  formatEnumLabel(value: string): string {
+    // Convert enum value to user-friendly label (e.g., 'pending' -> 'Pending')
+    return value.charAt(0).toUpperCase() + value.slice(1).replace(/_/g, ' ');
   }
 
   isDateField(column: string): boolean {
@@ -189,12 +226,25 @@ export class TableFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error creating row:', err);
+          alert('Error creating record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
           this.loading = false;
           this.cdr.markForCheck();
         }
       });
     } else {
-      const id = this.formData[this.pkKey!];
+      // Handle both single and composite primary keys
+      let id: string | number;
+      if (this.pkKey) {
+        id = this.formData[this.pkKey];
+      } else if (this.pkKeys.length > 0) {
+        // For composite keys, use the first key value (backend handles composite keys via query string)
+        id = this.formData[this.pkKeys[0]];
+      } else {
+        console.error('No primary key defined');
+        this.loading = false;
+        return;
+      }
+      
       this.api.updateRow(this.selectedTable, id, payload).subscribe({
         next: () => {
           this.loading = false;
@@ -202,6 +252,7 @@ export class TableFormComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error updating row:', err);
+          alert('Error updating record: ' + (err.error?.message || err.error?.error || 'Unknown error'));
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -213,7 +264,10 @@ export class TableFormComponent implements OnInit {
     if (!this.schema) return {};
     const payload: any = {};
     this.schema.columns.forEach((c: string) => {
-      if (!this.isReadonly(c)) {
+      // Include composite primary key fields when creating new records
+      if (this.isNew && this.pkKeys.includes(c) && !this.pkKey) {
+        payload[c] = this.formData[c] ?? null;
+      } else if (!this.isReadonly(c)) {
         payload[c] = this.formData[c] ?? null;
       }
     });
