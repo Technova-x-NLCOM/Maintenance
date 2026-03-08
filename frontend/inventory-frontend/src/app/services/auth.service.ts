@@ -9,7 +9,7 @@ export interface User {
   first_name: string;
   last_name: string;
   contact_info: string | null;
-  role: 'super_admin' | 'admin' | 'staff';
+  role: 'super_admin' | 'inventory_manager';
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -32,10 +32,11 @@ export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
+  password_confirmation: string;
   first_name: string;
   last_name: string;
-  contact_info?: string;
-  role?: 'super_admin' | 'admin' | 'staff';
+  contact_info?: string | null;
+  role?: 'super_admin' | 'inventory_manager';
 }
 
 @Injectable({
@@ -120,6 +121,9 @@ export class AuthService {
           this.setToken(response.access_token);
         this.currentUserSubject.next(response.user);
         localStorage.setItem('user', JSON.stringify(response.user));
+      }),
+      catchError(error => {
+        throw error;
       })
     );
   }
