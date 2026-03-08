@@ -44,9 +44,8 @@ ng serve
 ```
 
 **Demo accounts:**
-- Super Admin: `superadmin@nlcom.org` / `superadmin123`
-- Admin: `admin@nlcom.org` / `admin123`
-- Staff: `staff@nlcom.org` / `staff123`
+- Super Admin: `superadmin@nlcom.org` / `SuperAdmin123!`
+- Inventory Manager: `inventory@nlcom.org` / `InventoryManager123!`
 
 Access: Backend `http://127.0.0.1:8000` | Frontend `http://localhost:4200`
 
@@ -143,7 +142,7 @@ Quick test:
 # Login (username or email in "identifier")
 curl -X POST http://127.0.0.1:8000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"identifier":"admin@nlcom.org","password":"admin123"}'
+  -d '{"identifier":"inventory@nlcom.org","password":"InventoryManager123!"}'
 
 # Then call /me with the returned token
 curl http://127.0.0.1:8000/api/auth/me \

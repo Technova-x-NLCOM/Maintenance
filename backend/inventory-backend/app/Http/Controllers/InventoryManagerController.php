@@ -5,44 +5,21 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class AdminController extends Controller
+class InventoryManagerController extends Controller
 {
     /**
-     * Get dashboard statistics for admin
+     * Get dashboard statistics for inventory manager
+     * Inventory manager sees comprehensive inventory stats and can manage all inventory operations
      */
     public function stats()
     {
         try {
-            // Total and active users (excluding super admins)
-            $superAdminUserIds = [];
-            try {
-                $superAdminUserIds = DB::table('user_roles')
-                    ->join('roles', 'user_roles.role_id', '=', 'roles.role_id')
-                    ->where('roles.role_name', 'Super Admin')
-                    ->pluck('user_roles.user_id')
-                    ->toArray();
-            } catch (\Exception $e) {
-                $superAdminUserIds = [];
-            }
-
-            if (count($superAdminUserIds) > 0) {
-                $totalUsers = DB::table('users')
-                    ->whereNotIn('user_id', $superAdminUserIds)
-                    ->count();
-                
-                $activeUsers = DB::table('users')
-                    ->where('is_active', 1)
-                    ->whereNotIn('user_id', $superAdminUserIds)
-                    ->count();
-            } else {
-                $totalUsers = DB::table('users')->count();
-                $activeUsers = DB::table('users')->where('is_active', 1)->count();
-            }
-
-            // Total items
+            $user = auth('api')->user();
+            
+            // Total active items
             $totalItems = DB::table('items')->where('is_active', 1)->count();
 
-            // Low stock items - simplified query
+            // Low stock items
             $lowStockItems = 0;
             try {
                 $lowStockItems = DB::table('items as i')
@@ -66,6 +43,19 @@ class AdminController extends Controller
                 ->whereYear('transaction_date', now()->year)
                 ->count();
 
+            // My transactions this month (by current user)
+            $myTransactions = DB::table('inventory_transactions')
+                ->where('performed_by', $user->user_id)
+                ->whereMonth('transaction_date', now()->month)
+                ->whereYear('transaction_date', now()->year)
+                ->count();
+
+            // Pending transactions requiring approval
+            $pendingTransactions = DB::table('inventory_transactions')
+                ->whereNull('approved_by')
+                ->where('transaction_type', 'OUT')
+                ->count();
+
             // Pending alerts
             $pendingAlerts = DB::table('expiry_alerts')
                 ->where('status', 'pending')
@@ -86,38 +76,47 @@ class AdminController extends Controller
                 $expiringItems = 0;
             }
 
+            // Total active batches
+            $activeBatches = DB::table('inventory_batches')
+                ->where('status', 'active')
+                ->count();
+
             return response()->json([
-                'totalUsers' => $totalUsers,
-                'activeUsers' => $activeUsers,
                 'totalItems' => $totalItems,
                 'lowStockItems' => $lowStockItems,
                 'totalTransactions' => $totalTransactions,
+                'myTransactions' => $myTransactions,
+                'pendingTransactions' => $pendingTransactions,
                 'pendingAlerts' => $pendingAlerts,
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
+                'activeBatches' => $activeBatches,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'totalUsers' => 0,
-                'activeUsers' => 0,
                 'totalItems' => 0,
                 'lowStockItems' => 0,
                 'totalTransactions' => 0,
+                'myTransactions' => 0,
+                'pendingTransactions' => 0,
                 'pendingAlerts' => 0,
                 'totalCategories' => 0,
                 'expiringItems' => 0,
+                'activeBatches' => 0,
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get recent audit log activity
+     * Get recent activity (inventory manager can see all inventory-related activity)
      */
     public function activity(Request $request)
     {
         $limit = $request->input('limit', 10);
+        $user = auth('api')->user();
 
+        // Show recent transactions and audit logs related to inventory (all activity, not just own)
         $activity = DB::table('audit_log as al')
             ->leftJoin('users as u', 'al.performed_by', '=', 'u.user_id')
             ->select(
@@ -130,6 +129,7 @@ class AdminController extends Controller
                 'al.ip_address',
                 'al.created_at'
             )
+            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'categories', 'item_types'])
             ->orderBy('al.created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -138,7 +138,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Get system alerts (expiry alerts + low stock)
+     * Get alerts relevant to inventory manager (expiry and low stock)
      */
     public function alerts()
     {
