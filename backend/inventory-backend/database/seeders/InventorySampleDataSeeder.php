@@ -15,11 +15,11 @@ class InventorySampleDataSeeder extends Seeder
         $now = now();
 
         $userIds = DB::table('users')
-            ->whereIn('username', ['admin', 'superadmin', 'staff1', 'staff'])
+            ->whereIn('username', ['superadmin', 'inventory_manager'])
             ->pluck('user_id', 'username');
 
-        $adminId = $userIds['admin'] ?? $userIds['superadmin'] ?? null;
-        $staffId = $userIds['staff1'] ?? $userIds['staff'] ?? $adminId;
+        $adminId = $userIds['superadmin'] ?? null;
+        $inventoryManagerId = $userIds['inventory_manager'] ?? $adminId;
 
         $categories = DB::table('categories')->pluck('category_id', 'category_name');
         $itemTypes = DB::table('item_types')->pluck('item_type_id', 'type_name');
@@ -162,7 +162,7 @@ class InventorySampleDataSeeder extends Seeder
                 'transaction_date' => '2026-01-11 10:30:00',
                 'reason' => 'Distribution',
                 'destination' => 'Typhoon Response Team',
-                'performed_by' => $staffId,
+                'performed_by' => $inventoryManagerId,
                 'approved_by' => $adminId,
             ],
             [
@@ -174,7 +174,7 @@ class InventorySampleDataSeeder extends Seeder
                 'transaction_date' => '2026-01-11 11:00:00',
                 'reason' => 'Distribution',
                 'destination' => 'Mobile Kitchen',
-                'performed_by' => $staffId,
+                'performed_by' => $inventoryManagerId,
                 'approved_by' => $adminId,
             ],
         ];
@@ -223,7 +223,7 @@ class InventorySampleDataSeeder extends Seeder
                 'quantity' => 250,
                 'total_value' => 112500.00,
                 'notes' => 'Post distribution',
-                'created_by' => $staffId,
+                'created_by' => $inventoryManagerId,
             ],
             [
                 'item_code' => 'FOOD-0001',
@@ -232,7 +232,7 @@ class InventorySampleDataSeeder extends Seeder
                 'quantity' => 35,
                 'total_value' => 63000.00,
                 'notes' => 'Post distribution',
-                'created_by' => $staffId,
+                'created_by' => $inventoryManagerId,
             ],
         ];
 
@@ -301,7 +301,7 @@ class InventorySampleDataSeeder extends Seeder
                     'action' => 'UPDATE',
                     'old_values' => null,
                     'new_values' => json_encode(['quantity' => 35]),
-                    'performed_by' => $staffId,
+                    'performed_by' => $inventoryManagerId,
                     'ip_address' => '192.168.1.10',
                     'created_at' => $now,
                 ]
