@@ -1,0 +1,172 @@
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, NgZone } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService, User } from '../../../services/auth.service';
+import { Subscription, filter, forkJoin, catchError, of } from 'rxjs';
+
+export interface InventoryManagerStats {
+  totalItems: number;
+  lowStockItems: number;
+  totalTransactions: number;
+  myTransactions: number;
+  pendingTransactions: number;
+  pendingAlerts: number;
+  totalCategories: number;
+  expiringItems: number;
+  activeBatches: number;
+}
+
+export interface AuditLogEntry {
+  log_id: number;
+  table_name: string;
+  record_id: number;
+  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  performed_by: number;
+  performed_by_name?: string;
+  ip_address: string;
+  created_at: string;
+}
+
+export interface SystemAlert {
+  alert_id: number | string;
+  type: string;
+  message: string;
+  severity: 'critical' | 'warning' | 'info';
+  created_at: string;
+  acknowledged: boolean;
+}
+
+@Component({
+  selector: 'app-inventory-manager-dashboard',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './inventory-manager-dashboard.component.html',
+  styleUrl: './inventory-manager-dashboard.component.scss'
+})
+export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
+  user: User | null = null;
+  stats: InventoryManagerStats | null = null;
+  recentActivity: AuditLogEntry[] = [];
+  systemAlerts: SystemAlert[] = [];
+  loading = true;
+  private routerSubscription: Subscription | null = null;
+
+  private readonly API_URL = 'http://127.0.0.1:8000/api';
+
+  constructor(
+    private authService: AuthService,
+    private http: HttpClient,
+    private router: Router,
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
+
+  ngOnInit() {
+    this.authService.currentUser$.subscribe(user => {
+      this.user = user;
+    });
+    this.loadDashboardData();
+    
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        if (this.route.snapshot.component === InventoryManagerDashboardComponent) {
+          this.loadDashboardData();
+        }
+      });
+  }
+
+  ngOnDestroy() {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('access_token');
+    return new HttpHeaders({
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    });
+  }
+
+  loadDashboardData() {
+    this.loading = true;
+    
+    const stats$ = this.http.get<InventoryManagerStats>(`${this.API_URL}/inventory-manager/stats`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading inventory manager stats:', err);
+        return of({
+          totalItems: 0,
+          lowStockItems: 0,
+          totalTransactions: 0,
+          myTransactions: 0,
+          pendingTransactions: 0,
+          pendingAlerts: 0,
+          totalCategories: 0,
+          expiringItems: 0,
+          activeBatches: 0
+        } as InventoryManagerStats);
+      }));
+
+    const activity$ = this.http.get<AuditLogEntry[]>(`${this.API_URL}/inventory-manager/activity?limit=10`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading activity:', err);
+        return of([] as AuditLogEntry[]);
+      }));
+
+    const alerts$ = this.http.get<SystemAlert[]>(`${this.API_URL}/inventory-manager/alerts`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(err => {
+        console.error('Error loading alerts:', err);
+        return of([] as SystemAlert[]);
+      }));
+
+    forkJoin([stats$, activity$, alerts$]).subscribe({
+      next: ([stats, activity, alerts]) => {
+        this.ngZone.run(() => {
+          this.stats = stats;
+          this.recentActivity = activity;
+          this.systemAlerts = alerts;
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.loading = false;
+          this.cdr.detectChanges();
+        });
+      }
+    });
+  }
+
+  getActionClass(action: string): string {
+    switch (action) {
+      case 'INSERT': return 'action-insert';
+      case 'UPDATE': return 'action-update';
+      case 'DELETE': return 'action-delete';
+      default: return '';
+    }
+  }
+
+  getAlertClass(severity: string): string {
+    switch (severity) {
+      case 'critical': return 'alert-critical';
+      case 'warning': return 'alert-warning';
+      case 'info': return 'alert-info';
+      default: return '';
+    }
+  }
+
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+}
