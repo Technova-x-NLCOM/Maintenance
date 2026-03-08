@@ -1,0 +1,230 @@
+// Administrator portal - dark/navy theme to distinguish from user login
+$admin-primary: #0f172a;   // near-black navy
+$admin-accent:  #1e40af;   // deep blue accent
+$admin-light:   #1d4ed8;   // button blue
+$admin-border:  #334155;
+$text-dark:     #0f172a;
+$text-medium:   #1e293b;
+$text-light:    #475569;
+$error-color:   #991b1b;
+$border-radius: 12px;
+
+.admin-login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #1e3a5f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  position: relative;
+}
+
+.back-home-btn {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #cbd5e1;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    stroke: #cbd5e1;
+    transition: stroke 0.2s;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    svg { stroke: #ffffff; }
+  }
+}
+
+.admin-login-card {
+  background: #ffffff;
+  border-radius: $border-radius;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 40px;
+  width: 100%;
+  max-width: 480px;
+  border: 3px solid #e2e8f0;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  color: $admin-primary;
+  border: 2px solid $admin-border;
+  border-radius: 50px;
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  svg {
+    width: 15px;
+    height: 15px;
+    stroke: $admin-primary;
+    flex-shrink: 0;
+  }
+}
+
+.login-header h2 {
+  font-size: 1.875rem;
+  margin: 0 0 8px;
+  color: $text-dark;
+  font-weight: 800;
+}
+
+.subtitle {
+  color: $text-light;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.error-message {
+  background-color: #fef2f2;
+  border: 2px solid #fca5a5;
+  color: $error-color;
+  padding: 14px 16px;
+  border-radius: $border-radius;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+
+  .error-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    stroke: $error-color;
+  }
+}
+
+form {
+  margin-bottom: 8px;
+}
+
+.form-group {
+  margin-bottom: 22px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: $text-dark;
+    font-weight: 600;
+    font-size: 0.9375rem;
+  }
+}
+
+.form-control {
+  width: 100%;
+  padding: 13px 15px;
+  border: 2.5px solid #94a3b8;
+  border-radius: $border-radius;
+  font-size: 1rem;
+  color: $text-dark;
+  transition: all 0.2s ease;
+  background: #fff;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+    border-color: $admin-light;
+    box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.15);
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+.password-input-wrapper {
+  position: relative;
+
+  .form-control {
+    padding-right: 48px;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+
+  &:hover { opacity: 0.7; }
+
+  .eye-icon {
+    width: 22px;
+    height: 22px;
+    stroke: $text-light;
+  }
+}
+
+.error {
+  color: $error-color;
+  font-size: 0.875rem;
+  margin-top: 5px;
+  display: block;
+  font-weight: 500;
+}
+
+.btn {
+  padding: 14px 24px;
+  border: none;
+  border-radius: $border-radius;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.btn-admin {
+    background: $admin-primary;
+    color: #fff;
+    &:hover:not(:disabled) {
+      background: $admin-accent;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35);
+    }
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &.btn-login {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 1.0625rem;
+  }
+}
