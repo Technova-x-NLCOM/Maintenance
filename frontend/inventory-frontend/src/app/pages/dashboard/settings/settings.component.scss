@@ -1,0 +1,184 @@
+// System Settings page - matches blue theme
+$primary-color: #1d4ed8;
+$primary-dark: #1e40af;
+$accent-color: #3b82f6;
+$text-dark: #111827;
+$text-medium: #1f2937;
+$text-light: #374151;
+
+.settings-page {
+  padding: 24px;
+  background: #f5f7fa;
+  color: $text-dark;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.page-titles h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: $text-dark;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.875rem;
+  color: $text-medium;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 6px 0 0 0;
+  color: $text-medium;
+  font-size: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+
+  &.ghost {
+    background: transparent;
+    border: 2px solid $primary-color;
+    color: $primary-color;
+    &:hover:not(:disabled) { background: #eff6ff; }
+  }
+
+  &.primary {
+    background: $primary-color;
+    color: #fff;
+    &:hover:not(:disabled) { background: $primary-dark; }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.state {
+  padding: 14px 18px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 1rem;
+
+  &-loading { background: #eff6ff; color: $primary-color; }
+  &-error   { background: #fef2f2; color: #b91c1c; }
+  &-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.setting-card {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: border-color 0.15s;
+
+  &.editing {
+    border-color: $accent-color;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+  }
+}
+
+.setting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.setting-info h3 {
+  margin: 0 0 2px 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: $text-dark;
+}
+
+.setting-key {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $text-light;
+  font-family: monospace;
+  letter-spacing: 0.03em;
+}
+
+.setting-desc {
+  margin: 6px 0 0 0;
+  font-size: 0.9rem;
+  color: $text-light;
+}
+
+.setting-actions {
+  flex-shrink: 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.setting-value-row {
+  margin-top: 4px;
+}
+
+.setting-value {
+  display: inline-block;
+  background: #f1f5f9;
+  color: $text-dark;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.setting-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 2px solid $accent-color;
+  border-radius: 6px;
+  color: $text-dark;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.save-error {
+  margin: 8px 0 0 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}

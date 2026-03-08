@@ -1,0 +1,63 @@
+<div class="settings-page">
+  <header class="page-header">
+    <div class="page-titles">
+      <p class="eyebrow">Configuration</p>
+      <h2>System Settings</h2>
+      <p class="subtitle">Configure system-wide operational parameters.</p>
+    </div>
+    <div class="header-actions">
+      <button class="ghost" (click)="loadSettings()" [disabled]="loading">Refresh</button>
+    </div>
+  </header>
+
+  <div *ngIf="saveSuccess" class="state state-success">{{ saveSuccess }}</div>
+  <div *ngIf="loading" class="state state-loading">Loading settings...</div>
+  <div *ngIf="error" class="state state-error">{{ error }}</div>
+
+  <div *ngIf="!loading && !error" class="settings-list">
+    <div
+      class="setting-card"
+      *ngFor="let setting of settings"
+      [class.editing]="editingKey === setting.setting_key"
+    >
+      <div class="setting-header">
+        <div class="setting-info">
+          <h3>{{ formatKey(setting.setting_key) }}</h3>
+          <p class="setting-key">{{ setting.setting_key }}</p>
+          <p class="setting-desc" *ngIf="setting.description">{{ setting.description }}</p>
+        </div>
+        <div class="setting-actions">
+          <button
+            *ngIf="editingKey !== setting.setting_key"
+            class="ghost"
+            (click)="startEdit(setting)"
+          >
+            Edit
+          </button>
+          <div *ngIf="editingKey === setting.setting_key" class="edit-actions">
+            <button class="ghost" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
+            <button class="primary" (click)="save(setting)" [disabled]="saving">
+              {{ saving ? 'Saving...' : 'Save' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-value-row">
+        <span *ngIf="editingKey !== setting.setting_key" class="setting-value">
+          {{ setting.setting_value }}
+        </span>
+        <input
+          *ngIf="editingKey === setting.setting_key"
+          class="setting-input"
+          [(ngModel)]="editValue"
+          [placeholder]="setting.setting_value"
+        />
+      </div>
+
+      <p *ngIf="editingKey === setting.setting_key && saveError" class="save-error">
+        {{ saveError }}
+      </p>
+    </div>
+  </div>
+</div>
