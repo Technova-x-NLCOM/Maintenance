@@ -1,11 +1,10 @@
 import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MaintenanceService, MaintenanceTableInfo } from '../../../../services/maintenance.service';
 import { 
   getFriendlyTableName, 
-  getTableDescription, 
-  getTableIcon, 
-  getTableCategory 
+  getTableDescription
 } from '../table-config';
 
 @Component({
@@ -23,6 +22,7 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private api: MaintenanceService,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -38,13 +38,11 @@ export class HomeComponent implements OnInit {
         setTimeout(() => {
           this.tables = t;
           this.loading = false;
-          console.log('Loaded tables:', t);
           this.cdr.detectChanges();
         }, 0);
       },
       error: (err) => {
         setTimeout(() => {
-          console.error('Error loading tables:', err);
           this.error = err?.error?.message || 'Failed to load tables. Please check your permissions.';
           this.loading = false;
           this.cdr.detectChanges();
@@ -53,31 +51,15 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  onSelectTable(tableName: string): void {
-    this.parent.goToTableList(tableName);
+  openTable(tableName: string): void {
+    this.router.navigate(['/dashboard/maintenance', tableName]);
   }
 
-  // Helper methods for template
   getFriendlyTableName(tableName: string): string {
     return getFriendlyTableName(tableName);
   }
 
   getTableDescription(tableName: string): string {
     return getTableDescription(tableName);
-  }
-
-  getTableIcon(tableName: string): string {
-    return getTableIcon(tableName);
-  }
-
-  getTableCategory(tableName: string): string {
-    return getTableCategory(tableName);
-  }
-
-  hasUncategorizedTables(): boolean {
-    return this.tables.some(t => {
-      const cat = this.getTableCategory(t.name);
-      return cat !== 'inventory' && cat !== 'users' && cat !== 'system';
-    });
   }
 }
