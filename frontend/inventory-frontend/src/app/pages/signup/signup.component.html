@@ -27,15 +27,6 @@
       </div>
     </div>
 
-    <!-- Success Message -->
-    <div class="success-message" *ngIf="successMessage">
-      <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      {{ successMessage }}
-    </div>
-
     <!-- Error Message -->
     <div class="error-message" *ngIf="errorMessage">
       <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -133,15 +124,6 @@
       <!-- Step 3: Security -->
       <div class="form-step" *ngIf="currentStep === 3">
         <h3 class="step-heading">Security Setup</h3>
-
-        <!-- Success Message -->
-        <div class="success-message" *ngIf="successMessage">
-          <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          {{ successMessage }}
-        </div>
 
         <!-- Error Message -->
         <div class="error-message" *ngIf="errorMessage">
@@ -299,5 +281,20 @@
     <div class="back-home">
       <a routerLink="/" class="link-home">← Back to Home</a>
     </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" *ngIf="showSuccessModal">
+  <div class="modal-content">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <h2 class="modal-title">Account Created!</h2>
+    <p class="modal-message">Your account has been successfully created. You will be redirected to your dashboard shortly.</p>
+    <button class="btn btn-primary modal-btn" (click)="goToDashboard()">Go to Dashboard</button>
   </div>
 </div>
