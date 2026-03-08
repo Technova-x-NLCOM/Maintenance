@@ -1,18 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService, User } from '../../services/auth.service';
-import { AdminDashboardComponent } from './admin/admin-dashboard.component';
-import { StaffDashboardComponent } from './staff/staff-dashboard.component';
 import { SuperAdminDashboardComponent } from './super-admin/super-admin-dashboard.component';
+import { InventoryManagerDashboardComponent } from './inventory-manager/inventory-manager-dashboard.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, AdminDashboardComponent, StaffDashboardComponent, SuperAdminDashboardComponent],
+  imports: [CommonModule, SuperAdminDashboardComponent, InventoryManagerDashboardComponent],
   template: `
     <app-super-admin-dashboard *ngIf="user?.role === 'super_admin'" />
-    <app-admin-dashboard *ngIf="user?.role === 'admin'" />
-    <app-staff-dashboard *ngIf="user?.role === 'staff'" />
+    <app-inventory-manager-dashboard *ngIf="user?.role === 'inventory_manager'" />
   `
 })
 export class HomeComponent implements OnInit {
