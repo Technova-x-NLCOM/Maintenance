@@ -27,25 +27,11 @@ export class LoginComponent implements OnInit {
 
   demoAccounts: DemoAccount[] = [
     {
-      role: 'Super Administrator',
-      icon: '👑',
-      identifier: 'superadmin@nlcom.org',
-      password: 'superadmin123',
-      description: 'Full system access with all permissions'
-    },
-    {
-      role: 'Administrator',
-      icon: '🔐',
-      identifier: 'admin@nlcom.org',
-      password: 'admin123',
-      description: 'Administrative access to manage users and inventory'
-    },
-    {
-      role: 'Staff Member',
-      icon: '👤',
-      identifier: 'staff@nlcom.org',
-      password: 'staff123',
-      description: 'Standard staff access for inventory operations'
+      role: 'Inventory Manager',
+      icon: '📦',
+      identifier: 'inventory@nlcom.org',
+      password: 'InventoryManager123!',
+      description: 'Complete inventory operations management'
     }
   ];
 
@@ -88,6 +74,12 @@ export class LoginComponent implements OnInit {
     this.authService.login(identifier, password).subscribe({
       next: (response) => {
         this.isLoading = false;
+        if (response.user.role === 'super_admin') {
+          // Log out the super admin immediately — wrong portal
+          this.authService.logout().subscribe();
+          this.errorMessage = 'This portal is for Inventory Managers only. Please use the administrator portal.';
+          return;
+        }
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
