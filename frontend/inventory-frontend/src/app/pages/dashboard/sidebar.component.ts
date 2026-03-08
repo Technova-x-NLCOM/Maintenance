@@ -1,9 +1,9 @@
 import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { RbacService, Role } from '../../rbac/services/rbac.service';
-import { Router } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-sidebar',
@@ -17,6 +17,9 @@ export class SidebarComponent implements OnInit {
   currentRole: Role | null = null;
   loadingRole = false;
   showLogoutModal = false;
+
+  // Track which nav groups are open
+  openGroups: Set<string> = new Set();
 
   constructor(
     private authService: AuthService,
@@ -35,6 +38,52 @@ export class SidebarComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+
+    // Auto-expand the group that matches the current route
+    this.expandGroupForCurrentRoute(this.router.url);
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.expandGroupForCurrentRoute(event.urlAfterRedirects || event.url);
+      this.cdr.detectChanges();
+    });
+  }
+
+  toggleGroup(group: string): void {
+    if (this.openGroups.has(group)) {
+      this.openGroups.delete(group);
+    } else {
+      this.openGroups.add(group);
+    }
+  }
+
+  isGroupOpen(group: string): boolean {
+    return this.openGroups.has(group);
+  }
+
+  private expandGroupForCurrentRoute(url: string): void {
+    const inventoryTables = ['items', 'categories', 'item_types', 'inventory_batches', 'inventory_transactions', 'inventory_snapshots', 'expiry_alerts'];
+    const userTables = ['users', 'user_roles'];
+    const systemTables = ['audit_log'];
+
+    for (const t of inventoryTables) {
+      if (url.includes(`/maintenance/${t}`)) {
+        this.openGroups.add('inventory');
+        return;
+      }
+    }
+    for (const t of userTables) {
+      if (url.includes(`/maintenance/${t}`) || url.includes('/roles')) {
+        this.openGroups.add('users');
+        return;
+      }
+    }
+    for (const t of systemTables) {
+      if (url.includes(`/maintenance/${t}`) || url.includes('/settings')) {
+        this.openGroups.add('system');
+        return;
+      }
+    }
   }
 
   openLogoutModal() {
@@ -47,13 +96,15 @@ export class SidebarComponent implements OnInit {
 
   confirmLogout() {
     this.showLogoutModal = false;
+    const role = this.authService.getCurrentUser()?.role;
+    const loginRoute = role === 'super_admin' ? '/admin-login' : '/login';
     this.authService.logout().subscribe({
       next: () => {
-        this.router.navigate(['/login']);
+        this.router.navigate([loginRoute]);
       },
       error: (error) => {
         console.error('Logout error:', error);
-        this.router.navigate(['/login']);
+        this.router.navigate([loginRoute]);
       }
     });
   }
