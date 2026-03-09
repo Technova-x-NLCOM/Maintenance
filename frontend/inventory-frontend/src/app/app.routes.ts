@@ -11,6 +11,7 @@ import { BackupComponent } from './pages/dashboard/backup/backup.component';
 import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
 import { SettingsComponent } from './pages/dashboard/settings/settings.component';
 import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
+import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
         { path: 'roles', component: RolesComponent },
       { path: 'backup', component: BackupComponent },
+      { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
       { path: 'settings', component: SettingsComponent },
