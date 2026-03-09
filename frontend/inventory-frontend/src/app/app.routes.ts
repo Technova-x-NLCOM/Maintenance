@@ -9,10 +9,13 @@ import { authGuard } from './guards/auth.guard';
 import { RolesComponent } from './pages/dashboard/roles.component';
 import { BackupComponent } from './pages/dashboard/backup/backup.component';
 import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
+import { SettingsComponent } from './pages/dashboard/settings/settings.component';
+import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'login', component: LoginComponent },
+  { path: 'admin-login', component: AdminLoginComponent },
   { path: 'signup', component: SignupComponent },
   {
     path: 'dashboard',
@@ -24,6 +27,8 @@ export const routes: Routes = [
         { path: 'roles', component: RolesComponent },
       { path: 'backup', component: BackupComponent },
       { path: 'maintenance', component: MaintenanceComponent },
+      { path: 'maintenance/:table', component: MaintenanceComponent },
+      { path: 'settings', component: SettingsComponent },
       { path: '', redirectTo: 'home', pathMatch: 'full' }
     ]
   },

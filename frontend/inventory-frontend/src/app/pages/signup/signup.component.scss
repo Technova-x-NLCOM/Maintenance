@@ -629,6 +629,85 @@ select.form-control {
   }
 }
 
+// Success Modal
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px 36px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal-icon {
+  width: 72px;
+  height: 72px;
+  background: #dcfce7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+
+  svg {
+    width: 36px;
+    height: 36px;
+    stroke: #16a34a;
+  }
+}
+
+.modal-title {
+  margin: 0 0 12px;
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: $text-dark;
+}
+
+.modal-message {
+  margin: 0 0 28px;
+  color: $text-medium;
+  font-size: 1rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.modal-btn {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 1.0625rem;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  border-radius: $border-radius;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+
+  &:hover {
+    background: $primary-dark;
+    transform: translateY(-2px);
+  }
+}
+
 .signup-card::-webkit-scrollbar {
   width: 10px;
 }

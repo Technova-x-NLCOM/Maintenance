@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class StaffController extends Controller
+class InventoryManagerController extends Controller
 {
     /**
-     * Get dashboard statistics for staff
-     * Staff sees inventory-focused stats (no user management)
+     * Get dashboard statistics for inventory manager
+     * Inventory manager sees comprehensive inventory stats and can manage all inventory operations
      */
     public function stats()
     {
@@ -50,6 +50,12 @@ class StaffController extends Controller
                 ->whereYear('transaction_date', now()->year)
                 ->count();
 
+            // Pending transactions requiring approval
+            $pendingTransactions = DB::table('inventory_transactions')
+                ->whereNull('approved_by')
+                ->where('transaction_type', 'OUT')
+                ->count();
+
             // Pending alerts
             $pendingAlerts = DB::table('expiry_alerts')
                 ->where('status', 'pending')
@@ -80,6 +86,7 @@ class StaffController extends Controller
                 'lowStockItems' => $lowStockItems,
                 'totalTransactions' => $totalTransactions,
                 'myTransactions' => $myTransactions,
+                'pendingTransactions' => $pendingTransactions,
                 'pendingAlerts' => $pendingAlerts,
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
@@ -91,6 +98,7 @@ class StaffController extends Controller
                 'lowStockItems' => 0,
                 'totalTransactions' => 0,
                 'myTransactions' => 0,
+                'pendingTransactions' => 0,
                 'pendingAlerts' => 0,
                 'totalCategories' => 0,
                 'expiringItems' => 0,
@@ -101,14 +109,14 @@ class StaffController extends Controller
     }
 
     /**
-     * Get recent activity (staff's own activity)
+     * Get recent activity (inventory manager can see all inventory-related activity)
      */
     public function activity(Request $request)
     {
         $limit = $request->input('limit', 10);
         $user = auth('api')->user();
 
-        // Show recent transactions and audit logs related to inventory
+        // Show recent transactions and audit logs related to inventory (all activity, not just own)
         $activity = DB::table('audit_log as al')
             ->leftJoin('users as u', 'al.performed_by', '=', 'u.user_id')
             ->select(
@@ -121,7 +129,7 @@ class StaffController extends Controller
                 'al.ip_address',
                 'al.created_at'
             )
-            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'distributions'])
+            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'categories', 'item_types'])
             ->orderBy('al.created_at', 'desc')
             ->limit($limit)
             ->get();
@@ -130,7 +138,7 @@ class StaffController extends Controller
     }
 
     /**
-     * Get alerts relevant to staff (expiry and low stock)
+     * Get alerts relevant to inventory manager (expiry and low stock)
      */
     public function alerts()
     {

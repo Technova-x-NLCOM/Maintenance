@@ -17,6 +17,7 @@ export class SignupComponent implements OnInit, OnDestroy {
   showPassword = false;
   showConfirmPassword = false;
   isLoading = false;
+  showSuccessModal = false;
   successMessage = '';
   errorMessage = '';
 
@@ -103,25 +104,37 @@ export class SignupComponent implements OnInit, OnDestroy {
       username: formData.username,
       email: formData.email,
       password: formData.password,
+      password_confirmation: formData.confirmPassword,
       first_name: formData.first_name,
       last_name: formData.last_name,
       contact_info: formData.contact_info || null,
-      role: 'staff' // New users default to staff role
+      role: 'inventory_manager' // New users default to inventory manager role
     };
 
     this.authService.register(registerPayload).subscribe({
       next: (response) => {
         this.isLoading = false;
-        this.successMessage = 'Account created successfully! Redirecting...';
+        this.showSuccessModal = true;
         setTimeout(() => {
           this.router.navigate(['/dashboard']);
-        }, 2000);
+        }, 3000);
       },
       error: (error) => {
         this.isLoading = false;
-        this.errorMessage = error.error?.message || error.error?.error || 'Registration failed';
+        // Surface the first validation error if available, else generic message
+        const errors = error.error?.errors;
+        if (errors) {
+          const firstKey = Object.keys(errors)[0];
+          this.errorMessage = errors[firstKey]?.[0] || error.error?.message || 'Registration failed';
+        } else {
+          this.errorMessage = error.error?.message || error.error?.error || 'Registration failed';
+        }
       }
     });
+  }
+
+  goToDashboard() {
+    this.router.navigate(['/dashboard']);
   }
 
   getPasswordStrength(): string {

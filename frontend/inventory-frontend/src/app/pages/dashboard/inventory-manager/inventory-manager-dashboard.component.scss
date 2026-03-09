@@ -1,8 +1,8 @@
-// Staff Dashboard - Blue Theme HIGH CONTRAST
-$primary-color: #1d4ed8;
-$primary-dark: #1e40af;
-$primary-light: #3b82f6;
-$accent-color: #60a5fa;
+// Inventory Manager Dashboard - Green Theme HIGH CONTRAST
+$primary-color: #059669;
+$primary-dark: #047857;
+$primary-light: #10b981;
+$accent-color: #34d399;
 $text-dark: #111827;
 $text-medium: #374151;
 $text-light: #6b7280;
@@ -12,6 +12,7 @@ $border-color: #e5e7eb;
 $success: #059669;
 $warning: #d97706;
 $danger: #dc2626;
+$info-blue: #1d4ed8;
 
 .dashboard-wrapper {
   padding: 24px;
@@ -113,12 +114,12 @@ $danger: #dc2626;
     svg { stroke: $success; }
   }
 
-  &.batches .stat-icon {
+  &.transactions .stat-icon {
     background: rgba(29, 78, 216, 0.1);
-    svg { stroke: $primary-color; }
+    svg { stroke: $info-blue; }
   }
 
-  &.transactions .stat-icon {
+  &.batches .stat-icon {
     background: rgba(217, 119, 6, 0.1);
     svg { stroke: $warning; }
   }
@@ -224,7 +225,7 @@ $danger: #dc2626;
   }
 
   &.alert-info {
-    background: rgba(29, 78, 216, 0.08);
+    background: rgba(5, 150, 105, 0.08);
     .alert-icon svg { stroke: $primary-color; }
   }
 
@@ -283,7 +284,7 @@ $danger: #dc2626;
 
     &.action-update {
       background: rgba(29, 78, 216, 0.15);
-      color: $primary-color;
+      color: $info-blue;
     }
 
     &.action-delete {

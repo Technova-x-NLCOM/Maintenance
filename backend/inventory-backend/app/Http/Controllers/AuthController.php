@@ -8,21 +8,113 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
+    /**
+     * Register a new user (Super Admin only)
+     */
     public function register(Request $request)
     {
-        $data = $request->validate([
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', Rule::unique('users', 'username')],
-            'email' => ['required', 'string', 'email', 'max:100', Rule::unique('users', 'email')],
-            'password' => ['required', 'string', 'min:8'],
-            'first_name' => ['required', 'string', 'max:50'],
-            'last_name' => ['required', 'string', 'max:50'],
-            'contact_info' => ['nullable', 'string', 'max:100'],
-            'role' => ['nullable', Rule::in(['super_admin', 'admin', 'staff'])],
-        ]);
+        try {
+            $data = $request->validate([
+                'username' => [
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:50',
+                    'alpha_dash',
+                    Rule::unique('users', 'username')
+                ],
+                'email' => [
+                    'required',
+                    'string',
+                    'email:rfc',
+                    'max:100',
+                    Rule::unique('users', 'email')
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:255',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                ],
+                'password_confirmation' => [
+                    'required',
+                    'same:password'
+                ],
+                'first_name' => [
+                    'required',
+                    'string',
+                    'min:2',
+                    'max:50',
+                    'regex:/^[a-zA-Z\s\-\'\.]+$/'
+                ],
+                'last_name' => [
+                    'required',
+                    'string',
+                    'min:2',
+                    'max:50',
+                    'regex:/^[a-zA-Z\s\-\'\.]+$/'
+                ],
+                'contact_info' => [
+                    'nullable',
+                    'string',
+                    'max:100',
+                    'regex:/^[\+]?[0-9\s\-\(\)]+$/'
+                ],
+                'role' => [
+                    'nullable',
+                    Rule::in(['super_admin', 'inventory_manager'])
+                ],
+            ], [
+                // Custom error messages
+                'username.required' => 'Username is required.',
+                'username.min' => 'Username must be at least 3 characters long.',
+                'username.max' => 'Username cannot exceed 50 characters.',
+                'username.alpha_dash' => 'Username can only contain letters, numbers, dashes, and underscores.',
+                'username.unique' => 'This username is already taken. Please choose a different one.',
+                
+                'email.required' => 'Email address is required.',
+                'email.email' => 'Please enter a valid email address.',
+                'email.unique' => 'This email address is already registered. Please use a different email.',
+                
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 8 characters long.',
+                'password.max' => 'Password cannot exceed 255 characters.',
+                'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).',
+                
+                'password_confirmation.required' => 'Password confirmation is required.',
+                'password_confirmation.same' => 'Password confirmation does not match the password.',
+                
+                'first_name.required' => 'First name is required.',
+                'first_name.min' => 'First name must be at least 2 characters long.',
+                'first_name.max' => 'First name cannot exceed 50 characters.',
+                'first_name.regex' => 'First name can only contain letters, spaces, hyphens, apostrophes, and periods.',
+                
+                'last_name.required' => 'Last name is required.',
+                'last_name.min' => 'Last name must be at least 2 characters long.',
+                'last_name.max' => 'Last name cannot exceed 50 characters.',
+                'last_name.regex' => 'Last name can only contain letters, spaces, hyphens, apostrophes, and periods.',
+                
+                'contact_info.regex' => 'Contact information can only contain numbers, spaces, hyphens, parentheses, and plus signs.',
+                'contact_info.max' => 'Contact information cannot exceed 100 characters.',
+                
+                'role.in' => 'Invalid role selected. Please choose either Super Admin or Inventory Manager.',
+            ]);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed. Please check your input and try again.',
+                'errors' => $e->errors(),
+                'error_count' => count($e->errors())
+            ], 422);
+        }
 
         DB::beginTransaction();
         try {
@@ -37,23 +129,27 @@ class AuthController extends Controller
             $user->save();
 
             // Assign role
-            $roleName = $data['role'] ?? 'staff';
+            $roleName = $data['role'] ?? 'inventory_manager';
             $role = Role::where('role_name', $roleName)->first();
-            if ($role) {
-                $user->roles()->attach($role->role_id, ['is_primary' => true]);
+            
+            if (!$role) {
+                throw new \Exception('Selected role does not exist in the system.');
             }
+            
+            $user->roles()->attach($role->role_id, ['is_primary' => true]);
 
             DB::commit();
 
-                // Generate JWT token for the new user
-                $token = JWTAuth::fromUser($user);
-                $user->load('primaryRole');
+            // Generate JWT token for the new user
+            $token = JWTAuth::fromUser($user);
+            $user->load('primaryRole');
 
             return response()->json([
-                'message' => 'Registration successful',
-                    'access_token' => $token,
-                    'token_type' => 'bearer',
-                    'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'success' => true,
+                'message' => 'User registered successfully! Welcome to NLCOM Inventory System.',
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
                 'user' => [
                     'user_id' => $user->user_id,
                     'username' => $user->username,
@@ -67,95 +163,273 @@ class AuthController extends Controller
                     'updated_at' => $user->updated_at,
                 ],
             ], 201);
+            
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'message' => 'Registration failed',
+                'success' => false,
+                'message' => 'Registration failed. Please try again.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
 
+    /**
+     * Login user
+     */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'identifier' => ['required', 'string'], // email or username
-            'password' => ['required', 'string'],
-        ]);
+        try {
+            $credentials = $request->validate([
+                'identifier' => [
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:100'
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:1',
+                    'max:255'
+                ],
+            ], [
+                'identifier.required' => 'Username or email is required.',
+                'identifier.min' => 'Username or email must be at least 3 characters long.',
+                'identifier.max' => 'Username or email cannot exceed 100 characters.',
+                'identifier.string' => 'Username or email must be a valid text.',
+                
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password cannot be empty.',
+                'password.max' => 'Password is too long.',
+                'password.string' => 'Password must be valid text.',
+            ]);
 
-        $identifier = $credentials['identifier'];
-        $password = $credentials['password'];
-
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-
-            // Find user by identifier
-            $user = User::where($field, $identifier)->where('is_active', true)->first();
-        
-            if (!$user || !Hash::check($password, $user->password_hash)) {
+        } catch (ValidationException $e) {
             return response()->json([
-                'message' => 'Invalid credentials or inactive account',
+                'success' => false,
+                'message' => 'Please check your login information and try again.',
+                'errors' => $e->errors(),
+                'error_count' => count($e->errors())
             ], 422);
         }
 
+        $identifier = trim($credentials['identifier']);
+        $password = $credentials['password'];
+
+        // Determine if identifier is email or username
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        try {
+            // Find user by identifier
+            $user = User::where($field, $identifier)->first();
+            
+            // Check if user exists
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No account found with this ' . ($field === 'email' ? 'email address' : 'username') . '.',
+                    'error_type' => 'user_not_found'
+                ], 404);
+            }
+            
+            // Check if user is active
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account has been deactivated. Please contact the system administrator.',
+                    'error_type' => 'account_inactive'
+                ], 403);
+            }
+            
+            // Check password
+            if (!Hash::check($password, $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incorrect password. Please check your password and try again.',
+                    'error_type' => 'invalid_password'
+                ], 401);
+            }
+
             // Generate JWT token
             $token = JWTAuth::fromUser($user);
-        $user->load('primaryRole');
+            $user->load('primaryRole');
 
-        return response()->json([
-            'message' => 'Login successful',
+            // Update last login timestamp (optional)
+            $user->touch('updated_at');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful! Welcome back, ' . $user->first_name . '.',
                 'access_token' => $token,
                 'token_type' => 'bearer',
                 'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => [
-                'user_id' => $user->user_id,
-                'username' => $user->username,
-                'email' => $user->email,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'contact_info' => $user->contact_info,
-                'role' => $user->role,
-                'is_active' => $user->is_active,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-            ],
-        ]);
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'contact_info' => $user->contact_info,
+                    'role' => $user->role,
+                    'is_active' => $user->is_active,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ],
+            ], 200);
+            
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create authentication token. Please try again.',
+                'error_type' => 'token_creation_failed'
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Login failed due to a system error. Please try again.',
+                'error_type' => 'system_error'
+            ], 500);
+        }
     }
 
+    /**
+     * Get authenticated user information
+     */
     public function me(Request $request)
     {
         try {
             // Get authenticated user from JWT token
             $user = JWTAuth::parseToken()->authenticate();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not found. Please login again.',
+                    'error_type' => 'user_not_found'
+                ], 404);
+            }
+            
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account has been deactivated. Please contact the system administrator.',
+                    'error_type' => 'account_inactive'
+                ], 403);
+            }
+
+            $user->load('primaryRole');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User information retrieved successfully.',
+                'user' => [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'contact_info' => $user->contact_info,
+                    'role' => $user->role,
+                    'is_active' => $user->is_active,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ],
+            ], 200);
+            
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired authentication token. Please login again.',
+                'error_type' => 'invalid_token'
+            ], 401);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not retrieve user information. Please try again.',
+                'error_type' => 'system_error'
+            ], 500);
         }
-
-        $user->load('primaryRole');
-
-        return response()->json([
-            'user' => [
-                'user_id' => $user->user_id,
-                'username' => $user->username,
-                'email' => $user->email,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'contact_info' => $user->contact_info,
-                'role' => $user->role,
-                'is_active' => $user->is_active,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-            ],
-        ]);
     }
 
+    /**
+     * Logout user
+     */
     public function logout(Request $request)
     {
         try {
+            // Get the token from the request
+            $token = JWTAuth::getToken();
+            
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No authentication token found.',
+                    'error_type' => 'no_token'
+                ], 400);
+            }
+            
             // Invalidate the JWT token
-            JWTAuth::invalidate(JWTAuth::getToken());
-            return response()->json(['message' => 'Logged out successfully']);
+            JWTAuth::invalidate($token);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully. Thank you for using NLCOM Inventory System.'
+            ], 200);
+            
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not logout properly. Please clear your browser cache.',
+                'error_type' => 'logout_failed'
+            ], 500);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Logout failed'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Logout failed due to a system error.',
+                'error_type' => 'system_error'
+            ], 500);
+        }
+    }
+
+    /**
+     * Refresh JWT token
+     */
+    public function refresh(Request $request)
+    {
+        try {
+            $token = JWTAuth::getToken();
+            
+            if (!$token) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No authentication token found.',
+                    'error_type' => 'no_token'
+                ], 400);
+            }
+            
+            $newToken = JWTAuth::refresh($token);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Token refreshed successfully.',
+                'access_token' => $newToken,
+                'token_type' => 'bearer',
+                'expires_in' => auth('api')->factory()->getTTL() * 60,
+            ], 200);
+            
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not refresh token. Please login again.',
+                'error_type' => 'refresh_failed'
+            ], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token refresh failed due to a system error.',
+                'error_type' => 'system_error'
+            ], 500);
         }
     }
 }

@@ -5,11 +5,12 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../../services/auth.service';
 import { Subscription, filter, forkJoin, catchError, of } from 'rxjs';
 
-export interface StaffDashboardStats {
+export interface InventoryManagerStats {
   totalItems: number;
   lowStockItems: number;
   totalTransactions: number;
   myTransactions: number;
+  pendingTransactions: number;
   pendingAlerts: number;
   totalCategories: number;
   expiringItems: number;
@@ -37,15 +38,15 @@ export interface SystemAlert {
 }
 
 @Component({
-  selector: 'app-staff-dashboard',
+  selector: 'app-inventory-manager-dashboard',
   standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './staff-dashboard.component.html',
-  styleUrl: './staff-dashboard.component.scss'
+  templateUrl: './inventory-manager-dashboard.component.html',
+  styleUrl: './inventory-manager-dashboard.component.scss'
 })
-export class StaffDashboardComponent implements OnInit, OnDestroy {
+export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
   user: User | null = null;
-  stats: StaffDashboardStats | null = null;
+  stats: InventoryManagerStats | null = null;
   recentActivity: AuditLogEntry[] = [];
   systemAlerts: SystemAlert[] = [];
   loading = true;
@@ -71,7 +72,7 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
-        if (this.route.snapshot.component === StaffDashboardComponent) {
+        if (this.route.snapshot.component === InventoryManagerDashboardComponent) {
           this.loadDashboardData();
         }
       });
@@ -94,28 +95,29 @@ export class StaffDashboardComponent implements OnInit, OnDestroy {
   loadDashboardData() {
     this.loading = true;
     
-    const stats$ = this.http.get<StaffDashboardStats>(`${this.API_URL}/staff/stats`, { headers: this.getAuthHeaders() })
+    const stats$ = this.http.get<InventoryManagerStats>(`${this.API_URL}/inventory-manager/stats`, { headers: this.getAuthHeaders() })
       .pipe(catchError(err => {
-        console.error('Error loading staff stats:', err);
+        console.error('Error loading inventory manager stats:', err);
         return of({
           totalItems: 0,
           lowStockItems: 0,
           totalTransactions: 0,
           myTransactions: 0,
+          pendingTransactions: 0,
           pendingAlerts: 0,
           totalCategories: 0,
           expiringItems: 0,
           activeBatches: 0
-        } as StaffDashboardStats);
+        } as InventoryManagerStats);
       }));
 
-    const activity$ = this.http.get<AuditLogEntry[]>(`${this.API_URL}/staff/activity?limit=10`, { headers: this.getAuthHeaders() })
+    const activity$ = this.http.get<AuditLogEntry[]>(`${this.API_URL}/inventory-manager/activity?limit=10`, { headers: this.getAuthHeaders() })
       .pipe(catchError(err => {
         console.error('Error loading activity:', err);
         return of([] as AuditLogEntry[]);
       }));
 
-    const alerts$ = this.http.get<SystemAlert[]>(`${this.API_URL}/staff/alerts`, { headers: this.getAuthHeaders() })
+    const alerts$ = this.http.get<SystemAlert[]>(`${this.API_URL}/inventory-manager/alerts`, { headers: this.getAuthHeaders() })
       .pipe(catchError(err => {
         console.error('Error loading alerts:', err);
         return of([] as SystemAlert[]);

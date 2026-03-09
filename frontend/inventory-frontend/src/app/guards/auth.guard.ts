@@ -15,7 +15,7 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: R
   return false;
 };
 
-export const roleGuard = (roles: ('super_admin' | 'admin' | 'staff')[]): CanActivateFn => {
+export const roleGuard = (roles: ('super_admin' | 'inventory_manager')[]): CanActivateFn => {
   return (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
     const authService = inject(AuthService);
     const router = inject(Router);

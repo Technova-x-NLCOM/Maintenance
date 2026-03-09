@@ -1,39 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
-interface DemoAccount {
-  role: string;
-  icon: string;
-  identifier: string;
-  password: string;
-  description: string;
-}
-
 @Component({
-  selector: 'app-login',
+  selector: 'app-admin-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  templateUrl: './admin-login.component.html',
+  styleUrl: './admin-login.component.scss'
 })
-export class LoginComponent implements OnInit {
+export class AdminLoginComponent implements OnInit {
   loginForm!: FormGroup;
   showPassword = false;
   isLoading = false;
   errorMessage = '';
-
-  demoAccounts: DemoAccount[] = [
-    {
-      role: 'Inventory Manager',
-      icon: '📦',
-      identifier: 'inventory@nlcom.org',
-      password: 'InventoryManager123!',
-      description: 'Complete inventory operations management'
-    }
-  ];
 
   constructor(
     private fb: FormBuilder,
@@ -44,21 +26,12 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     this.loginForm = this.fb.group({
       identifier: ['', [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      rememberMe: [false]
+      password: ['', [Validators.required, Validators.minLength(6)]]
     });
   }
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
-  }
-
-  fillDemoCredentials(account: DemoAccount) {
-    this.loginForm.patchValue({
-      identifier: account.identifier,
-      password: account.password
-    });
-    this.errorMessage = '';
   }
 
   onSubmit() {
@@ -74,10 +47,10 @@ export class LoginComponent implements OnInit {
     this.authService.login(identifier, password).subscribe({
       next: (response) => {
         this.isLoading = false;
-        if (response.user.role === 'super_admin') {
-          // Log out the super admin immediately — wrong portal
+        if (response.user.role !== 'super_admin') {
+          // Not an admin — revoke token immediately
           this.authService.logout().subscribe();
-          this.errorMessage = 'This portal is for Inventory Managers only. Please use the administrator portal.';
+          this.errorMessage = 'Access denied. This portal is for administrators only.';
           return;
         }
         this.router.navigate(['/dashboard']);

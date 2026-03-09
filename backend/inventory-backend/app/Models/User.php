@@ -76,7 +76,13 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->roles()
             ->whereHas('permissions', function ($q) use ($permissionName) {
-                $q->where('permission_name', $permissionName);
+                $q->where('permission_name', $permissionName)
+                  ->where(function ($q2) {
+                      $q2->where('role_permissions.can_create', true)
+                         ->orWhere('role_permissions.can_read', true)
+                         ->orWhere('role_permissions.can_update', true)
+                         ->orWhere('role_permissions.can_delete', true);
+                  });
             })->exists();
     }
     public function getRoleAttribute()

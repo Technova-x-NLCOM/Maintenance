@@ -19,6 +19,8 @@ Route::prefix('api/auth')->group(function () {
                 ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
             Route::post('logout', [AuthController::class, 'logout'])
                 ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('refresh', [AuthController::class, 'refresh'])
+                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         });
 });
 
@@ -72,25 +74,15 @@ Route::prefix('api/super-admin')
         });
     });
 
-// Admin Dashboard API routes
-Route::prefix('api/admin')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api'])->group(function () {
-            Route::get('stats', [\App\Http\Controllers\AdminController::class, 'stats']);
-            Route::get('activity', [\App\Http\Controllers\AdminController::class, 'activity']);
-            Route::get('alerts', [\App\Http\Controllers\AdminController::class, 'alerts']);
-        });
-    });
 
-// Staff Dashboard API routes
-Route::prefix('api/staff')
+// Inventory Manager Dashboard API routes
+Route::prefix('api/inventory-manager')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->group(function () {
         Route::middleware(['auth:api'])->group(function () {
-            Route::get('stats', [\App\Http\Controllers\StaffController::class, 'stats']);
-            Route::get('activity', [\App\Http\Controllers\StaffController::class, 'activity']);
-            Route::get('alerts', [\App\Http\Controllers\StaffController::class, 'alerts']);
+            Route::get('stats', [\App\Http\Controllers\InventoryManagerController::class, 'stats']);
+            Route::get('activity', [\App\Http\Controllers\InventoryManagerController::class, 'activity']);
+            Route::get('alerts', [\App\Http\Controllers\InventoryManagerController::class, 'alerts']);
         });
     });
 
@@ -111,5 +103,15 @@ Route::prefix('api/maintenance')
             // Table Form - Create and update
             Route::post('{table}/rows', [\App\Http\Controllers\Maintenance\TableFormController::class, 'create']);
             Route::put('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableFormController::class, 'update']);
+        });
+    });
+
+// System Settings API routes (super admin only)
+Route::prefix('api/settings')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_settings'])->group(function () {
+            Route::get('/', [\App\Http\Controllers\SystemSettingsController::class, 'index']);
+            Route::put('{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
         });
     });

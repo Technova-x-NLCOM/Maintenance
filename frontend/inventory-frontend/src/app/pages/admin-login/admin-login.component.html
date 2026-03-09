@@ -1,16 +1,21 @@
-<div class="login-container">
-  <div class="login-card">
+<div class="admin-login-container">
+  <a routerLink="/" class="back-home-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to Home
+  </a>
+  <div class="admin-login-card">
     <!-- Header -->
     <div class="login-header">
-      <div class="portal-badge">
+      <div class="admin-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
-        Inventory Manager Portal
+        Administrator Portal
       </div>
-      <h2>Welcome Back</h2>
-      <p class="subtitle">Sign in to manage inventory operations</p>
+      <h2>Admin Sign In</h2>
+      <p class="subtitle">Restricted access — authorized personnel only</p>
     </div>
 
     <!-- Error Message -->
@@ -33,6 +38,7 @@
           formControlName="identifier"
           placeholder="Enter your username or email"
           class="form-control"
+          autocomplete="username"
         />
         <span class="error" *ngIf="loginForm.get('identifier')?.invalid && loginForm.get('identifier')?.touched">
           Please enter your username or email
@@ -48,6 +54,7 @@
             formControlName="password"
             placeholder="Enter your password"
             class="form-control"
+            autocomplete="current-password"
           />
           <button
             type="button"
@@ -69,36 +76,13 @@
         </span>
       </div>
 
-      <!-- <div class="form-group checkbox">
-        <input
-          type="checkbox"
-          id="rememberMe"
-          formControlName="rememberMe"
-        />
-        <label for="rememberMe">Remember me</label>
-      </div> -->
-
       <button
         type="submit"
-        class="btn btn-primary btn-login"
+        class="btn btn-admin btn-login"
         [disabled]="isLoading"
       >
         {{ isLoading ? 'Signing in...' : 'Sign In' }}
       </button>
     </form>
-
-
-
-    <!-- Links -->
-    <div class="form-footer">
-      <a href="#forgot-password" class="link">Forgot Password?</a>
-      <span class="divider">•</span>
-      <a routerLink="/signup" class="link">Create Account</a>
-    </div>
-
-    <!-- Back to Home -->
-    <div class="back-home">
-      <a routerLink="/" class="link-home">← Back to Home</a>
-    </div>
   </div>
 </div>
