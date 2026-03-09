@@ -51,6 +51,7 @@ export class AdminLoginComponent implements OnInit {
           // Not an admin — revoke token immediately
           this.authService.logout().subscribe();
           this.errorMessage = 'Access denied. This portal is for administrators only.';
+          this.router.navigate(['/login']);
           return;
         }
         this.router.navigate(['/dashboard']);

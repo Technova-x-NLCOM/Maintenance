@@ -78,6 +78,7 @@ export class LoginComponent implements OnInit {
           // Log out the super admin immediately — wrong portal
           this.authService.logout().subscribe();
           this.errorMessage = 'This portal is for Inventory Managers only. Please use the administrator portal.';
+          this.router.navigate(['/admin-login']);
           return;
         }
         this.router.navigate(['/dashboard']);
