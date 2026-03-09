@@ -149,7 +149,7 @@ class AuthController extends Controller
                 'message' => 'User registered successfully! Welcome to NLCOM Inventory System.',
                 'access_token' => $token,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'expires_in' => config('jwt.ttl') * 60,
                 'user' => [
                     'user_id' => $user->user_id,
                     'username' => $user->username,
@@ -193,6 +193,11 @@ class AuthController extends Controller
                     'min:1',
                     'max:255'
                 ],
+                'expected_role' => [
+                    'nullable',
+                    'string',
+                    'in:super_admin,inventory_manager'
+                ],
             ], [
                 'identifier.required' => 'Username or email is required.',
                 'identifier.min' => 'Username or email must be at least 3 characters long.',
@@ -203,6 +208,8 @@ class AuthController extends Controller
                 'password.min' => 'Password cannot be empty.',
                 'password.max' => 'Password is too long.',
                 'password.string' => 'Password must be valid text.',
+                
+                'expected_role.in' => 'Invalid portal role specified.',
             ]);
 
         } catch (ValidationException $e) {
@@ -216,6 +223,7 @@ class AuthController extends Controller
 
         $identifier = trim($credentials['identifier']);
         $password = $credentials['password'];
+        $expectedRole = $credentials['expected_role'] ?? null;
 
         // Determine if identifier is email or username
         $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -251,7 +259,18 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Generate JWT token
+            // Check if user's role matches expected role BEFORE issuing token
+            if ($expectedRole && $user->role !== $expectedRole) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account does not have access to this portal. Please use the correct login page.',
+                    'error_type' => 'unauthorized_portal_access',
+                    'user_role' => $user->role,
+                    'expected_role' => $expectedRole
+                ], 403);
+            }
+
+            // Generate JWT token (only after all validation passes)
             $token = JWTAuth::fromUser($user);
             $user->load('primaryRole');
 
@@ -263,7 +282,7 @@ class AuthController extends Controller
                 'message' => 'Login successful! Welcome back, ' . $user->first_name . '.',
                 'access_token' => $token,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'expires_in' => config('jwt.ttl') * 60,
                 'user' => [
                     'user_id' => $user->user_id,
                     'username' => $user->username,
@@ -415,7 +434,7 @@ class AuthController extends Controller
                 'message' => 'Token refreshed successfully.',
                 'access_token' => $newToken,
                 'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60,
+                'expires_in' => config('jwt.ttl') * 60,
             ], 200);
             
         } catch (JWTException $e) {

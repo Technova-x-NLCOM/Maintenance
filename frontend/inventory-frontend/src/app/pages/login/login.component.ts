@@ -79,6 +79,17 @@ export class LoginComponent implements OnInit {
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = error.error?.message || 'Invalid credentials or server error';
+        
+        // Reroute to correct portal based on user role
+        if (error.error?.error_type === 'unauthorized_portal_access') {
+          const userRole = error.error?.user_role;
+          if (userRole === 'super_admin') {
+            this.errorMessage = 'Redirecting to Administrator Portal...';
+            setTimeout(() => {
+              this.router.navigate(['/admin-login']);
+            }, 2000);
+          }
+        }
       }
     });
   }

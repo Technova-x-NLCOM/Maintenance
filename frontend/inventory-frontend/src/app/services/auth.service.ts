@@ -101,23 +101,18 @@ export class AuthService {
       password: string,
       expectedRole?: 'super_admin' | 'inventory_manager'
     ): Observable<AuthResponse> {
+      const payload: any = { identifier, password };
+      if (expectedRole) {
+        payload.expected_role = expectedRole;
+      }
+      
       return this.http.post<AuthResponse>(
       `${this.API_URL}/login`,
-        { identifier, password }
+        payload
     ).pipe(
       mergeMap(response => {
-        if (expectedRole && response.user.role !== expectedRole) {
-          return throwError(() => ({
-            error: {
-              message:
-                expectedRole === 'super_admin'
-                  ? 'Access denied. This portal is for administrators only.'
-                  : 'This portal is for Inventory Managers only. Please use the administrator portal.'
-            }
-          }));
-        }
-
-          this.setToken(response.access_token);
+        // Token is only returned if role validation passed on backend
+        this.setToken(response.access_token);
         this.currentUserSubject.next(response.user);
         localStorage.setItem('user', JSON.stringify(response.user));
         return of(response);
