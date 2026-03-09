@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Inventory\ItemController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -83,6 +84,20 @@ Route::prefix('api/inventory-manager')
             Route::get('stats', [\App\Http\Controllers\InventoryManagerController::class, 'stats']);
             Route::get('activity', [\App\Http\Controllers\InventoryManagerController::class, 'activity']);
             Route::get('alerts', [\App\Http\Controllers\InventoryManagerController::class, 'alerts']);
+        });
+    });
+
+// Inventory Master Data - Item Registration and Updates
+Route::prefix('api/inventory/items')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('options', [ItemController::class, 'options']);
+            Route::get('/', [ItemController::class, 'index']);
+            Route::get('{itemId}', [ItemController::class, 'show']);
+            Route::post('/', [ItemController::class, 'store']);
+            Route::put('{itemId}', [ItemController::class, 'update']);
+            Route::patch('{itemId}/status', [ItemController::class, 'updateStatus']);
         });
     });
 

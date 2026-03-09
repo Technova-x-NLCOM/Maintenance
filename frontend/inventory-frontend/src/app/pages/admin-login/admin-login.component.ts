@@ -44,20 +44,25 @@ export class AdminLoginComponent implements OnInit {
     this.errorMessage = '';
     const { identifier, password } = this.loginForm.value;
 
-    this.authService.login(identifier, password).subscribe({
-      next: (response) => {
+    this.authService.login(identifier, password, 'super_admin').subscribe({
+      next: () => {
         this.isLoading = false;
-        if (response.user.role !== 'super_admin') {
-          // Not an admin — revoke token immediately
-          this.authService.logout().subscribe();
-          this.errorMessage = 'Access denied. This portal is for administrators only.';
-          return;
-        }
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = error.error?.message || 'Invalid credentials or server error';
+        
+        // Reroute to correct portal based on user role
+        if (error.error?.error_type === 'unauthorized_portal_access') {
+          const userRole = error.error?.user_role;
+          if (userRole === 'inventory_manager') {
+            this.errorMessage = 'Redirecting to Inventory Manager Portal...';
+            setTimeout(() => {
+              this.router.navigate(['/login']);
+            }, 2000);
+          }
+        }
       }
     });
   }

@@ -1,0 +1,155 @@
+<div class="items-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Inventory Master Data</p>
+      <h2>Item Registration & Updates</h2>
+      <p class="subtitle">Create new items and update existing item master records.</p>
+    </div>
+    <button class="ghost" (click)="startNew()">New Item</button>
+  </header>
+
+  <div *ngIf="errorMessage" class="state state-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="state state-success">{{ successMessage }}</div>
+
+  <section class="panel form-panel">
+    <h3>{{ selectedItemId ? 'Update Item' : 'Register Item' }}</h3>
+
+    <div class="form-grid">
+      <label>
+        <span>Item Code *</span>
+        <input type="text" [(ngModel)]="formData.item_code" />
+      </label>
+
+      <label>
+        <span>Description *</span>
+        <input type="text" [(ngModel)]="formData.item_description" />
+      </label>
+
+      <label>
+        <span>Item Type *</span>
+        <select [(ngModel)]="formData.item_type_id">
+          <option [ngValue]="null">Select item type</option>
+          <option *ngFor="let type of options.item_types" [ngValue]="type.item_type_id">{{ type.type_name }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Category</span>
+        <select [(ngModel)]="formData.category_id">
+          <option [ngValue]="null">No category</option>
+          <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
+            {{ category.category_name }}
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span>Measurement Unit</span>
+        <input type="text" [(ngModel)]="formData.measurement_unit" />
+      </label>
+
+      <label>
+        <span>Unit Value</span>
+        <input type="number" min="0" step="0.01" [(ngModel)]="formData.unit_value" />
+      </label>
+
+      <label>
+        <span>Reorder Level</span>
+        <input type="number" min="0" [(ngModel)]="formData.reorder_level" />
+      </label>
+
+      <label>
+        <span>MG Dosage</span>
+        <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" />
+      </label>
+
+      <label class="full-width">
+        <span>Image URL</span>
+        <input type="url" [(ngModel)]="formData.image_url" />
+      </label>
+
+      <label class="full-width">
+        <span>Particular</span>
+        <textarea rows="2" [(ngModel)]="formData.particular"></textarea>
+      </label>
+
+      <label class="full-width">
+        <span>Remarks</span>
+        <textarea rows="2" [(ngModel)]="formData.remarks"></textarea>
+      </label>
+
+      <label class="checkbox-row">
+        <input type="checkbox" [(ngModel)]="formData.is_active" />
+        <span>Active item</span>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button class="primary" [disabled]="saving" (click)="save()">
+        {{ saving ? 'Saving...' : (selectedItemId ? 'Update Item' : 'Register Item') }}
+      </button>
+      <button class="ghost" type="button" (click)="startNew()">Clear</button>
+    </div>
+  </section>
+
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h3>Registered Items ({{ totalItems }})</h3>
+      <div class="search-row">
+        <input
+          type="text"
+          [(ngModel)]="search"
+          placeholder="Search by code, description, type, or category"
+          (keyup.enter)="onSearch()"
+        />
+        <button class="ghost" (click)="onSearch()">Search</button>
+        <button class="ghost" (click)="clearSearch()">Reset</button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state state-loading">Loading items...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Reorder</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>{{ item.item_code }}</td>
+            <td>{{ item.item_description }}</td>
+            <td>{{ item.item_type_name || '-' }}</td>
+            <td>{{ item.category_name || '-' }}</td>
+            <td>{{ item.reorder_level }}</td>
+            <td>
+              <span class="status" [class.inactive]="!item.is_active">{{ item.is_active ? 'Active' : 'Inactive' }}</span>
+            </td>
+            <td class="actions">
+              <button class="ghost" (click)="editItem(item)">Edit</button>
+              <button class="ghost" (click)="toggleStatus(item)">
+                {{ item.is_active ? 'Deactivate' : 'Activate' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="items.length === 0">
+            <td colspan="7" class="empty">No items found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading">
+      <button class="ghost" [disabled]="currentPage <= 1" (click)="previousPage()">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()">Next</button>
+    </div>
+  </section>
+</div>

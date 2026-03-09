@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, tap, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError } from 'rxjs';
 
 export interface User {
   user_id: number;
@@ -96,15 +96,26 @@ export class AuthService {
     ).subscribe();
   }
 
-    login(identifier: string, password: string): Observable<AuthResponse> {
+    login(
+      identifier: string,
+      password: string,
+      expectedRole?: 'super_admin' | 'inventory_manager'
+    ): Observable<AuthResponse> {
+      const payload: any = { identifier, password };
+      if (expectedRole) {
+        payload.expected_role = expectedRole;
+      }
+      
       return this.http.post<AuthResponse>(
       `${this.API_URL}/login`,
-        { identifier, password }
+        payload
     ).pipe(
-      tap(response => {
-          this.setToken(response.access_token);
+      mergeMap(response => {
+        // Token is only returned if role validation passed on backend
+        this.setToken(response.access_token);
         this.currentUserSubject.next(response.user);
         localStorage.setItem('user', JSON.stringify(response.user));
+        return of(response);
       }),
       catchError(error => {
         throw error;

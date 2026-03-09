@@ -71,20 +71,25 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     const { identifier, password } = this.loginForm.value;
 
-    this.authService.login(identifier, password).subscribe({
-      next: (response) => {
+    this.authService.login(identifier, password, 'inventory_manager').subscribe({
+      next: () => {
         this.isLoading = false;
-        if (response.user.role === 'super_admin') {
-          // Log out the super admin immediately — wrong portal
-          this.authService.logout().subscribe();
-          this.errorMessage = 'This portal is for Inventory Managers only. Please use the administrator portal.';
-          return;
-        }
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = error.error?.message || 'Invalid credentials or server error';
+        
+        // Reroute to correct portal based on user role
+        if (error.error?.error_type === 'unauthorized_portal_access') {
+          const userRole = error.error?.user_role;
+          if (userRole === 'super_admin') {
+            this.errorMessage = 'Redirecting to Administrator Portal...';
+            setTimeout(() => {
+              this.router.navigate(['/admin-login']);
+            }, 2000);
+          }
+        }
       }
     });
   }

@@ -58,6 +58,25 @@
       <span class="label">Inventory</span>
     </a>
 
+    <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
+      <button class="nav-group-toggle" (click)="toggleGroup('inventory-master-data')" [class.expanded]="isGroupOpen('inventory-master-data')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v4H4z"/>
+          <path d="M4 10h16v10H4z"/>
+        </svg>
+        <span class="label">Inventory Master Data</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('inventory-master-data')">
+        <a routerLink="/dashboard/inventory/items" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Item Registration & Updates</span>
+        </a>
+      </div>
+    </div>
+
     <!-- ═══════ USERS & ACCESS GROUP (Super Admin Only) ═══════ -->
     <div class="nav-group" *ngIf="hasPermission('manage_permissions') || hasPermission('manage_roles')">
       <button class="nav-group-toggle" (click)="toggleGroup('users')" [class.expanded]="isGroupOpen('users')">
