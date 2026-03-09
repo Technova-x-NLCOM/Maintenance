@@ -71,16 +71,9 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     const { identifier, password } = this.loginForm.value;
 
-    this.authService.login(identifier, password).subscribe({
-      next: (response) => {
+    this.authService.login(identifier, password, 'inventory_manager').subscribe({
+      next: () => {
         this.isLoading = false;
-        if (response.user.role === 'super_admin') {
-          // Log out the super admin immediately — wrong portal
-          this.authService.logout().subscribe();
-          this.errorMessage = 'This portal is for Inventory Managers only. Please use the administrator portal.';
-          this.router.navigate(['/admin-login']);
-          return;
-        }
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {

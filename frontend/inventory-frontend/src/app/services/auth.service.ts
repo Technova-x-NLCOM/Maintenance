@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, tap, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError } from 'rxjs';
 
 export interface User {
   user_id: number;
@@ -96,15 +96,31 @@ export class AuthService {
     ).subscribe();
   }
 
-    login(identifier: string, password: string): Observable<AuthResponse> {
+    login(
+      identifier: string,
+      password: string,
+      expectedRole?: 'super_admin' | 'inventory_manager'
+    ): Observable<AuthResponse> {
       return this.http.post<AuthResponse>(
       `${this.API_URL}/login`,
         { identifier, password }
     ).pipe(
-      tap(response => {
+      mergeMap(response => {
+        if (expectedRole && response.user.role !== expectedRole) {
+          return throwError(() => ({
+            error: {
+              message:
+                expectedRole === 'super_admin'
+                  ? 'Access denied. This portal is for administrators only.'
+                  : 'This portal is for Inventory Managers only. Please use the administrator portal.'
+            }
+          }));
+        }
+
           this.setToken(response.access_token);
         this.currentUserSubject.next(response.user);
         localStorage.setItem('user', JSON.stringify(response.user));
+        return of(response);
       }),
       catchError(error => {
         throw error;
