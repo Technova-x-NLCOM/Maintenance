@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Inventory Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .offline-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 2rem;
+            opacity: 0.8;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 300;
+        }
+
+        p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .features {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .features h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .features ul {
+            list-style: none;
+        }
+
+        .features li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .retry-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .online {
+            background: rgba(74, 222, 128, 0.2);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+
+        .offline {
+            background: rgba(248, 113, 113, 0.2);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .offline-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .features {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <svg class="offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6"/>
+        </svg>
+
+        <h1>You're Offline</h1>
+        <p>Don't worry! You can still access some features of the Inventory Management System while offline.</p>
+
+        <div class="features">
+            <h3>Available Offline:</h3>
+            <ul>
+                <li>View cached alerts and notifications</li>
+                <li>Browse recent dashboard data</li>
+                <li>Search through cached inventory items</li>
+                <li>View user settings and preferences</li>
+                <li>Access alert analytics (cached data)</li>
+            </ul>
+        </div>
+
+        <div class="features">
+            <h3>Requires Internet Connection:</h3>
+            <ul>
+                <li>Create or update inventory items</li>
+                <li>Acknowledge or resolve alerts</li>
+                <li>Perform bulk operations</li>
+                <li>Update user settings</li>
+                <li>Real-time data synchronization</li>
+            </ul>
+        </div>
+
+        <a href="/" class="retry-btn" onclick="window.location.reload()">
+            Try Again
+        </a>
+
+        <div class="status offline" id="connectionStatus">
+            <strong>Status:</strong> <span id="statusText">Offline</span>
+        </div>
+    </div>
+
+    <script>
+        // Monitor connection status
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            if (navigator.onLine) {
+                statusElement.className = 'status online';
+                statusText.textContent = 'Online - Redirecting...';
+                
+                // Redirect to main app when back online
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+            } else {
+                statusElement.className = 'status offline';
+                statusText.textContent = 'Offline';
+            }
+        }
+
+        // Listen for connection changes
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+
+        // Initial status check
+        updateConnectionStatus();
+
+        // Periodic connection check
+        setInterval(() => {
+            // Try to fetch a small resource to verify actual connectivity
+            fetch('/favicon.ico', { 
+                method: 'HEAD',
+                cache: 'no-cache'
+            }).then(() => {
+                if (!navigator.onLine) {
+                    // Force online status if fetch succeeds
+                    window.dispatchEvent(new Event('online'));
+                }
+            }).catch(() => {
+                if (navigator.onLine) {
+                    // Force offline status if fetch fails
+                    window.dispatchEvent(new Event('offline'));
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
