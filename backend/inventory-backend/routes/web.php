@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\AlertManagementController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -128,5 +129,19 @@ Route::prefix('api/settings')
         Route::middleware(['auth:api', 'permission:manage_settings'])->group(function () {
             Route::get('/', [\App\Http\Controllers\SystemSettingsController::class, 'index']);
             Route::put('{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
+        });
+    });
+
+// Alert Management API routes
+Route::prefix('api/alerts')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('/', [AlertManagementController::class, 'getAlerts']);
+            Route::post('bulk-acknowledge', [AlertManagementController::class, 'bulkAcknowledge']);
+            Route::post('bulk-resolve', [AlertManagementController::class, 'bulkResolve']);
+            Route::get('analytics', [AlertManagementController::class, 'getAnalytics']);
+            Route::get('settings', [AlertManagementController::class, 'getUserSettings']);
+            Route::put('settings', [AlertManagementController::class, 'updateUserSettings']);
         });
     });
