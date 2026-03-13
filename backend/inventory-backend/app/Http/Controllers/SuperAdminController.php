@@ -122,7 +122,7 @@ class SuperAdminController extends Controller
     {
         $alerts = [];
 
-        // Expiry alerts
+        // Expiry alerts with escalation check
         $expiryAlerts = DB::table('expiry_alerts as ea')
             ->join('inventory_batches as ib', 'ea.batch_id', '=', 'ib.batch_id')
             ->join('items as i', 'ib.item_id', '=', 'i.item_id')
@@ -137,6 +137,7 @@ class SuperAdminController extends Controller
                     ELSE 'info'
                 END as severity"),
                 'ea.created_at',
+                'ea.escalation_level',
                 DB::raw('false as acknowledged')
             )
             ->orderBy('ea.days_until_expiry', 'asc')
@@ -144,10 +145,41 @@ class SuperAdminController extends Controller
             ->get();
 
         foreach ($expiryAlerts as $alert) {
+            // Check if alert should be escalated
+            $severity = $alert->severity;
+            $createdAt = new \DateTime($alert->created_at);
+            
+            if (\App\Models\AlertEscalationRule::shouldEscalate('expiry', $severity, $createdAt)) {
+                // Update escalation level in database
+                DB::table('expiry_alerts')
+                    ->where('alert_id', $alert->alert_id)
+                    ->update([
+                        'escalation_level' => $alert->escalation_level + 1,
+                        'escalated_at' => now()
+                    ]);
+                
+                // Create alert history entry
+                \App\Models\AlertHistory::createEntry([
+                    'type' => 'expiry',
+                    'reference' => $alert->alert_id,
+                    'message' => $alert->message . ' (ESCALATED)',
+                    'severity' => 'critical', // Escalated alerts become critical
+                    'status' => 'escalated',
+                    'metadata' => [
+                        'original_severity' => $severity,
+                        'escalation_level' => $alert->escalation_level + 1,
+                        'batch_id' => $alert->alert_id
+                    ]
+                ]);
+                
+                $alert->severity = 'critical';
+                $alert->message .= ' (ESCALATED - Level ' . ($alert->escalation_level + 1) . ')';
+            }
+            
             $alerts[] = $alert;
         }
 
-        // Low stock alerts (generated dynamically)
+        // Low stock alerts (generated dynamically) with escalation
         $lowStockItems = DB::table('items as i')
             ->leftJoin('inventory_batches as ib', function ($join) {
                 $join->on('i.item_id', '=', 'ib.item_id')
@@ -155,21 +187,22 @@ class SuperAdminController extends Controller
             })
             ->where('i.is_active', true)
             ->where('i.reorder_level', '>', 0)
-            ->groupBy('i.item_id', 'i.item_description', 'i.reorder_level')
+            ->groupBy('i.item_id', 'i.item_description', 'i.reorder_level', 'i.created_at')
             ->havingRaw('COALESCE(SUM(ib.quantity), 0) <= i.reorder_level')
             ->select(
                 'i.item_id',
                 'i.item_description',
                 'i.reorder_level',
+                'i.created_at',
                 DB::raw('COALESCE(SUM(ib.quantity), 0) as current_stock')
             )
             ->limit(10)
             ->get();
 
         foreach ($lowStockItems as $item) {
-            // Create user-friendly message based on stock level
             $currentStock = (int) $item->current_stock;
             $reorderLevel = (int) $item->reorder_level;
+            $createdAt = new \DateTime($item->created_at);
             
             if ($currentStock == 0) {
                 $message = "{$item->item_description} is OUT OF STOCK! Please restock immediately.";
@@ -178,9 +211,29 @@ class SuperAdminController extends Controller
                 $message = "{$item->item_description} is running low. Only {$currentStock} left (minimum should be {$reorderLevel}).";
                 $severity = 'warning';
             } else {
-                // Stock equals reorder level - needs attention soon
                 $message = "{$item->item_description} has reached minimum stock level ({$currentStock}). Consider restocking soon.";
                 $severity = 'info';
+            }
+            
+            // Check for escalation
+            if (\App\Models\AlertEscalationRule::shouldEscalate('low_stock', $severity, $createdAt)) {
+                $message .= ' (ESCALATED - Requires immediate attention)';
+                $severity = 'critical';
+                
+                // Create alert history entry for escalated low stock
+                \App\Models\AlertHistory::createEntry([
+                    'type' => 'low_stock',
+                    'reference' => 'item_' . $item->item_id,
+                    'message' => $message,
+                    'severity' => 'critical',
+                    'status' => 'escalated',
+                    'metadata' => [
+                        'item_id' => $item->item_id,
+                        'current_stock' => $currentStock,
+                        'reorder_level' => $reorderLevel,
+                        'escalated' => true
+                    ]
+                ]);
             }
             
             $alerts[] = (object)[
@@ -188,7 +241,7 @@ class SuperAdminController extends Controller
                 'type' => 'low_stock',
                 'message' => $message,
                 'severity' => $severity,
-                'created_at' => now()->toDateTimeString(),
+                'created_at' => $item->created_at,
                 'acknowledged' => false,
             ];
         }
