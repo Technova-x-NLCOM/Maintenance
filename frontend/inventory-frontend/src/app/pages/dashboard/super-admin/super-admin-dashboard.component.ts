@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../../services/auth.service';
+import { OfflineService } from '../../../services/offline.service';
 import { Subscription, filter, forkJoin, catchError, of } from 'rxjs';
 
 export interface DashboardStats {
@@ -59,7 +60,8 @@ export class SuperAdminDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private offlineService: OfflineService
   ) {}
 
   ngOnInit() {
@@ -77,6 +79,20 @@ export class SuperAdminDashboardComponent implements OnInit, OnDestroy {
           this.loadDashboardData();
         }
       });
+
+    // Listen for online/offline status
+    this.offlineService.isOnline$.subscribe(isOnline => {
+      if (isOnline) {
+        this.loadDashboardData();
+      } else {
+        this.loadOfflineData();
+      }
+    });
+
+    // Listen for sync events
+    window.addEventListener('online-sync', () => {
+      this.loadDashboardData();
+    });
   }
 
   ngOnDestroy() {
@@ -94,6 +110,11 @@ export class SuperAdminDashboardComponent implements OnInit, OnDestroy {
   }
 
   loadDashboardData() {
+    if (!this.offlineService.isOnline()) {
+      this.loadOfflineData();
+      return;
+    }
+
     this.loading = true;
     
     const stats$ = this.http.get<DashboardStats>(`${this.API_URL}/super-admin/stats`, { headers: this.getAuthHeaders() })
@@ -130,16 +151,43 @@ export class SuperAdminDashboardComponent implements OnInit, OnDestroy {
           this.recentActivity = activity;
           this.systemAlerts = alerts;
           this.loading = false;
+          
+          // Cache data for offline use
+          this.offlineService.cacheData(alerts, { stats, activity });
+          
           this.cdr.detectChanges();
         });
       },
       error: () => {
         this.ngZone.run(() => {
+          this.loadOfflineData();
           this.loading = false;
           this.cdr.detectChanges();
         });
       }
     });
+  }
+
+  private loadOfflineData() {
+    const cachedAlerts = this.offlineService.getCachedAlerts();
+    const cachedData = this.offlineService.getCachedUserSettings();
+    
+    if (cachedData) {
+      this.stats = cachedData?.stats || {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalItems: 0,
+        lowStockItems: 0,
+        totalTransactions: 0,
+        pendingAlerts: 0,
+        totalCategories: 0,
+        expiringItems: 0
+      };
+      this.recentActivity = cachedData?.activity || [];
+      this.systemAlerts = cachedAlerts;
+      this.loading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   getActionClass(action: string): string {
