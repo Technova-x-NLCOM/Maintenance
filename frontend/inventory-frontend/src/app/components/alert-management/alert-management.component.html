@@ -1,0 +1,418 @@
+<div class="alert-management" [class.mobile]="isMobile" [class.tablet]="isTablet">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <h1 class="title">Alert Management</h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="showAnalytics = !showAnalytics" [class.active]="showAnalytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 3v18h18"/>
+            <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+          </svg>
+          <span *ngIf="!isMobile">Analytics</span>
+        </button>
+        <button class="btn btn-secondary" (click)="showSettings = !showSettings" [class.active]="showSettings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+          </svg>
+          <span *ngIf="!isMobile">Settings</span>
+        </button>
+        <button class="btn btn-primary" (click)="loadAlerts()" [disabled]="loading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.spinning]="loading">
+            <path d="M23 4v6h-6M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          <span *ngIf="!isMobile">Refresh</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="search-filters" *ngIf="!showSettings && !showAnalytics">
+    <div class="search-bar">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input 
+          #searchInput
+          type="text" 
+          class="search-input" 
+          placeholder="Search alerts..." 
+          [(ngModel)]="searchTerm"
+          (input)="onSearch($event)"
+        >
+        <button class="clear-search" *ngIf="searchTerm" (click)="clearSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <button class="filter-toggle" (click)="showFilters = !showFilters" [class.active]="showFilters">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        <span *ngIf="!isMobile">Filters</span>
+      </button>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="filters" *ngIf="showFilters">
+      <div class="filter-group">
+        <label>Type:</label>
+        <div class="filter-pills">
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.type === 'expiry'"
+            (click)="toggleFilter('type', 'expiry')"
+          >
+            Expiry
+          </button>
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.type === 'low_stock'"
+            (click)="toggleFilter('type', 'low_stock')"
+          >
+            Low Stock
+          </button>
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.type === 'system'"
+            (click)="toggleFilter('type', 'system')"
+          >
+            System
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Severity:</label>
+        <div class="filter-pills">
+          <button 
+            class="filter-pill severity-critical" 
+            [class.active]="filters.severity === 'critical'"
+            (click)="toggleFilter('severity', 'critical')"
+          >
+            Critical
+          </button>
+          <button 
+            class="filter-pill severity-warning" 
+            [class.active]="filters.severity === 'warning'"
+            (click)="toggleFilter('severity', 'warning')"
+          >
+            Warning
+          </button>
+          <button 
+            class="filter-pill severity-info" 
+            [class.active]="filters.severity === 'info'"
+            (click)="toggleFilter('severity', 'info')"
+          >
+            Info
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Status:</label>
+        <div class="filter-pills">
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.status === 'pending'"
+            (click)="toggleFilter('status', 'pending')"
+          >
+            Pending
+          </button>
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.status === 'acknowledged'"
+            (click)="toggleFilter('status', 'acknowledged')"
+          >
+            Acknowledged
+          </button>
+          <button 
+            class="filter-pill" 
+            [class.active]="filters.status === 'resolved'"
+            (click)="toggleFilter('status', 'resolved')"
+          >
+            Resolved
+          </button>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-sm" (click)="clearFilters()">
+        Clear All Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="bulk-actions" *ngIf="selectedAlerts.size > 0 && !showSettings && !showAnalytics">
+    <div class="selection-info">
+      <span>{{ selectedAlerts.size }} alert(s) selected</span>
+    </div>
+    <div class="bulk-buttons">
+      <button class="btn btn-warning btn-sm" (click)="bulkAcknowledge()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Acknowledge
+      </button>
+      <button class="btn btn-success btn-sm" (click)="bulkResolve()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        Resolve
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" *ngIf="showSettings">
+    <div class="panel-header">
+      <h2>Alert Settings</h2>
+      <button class="btn btn-ghost" (click)="showSettings = false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="settings-form">
+      <div class="form-group">
+        <label for="alertFrequency">Alert Frequency</label>
+        <select id="alertFrequency" [(ngModel)]="userSettings.alert_frequency" class="form-control">
+          <option value="immediate">Immediate</option>
+          <option value="daily">Daily Digest</option>
+          <option value="weekly">Weekly Summary</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="expiryWarning">Expiry Warning Days</label>
+        <input 
+          type="number" 
+          id="expiryWarning" 
+          [(ngModel)]="userSettings.expiry_warning_days" 
+          class="form-control"
+          min="1" 
+          max="365"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="criticalExpiry">Critical Expiry Days</label>
+        <input 
+          type="number" 
+          id="criticalExpiry" 
+          [(ngModel)]="userSettings.critical_expiry_days" 
+          class="form-control"
+          min="1" 
+          max="30"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="warningExpiry">Warning Expiry Days</label>
+        <input 
+          type="number" 
+          id="warningExpiry" 
+          [(ngModel)]="userSettings.warning_expiry_days" 
+          class="form-control"
+          min="1" 
+          max="60"
+        >
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="userSettings.email_notifications"
+          >
+          <span class="checkmark"></span>
+          Email Notifications
+        </label>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="userSettings.push_notifications"
+          >
+          <span class="checkmark"></span>
+          Push Notifications
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-secondary" (click)="showSettings = false">Cancel</button>
+        <button class="btn btn-primary" (click)="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Panel -->
+  <div class="analytics-panel" *ngIf="showAnalytics">
+    <div class="panel-header">
+      <h2>Alert Analytics</h2>
+      <div class="period-selector">
+        <button class="btn btn-sm" (click)="loadAnalytics('7d')">7 Days</button>
+        <button class="btn btn-sm" (click)="loadAnalytics('30d')">30 Days</button>
+        <button class="btn btn-sm" (click)="loadAnalytics('90d')">90 Days</button>
+      </div>
+      <button class="btn btn-ghost" (click)="showAnalytics = false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="analytics-content" *ngIf="analytics">
+      <div class="analytics-summary">
+        <div class="summary-card">
+          <span class="summary-value">{{ analytics.summary.total_alerts }}</span>
+          <span class="summary-label">Total Alerts</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-value">{{ analytics.summary.resolved_alerts }}</span>
+          <span class="summary-label">Resolved</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-value">{{ analytics.summary.pending_alerts }}</span>
+          <span class="summary-label">Pending</span>
+        </div>
+        <div class="summary-card critical">
+          <span class="summary-value">{{ analytics.summary.critical_alerts }}</span>
+          <span class="summary-label">Critical</span>
+        </div>
+      </div>
+
+      <div class="top-alerts">
+        <h3>Most Frequent Alerts</h3>
+        <div class="alert-list">
+          <div class="alert-item" *ngFor="let alert of analytics.top_alerts">
+            <div class="alert-message">{{ alert.message }}</div>
+            <div class="alert-count">{{ alert.count }} times</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert List -->
+  <div class="alert-list" *ngIf="!showSettings && !showAnalytics">
+    <div class="list-header" *ngIf="!isMobile">
+      <div class="select-all">
+        <input 
+          type="checkbox" 
+          [checked]="selectedAlerts.size === alerts.length && alerts.length > 0"
+          [indeterminate]="selectedAlerts.size > 0 && selectedAlerts.size < alerts.length"
+          (change)="selectAllAlerts()"
+        >
+      </div>
+      <div class="header-cell">Alert</div>
+      <div class="header-cell">Type</div>
+      <div class="header-cell">Severity</div>
+      <div class="header-cell">Status</div>
+      <div class="header-cell">Created</div>
+    </div>
+
+    <div class="loading" *ngIf="loading">
+      <div class="spinner"></div>
+      <span>Loading alerts...</span>
+    </div>
+
+    <div class="alert-item" 
+         *ngFor="let alert of alerts" 
+         [class]="getSeverityClass(alert.severity)"
+         [class.selected]="selectedAlerts.has(alert.history_id)">
+      
+      <div class="alert-checkbox">
+        <input 
+          type="checkbox" 
+          [checked]="selectedAlerts.has(alert.history_id)"
+          (change)="toggleAlertSelection(alert.history_id)"
+        >
+      </div>
+
+      <div class="alert-content">
+        <div class="alert-message">{{ alert.message }}</div>
+        <div class="alert-meta">
+          <span class="alert-type">{{ alert.alert_type | titlecase }}</span>
+          <span class="alert-severity" [class]="getSeverityClass(alert.severity)">
+            {{ alert.severity | titlecase }}
+          </span>
+          <span class="alert-status" [class]="getStatusClass(alert.status)">
+            {{ alert.status | titlecase }}
+          </span>
+          <span class="alert-time">{{ getRelativeTime(alert.created_at) }}</span>
+        </div>
+      </div>
+
+      <div class="alert-actions" *ngIf="!isMobile">
+        <button 
+          class="btn btn-sm btn-ghost" 
+          *ngIf="alert.status === 'pending'"
+          (click)="toggleAlertSelection(alert.history_id); bulkAcknowledge()"
+        >
+          Acknowledge
+        </button>
+        <button 
+          class="btn btn-sm btn-ghost" 
+          *ngIf="alert.status !== 'resolved'"
+          (click)="toggleAlertSelection(alert.history_id); bulkResolve()"
+        >
+          Resolve
+        </button>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && alerts.length === 0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <h3>No alerts found</h3>
+      <p>There are no alerts matching your current filters.</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1 && !showSettings && !showAnalytics">
+    <button 
+      class="btn btn-ghost btn-sm" 
+      [disabled]="currentPage === 1"
+      (click)="goToPage(currentPage - 1)"
+    >
+      Previous
+    </button>
+    
+    <div class="page-numbers">
+      <button 
+        class="btn btn-ghost btn-sm" 
+        *ngFor="let page of getPageNumbers()"
+        [class.active]="currentPage === page"
+        (click)="goToPage(page)"
+      >
+        {{ page }}
+      </button>
+    </div>
+    
+    <button 
+      class="btn btn-ghost btn-sm" 
+      [disabled]="currentPage === totalPages"
+      (click)="goToPage(currentPage + 1)"
+    >
+      Next
+    </button>
+  </div>
+</div>
