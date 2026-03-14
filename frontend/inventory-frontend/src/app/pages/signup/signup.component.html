@@ -1,285 +1,290 @@
-<div class="signup-container">
-  <div class="signup-card">
-    <!-- Header -->
-    <div class="signup-header">
-      <h2>Create Account</h2>
-      <p class="subtitle">Join our team and help make a difference</p>
-    </div>
-
-    <!-- Step Indicator -->
-    <div class="step-indicator">
-      <div class="step-progress">
-        <div class="progress-bar" [style.width.%]="((currentStep - 1) / (totalSteps - 1)) * 100"></div>
+<div class="signup-wrapper">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="left-overlay">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="assets/logo.png" alt="NLCOM Logo" class="logo-img" />
+        </div>
+        <span class="brand-ims">NLCOM - IMS</span>
       </div>
-      <div class="steps">
-        <div 
-          *ngFor="let title of stepTitles; let i = index" 
-          class="step" 
-          [class.completed]="getStepStatus(i + 1) === 'completed'"
-          [class.active]="getStepStatus(i + 1) === 'active'"
-          (click)="goToStep(i + 1)">
-          <div class="step-circle">
-            <span *ngIf="getStepStatus(i + 1) === 'completed'">✓</span>
-            <span *ngIf="getStepStatus(i + 1) !== 'completed'">{{ i + 1 }}</span>
+      <div class="left-content">
+        <h1>Join<br/><strong>Our Team!</strong></h1>
+        <p>
+          Provide natural and spiritual needs of disaster-stricken communities
+          by partnering with local churches, non-government organizations,
+          private institutions, individuals and different government agencies.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+    <div class="signup-card">
+      <!-- Back to Home -->
+      <a routerLink="/" class="back-home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back to Home
+      </a>
+
+      <!-- Header -->
+      <div class="signup-header">
+        <h2>Create Account</h2>
+        <p>Join our team and help make a difference</p>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step-progress">
+          <div class="progress-bar" [style.width.%]="((currentStep - 1) / (totalSteps - 1)) * 100"></div>
+        </div>
+        <div class="steps">
+          <div
+            *ngFor="let title of stepTitles; let i = index"
+            class="step"
+            [class.completed]="getStepStatus(i + 1) === 'completed'"
+            [class.active]="getStepStatus(i + 1) === 'active'"
+            (click)="goToStep(i + 1)">
+            <div class="step-circle">
+              <span *ngIf="getStepStatus(i + 1) === 'completed'">✓</span>
+              <span *ngIf="getStepStatus(i + 1) !== 'completed'">{{ i + 1 }}</span>
+            </div>
+            <span class="step-title">{{ title }}</span>
           </div>
-          <span class="step-title">{{ title }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Error Message -->
-    <div class="error-message" *ngIf="errorMessage">
-      <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      {{ errorMessage }}
-    </div>
-
-    <!-- Signup Form -->
-    <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
-      
-      <!-- Step 1: Account Info -->
-      <div class="form-step" *ngIf="currentStep === 1">
-        <h3 class="step-heading">Account Information</h3>
-        
-        <!-- Username Field -->
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input
-            type="text"
-            id="username"
-            formControlName="username"
-            placeholder="Enter a unique username"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('username')?.invalid && signupForm.get('username')?.touched">
-            Username is required (3-50 characters)
-          </span>
-        </div>
-
-        <!-- Email Field -->
-        <div class="form-group">
-          <label for="email">Email Address</label>
-          <input
-            type="email"
-            id="email"
-            formControlName="email"
-            placeholder="Enter your email"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
-            Please enter a valid email address
-          </span>
         </div>
       </div>
 
-      <!-- Step 2: Personal Info -->
-      <div class="form-step" *ngIf="currentStep === 2">
-        <h3 class="step-heading">Personal Information</h3>
-        
-        <!-- Name Fields -->
-        <div class="form-group">
-          <label for="first_name">First Name</label>
-          <input
-            type="text"
-            id="first_name"
-            formControlName="first_name"
-            placeholder="Enter your first name"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('first_name')?.invalid && signupForm.get('first_name')?.touched">
-            First name is required (at least 2 characters)
-          </span>
-        </div>
-
-        <div class="form-group">
-          <label for="last_name">Last Name</label>
-          <input
-            type="text"
-            id="last_name"
-            formControlName="last_name"
-            placeholder="Enter your last name"
-            class="form-control"
-          />
-          <span class="error" *ngIf="signupForm.get('last_name')?.invalid && signupForm.get('last_name')?.touched">
-            Last name is required (at least 2 characters)
-          </span>
-        </div>
-
-        <!-- Contact Info Field -->
-        <div class="form-group">
-          <label for="contact_info">Contact Information (Optional)</label>
-          <input
-            type="text"
-            id="contact_info"
-            formControlName="contact_info"
-            placeholder="Phone number, address, or other contact details"
-            class="form-control"
-          />
-        </div>
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage && currentStep !== 3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ errorMessage }}
       </div>
 
-      <!-- Step 3: Security -->
-      <div class="form-step" *ngIf="currentStep === 3">
-        <h3 class="step-heading">Security Setup</h3>
+      <!-- Signup Form -->
+      <form [formGroup]="signupForm" (ngSubmit)="onSubmit()">
 
-        <!-- Error Message -->
-        <div class="error-message" *ngIf="errorMessage">
-          <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          {{ errorMessage }}
-        </div>
-        
-        <!-- Password Field -->
-        <div class="form-group">
-          <label for="password">Password</label>
-          <div class="password-input-wrapper">
+        <!-- Step 1: Account Info -->
+        <div class="form-step" *ngIf="currentStep === 1">
+          <h3 class="step-heading">Account Information</h3>
+
+          <div class="form-group">
+            <label for="username">Username</label>
             <input
-              [type]="showPassword ? 'text' : 'password'"
-              id="password"
-              formControlName="password"
-              placeholder="Create a strong password"
-              class="form-control"
-              (input)="onPasswordInput($event)"
-            />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="togglePasswordVisibility()">
-              <svg *ngIf="!showPassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg *ngIf="showPassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-            </button>
-          </div>
-          <span class="error" *ngIf="showPasswordValidation">
-            <ng-container *ngIf="isPasswordValid(); else checklist">
-              <span class="success-icon">✓</span>
-              <span class="success-text">Password meets all requirements</span>
-            </ng-container>
-            <ng-template #checklist>
-              <span class="validation-item" *ngIf="!passwordValidation.length">
-                <span class="validation-icon">○</span>
-                <span>At least 8 characters</span>
-              </span>
-              <span class="validation-item" *ngIf="!passwordValidation.uppercase">
-                <span class="validation-icon">○</span>
-                <span>At least 1 uppercase letter (A-Z)</span>
-              </span>
-              <span class="validation-item" *ngIf="!passwordValidation.lowercase">
-                <span class="validation-icon">○</span>
-                <span>At least 1 lowercase letter (a-z)</span>
-              </span>
-              <span class="validation-item" *ngIf="!passwordValidation.number">
-                <span class="validation-icon">○</span>
-                <span>At least 1 number (0-9)</span>
-              </span>
-              <span class="validation-item" *ngIf="!passwordValidation.symbol">
-                <span class="validation-icon">○</span>
-                <span>At least 1 symbol (!@#$%^&*)</span>
-              </span>
-            </ng-template>
-          </span>
-        </div>
-
-        <!-- Confirm Password Field -->
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <div class="password-input-wrapper">
-            <input
-              [type]="showConfirmPassword ? 'text' : 'password'"
-              id="confirmPassword"
-              formControlName="confirmPassword"
-              placeholder="Confirm your password"
+              type="text"
+              id="username"
+              formControlName="username"
+              placeholder="Enter a unique username"
               class="form-control"
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="toggleConfirmPasswordVisibility()">
-              <svg *ngIf="!showConfirmPassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg *ngIf="showConfirmPassword" class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-            </button>
+            <span class="error" *ngIf="signupForm.get('username')?.invalid && signupForm.get('username')?.touched">
+              Username is required (3-50 characters)
+            </span>
           </div>
-          <span class="error" *ngIf="signupForm.get('confirmPassword')?.invalid && signupForm.get('confirmPassword')?.touched">
-            Please confirm your password
-          </span>
-          <span class="error" *ngIf="signupForm.errors?.['passwordMismatch'] && signupForm.get('confirmPassword')?.touched">
-            Passwords do not match
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              placeholder="Enter your email"
+              class="form-control"
+            />
+            <span class="error" *ngIf="signupForm.get('email')?.invalid && signupForm.get('email')?.touched">
+              Please enter a valid email address
+            </span>
+          </div>
+        </div>
+
+        <!-- Step 2: Personal Info -->
+        <div class="form-step" *ngIf="currentStep === 2">
+          <h3 class="step-heading">Personal Information</h3>
+
+          <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input
+              type="text"
+              id="first_name"
+              formControlName="first_name"
+              placeholder="Enter your first name"
+              class="form-control"
+            />
+            <span class="error" *ngIf="signupForm.get('first_name')?.invalid && signupForm.get('first_name')?.touched">
+              First name is required (at least 2 characters)
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input
+              type="text"
+              id="last_name"
+              formControlName="last_name"
+              placeholder="Enter your last name"
+              class="form-control"
+            />
+            <span class="error" *ngIf="signupForm.get('last_name')?.invalid && signupForm.get('last_name')?.touched">
+              Last name is required (at least 2 characters)
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="contact_info">Contact Information (Optional)</label>
+            <input
+              type="text"
+              id="contact_info"
+              formControlName="contact_info"
+              placeholder="Phone number, address, or other contact details"
+              class="form-control"
+            />
+          </div>
+        </div>
+
+        <!-- Step 3: Security -->
+        <div class="form-step" *ngIf="currentStep === 3">
+          <h3 class="step-heading">Security Setup</h3>
+
+          <div class="error-message" *ngIf="errorMessage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ errorMessage }}
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-input-wrapper">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                placeholder="Create a strong password"
+                class="form-control"
+                (input)="onPasswordInput($event)"
+              />
+              <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+                <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error" *ngIf="showPasswordValidation">
+              <ng-container *ngIf="isPasswordValid(); else checklist">
+                <span class="success-icon">✓</span>
+                <span class="success-text">Password meets all requirements</span>
+              </ng-container>
+              <ng-template #checklist>
+                <span class="validation-item" *ngIf="!passwordValidation.length">
+                  <span class="validation-icon">○</span>
+                  <span>At least 8 characters</span>
+                </span>
+                <span class="validation-item" *ngIf="!passwordValidation.uppercase">
+                  <span class="validation-icon">○</span>
+                  <span>At least 1 uppercase letter (A-Z)</span>
+                </span>
+                <span class="validation-item" *ngIf="!passwordValidation.lowercase">
+                  <span class="validation-icon">○</span>
+                  <span>At least 1 lowercase letter (a-z)</span>
+                </span>
+                <span class="validation-item" *ngIf="!passwordValidation.number">
+                  <span class="validation-icon">○</span>
+                  <span>At least 1 number (0-9)</span>
+                </span>
+                <span class="validation-item" *ngIf="!passwordValidation.symbol">
+                  <span class="validation-icon">○</span>
+                  <span>At least 1 symbol (!@#$%^&*)</span>
+                </span>
+              </ng-template>
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="password-input-wrapper">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                placeholder="Confirm your password"
+                class="form-control"
+              />
+              <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()">
+                <svg *ngIf="!showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error" *ngIf="signupForm.get('confirmPassword')?.invalid && signupForm.get('confirmPassword')?.touched">
+              Please confirm your password
+            </span>
+            <span class="error" *ngIf="signupForm.errors?.['passwordMismatch'] && signupForm.get('confirmPassword')?.touched">
+              Passwords do not match
+            </span>
+          </div>
+
+          <div class="form-group checkbox">
+            <input type="checkbox" id="agreeTerms" formControlName="agreeTerms" />
+            <label for="agreeTerms">I agree to the Terms and Conditions and Privacy Policy</label>
+          </div>
+          <span class="error" *ngIf="signupForm.get('agreeTerms')?.invalid && signupForm.get('agreeTerms')?.touched">
+            You must agree to the terms to continue
           </span>
         </div>
 
-        <!-- Terms Checkbox -->
-        <div class="form-group checkbox">
-          <input
-            type="checkbox"
-            id="agreeTerms"
-            formControlName="agreeTerms"
-          />
-          <label for="agreeTerms">
-            I agree to the Terms and Conditions and Privacy Policy
-          </label>
+        <!-- Navigation Buttons -->
+        <div class="form-navigation">
+          <button
+            type="button"
+            class="btn-back"
+            *ngIf="currentStep > 1"
+            (click)="prevStep()">
+            ← Previous
+          </button>
+          <div class="spacer" *ngIf="currentStep === 1"></div>
+
+          <button
+            type="button"
+            class="btn-next"
+            *ngIf="currentStep < totalSteps"
+            [disabled]="!isCurrentStepValid()"
+            (click)="nextStep()">
+            Next →
+          </button>
+
+          <button
+            type="submit"
+            class="btn-submit"
+            *ngIf="currentStep === totalSteps"
+            [disabled]="isLoading || signupForm.invalid">
+            {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+          </button>
         </div>
-        <span class="error" *ngIf="signupForm.get('agreeTerms')?.invalid && signupForm.get('agreeTerms')?.touched">
-          You must agree to the terms to continue
-        </span>
+      </form>
+
+      <!-- Footer -->
+      <div class="login-section">
+        <p>Already have an account?</p>
+        <a routerLink="/login" class="btn-login">Sign In</a>
       </div>
-
-      <!-- Navigation Buttons -->
-      <div class="form-navigation">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          *ngIf="currentStep > 1"
-          (click)="prevStep()">
-          ← Previous
-        </button>
-        <div class="spacer" *ngIf="currentStep === 1"></div>
-        
-        <button
-          type="button"
-          class="btn btn-primary"
-          *ngIf="currentStep < totalSteps"
-          [disabled]="!isCurrentStepValid()"
-          (click)="nextStep()">
-          Next →
-        </button>
-        
-        <button
-          type="submit"
-          class="btn btn-primary btn-signup"
-          *ngIf="currentStep === totalSteps"
-          [disabled]="isLoading || signupForm.invalid">
-          {{ isLoading ? 'Creating Account...' : 'Create Account' }}
-        </button>
-      </div>
-    </form>
-
-    <!-- Form Footer -->
-    <div class="form-footer">
-      <p>Already have an account?
-        <a routerLink="/login" class="link">Sign In</a>
-      </p>
-    </div>
-
-    <!-- Back to Home -->
-    <div class="back-home">
-      <a routerLink="/" class="link-home">← Back to Home</a>
     </div>
   </div>
 </div>
@@ -295,6 +300,6 @@
     </div>
     <h2 class="modal-title">Account Created!</h2>
     <p class="modal-message">Your account has been successfully created. You will be redirected to your dashboard shortly.</p>
-    <button class="btn btn-primary modal-btn" (click)="goToDashboard()">Go to Dashboard</button>
+    <button class="btn-submit modal-btn" (click)="goToDashboard()">Go to Dashboard</button>
   </div>
 </div>
