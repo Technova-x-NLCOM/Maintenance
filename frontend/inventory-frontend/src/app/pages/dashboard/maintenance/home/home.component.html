@@ -33,133 +33,127 @@
     <!-- Quick Access Grid -->
     <div class="quick-sections">
       <h2 class="section-heading">Quick Access</h2>
+      <p class="section-desc">Jump to any section to manage your inventory data.</p>
       <div class="quick-grid">
         <!-- Items -->
-        <button class="quick-card" (click)="openTable('items')">
+        <button class="quick-card" (click)="openTable('items')" type="button">
           <div class="quick-icon inventory-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
               <line x1="12" y1="22.08" x2="12" y2="12"/>
             </svg>
           </div>
-          <span class="quick-label">Items</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Items</span>
+            <span class="quick-desc">{{ getTableDescription('items') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Categories -->
-        <button class="quick-card" (click)="openTable('categories')">
+        <button class="quick-card" (click)="openTable('categories')" type="button">
           <div class="quick-icon category-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
           </div>
-          <span class="quick-label">Categories</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Categories</span>
+            <span class="quick-desc">{{ getTableDescription('categories') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Item Types -->
-        <button class="quick-card" (click)="openTable('item_types')">
+        <button class="quick-card" (click)="openTable('item_types')" type="button">
           <div class="quick-icon type-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
               <line x1="7" y1="7" x2="7.01" y2="7"/>
             </svg>
           </div>
-          <span class="quick-label">Item Types</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Item Types</span>
+            <span class="quick-desc">{{ getTableDescription('item_types') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Batches -->
-        <button class="quick-card" (click)="openTable('inventory_batches')">
+        <button class="quick-card" (click)="openTable('inventory_batches')" type="button">
           <div class="quick-icon stock-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="12 2 2 7 12 12 22 7 12 2"/>
               <polyline points="2 17 12 22 22 17"/>
               <polyline points="2 12 12 17 22 12"/>
             </svg>
           </div>
-          <span class="quick-label">Batches</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Batches</span>
+            <span class="quick-desc">{{ getTableDescription('inventory_batches') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Transactions -->
-        <button class="quick-card" (click)="openTable('inventory_transactions')">
+        <button class="quick-card" (click)="openTable('inventory_transactions')" type="button">
           <div class="quick-icon transaction-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
           </div>
-          <span class="quick-label">Transactions</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Transactions</span>
+            <span class="quick-desc">{{ getTableDescription('inventory_transactions') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Snapshots -->
-        <button class="quick-card" (click)="openTable('inventory_snapshots')">
+        <button class="quick-card" (click)="openTable('inventory_snapshots')" type="button">
           <div class="quick-icon snapshot-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
               <circle cx="12" cy="13" r="4"/>
             </svg>
           </div>
-          <span class="quick-label">Snapshots</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Snapshots</span>
+            <span class="quick-desc">{{ getTableDescription('inventory_snapshots') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
 
         <!-- Expiry Alerts -->
-        <button class="quick-card" (click)="openTable('expiry_alerts')">
+        <button class="quick-card" (click)="openTable('expiry_alerts')" type="button">
           <div class="quick-icon alert-color">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
               <line x1="12" y1="9" x2="12" y2="13"/>
               <line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
           </div>
-          <span class="quick-label">Expiry Alerts</span>
-          <svg class="quick-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="quick-text">
+            <span class="quick-label">Expiry Alerts</span>
+            <span class="quick-desc">{{ getTableDescription('expiry_alerts') }}</span>
+          </div>
+          <svg class="quick-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
         </button>
-      </div>
-    </div>
-
-    <!-- How it works guide -->
-    <div class="guide-section">
-      <h2 class="section-heading">How It Works</h2>
-      <div class="guide-steps">
-        <div class="step">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <h3>Choose a section</h3>
-            <p>Expand <strong>Inventory</strong> in the sidebar to see all data sections like Items, Categories, Batches, and more.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <h3>View & search records</h3>
-            <p>Each section shows a table of records. Use the search bar to find specific entries quickly.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <h3>Add or edit data</h3>
-            <p>Click <strong>Add New Record</strong> to create an entry, or click <strong>Edit</strong> on any existing record to update it.</p>
-          </div>
-        </div>
       </div>
     </div>
   </div>
