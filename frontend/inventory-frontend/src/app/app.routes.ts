@@ -1,20 +1,21 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './pages/home/home.component';
-import { LoginComponent } from './pages/login/login.component';
+import { LoginComponent } from './pages/auth/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
-import { DashboardLayoutComponent } from './pages/dashboard/dashboard-layout.component';
-import { HomeComponent as DashboardHomeComponent } from './pages/dashboard/home.component';
-import { ProfileComponent } from './pages/dashboard/profile.component';
+import { HomeComponent } from './pages/home/home.component';
+import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
+import { DashboardLayoutComponent } from './pages/dashboard/layout/dashboard-layout.component';
+import { HomeComponent as DashboardHomeComponent } from './pages/dashboard/home/home.component';
+import { ProfileComponent } from './pages/dashboard/profile/profile.component';
 import { authGuard } from './guards/auth.guard';
-import { RolesComponent } from './pages/dashboard/roles.component';
+import { RolesComponent } from './pages/dashboard/roles/roles.component';
 import { BackupComponent } from './pages/dashboard/backup/backup.component';
 import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
 import { SettingsComponent } from './pages/dashboard/settings/settings.component';
-import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
 import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
+  { path: 'home', component: HomeComponent },
   { path: 'login', component: LoginComponent },
   { path: 'admin-login', component: AdminLoginComponent },
   { path: 'signup', component: SignupComponent },
