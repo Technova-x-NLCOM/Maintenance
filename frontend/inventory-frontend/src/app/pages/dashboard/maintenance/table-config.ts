@@ -151,64 +151,64 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
   },
   'categories': {
     'category_id': { friendlyName: 'Category ID', description: 'Unique identifier' },
-    'category_name': { friendlyName: 'Category Name', description: 'Name of category', placeholder: 'Enter category name' },
-    'parent_category_id': { friendlyName: 'Parent Category', description: 'Parent category (if subcategory)' },
-    'description': { friendlyName: 'Description', description: 'Category description', placeholder: 'Describe this category' },
-    'created_at': { friendlyName: 'Date Created', description: 'When created' }
+    'category_name': { friendlyName: 'Category name', description: 'Name of this category', placeholder: 'e.g. Office supplies' },
+    'parent_category_id': { friendlyName: 'Parent category (optional)', description: 'Leave blank for a top-level category' },
+    'description': { friendlyName: 'Description (optional)', description: 'Short description of this category', placeholder: 'Describe this category' },
+    'created_at': { friendlyName: 'Date created', description: 'When created' }
   },
   'item_types': {
     'item_type_id': { friendlyName: 'Type ID', description: 'Unique identifier' },
-    'type_name': { friendlyName: 'Type Name', description: 'Name of item type', placeholder: 'Enter type name' },
-    'description': { friendlyName: 'Description', description: 'Type description', placeholder: 'Describe this type' }
+    'type_name': { friendlyName: 'Type name', description: 'What kind of item is this?', placeholder: 'e.g. Medicine, Equipment' },
+    'description': { friendlyName: 'Description (optional)', description: 'Short description', placeholder: 'Describe this type' }
   },
   'inventory_batches': {
     'batch_id': { friendlyName: 'Batch ID', description: 'Unique identifier' },
     'item_id': { friendlyName: 'Item', description: 'Which item is this batch for?' },
-    'batch_number': { friendlyName: 'Batch Number', description: 'Batch/lot number', placeholder: 'Enter batch number' },
-    'quantity': { friendlyName: 'Quantity', description: 'Number of items in batch', placeholder: 'Enter quantity' },
-    'expiry_date': { friendlyName: 'Expiry Date', description: 'When does it expire?', placeholder: 'YYYY-MM-DD' },
-    'manufactured_date': { friendlyName: 'Manufacturing Date', description: 'When was it made?', placeholder: 'YYYY-MM-DD' },
-    'supplier_info': { friendlyName: 'Supplier', description: 'Where did it come from?', placeholder: 'Enter supplier name' },
-    'batch_value': { friendlyName: 'Batch Value', description: 'Total value of batch', placeholder: '0.00' },
+    'batch_number': { friendlyName: 'Batch or lot number', description: 'Reference number for this batch', placeholder: 'e.g. LOT-2024-001' },
+    'quantity': { friendlyName: 'Quantity', description: 'Number of units in this batch', placeholder: 'e.g. 100' },
+    'expiry_date': { friendlyName: 'Expiry date', description: 'When does this batch expire?', placeholder: 'YYYY-MM-DD' },
+    'manufactured_date': { friendlyName: 'Manufacturing date (optional)', description: 'When was it made?', placeholder: 'YYYY-MM-DD' },
+    'supplier_info': { friendlyName: 'Supplier (optional)', description: 'Where did it come from?', placeholder: 'Supplier name' },
+    'batch_value': { friendlyName: 'Batch value (optional)', description: 'Total value of this batch', placeholder: '0.00' },
     'status': { friendlyName: 'Status', description: 'Current batch status' },
-    'created_at': { friendlyName: 'Date Added', description: 'When batch was added' },
-    'updated_at': { friendlyName: 'Last Updated', description: 'Last modification' }
+    'created_at': { friendlyName: 'Date added', description: 'When batch was added' },
+    'updated_at': { friendlyName: 'Last updated', description: 'Last modification' }
   },
   'inventory_transactions': {
     'transaction_id': { friendlyName: 'Transaction ID', description: 'Unique identifier' },
     'item_id': { friendlyName: 'Item', description: 'Which item?' },
     'batch_id': { friendlyName: 'Batch', description: 'Which batch?' },
-    'transaction_type': { friendlyName: 'Type', description: 'IN, OUT, ADJUSTMENT, or TRANSFER' },
-    'quantity': { friendlyName: 'Quantity', description: 'How many?', placeholder: 'Enter quantity' },
-    'reference_number': { friendlyName: 'Reference Number', description: 'Document reference', placeholder: 'Enter reference' },
+    'transaction_type': { friendlyName: 'Type', description: 'In, Out, Adjustment, or Transfer' },
+    'quantity': { friendlyName: 'Quantity', description: 'How many units?', placeholder: 'e.g. 10' },
+    'reference_number': { friendlyName: 'Reference number (optional)', description: 'Document or reference', placeholder: 'e.g. PO-12345' },
     'transaction_date': { friendlyName: 'Date', description: 'When did this happen?' },
-    'reason': { friendlyName: 'Reason', description: 'Why?', placeholder: 'Enter reason' },
-    'notes': { friendlyName: 'Notes', description: 'Additional notes', placeholder: 'Enter notes' },
-    'destination': { friendlyName: 'Destination', description: 'Where is it going?', placeholder: 'Enter destination' },
-    'performed_by': { friendlyName: 'Performed By', description: 'Who did this?' },
-    'approved_by': { friendlyName: 'Approved By', description: 'Who approved?' },
-    'created_at': { friendlyName: 'Date Recorded', description: 'When recorded' }
+    'reason': { friendlyName: 'Reason (optional)', description: 'Why was this done?', placeholder: 'Brief reason' },
+    'notes': { friendlyName: 'Notes (optional)', description: 'Additional notes', placeholder: 'Any notes' },
+    'destination': { friendlyName: 'Destination (optional)', description: 'Where is it going?', placeholder: 'Destination' },
+    'performed_by': { friendlyName: 'Performed by', description: 'Who did this?' },
+    'approved_by': { friendlyName: 'Approved by', description: 'Who approved?' },
+    'created_at': { friendlyName: 'Date recorded', description: 'When recorded' }
   },
   'inventory_snapshots': {
     'snapshot_id': { friendlyName: 'Snapshot ID', description: 'Unique identifier' },
     'item_id': { friendlyName: 'Item', description: 'Which item?' },
     'batch_id': { friendlyName: 'Batch', description: 'Which batch?' },
-    'snapshot_date': { friendlyName: 'Snapshot Date', description: 'Date of snapshot', placeholder: 'YYYY-MM-DD' },
-    'quantity': { friendlyName: 'Quantity', description: 'Stock count', placeholder: 'Enter quantity' },
-    'total_value': { friendlyName: 'Total Value', description: 'Value at snapshot', placeholder: '0.00' },
-    'notes': { friendlyName: 'Notes', description: 'Additional notes', placeholder: 'Enter notes' },
-    'created_by': { friendlyName: 'Created By', description: 'Who created this?' },
-    'created_at': { friendlyName: 'Date Created', description: 'When created' }
+    'snapshot_date': { friendlyName: 'Snapshot date', description: 'Date of this stock count', placeholder: 'YYYY-MM-DD' },
+    'quantity': { friendlyName: 'Quantity', description: 'Stock count at this date', placeholder: 'e.g. 50' },
+    'total_value': { friendlyName: 'Total value (optional)', description: 'Value at snapshot time', placeholder: '0.00' },
+    'notes': { friendlyName: 'Notes (optional)', description: 'Additional notes', placeholder: 'Any notes' },
+    'created_by': { friendlyName: 'Created by', description: 'Who created this?' },
+    'created_at': { friendlyName: 'Date created', description: 'When created' }
   },
   'expiry_alerts': {
     'alert_id': { friendlyName: 'Alert ID', description: 'Unique identifier' },
     'batch_id': { friendlyName: 'Batch', description: 'Which batch?' },
-    'alert_date': { friendlyName: 'Alert Date', description: 'When alert was raised' },
-    'days_until_expiry': { friendlyName: 'Days Until Expiry', description: 'Days remaining' },
+    'alert_date': { friendlyName: 'Alert date', description: 'When alert was raised' },
+    'days_until_expiry': { friendlyName: 'Days until expiry', description: 'Days remaining' },
     'status': { friendlyName: 'Status', description: 'Alert status' },
-    'acknowledged_by': { friendlyName: 'Acknowledged By', description: 'Who acknowledged?' },
-    'acknowledged_at': { friendlyName: 'Acknowledged Date', description: 'When acknowledged' },
-    'created_at': { friendlyName: 'Date Created', description: 'When created' }
+    'acknowledged_by': { friendlyName: 'Acknowledged by', description: 'Who acknowledged?' },
+    'acknowledged_at': { friendlyName: 'Acknowledged date', description: 'When acknowledged' },
+    'created_at': { friendlyName: 'Date created', description: 'When created' }
   },
   'audit_log': {
     'log_id': { friendlyName: 'Log ID', description: 'Unique identifier' },
