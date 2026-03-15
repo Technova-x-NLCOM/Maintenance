@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../../services/maintenance.service';
 import { 
   getFriendlyTableName as getTableName,
-  getFriendlyColumnName as getColName
+  getFriendlyColumnName as getColName,
+  getTableDescription as getTableDesc
 } from '../table-config';
 
 @Component({
@@ -250,6 +251,10 @@ export class TableListComponent implements OnInit {
   // Friendly name helpers
   getFriendlyTableName(): string {
     return this.selectedTable ? getTableName(this.selectedTable) : '';
+  }
+
+  getTableDescription(): string {
+    return this.selectedTable ? getTableDesc(this.selectedTable) : '';
   }
 
   getFriendlyColumnName(column: string): string {
