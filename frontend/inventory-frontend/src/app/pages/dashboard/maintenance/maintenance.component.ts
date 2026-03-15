@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,7 +6,7 @@ import { HomeComponent } from './home/home.component';
 import { TableListComponent } from './table-list/table-list.component';
 import { TableFormComponent } from './table-form/table-form.component';
 
-type View = 'home' | 'table-list' | 'table-form';
+type View = 'home' | 'table-list';
 
 @Component({
   selector: 'app-maintenance',
@@ -19,7 +19,11 @@ export class MaintenanceComponent implements OnInit, OnDestroy {
   currentView: View = 'home';
   selectedTable: string | null = null;
   editingRow: any | null = null;
+  /** When true, add/edit form is shown in a modal overlay (no navigation away). */
+  showFormModal = false;
   private routeSub: Subscription | null = null;
+
+  @ViewChild(TableListComponent) tableListRef?: TableListComponent;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -33,11 +37,13 @@ export class MaintenanceComponent implements OnInit, OnDestroy {
       if (table) {
         this.selectedTable = table;
         this.editingRow = null;
+        this.showFormModal = false;
         this.currentView = 'table-list';
       } else {
         this.currentView = 'home';
         this.selectedTable = null;
         this.editingRow = null;
+        this.showFormModal = false;
       }
       this.cdr.markForCheck();
     });
@@ -57,14 +63,19 @@ export class MaintenanceComponent implements OnInit, OnDestroy {
 
   goToForm(row: any | null): void {
     this.editingRow = row;
-    this.currentView = 'table-form';
+    this.showFormModal = true;
     this.cdr.markForCheck();
   }
 
   goToTableListView(): void {
+    this.showFormModal = false;
     this.editingRow = null;
-    this.currentView = 'table-list';
+    this.tableListRef?.fetchRows();
     this.cdr.markForCheck();
+  }
+
+  closeFormModal(): void {
+    this.goToTableListView();
   }
 }
 

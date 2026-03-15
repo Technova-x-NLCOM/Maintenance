@@ -1,5 +1,20 @@
 <div class="maintenance-container">
   <app-maintenance-home *ngIf="currentView === 'home'" [parent]="this"></app-maintenance-home>
   <app-table-list *ngIf="currentView === 'table-list'" [parent]="this"></app-table-list>
-  <app-table-form *ngIf="currentView === 'table-form'" [parent]="this"></app-table-form>
+
+  <!-- Add/Edit form in modal (no page navigation) for Categories, Item Types, Batches, etc. -->
+  <div class="modal-overlay" *ngIf="currentView === 'table-list' && showFormModal" (click)="closeFormModal()" role="dialog" aria-modal="true">
+    <div class="modal-content maintenance-form-modal" (click)="$event.stopPropagation()">
+      <div class="modal-form-header">
+        <button class="modal-close-btn" type="button" (click)="closeFormModal()" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Close
+        </button>
+      </div>
+      <app-table-form [parent]="this" [modalMode]="true"></app-table-form>
+    </div>
+  </div>
 </div>
