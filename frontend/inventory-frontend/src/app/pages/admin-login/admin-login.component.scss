@@ -18,6 +18,7 @@ $border-radius: 12px;
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   position: relative;
+  box-sizing: border-box;
 }
 
 .back-home-btn {
@@ -54,16 +55,17 @@ $border-radius: 12px;
   background: #ffffff;
   border-radius: $border-radius;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  padding: 40px;
+  padding: 28px 24px;
   width: 100%;
-  max-width: 480px;
+  max-width: 420px;
   border: 3px solid #e2e8f0;
+  box-sizing: border-box;
 }
 
 .login-header {
   text-align: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
   border-bottom: 2px solid #e2e8f0;
 }
 
@@ -75,24 +77,24 @@ $border-radius: 12px;
   color: $admin-primary;
   border: 2px solid $admin-border;
   border-radius: 50px;
-  padding: 6px 16px;
-  font-size: 0.875rem;
+  padding: 6px 14px;
+  font-size: 0.8125rem;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 
   svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     stroke: $admin-primary;
     flex-shrink: 0;
   }
 }
 
 .login-header h2 {
-  font-size: 1.875rem;
-  margin: 0 0 8px;
+  font-size: 1.5rem;
+  margin: 0 0 6px;
   color: $text-dark;
   font-weight: 800;
 }
@@ -103,24 +105,47 @@ $border-radius: 12px;
   font-weight: 500;
 }
 
+// Error slot collapses when empty; expands when message is shown (fits 2 full lines)
+.error-slot {
+  height: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+  transition: height 0.2s ease, margin-bottom 0.2s ease;
+
+  &.has-error {
+    height: 72px;
+    min-height: 48px;
+    margin-bottom: 16px;
+  }
+}
+
 .error-message {
   background-color: #fef2f2;
   border: 2px solid #fca5a5;
   color: $error-color;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border-radius: $border-radius;
-  margin-bottom: 20px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  line-height: 1.4;
+  min-height: 100%;
+  box-sizing: border-box;
 
   .error-icon {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
     stroke: $error-color;
+    margin-top: 2px;
+  }
+
+  .error-text {
+    flex: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 }
 
@@ -129,20 +154,20 @@ form {
 }
 
 .form-group {
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 
   label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     color: $text-dark;
     font-weight: 600;
-    font-size: 0.9375rem;
+    font-size: 1rem;
   }
 }
 
 .form-control {
   width: 100%;
-  padding: 13px 15px;
+  padding: 11px 14px;
   border: 2.5px solid #94a3b8;
   border-radius: $border-radius;
   font-size: 1rem;
@@ -224,7 +249,8 @@ form {
 
   &.btn-login {
     width: 100%;
-    padding: 16px 24px;
+    padding: 12px 24px;
+    min-height: 48px;
     font-size: 1.0625rem;
   }
 }

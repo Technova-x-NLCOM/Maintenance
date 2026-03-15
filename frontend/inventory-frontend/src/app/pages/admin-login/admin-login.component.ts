@@ -51,18 +51,14 @@ export class AdminLoginComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        this.errorMessage = error.error?.message || 'Invalid credentials or server error';
-        
-        // Reroute to correct portal based on user role
         if (error.error?.error_type === 'unauthorized_portal_access') {
           const userRole = error.error?.user_role;
           if (userRole === 'inventory_manager') {
-            this.errorMessage = 'Redirecting to Inventory Manager Portal...';
-            setTimeout(() => {
-              this.router.navigate(['/login']);
-            }, 2000);
+            this.errorMessage = 'This login is for Administrators only. Use the Inventory Manager login for your account.';
+            return;
           }
         }
+        this.errorMessage = error.error?.message || 'Invalid credentials or server error';
       }
     });
   }
