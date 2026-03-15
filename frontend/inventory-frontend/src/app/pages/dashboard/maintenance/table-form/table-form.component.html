@@ -1,15 +1,15 @@
 <div class="table-form">
   <div class="form-header">
-    <button class="back-btn" (click)="goBack()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <button class="back-btn" *ngIf="!modalMode" (click)="goBack()" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
-      Back to List
+      Back
     </button>
     <div class="header-title">
-      <h2>{{ isNew ? 'Add New' : 'Edit' }} {{ getFriendlyTableName() }}</h2>
-      <p class="header-subtitle" *ngIf="isNew">Fill in the information below to create a new record</p>
-      <p class="header-subtitle" *ngIf="!isNew">Update the information below</p>
+      <h1 class="page-title">{{ isNew ? 'Add new' : 'Edit' }} {{ getFriendlyTableName().toLowerCase() }}</h1>
+      <p class="header-subtitle" *ngIf="isNew">Fill in the fields below. Fields marked with * are required.</p>
+      <p class="header-subtitle" *ngIf="!isNew">Update the fields below and save.</p>
     </div>
   </div>
 
@@ -34,11 +34,12 @@
     </div>
     
     <div class="form-grid">
-      <div *ngFor="let col of schema?.columns" 
-           class="form-group" 
-           [class.readonly]="isReadonly(col)"
-           [class.full-width]="isFullWidth(col)">
-        <label [for]="col">
+      <ng-container *ngFor="let col of schema?.columns">
+        <div *ngIf="!isHiddenFromForm(col)"
+             class="form-group" 
+             [class.readonly]="isReadonly(col)"
+             [class.full-width]="isFullWidth(col)">
+          <label [for]="col">
           {{ getFriendlyColumnName(col) }}
           <span *ngIf="isRequired(col)" class="required-indicator">*</span>
         </label>
@@ -138,7 +139,8 @@
           [required]="isRequired(col)"
           [placeholder]="getColumnPlaceholder(col)"
         />
-      </div>
+        </div>
+      </ng-container>
     </div>
 
     <div class="form-actions">
@@ -147,7 +149,7 @@
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
-        Cancel
+        {{ modalMode ? 'Close' : 'Cancel' }}
       </button>
       <button type="submit" class="submit-btn" [disabled]="loading">
         <svg *ngIf="!loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

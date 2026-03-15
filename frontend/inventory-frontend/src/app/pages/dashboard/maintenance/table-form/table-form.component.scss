@@ -1,108 +1,105 @@
-// Elderly-friendly table form - Blue Theme HIGH CONTRAST
-$primary-color: #1d4ed8;
-$primary-dark: #1e40af;
-$accent-color: #3b82f6;
-$bg-light: #f8fafc;
-$text-dark: #111827;
-$text-medium: #374151;
-$text-light: #6b7280;
-$border-color: #d1d5db;
+// Modern table form - add/edit records
+$primary: #2563eb;
+$primary-dark: #1d4ed8;
+$bg-base: #f8fafc;
+$text-primary: #0f172a;
+$text-secondary: #475569;
+$text-muted: #64748b;
+$border: #e2e8f0;
+$radius: 12px;
+$radius-sm: 10px;
 $success: #059669;
 $danger: #dc2626;
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+$shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 
 .table-form {
-  padding: 24px;
-  background-color: $bg-light;
+  padding: 28px 24px 48px;
+  background: $bg-base;
   min-height: 100vh;
 }
 
 .form-header {
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 
   .back-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 10px 18px;
     background: white;
-    border: 2px solid $border-color;
-    border-radius: 8px;
-    color: $text-dark;
-    font-size: 1rem;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    color: $text-primary;
+    font-size: 0.9375rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     margin-bottom: 20px;
+    box-shadow: $shadow-sm;
 
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    svg { width: 18px; height: 18px; }
 
     &:hover {
-      border-color: $primary-color;
-      color: $primary-color;
+      border-color: #cbd5e1;
+      background: #f8fafc;
     }
   }
 
   .header-title {
-    h2 {
-      margin: 0 0 8px 0;
-      font-size: 1.75rem;
+    .page-title {
+      margin: 0 0 6px 0;
+      font-size: 1.5rem;
       font-weight: 700;
-      color: $text-dark;
+      color: $text-primary;
+      letter-spacing: -0.02em;
     }
 
     .header-subtitle {
       margin: 0;
-      font-size: 1.0625rem;
-      color: $text-medium;
+      font-size: 0.9375rem;
+      color: $text-muted;
     }
   }
 }
 
 .form-container {
   background: white;
-  border-radius: 12px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border-radius: $radius;
+  padding: 32px 28px;
+  box-shadow: $shadow-card;
+  border: 1px solid $border;
 }
 
-// Success and Error Messages
 .message {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 20px;
-  border-radius: 8px;
+  padding: 14px 20px;
+  border-radius: $radius-sm;
   margin-bottom: 24px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
 
-  svg {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-  }
+  svg { width: 22px; height: 22px; flex-shrink: 0; }
 }
 
 .success-message {
-  background: rgba(5, 150, 105, 0.1);
-  border: 2px solid $success;
-  color: $success;
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid $success;
+  color: #047857;
 }
 
 .error-message {
-  background: rgba(220, 38, 38, 0.1);
-  border: 2px solid $danger;
-  color: $danger;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid $danger;
+  color: #b91c1c;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: 22px 24px;
   margin-bottom: 32px;
 
   @media (max-width: 768px) {
@@ -114,165 +111,118 @@ $danger: #dc2626;
   display: flex;
   flex-direction: column;
 
-  &.full-width {
-    grid-column: 1 / -1;
-  }
-
-  &.readonly {
-    opacity: 0.7;
-  }
+  &.full-width { grid-column: 1 / -1; }
+  &.readonly { opacity: 0.85; }
 
   label {
     display: block;
     margin-bottom: 6px;
-    font-size: 1rem;
-    font-weight: 700;
-    color: $text-dark;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: $text-primary;
 
-    .required-indicator {
-      color: $danger;
-      margin-left: 4px;
-    }
+    .required-indicator { color: $danger; margin-left: 2px; }
   }
 
   .field-description {
-    margin: 0 0 8px 0;
-    font-size: 0.875rem;
-    color: $text-light;
+    margin: 0 0 6px 0;
+    font-size: 0.8125rem;
+    color: $text-muted;
   }
 
   input[type="text"],
   input[type="number"],
   input[type="date"],
   input[type="email"],
+  input[type="url"],
   select,
   textarea {
     width: 100%;
-    padding: 14px 16px;
-    font-size: 1.0625rem;
-    border: 2px solid $border-color;
-    border-radius: 8px;
-    color: $text-dark;
-    background: white;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 12px 14px;
+    font-size: 0.9375rem;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    color: $text-primary;
+    background: #fafafa;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     box-sizing: border-box;
 
     &:focus {
       outline: none;
-      border-color: $primary-color;
-      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      background: white;
     }
 
-    &::placeholder {
-      color: #9ca3af;
-    }
+    &::placeholder { color: #94a3b8; }
   }
 
   textarea {
     resize: vertical;
-    min-height: 100px;
+    min-height: 96px;
   }
 
   select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
-    background-size: 20px;
-    padding-right: 44px;
-
-    &.boolean-select,
-    &.enum-select {
-      // Specific styling for Yes/No and ENUM dropdowns
-      font-weight: 600;
-    }
+    background-size: 18px;
+    padding-right: 42px;
   }
 
   .readonly-value {
-    padding: 14px 16px;
-    font-size: 1.0625rem;
-    background: #f3f4f6;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    color: $text-medium;
-  }
-}
-
-.checkbox-wrapper {
-  .checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    padding: 14px 16px;
-    background: #f9fafb;
-    border: 2px solid $border-color;
-    border-radius: 8px;
-    transition: all 0.2s;
-
-    &:hover {
-      border-color: $primary-color;
-    }
-
-    input[type="checkbox"] {
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      accent-color: $primary-color;
-    }
-
-    .checkbox-text {
-      font-size: 1.0625rem;
-      font-weight: 600;
-      color: $text-dark;
-    }
+    padding: 12px 14px;
+    font-size: 0.9375rem;
+    background: #f1f5f9;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    color: $text-secondary;
   }
 }
 
 .form-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: flex-end;
   padding-top: 24px;
-  border-top: 2px solid #e5e7eb;
+  border-top: 1px solid $border;
 
   button {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 14px 28px;
-    font-size: 1.0625rem;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 0.9375rem;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: $radius-sm;
     cursor: pointer;
     transition: all 0.2s;
 
-    svg {
-      width: 20px;
-      height: 20px;
-    }
+    svg { width: 18px; height: 18px; }
   }
 
   .cancel-btn {
     background: white;
-    color: $text-dark;
-    border: 2px solid $border-color;
+    color: $text-primary;
+    border: 1px solid $border;
 
     &:hover {
-      background: #f3f4f6;
-      border-color: $text-medium;
+      background: #f8fafc;
+      border-color: #cbd5e1;
     }
   }
 
   .submit-btn {
-    background: $primary-color;
+    background: $primary;
     color: white;
-    border: 2px solid $primary-color;
+    border: 1px solid $primary;
 
     &:hover:not(:disabled) {
       background: $primary-dark;
       border-color: $primary-dark;
+      transform: translateY(-1px);
     }
 
     &:disabled {
@@ -282,29 +232,14 @@ $danger: #dc2626;
   }
 }
 
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+.spinning { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .table-form {
-    padding: 16px;
-  }
-
-  .form-container {
-    padding: 20px;
-  }
-
+  .table-form { padding: 20px 16px 40px; }
+  .form-container { padding: 24px 20px; }
   .form-actions {
     flex-direction: column;
-
-    button {
-      width: 100%;
-      justify-content: center;
-    }
+    button { width: 100%; justify-content: center; }
   }
 }

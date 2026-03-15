@@ -18,6 +18,8 @@ import {
 })
 export class TableFormComponent implements OnInit {
   @Input() parent: any;
+  /** When true, form is shown inside a modal (Close instead of Back, no full-page layout). */
+  @Input() modalMode = false;
   selectedTable: string | null = null;
   schema: any | null = null;
   pkKey: string | null = null;
@@ -117,6 +119,11 @@ export class TableFormComponent implements OnInit {
 
   isPrimaryKeyField(column: string): boolean {
     return this.pkKeys.includes(column) || column === this.pkKey;
+  }
+
+  /** Hide system ID (single primary key) from form so user doesn't see a disabled ID field. */
+  isHiddenFromForm(column: string): boolean {
+    return this.pkKey !== null && column === this.pkKey;
   }
 
   isForeignKey(column: string): boolean {
