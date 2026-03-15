@@ -1,0 +1,173 @@
+<div class="sidebar">
+  <!-- Logo Section -->
+  <div class="sidebar-header">
+    <img src="assets/logo.png" alt="NLCOM IMS Logo" class="logo">
+  </div>
+
+  <div class="header-divider"></div>
+
+  <!-- Navigation Menu -->
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard/home" 
+       routerLinkActive="active" 
+       [routerLinkActiveOptions]="{ exact: true }"
+       class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      <span class="label">Dashboard</span>
+    </a>
+
+    <a routerLink="/dashboard/profile" 
+       routerLinkActive="active" 
+       class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="7" r="4"/>
+        <path d="M5.5 21a7.5 7.5 0 0 1 13 0"/>
+      </svg>
+      <span class="label">Profile</span>
+    </a>
+
+    <!-- Backup (Admin & Super Admin Only) -->
+    <a *ngIf="hasPermission('manage_backups')"
+       routerLink="/dashboard/backup" 
+       routerLinkActive="active" 
+       class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span class="label">Backups</span>
+    </a>
+
+    <!-- ═══════ INVENTORY LINK ═══════ -->
+    <a *ngIf="hasPermission('manage_maintenance')"
+       routerLink="/dashboard/maintenance"
+       routerLinkActive="active"
+       class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+      <span class="label">Inventory</span>
+    </a>
+
+    <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
+      <button class="nav-group-toggle" (click)="toggleGroup('inventory-master-data')" [class.expanded]="isGroupOpen('inventory-master-data')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16v4H4z"/>
+          <path d="M4 10h16v10H4z"/>
+        </svg>
+        <span class="label">Inventory Master Data</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('inventory-master-data')">
+        <a routerLink="/dashboard/inventory/items" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Item Registration & Updates</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ═══════ USERS & ACCESS GROUP (Super Admin Only) ═══════ -->
+    <div class="nav-group" *ngIf="hasPermission('manage_permissions') || hasPermission('manage_roles')">
+      <button class="nav-group-toggle" (click)="toggleGroup('users')" [class.expanded]="isGroupOpen('users')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span class="label">Users & Access</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('users')">
+        <a routerLink="/dashboard/maintenance/users" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Users</span>
+        </a>
+        <a routerLink="/dashboard/roles" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Roles & Permissions</span>
+        </a>
+        <a routerLink="/dashboard/maintenance/user_roles" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">User Assignments</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ═══════ SYSTEM GROUP (Super Admin Only) ═══════ -->
+    <div class="nav-group" *ngIf="hasPermission('manage_settings')">
+      <button class="nav-group-toggle" (click)="toggleGroup('system')" [class.expanded]="isGroupOpen('system')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <span class="label">System</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('system')">
+        <a routerLink="/dashboard/maintenance/audit_log" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Activity Log</span>
+        </a>
+        <a routerLink="/dashboard/settings" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">System Settings</span>
+        </a>
+      </div>
+    </div>
+
+  </nav>
+
+  <!-- User Info & Logout at Bottom -->
+  <div class="sidebar-footer">
+    <div class="footer-divider"></div>
+    <div class="user-section">
+      <div class="user-info" *ngIf="user">
+        <div class="user-details">
+          <p class="user-name">{{ user.first_name }} {{ user.last_name }}</p>
+          <p class="user-email">{{ user.email }}</p>
+        </div>
+        <button class="logout-btn" (click)="openLogoutModal()" title="Logout">
+          <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showLogoutModal" (click)="closeLogoutModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    </div>
+    <h2 class="modal-title">Confirm Logout</h2>
+    <p class="modal-message">Are you sure you want to log out of your account?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="closeLogoutModal()">Cancel</button>
+      <button class="btn-confirm" (click)="confirmLogout()">Logout</button>
+    </div>
+  </div>
+</div>
