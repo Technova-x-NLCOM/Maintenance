@@ -30,6 +30,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
   search = '';
 
   selectedItemId: number | null = null;
+  /** When true, the Register/Update form is visible. Hidden by default; shown when user clicks New Item or Edit. */
+  showForm = false;
 
   errorMessage = '';
   successMessage = '';
@@ -126,6 +128,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
 
   editItem(item: InventoryItem): void {
     this.selectedItemId = item.item_id;
+    this.showForm = true;
     this.successMessage = '';
     this.errorMessage = '';
 
@@ -147,7 +150,32 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Show the form for adding a new item (and clear fields). */
   startNew(): void {
+    this.selectedItemId = null;
+    this.showForm = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.formData = {
+      item_code: '',
+      item_description: '',
+      item_type_id: null,
+      category_id: null,
+      measurement_unit: '',
+      particular: '',
+      mg_dosage: null,
+      image_url: '',
+      remarks: '',
+      unit_value: null,
+      reorder_level: 0,
+      is_active: true
+    };
+    this.cdr.detectChanges();
+  }
+
+  /** Hide the form and go back to list view. */
+  closeForm(): void {
+    this.showForm = false;
     this.selectedItemId = null;
     this.successMessage = '';
     this.errorMessage = '';
@@ -173,7 +201,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.successMessage = '';
 
     if (!this.formData.item_code.trim() || !this.formData.item_description.trim() || !this.formData.item_type_id) {
-      this.errorMessage = 'Item code, description, and item type are required.';
+      this.errorMessage = 'Please enter item code or SKU, name or description, and select a type of item.';
       return;
     }
 
@@ -198,6 +226,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       this.itemService.update(this.selectedItemId, payload).subscribe({
         next: () => {
           this.saving = false;
+          this.showForm = false;
           this.successMessage = 'Item updated successfully.';
           this.loadItems(this.currentPage);
         },
@@ -213,8 +242,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.itemService.create(payload).subscribe({
       next: () => {
         this.saving = false;
+        this.showForm = false;
         this.successMessage = 'Item registered successfully.';
-        this.startNew();
         this.loadItems(1);
       },
       error: (err) => {

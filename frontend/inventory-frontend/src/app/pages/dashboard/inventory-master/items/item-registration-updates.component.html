@@ -1,113 +1,145 @@
 <div class="items-page">
   <header class="page-header">
-    <div>
+    <div class="header-text">
       <p class="eyebrow">Inventory Master Data</p>
-      <h2>Item Registration & Updates</h2>
-      <p class="subtitle">Create new items and update existing item master records.</p>
+      <h1 class="page-title">Item Registration & Updates</h1>
+      <p class="subtitle">Add or edit items here. Click <strong>Add new item</strong> to create one, or <strong>Edit</strong> on a row to update.</p>
     </div>
-    <button class="ghost" (click)="startNew()">New Item</button>
   </header>
 
-  <div *ngIf="errorMessage" class="state state-error">{{ errorMessage }}</div>
-  <div *ngIf="successMessage" class="state state-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-error">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    {{ successMessage }}
+  </div>
 
-  <section class="panel form-panel">
-    <h3>{{ selectedItemId ? 'Update Item' : 'Register Item' }}</h3>
+  <!-- Item form modal: opens when user clicks "Add new item" or "Edit" -->
+  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true" [attr.aria-label]="selectedItemId ? 'Edit item' : 'Add new item'">
+    <div class="modal-content item-form-modal" (click)="$event.stopPropagation()">
+      <div class="form-panel-header">
+        <h2 class="panel-title">{{ selectedItemId ? 'Edit item' : 'Add new item' }}</h2>
+        <button class="btn-ghost btn-close-form" type="button" (click)="closeForm()" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Close
+        </button>
+      </div>
 
-    <div class="form-grid">
-      <label>
-        <span>Item Code *</span>
-        <input type="text" [(ngModel)]="formData.item_code" />
-      </label>
+      <div class="form-grid">
+        <label>
+          <span>Item code or SKU <em>*</em></span>
+          <input type="text" [(ngModel)]="formData.item_code" placeholder="e.g. SKU-001 or ITEM-001" />
+        </label>
 
-      <label>
-        <span>Description *</span>
-        <input type="text" [(ngModel)]="formData.item_description" />
-      </label>
+        <label>
+          <span>Item name or description <em>*</em></span>
+          <input type="text" [(ngModel)]="formData.item_description" placeholder="What is this item?" />
+        </label>
 
-      <label>
-        <span>Item Type *</span>
-        <select [(ngModel)]="formData.item_type_id">
-          <option [ngValue]="null">Select item type</option>
-          <option *ngFor="let type of options.item_types" [ngValue]="type.item_type_id">{{ type.type_name }}</option>
-        </select>
-      </label>
+        <label>
+          <span>Type of item <em>*</em></span>
+          <select [(ngModel)]="formData.item_type_id">
+            <option [ngValue]="null">Select type of item</option>
+            <option *ngFor="let type of options.item_types" [ngValue]="type.item_type_id">{{ type.type_name }}</option>
+          </select>
+        </label>
 
-      <label>
-        <span>Category</span>
-        <select [(ngModel)]="formData.category_id">
-          <option [ngValue]="null">No category</option>
-          <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
-            {{ category.category_name }}
-          </option>
-        </select>
-      </label>
+        <label>
+          <span>Category (optional)</span>
+          <select [(ngModel)]="formData.category_id">
+            <option [ngValue]="null">No category</option>
+            <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
+              {{ category.category_name }}
+            </option>
+          </select>
+        </label>
 
-      <label>
-        <span>Measurement Unit</span>
-        <input type="text" [(ngModel)]="formData.measurement_unit" />
-      </label>
+        <label>
+          <span>Unit of measure</span>
+          <input type="text" [(ngModel)]="formData.measurement_unit" placeholder="e.g. pieces, kg, box, liter" />
+        </label>
 
-      <label>
-        <span>Unit Value</span>
-        <input type="number" min="0" step="0.01" [(ngModel)]="formData.unit_value" />
-      </label>
+        <label>
+          <span>Price or value per unit (optional)</span>
+          <input type="number" min="0" step="0.01" [(ngModel)]="formData.unit_value" placeholder="Leave blank if not used" />
+        </label>
 
-      <label>
-        <span>Reorder Level</span>
-        <input type="number" min="0" [(ngModel)]="formData.reorder_level" />
-      </label>
+        <label>
+          <span>Alert when stock is below</span>
+          <input type="number" min="0" [(ngModel)]="formData.reorder_level" placeholder="e.g. 10 — get an alert when quantity falls below this" />
+        </label>
 
-      <label>
-        <span>MG Dosage</span>
-        <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" />
-      </label>
+        <label>
+          <span>Dosage in mg (for medicines only)</span>
+          <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" placeholder="e.g. 500" />
+        </label>
 
-      <label class="full-width">
-        <span>Image URL</span>
-        <input type="url" [(ngModel)]="formData.image_url" />
-      </label>
+        <label class="full-width">
+          <span>Product image link (optional)</span>
+          <input type="url" [(ngModel)]="formData.image_url" placeholder="https://..." />
+        </label>
 
-      <label class="full-width">
-        <span>Particular</span>
-        <textarea rows="2" [(ngModel)]="formData.particular"></textarea>
-      </label>
+        <label class="full-width">
+          <span>Additional details (optional)</span>
+          <textarea rows="2" [(ngModel)]="formData.particular" placeholder="Any extra information about this item"></textarea>
+        </label>
 
-      <label class="full-width">
-        <span>Remarks</span>
-        <textarea rows="2" [(ngModel)]="formData.remarks"></textarea>
-      </label>
+        <label class="full-width">
+          <span>Notes (optional)</span>
+          <textarea rows="2" [(ngModel)]="formData.remarks" placeholder="Internal notes for your reference"></textarea>
+        </label>
 
-      <label class="checkbox-row">
-        <input type="checkbox" [(ngModel)]="formData.is_active" />
-        <span>Active item</span>
-      </label>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="formData.is_active" />
+          <span>Show this item as available</span>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" [disabled]="saving" (click)="save()" type="button">
+          {{ saving ? 'Saving...' : (selectedItemId ? 'Save changes' : 'Add item') }}
+        </button>
+        <button class="btn-ghost" type="button" (click)="closeForm()">Cancel</button>
+      </div>
     </div>
-
-    <div class="form-actions">
-      <button class="primary" [disabled]="saving" (click)="save()">
-        {{ saving ? 'Saving...' : (selectedItemId ? 'Update Item' : 'Register Item') }}
-      </button>
-      <button class="ghost" type="button" (click)="startNew()">Clear</button>
-    </div>
-  </section>
+  </div>
 
   <section class="panel list-panel">
     <div class="list-toolbar">
-      <h3>Registered Items ({{ totalItems }})</h3>
-      <div class="search-row">
-        <input
-          type="text"
-          [(ngModel)]="search"
-          placeholder="Search by code, description, type, or category"
-          (keyup.enter)="onSearch()"
-        />
-        <button class="ghost" (click)="onSearch()">Search</button>
-        <button class="ghost" (click)="clearSearch()">Reset</button>
+      <h2 class="panel-title">Registered Items <span class="count">({{ totalItems }})</span></h2>
+      <div class="toolbar-actions">
+        <button class="btn-primary" (click)="startNew()" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add new item
+        </button>
+        <div class="search-row">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="search"
+            placeholder="Search by code, description, type, or category"
+            (keyup.enter)="onSearch()"
+          />
+        </div>
+        <button class="btn-ghost" (click)="onSearch()" type="button">Search</button>
+        <button class="btn-ghost" (click)="clearSearch()" type="button">Reset</button>
+        </div>
       </div>
     </div>
 
-    <div *ngIf="loading" class="state state-loading">Loading items...</div>
+    <div *ngIf="loading" class="state-loading">Loading items...</div>
 
     <div class="table-wrap" *ngIf="!loading">
       <table>
@@ -124,17 +156,19 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of items">
-            <td>{{ item.item_code }}</td>
+            <td><span class="cell-code">{{ item.item_code }}</span></td>
             <td>{{ item.item_description }}</td>
-            <td>{{ item.item_type_name || '-' }}</td>
-            <td>{{ item.category_name || '-' }}</td>
-            <td>{{ item.reorder_level }}</td>
+            <td>{{ item.item_type_name || '—' }}</td>
+            <td>{{ item.category_name || '—' }}</td>
+            <td>{{ item.reorder_level != null ? item.reorder_level : '—' }}</td>
             <td>
-              <span class="status" [class.inactive]="!item.is_active">{{ item.is_active ? 'Active' : 'Inactive' }}</span>
+              <span class="status-badge" [class.inactive]="!item.is_active">
+                {{ item.is_active ? 'Active' : 'Inactive' }}
+              </span>
             </td>
             <td class="actions">
-              <button class="ghost" (click)="editItem(item)">Edit</button>
-              <button class="ghost" (click)="toggleStatus(item)">
+              <button class="btn-sm btn-edit" (click)="editItem(item)" type="button">Edit</button>
+              <button class="btn-sm btn-toggle" (click)="toggleStatus(item)" type="button">
                 {{ item.is_active ? 'Deactivate' : 'Activate' }}
               </button>
             </td>
@@ -146,10 +180,10 @@
       </table>
     </div>
 
-    <div class="pagination" *ngIf="!loading">
-      <button class="ghost" [disabled]="currentPage <= 1" (click)="previousPage()">Previous</button>
-      <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()">Next</button>
+    <div class="pagination" *ngIf="!loading && totalPages > 1">
+      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
     </div>
   </section>
 </div>
