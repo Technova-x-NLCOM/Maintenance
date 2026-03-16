@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -34,6 +35,7 @@ class ItemController extends Controller
                 'i.remarks',
                 'i.unit_value',
                 'i.reorder_level',
+                'i.shelf_life_days',
                 'i.is_active',
                 'i.created_by',
                 DB::raw("CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as created_by_name"),
@@ -100,6 +102,7 @@ class ItemController extends Controller
                 'i.remarks',
                 'i.unit_value',
                 'i.reorder_level',
+                'i.shelf_life_days',
                 'i.is_active',
                 'i.created_by',
                 DB::raw("CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) as created_by_name"),
@@ -139,6 +142,7 @@ class ItemController extends Controller
             'remarks' => ['nullable', 'string'],
             'unit_value' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
+            'shelf_life_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -165,6 +169,7 @@ class ItemController extends Controller
                 'remarks' => $data['remarks'] ?? null,
                 'unit_value' => $data['unit_value'] ?? null,
                 'reorder_level' => $data['reorder_level'] ?? 0,
+                'shelf_life_days' => $data['shelf_life_days'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
                 'created_by' => $user?->user_id,
                 'created_at' => now(),
@@ -211,6 +216,7 @@ class ItemController extends Controller
             'remarks' => ['nullable', 'string'],
             'unit_value' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
+            'shelf_life_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -303,6 +309,49 @@ class ItemController extends Controller
             'data' => [
                 'item_types' => $itemTypes,
                 'categories' => $categories,
+            ],
+        ]);
+    }
+
+    public function expectedExpiry(Request $request, int $itemId)
+    {
+        $data = $request->validate([
+            'purchase_date' => ['required', 'date'],
+        ]);
+
+        $item = DB::table('items')
+            ->select('item_id', 'item_code', 'item_description', 'shelf_life_days')
+            ->where('item_id', $itemId)
+            ->first();
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found.',
+            ], 404);
+        }
+
+        if (!$item->shelf_life_days) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This item does not have a configured shelf life yet.',
+                'error_type' => 'shelf_life_not_configured',
+            ], 422);
+        }
+
+        $purchaseDate = Carbon::parse($data['purchase_date'])->startOfDay();
+        $expectedExpiryDate = $purchaseDate->copy()->addDays((int) $item->shelf_life_days);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Expected expiry date computed successfully.',
+            'data' => [
+                'item_id' => $item->item_id,
+                'item_code' => $item->item_code,
+                'item_description' => $item->item_description,
+                'purchase_date' => $purchaseDate->toDateString(),
+                'shelf_life_days' => (int) $item->shelf_life_days,
+                'expected_expiry_date' => $expectedExpiryDate->toDateString(),
             ],
         ]);
     }

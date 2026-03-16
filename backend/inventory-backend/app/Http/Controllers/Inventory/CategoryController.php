@@ -55,6 +55,9 @@ class CategoryController extends Controller
     public function listAssignableItems(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
+        $excludeCategoryId = $request->filled('exclude_category_id')
+            ? (int) $request->input('exclude_category_id')
+            : null;
 
         $query = DB::table('items as i')
             ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
@@ -77,6 +80,13 @@ class CategoryController extends Controller
                     ->orWhere('i.item_description', 'like', "%{$search}%")
                     ->orWhere('it.type_name', 'like', "%{$search}%")
                     ->orWhere('c.category_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($excludeCategoryId) {
+            $query->where(function ($builder) use ($excludeCategoryId) {
+                $builder->whereNull('i.category_id')
+                    ->orWhere('i.category_id', '!=', $excludeCategoryId);
             });
         }
 
