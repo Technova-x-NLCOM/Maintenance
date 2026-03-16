@@ -64,6 +64,6 @@ class ItemTypeSeeder extends Seeder
             ],
         ];
 
-        DB::table('item_types')->insert($itemTypes);
+        DB::table('item_types')->insertOrIgnore($itemTypes);
     }
 }
