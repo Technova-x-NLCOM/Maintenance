@@ -37,7 +37,7 @@ export class CategoryManagementComponent implements OnInit {
   modalSuccessMessage = '';
   itemSearch = '';
   assignSearch = '';
-  selectedItemToAssignId: number | null = null;
+  selectedAssignableItemIds: number[] = [];
 
   formData: {
     category_name: string;
@@ -204,7 +204,7 @@ export class CategoryManagementComponent implements OnInit {
     this.modalSuccessMessage = '';
     this.itemSearch = '';
     this.assignSearch = '';
-    this.selectedItemToAssignId = null;
+    this.selectedAssignableItemIds = [];
     this.loadCategoryItems();
     this.loadAssignableItems();
     this.cdr.detectChanges();
@@ -215,7 +215,7 @@ export class CategoryManagementComponent implements OnInit {
     this.selectedCategoryForItems = null;
     this.categoryItems = [];
     this.assignableItems = [];
-    this.selectedItemToAssignId = null;
+    this.selectedAssignableItemIds = [];
     this.modalErrorMessage = '';
     this.modalSuccessMessage = '';
     this.cdr.detectChanges();
@@ -249,6 +249,9 @@ export class CategoryManagementComponent implements OnInit {
     this.categoryService.listAssignableItems(this.assignSearch || undefined).subscribe({
       next: (response) => {
         this.assignableItems = response.data;
+        this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
+          this.assignableItems.some((item) => item.item_id === id)
+        );
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -259,8 +262,8 @@ export class CategoryManagementComponent implements OnInit {
   }
 
   assignSelectedItem(): void {
-    if (!this.selectedCategoryForItems || !this.selectedItemToAssignId) {
-      this.modalErrorMessage = 'Please select an item to assign.';
+    if (!this.selectedCategoryForItems || this.selectedAssignableItemIds.length === 0) {
+      this.modalErrorMessage = 'Please select one or more items to assign.';
       return;
     }
 
@@ -269,12 +272,12 @@ export class CategoryManagementComponent implements OnInit {
     this.modalSuccessMessage = '';
 
     this.categoryService
-      .assignItem(this.selectedCategoryForItems.category_id, this.selectedItemToAssignId)
+      .assignItems(this.selectedCategoryForItems.category_id, this.selectedAssignableItemIds)
       .subscribe({
         next: (response) => {
           this.assigningItem = false;
           this.modalSuccessMessage = response.message;
-          this.selectedItemToAssignId = null;
+          this.selectedAssignableItemIds = [];
           this.loadCategoryItems();
           this.loadAssignableItems();
           this.loadCategories();
@@ -285,6 +288,44 @@ export class CategoryManagementComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  toggleAssignableItem(itemId: number, checked: boolean): void {
+    if (checked) {
+      if (!this.selectedAssignableItemIds.includes(itemId)) {
+        this.selectedAssignableItemIds = [...this.selectedAssignableItemIds, itemId];
+      }
+      return;
+    }
+
+    this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) => id !== itemId);
+  }
+
+  isAssignableItemSelected(itemId: number): boolean {
+    return this.selectedAssignableItemIds.includes(itemId);
+  }
+
+  toggleSelectAllAssignable(checked: boolean): void {
+    if (checked) {
+      this.selectedAssignableItemIds = this.assignableItems.map((item) => item.item_id);
+      return;
+    }
+
+    this.selectedAssignableItemIds = [];
+  }
+
+  areAllAssignableSelected(): boolean {
+    return this.assignableItems.length > 0 && this.selectedAssignableItemIds.length === this.assignableItems.length;
+  }
+
+  onSelectAllAssignableChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.toggleSelectAllAssignable(checked);
+  }
+
+  onAssignableItemChange(itemId: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.toggleAssignableItem(itemId, checked);
   }
 
   removeItemFromCategory(item: CategoryItem): void {

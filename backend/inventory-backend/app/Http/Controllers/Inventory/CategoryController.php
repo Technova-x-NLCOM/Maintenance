@@ -100,19 +100,43 @@ class CategoryController extends Controller
         }
 
         $data = $request->validate([
-            'item_id' => ['required', 'integer', 'exists:items,item_id'],
+            'item_id' => ['nullable', 'integer', 'exists:items,item_id', 'required_without:item_ids'],
+            'item_ids' => ['nullable', 'array', 'min:1', 'required_without:item_id'],
+            'item_ids.*' => ['integer', 'exists:items,item_id'],
         ]);
 
-        DB::table('items')
-            ->where('item_id', $data['item_id'])
+        $itemIds = [];
+        if (!empty($data['item_ids'])) {
+            $itemIds = array_map('intval', $data['item_ids']);
+        } elseif (!empty($data['item_id'])) {
+            $itemIds = [(int) $data['item_id']];
+        }
+
+        $itemIds = array_values(array_unique($itemIds));
+
+        if (empty($itemIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please select at least one item to assign.',
+                'error_type' => 'no_items_selected',
+            ], 422);
+        }
+
+        $affected = DB::table('items')
+            ->whereIn('item_id', $itemIds)
             ->update([
                 'category_id' => $categoryId,
                 'updated_at' => now(),
             ]);
 
+        $message = count($itemIds) === 1
+            ? 'Item assigned to category successfully.'
+            : "{$affected} items assigned to category successfully.";
+
         return response()->json([
             'success' => true,
-            'message' => 'Item assigned to category successfully.',
+            'message' => $message,
+            'assigned_count' => $affected,
         ]);
     }
 

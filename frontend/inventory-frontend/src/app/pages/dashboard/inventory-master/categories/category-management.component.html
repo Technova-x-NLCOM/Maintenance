@@ -21,7 +21,7 @@
       <div *ngIf="modalSuccessMessage" class="alert alert-success modal-alert">{{ modalSuccessMessage }}</div>
 
       <div class="assign-section">
-        <h3>Assign registered item to this category</h3>
+        <h3>Assign Registered Items To This Category</h3>
         <div class="assign-controls">
           <input
             type="text"
@@ -30,17 +30,64 @@
             (keyup.enter)="loadAssignableItems()"
           />
           <button class="btn-ghost" type="button" (click)="loadAssignableItems()">Search</button>
+          <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(true)">Select all</button>
+          <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(false)">Clear</button>
         </div>
-        <div class="assign-controls">
-          <select [(ngModel)]="selectedItemToAssignId">
-            <option [ngValue]="null">Select item to assign</option>
-            <option *ngFor="let item of assignableItems" [ngValue]="item.item_id">
-              {{ item.item_code }} - {{ item.item_description }}
-              {{ item.category_name ? '(currently: ' + item.category_name + ')' : '(currently: no category)' }}
-            </option>
-          </select>
-          <button class="btn-primary" type="button" [disabled]="assigningItem" (click)="assignSelectedItem()">
-            {{ assigningItem ? 'Assigning...' : 'Assign Item' }}
+
+        <div class="assign-summary">
+          Selected: <strong>{{ selectedAssignableItemIds.length }}</strong> item(s)
+        </div>
+
+        <div class="table-wrap assignable-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="check-col">
+                  <input
+                    type="checkbox"
+                    [checked]="areAllAssignableSelected()"
+                    (change)="onSelectAllAssignableChange($event)"
+                  />
+                </th>
+                <th>Image</th>
+                <th>Code</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Current Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of assignableItems">
+                <td class="check-col">
+                  <input
+                    type="checkbox"
+                    [checked]="isAssignableItemSelected(item.item_id)"
+                    (change)="onAssignableItemChange(item.item_id, $event)"
+                  />
+                </td>
+                <td>
+                  <div class="item-image-preview" *ngIf="item.image_url; else noAssignableImage">
+                    <img [src]="item.image_url" [alt]="item.item_description" />
+                  </div>
+                  <ng-template #noAssignableImage>
+                    <span class="item-image-empty">No image</span>
+                  </ng-template>
+                </td>
+                <td>{{ item.item_code }}</td>
+                <td>{{ item.item_description }}</td>
+                <td>{{ item.item_type_name || '—' }}</td>
+                <td>{{ item.category_name || 'No category' }}</td>
+              </tr>
+              <tr *ngIf="assignableItems.length === 0">
+                <td colspan="6" class="empty">No assignable items found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="assign-actions">
+          <button class="btn-primary" type="button" [disabled]="assigningItem || selectedAssignableItemIds.length === 0" (click)="assignSelectedItem()">
+            {{ assigningItem ? 'Assigning...' : 'Assign Selected Items' }}
           </button>
         </div>
       </div>

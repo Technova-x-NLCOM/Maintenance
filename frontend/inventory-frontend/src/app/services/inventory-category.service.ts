@@ -155,6 +155,14 @@ export class InventoryCategoryService {
     );
   }
 
+  assignItems(categoryId: number, itemIds: number[]): Observable<{ success: boolean; message: string; assigned_count?: number }> {
+    return this.http.post<{ success: boolean; message: string; assigned_count?: number }>(
+      `${this.baseUrl}/${categoryId}/items`,
+      { item_ids: itemIds },
+      { headers: this.getHeaders() }
+    );
+  }
+
   removeItem(categoryId: number, itemId: number): Observable<{ success: boolean; message: string }> {
     return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${categoryId}/items/${itemId}`, {
       headers: this.getHeaders()
