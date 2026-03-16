@@ -66,7 +66,11 @@ export class SidebarComponent implements OnInit {
     const userTables = ['users', 'user_roles'];
     const systemTables = ['audit_log'];
 
-    if (url.includes('/dashboard/inventory/items') || url.includes('/dashboard/inventory/categories')) {
+    if (
+      url.includes('/dashboard/inventory/items') ||
+      url.includes('/dashboard/inventory/categories') ||
+      url.includes('/dashboard/inventory/minimum-stock')
+    ) {
       this.openGroups.add('inventory-master-data');
       return;
     }

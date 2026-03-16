@@ -1,0 +1,85 @@
+<div class="min-stock-page">
+  <header class="page-header">
+    <div class="header-text">
+      <p class="eyebrow">Inventory Master Data</p>
+      <h1 class="page-title">Minimum Stock Setup</h1>
+      <p class="subtitle">Configure low-stock thresholds per item so alerts and replenishment are more accurate.</p>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">Items <span class="count">({{ totalItems }})</span></h2>
+      <div class="toolbar-actions">
+        <div class="search-row">
+          <input
+            type="text"
+            [(ngModel)]="search"
+            placeholder="Search by code, item, type, or category"
+            (keyup.enter)="onSearch()"
+          />
+          <button class="btn-ghost" type="button" (click)="onSearch()">Search</button>
+          <button class="btn-ghost" type="button" (click)="clearSearch()">Reset</button>
+        </div>
+        <button class="btn-primary" type="button" [disabled]="saving || !hasPendingChanges()" (click)="saveAll()">
+          {{ saving ? 'Saving...' : 'Save Minimum Stock' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state-loading">Loading minimum stock data...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Description</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Current Stock</th>
+            <th>Minimum Stock</th>
+            <th>Shelf Life (days)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows" [class.row-alert]="isBelowMinimum(row)">
+            <td><span class="cell-code">{{ row.item_code }}</span></td>
+            <td>{{ row.item_description }}</td>
+            <td>{{ row.item_type_name || '—' }}</td>
+            <td>{{ row.category_name || '—' }}</td>
+            <td>{{ row.current_stock }}</td>
+            <td>
+              <input
+                class="min-stock-input"
+                type="number"
+                min="0"
+                [ngModel]="getEffectiveReorderLevel(row)"
+                (ngModelChange)="trackEdit(row, $event)"
+              />
+            </td>
+            <td>{{ row.shelf_life_days ?? '—' }}</td>
+            <td>
+              <span class="status-badge" [class.warning]="isBelowMinimum(row)">
+                {{ isBelowMinimum(row) ? 'Below Minimum' : 'OK' }}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="rows.length === 0">
+            <td colspan="8" class="empty">No items found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination" *ngIf="!loading && totalPages > 1">
+      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
+    </div>
+  </section>
+</div>

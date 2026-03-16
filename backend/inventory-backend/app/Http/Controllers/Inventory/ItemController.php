@@ -291,6 +291,124 @@ class ItemController extends Controller
         return $this->show($itemId);
     }
 
+    public function minimumStockList(Request $request)
+    {
+        $perPage = (int) $request->input('per_page', 20);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 20;
+
+        $stockSubquery = DB::table('inventory_batches')
+            ->select('item_id', DB::raw('COALESCE(SUM(quantity), 0) as current_stock'))
+            ->where('status', 'active')
+            ->groupBy('item_id');
+
+        $query = DB::table('items as i')
+            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
+            ->leftJoinSub($stockSubquery, 's', function ($join) {
+                $join->on('i.item_id', '=', 's.item_id');
+            })
+            ->select(
+                'i.item_id',
+                'i.item_code',
+                'i.item_description',
+                'i.reorder_level',
+                'i.shelf_life_days',
+                'i.is_active',
+                'it.type_name as item_type_name',
+                'c.category_name',
+                DB::raw('COALESCE(s.current_stock, 0) as current_stock')
+            )
+            ->orderBy('i.item_description');
+
+        if ($request->filled('search')) {
+            $search = trim((string) $request->input('search'));
+            $query->where(function ($builder) use ($search) {
+                $builder->where('i.item_code', 'like', "%{$search}%")
+                    ->orWhere('i.item_description', 'like', "%{$search}%")
+                    ->orWhere('it.type_name', 'like', "%{$search}%")
+                    ->orWhere('c.category_name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('is_active')) {
+            $isActive = filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (!is_null($isActive)) {
+                $query->where('i.is_active', $isActive);
+            }
+        }
+
+        $items = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Minimum stock items retrieved successfully.',
+            'data' => $items,
+        ]);
+    }
+
+    public function updateMinimumStock(Request $request, int $itemId)
+    {
+        $exists = DB::table('items')->where('item_id', $itemId)->exists();
+        if (!$exists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found.',
+            ], 404);
+        }
+
+        $data = $request->validate([
+            'reorder_level' => ['required', 'integer', 'min:0'],
+        ]);
+
+        DB::table('items')
+            ->where('item_id', $itemId)
+            ->update([
+                'reorder_level' => $data['reorder_level'],
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Minimum stock updated successfully.',
+        ]);
+    }
+
+    public function bulkUpdateMinimumStock(Request $request)
+    {
+        $data = $request->validate([
+            'updates' => ['required', 'array', 'min:1'],
+            'updates.*.item_id' => ['required', 'integer', 'exists:items,item_id'],
+            'updates.*.reorder_level' => ['required', 'integer', 'min:0'],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            foreach ($data['updates'] as $update) {
+                DB::table('items')
+                    ->where('item_id', $update['item_id'])
+                    ->update([
+                        'reorder_level' => $update['reorder_level'],
+                        'updated_at' => now(),
+                    ]);
+            }
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => count($data['updates']) . ' minimum stock value(s) updated successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update minimum stock values.',
+                'error_type' => 'minimum_stock_update_failed',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
     public function options()
     {
         $itemTypes = DB::table('item_types')

@@ -94,6 +94,9 @@ Route::prefix('api/inventory/items')
     ->group(function () {
         Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
             Route::get('options', [ItemController::class, 'options']);
+            Route::get('minimum-stock', [ItemController::class, 'minimumStockList']);
+            Route::patch('minimum-stock/bulk', [ItemController::class, 'bulkUpdateMinimumStock']);
+            Route::patch('{itemId}/minimum-stock', [ItemController::class, 'updateMinimumStock']);
             Route::post('{itemId}/expected-expiry', [ItemController::class, 'expectedExpiry']);
             Route::get('/', [ItemController::class, 'index']);
             Route::get('{itemId}', [ItemController::class, 'show']);

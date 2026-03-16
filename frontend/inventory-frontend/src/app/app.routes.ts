@@ -15,6 +15,7 @@ import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.
 import { SettingsComponent } from './pages/dashboard/settings/settings.component';
 import { CategoryManagementComponent } from './pages/dashboard/inventory-master/categories/category-management.component';
 import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
+import { MinimumStockSetupComponent } from './pages/dashboard/inventory-master/minimum-stock/minimum-stock-setup.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -35,6 +36,7 @@ export const routes: Routes = [
       { path: 'backup', component: BackupComponent },
       { path: 'inventory/categories', component: CategoryManagementComponent },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
+      { path: 'inventory/minimum-stock', component: MinimumStockSetupComponent },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
       { path: 'settings', component: SettingsComponent }

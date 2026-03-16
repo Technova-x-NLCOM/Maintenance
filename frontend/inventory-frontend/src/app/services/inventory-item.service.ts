@@ -54,6 +54,30 @@ interface ItemOptionsResponse {
   data: ItemFormOptions;
 }
 
+interface MinimumStockItem {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  item_type_name?: string;
+  category_name?: string;
+  reorder_level: number;
+  current_stock: number;
+  shelf_life_days: number | null;
+  is_active: boolean;
+}
+
+interface PaginatedMinimumStockResponse {
+  success: boolean;
+  message: string;
+  data: {
+    data: MinimumStockItem[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -128,6 +152,43 @@ export class InventoryItemService {
     return this.http.patch<ItemSingleResponse>(
       `${this.baseUrl}/${itemId}/status`,
       { is_active },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  listMinimumStock(params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    is_active?: boolean;
+  }): Observable<PaginatedMinimumStockResponse> {
+    let queryParams = new HttpParams();
+
+    if (params.page) queryParams = queryParams.set('page', String(params.page));
+    if (params.per_page) queryParams = queryParams.set('per_page', String(params.per_page));
+    if (params.search) queryParams = queryParams.set('search', params.search.trim());
+    if (typeof params.is_active === 'boolean') {
+      queryParams = queryParams.set('is_active', String(params.is_active));
+    }
+
+    return this.http.get<PaginatedMinimumStockResponse>(`${this.baseUrl}/minimum-stock`, {
+      headers: this.getHeaders(),
+      params: queryParams
+    });
+  }
+
+  updateMinimumStock(itemId: number, reorder_level: number): Observable<{ success: boolean; message: string }> {
+    return this.http.patch<{ success: boolean; message: string }>(
+      `${this.baseUrl}/${itemId}/minimum-stock`,
+      { reorder_level },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  bulkUpdateMinimumStock(updates: Array<{ item_id: number; reorder_level: number }>): Observable<{ success: boolean; message: string }> {
+    return this.http.patch<{ success: boolean; message: string }>(
+      `${this.baseUrl}/minimum-stock/bulk`,
+      { updates },
       { headers: this.getHeaders() }
     );
   }
