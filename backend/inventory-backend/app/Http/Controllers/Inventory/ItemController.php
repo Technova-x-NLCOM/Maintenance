@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ItemController extends Controller
@@ -67,6 +68,9 @@ class ItemController extends Controller
         }
 
         $items = $query->paginate($perPage);
+        $items->setCollection(
+            $items->getCollection()->map(fn ($item) => $this->normalizeItem($item))
+        );
 
         return response()->json([
             'success' => true,
@@ -112,6 +116,8 @@ class ItemController extends Controller
             ], 404);
         }
 
+        $item = $this->normalizeItem($item);
+
         return response()->json([
             'success' => true,
             'message' => 'Item retrieved successfully.',
@@ -129,17 +135,24 @@ class ItemController extends Controller
             'measurement_unit' => ['nullable', 'string', 'max:50'],
             'particular' => ['nullable', 'string'],
             'mg_dosage' => ['nullable', 'numeric', 'min:0'],
-            'image_url' => ['nullable', 'url', 'max:500'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'remarks' => ['nullable', 'string'],
             'unit_value' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
+        unset($data['image']);
+
         $user = auth('api')->user();
+        $imagePath = null;
 
         DB::beginTransaction();
         try {
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('items', 'public');
+            }
+
             $itemId = DB::table('items')->insertGetId([
                 'item_code' => trim($data['item_code']),
                 'item_description' => trim($data['item_description']),
@@ -148,7 +161,7 @@ class ItemController extends Controller
                 'measurement_unit' => $data['measurement_unit'] ?? null,
                 'particular' => $data['particular'] ?? null,
                 'mg_dosage' => $data['mg_dosage'] ?? null,
-                'image_url' => $data['image_url'] ?? null,
+                'image_url' => $imagePath,
                 'remarks' => $data['remarks'] ?? null,
                 'unit_value' => $data['unit_value'] ?? null,
                 'reorder_level' => $data['reorder_level'] ?? 0,
@@ -164,18 +177,22 @@ class ItemController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create item.',
-                'error' => $e->getMessage(),
-            ], 500);
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            return $this->buildItemSaveErrorResponse('create', $e);
         }
     }
 
     public function update(Request $request, int $itemId)
     {
-        $exists = DB::table('items')->where('item_id', $itemId)->exists();
-        if (!$exists) {
+        $existingItem = DB::table('items')
+            ->select('item_id', 'image_url')
+            ->where('item_id', $itemId)
+            ->first();
+
+        if (!$existingItem) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item not found.',
@@ -190,14 +207,16 @@ class ItemController extends Controller
             'measurement_unit' => ['nullable', 'string', 'max:50'],
             'particular' => ['nullable', 'string'],
             'mg_dosage' => ['nullable', 'numeric', 'min:0'],
-            'image_url' => ['nullable', 'url', 'max:500'],
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
             'remarks' => ['nullable', 'string'],
             'unit_value' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        if (empty($data)) {
+        unset($data['image']);
+
+        if (empty($data) && !$request->hasFile('image')) {
             return response()->json([
                 'success' => false,
                 'message' => 'No fields provided for update.',
@@ -214,20 +233,32 @@ class ItemController extends Controller
 
         $data['updated_at'] = now();
 
+        $newImagePath = null;
+        $oldImagePath = $this->extractStoredImagePath($existingItem->image_url);
+
         DB::beginTransaction();
         try {
+            if ($request->hasFile('image')) {
+                $newImagePath = $request->file('image')->store('items', 'public');
+                $data['image_url'] = $newImagePath;
+            }
+
             DB::table('items')->where('item_id', $itemId)->update($data);
             DB::commit();
+
+            if ($newImagePath && $oldImagePath && $oldImagePath !== $newImagePath) {
+                Storage::disk('public')->delete($oldImagePath);
+            }
 
             return $this->show($itemId);
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update item.',
-                'error' => $e->getMessage(),
-            ], 500);
+            if ($newImagePath) {
+                Storage::disk('public')->delete($newImagePath);
+            }
+
+            return $this->buildItemSaveErrorResponse('update', $e);
         }
     }
 
@@ -274,5 +305,79 @@ class ItemController extends Controller
                 'categories' => $categories,
             ],
         ]);
+    }
+
+    private function normalizeItem(object $item): object
+    {
+        $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
+
+        return $item;
+    }
+
+    private function resolveImageUrl(?string $storedValue): ?string
+    {
+        if (!$storedValue) {
+            return null;
+        }
+
+        if (preg_match('/^https?:\/\//i', $storedValue)) {
+            return $storedValue;
+        }
+
+        $path = ltrim($storedValue, '/');
+        if (str_starts_with($path, 'storage/')) {
+            return url($path);
+        }
+
+        return url('storage/' . $path);
+    }
+
+    private function extractStoredImagePath(?string $storedValue): ?string
+    {
+        if (!$storedValue) {
+            return null;
+        }
+
+        if (preg_match('#/storage/(.+)$#', $storedValue, $matches)) {
+            return $matches[1];
+        }
+
+        if (preg_match('/^https?:\/\//i', $storedValue)) {
+            return null;
+        }
+
+        $path = ltrim($storedValue, '/');
+
+        return str_starts_with($path, 'storage/') ? substr($path, 8) : $path;
+    }
+
+    private function buildItemSaveErrorResponse(string $action, \Throwable $e)
+    {
+        $actionLabel = $action === 'create' ? 'create' : 'update';
+        $message = "Unable to {$actionLabel} the item right now. Please try again.";
+        $errorType = 'item_save_failed';
+
+        if (str_contains($e->getMessage(), "Unknown column 'image'")) {
+            $message = 'Unable to save the uploaded image because the server image field is not configured correctly.';
+            $errorType = 'item_image_storage_misconfigured';
+        } elseif (str_contains(strtolower($e->getMessage()), 'storage') || str_contains(strtolower($e->getMessage()), 'file')) {
+            $message = 'Unable to save the uploaded image. Please check the file and try again.';
+            $errorType = 'item_image_upload_failed';
+        } elseif (str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique')) {
+            $message = 'The item code already exists. Please use a different item code.';
+            $errorType = 'item_code_already_exists';
+        }
+
+        $response = [
+            'success' => false,
+            'message' => $message,
+            'error_type' => $errorType,
+        ];
+
+        if (config('app.debug')) {
+            $response['error'] = $e->getMessage();
+        }
+
+        return response()->json($response, 500);
     }
 }
