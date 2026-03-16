@@ -17,6 +17,7 @@ export interface InventoryItem {
   remarks: string | null;
   unit_value: number | null;
   reorder_level: number;
+  shelf_life_days: number | null;
   is_active: boolean;
   created_by: number | null;
   created_by_name?: string;

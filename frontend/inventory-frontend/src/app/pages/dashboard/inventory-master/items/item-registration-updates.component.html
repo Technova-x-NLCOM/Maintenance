@@ -75,6 +75,16 @@
         </label>
 
         <label>
+          <span>Expected shelf life (days)</span>
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="formData.shelf_life_days"
+            placeholder="e.g. 730 for 2 years"
+          />
+        </label>
+
+        <label>
           <span>Dosage in mg (for medicines only)</span>
           <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" placeholder="e.g. 500" />
         </label>

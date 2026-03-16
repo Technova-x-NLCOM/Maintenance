@@ -246,7 +246,9 @@ export class CategoryManagementComponent implements OnInit {
   }
 
   loadAssignableItems(): void {
-    this.categoryService.listAssignableItems(this.assignSearch || undefined).subscribe({
+    this.categoryService
+      .listAssignableItems(this.assignSearch || undefined, this.selectedCategoryForItems?.category_id)
+      .subscribe({
       next: (response) => {
         this.assignableItems = response.data;
         this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>

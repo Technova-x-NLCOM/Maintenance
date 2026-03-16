@@ -135,10 +135,13 @@ export class InventoryCategoryService {
     });
   }
 
-  listAssignableItems(search?: string): Observable<CategoryItemsResponse> {
+  listAssignableItems(search?: string, excludeCategoryId?: number): Observable<CategoryItemsResponse> {
     let params = new HttpParams();
     if (search?.trim()) {
       params = params.set('search', search.trim());
+    }
+    if (excludeCategoryId) {
+      params = params.set('exclude_category_id', String(excludeCategoryId));
     }
 
     return this.http.get<CategoryItemsResponse>(`${this.baseUrl}/items/available`, {

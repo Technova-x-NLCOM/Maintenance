@@ -94,6 +94,7 @@ Route::prefix('api/inventory/items')
     ->group(function () {
         Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
             Route::get('options', [ItemController::class, 'options']);
+            Route::post('{itemId}/expected-expiry', [ItemController::class, 'expectedExpiry']);
             Route::get('/', [ItemController::class, 'index']);
             Route::get('{itemId}', [ItemController::class, 'show']);
             Route::post('/', [ItemController::class, 'store']);

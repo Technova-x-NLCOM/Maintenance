@@ -45,6 +45,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     measurement_unit: string;
     particular: string;
     mg_dosage: number | null;
+    shelf_life_days: number | null;
     remarks: string;
     unit_value: number | null;
     reorder_level: number;
@@ -57,6 +58,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     measurement_unit: '',
     particular: '',
     mg_dosage: null,
+    shelf_life_days: null,
     remarks: '',
     unit_value: null,
     reorder_level: 0,
@@ -139,6 +141,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: item.measurement_unit || '',
       particular: item.particular || '',
       mg_dosage: item.mg_dosage,
+      shelf_life_days: item.shelf_life_days,
       remarks: item.remarks || '',
       unit_value: item.unit_value,
       reorder_level: item.reorder_level,
@@ -165,6 +168,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: '',
       particular: '',
       mg_dosage: null,
+      shelf_life_days: null,
       remarks: '',
       unit_value: null,
       reorder_level: 0,
@@ -188,6 +192,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: '',
       particular: '',
       mg_dosage: null,
+      shelf_life_days: null,
       remarks: '',
       unit_value: null,
       reorder_level: 0,
@@ -301,6 +306,10 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     payload.append('measurement_unit', this.nullIfEmpty(this.formData.measurement_unit) ?? '');
     payload.append('particular', this.nullIfEmpty(this.formData.particular) ?? '');
     payload.append('mg_dosage', this.formData.mg_dosage === null ? '' : String(this.formData.mg_dosage));
+    payload.append(
+      'shelf_life_days',
+      this.formData.shelf_life_days === null ? '' : String(this.formData.shelf_life_days)
+    );
     payload.append('remarks', this.nullIfEmpty(this.formData.remarks) ?? '');
     payload.append('unit_value', this.formData.unit_value === null ? '' : String(this.formData.unit_value));
     payload.append(
