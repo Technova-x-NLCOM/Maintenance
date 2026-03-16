@@ -13,6 +13,17 @@ export interface InventoryCategory {
   item_count?: number;
 }
 
+export interface CategoryItem {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  image_url?: string | null;
+  is_active: boolean;
+  category_id: number | null;
+  category_name?: string | null;
+  item_type_name?: string | null;
+}
+
 interface CategoryListResponse {
   success: boolean;
   message: string;
@@ -35,6 +46,12 @@ interface CategoryOptionsResponse {
       parent_category_id: number | null;
     }>;
   };
+}
+
+interface CategoryItemsResponse {
+  success: boolean;
+  message: string;
+  data: CategoryItem[];
 }
 
 @Injectable({
@@ -102,6 +119,44 @@ export class InventoryCategoryService {
 
   delete(categoryId: number): Observable<{ success: boolean; message: string }> {
     return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${categoryId}`, {
+      headers: this.getHeaders()
+    });
+  }
+
+  listCategoryItems(categoryId: number, search?: string): Observable<CategoryItemsResponse> {
+    let params = new HttpParams();
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http.get<CategoryItemsResponse>(`${this.baseUrl}/${categoryId}/items`, {
+      headers: this.getHeaders(),
+      params
+    });
+  }
+
+  listAssignableItems(search?: string): Observable<CategoryItemsResponse> {
+    let params = new HttpParams();
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http.get<CategoryItemsResponse>(`${this.baseUrl}/items/available`, {
+      headers: this.getHeaders(),
+      params
+    });
+  }
+
+  assignItem(categoryId: number, itemId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(
+      `${this.baseUrl}/${categoryId}/items`,
+      { item_id: itemId },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  removeItem(categoryId: number, itemId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/${categoryId}/items/${itemId}`, {
       headers: this.getHeaders()
     });
   }

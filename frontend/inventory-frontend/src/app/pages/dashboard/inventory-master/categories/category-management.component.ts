@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
+  CategoryItem,
   InventoryCategory,
   InventoryCategoryService
 } from '../../../../services/inventory-category.service';
@@ -16,15 +17,27 @@ import {
 export class CategoryManagementComponent implements OnInit {
   loading = false;
   saving = false;
+  managingItems = false;
+  assigningItem = false;
   deletingCategoryId: number | null = null;
+  removingItemId: number | null = null;
   categories: InventoryCategory[] = [];
   parentOptions: InventoryCategory[] = [];
+  categoryItems: CategoryItem[] = [];
+  assignableItems: CategoryItem[] = [];
 
   search = '';
   showForm = false;
+  showItemsModal = false;
   selectedCategoryId: number | null = null;
+  selectedCategoryForItems: InventoryCategory | null = null;
   errorMessage = '';
   successMessage = '';
+  modalErrorMessage = '';
+  modalSuccessMessage = '';
+  itemSearch = '';
+  assignSearch = '';
+  selectedItemToAssignId: number | null = null;
 
   formData: {
     category_name: string;
@@ -182,6 +195,123 @@ export class CategoryManagementComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  openManageItems(category: InventoryCategory): void {
+    this.selectedCategoryForItems = category;
+    this.showItemsModal = true;
+    this.modalErrorMessage = '';
+    this.modalSuccessMessage = '';
+    this.itemSearch = '';
+    this.assignSearch = '';
+    this.selectedItemToAssignId = null;
+    this.loadCategoryItems();
+    this.loadAssignableItems();
+    this.cdr.detectChanges();
+  }
+
+  closeItemsModal(): void {
+    this.showItemsModal = false;
+    this.selectedCategoryForItems = null;
+    this.categoryItems = [];
+    this.assignableItems = [];
+    this.selectedItemToAssignId = null;
+    this.modalErrorMessage = '';
+    this.modalSuccessMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  loadCategoryItems(): void {
+    if (!this.selectedCategoryForItems) {
+      return;
+    }
+
+    this.managingItems = true;
+    this.modalErrorMessage = '';
+
+    this.categoryService
+      .listCategoryItems(this.selectedCategoryForItems.category_id, this.itemSearch || undefined)
+      .subscribe({
+        next: (response) => {
+          this.categoryItems = response.data;
+          this.managingItems = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.managingItems = false;
+          this.modalErrorMessage = this.extractError(err);
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  loadAssignableItems(): void {
+    this.categoryService.listAssignableItems(this.assignSearch || undefined).subscribe({
+      next: (response) => {
+        this.assignableItems = response.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.modalErrorMessage = this.extractError(err);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  assignSelectedItem(): void {
+    if (!this.selectedCategoryForItems || !this.selectedItemToAssignId) {
+      this.modalErrorMessage = 'Please select an item to assign.';
+      return;
+    }
+
+    this.assigningItem = true;
+    this.modalErrorMessage = '';
+    this.modalSuccessMessage = '';
+
+    this.categoryService
+      .assignItem(this.selectedCategoryForItems.category_id, this.selectedItemToAssignId)
+      .subscribe({
+        next: (response) => {
+          this.assigningItem = false;
+          this.modalSuccessMessage = response.message;
+          this.selectedItemToAssignId = null;
+          this.loadCategoryItems();
+          this.loadAssignableItems();
+          this.loadCategories();
+        },
+        error: (err) => {
+          this.assigningItem = false;
+          this.modalErrorMessage = this.extractError(err);
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  removeItemFromCategory(item: CategoryItem): void {
+    if (!this.selectedCategoryForItems) {
+      return;
+    }
+
+    this.removingItemId = item.item_id;
+    this.modalErrorMessage = '';
+    this.modalSuccessMessage = '';
+
+    this.categoryService
+      .removeItem(this.selectedCategoryForItems.category_id, item.item_id)
+      .subscribe({
+        next: (response) => {
+          this.removingItemId = null;
+          this.modalSuccessMessage = response.message;
+          this.loadCategoryItems();
+          this.loadAssignableItems();
+          this.loadCategories();
+        },
+        error: (err) => {
+          this.removingItemId = null;
+          this.modalErrorMessage = this.extractError(err);
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   getAvailableParentOptions(): InventoryCategory[] {

@@ -10,6 +10,104 @@
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
+  <div class="modal-overlay" *ngIf="showItemsModal" (click)="closeItemsModal()" role="dialog" aria-modal="true">
+    <div class="modal-content items-modal" (click)="$event.stopPropagation()">
+      <div class="form-panel-header">
+        <h2 class="panel-title">Manage Items: {{ selectedCategoryForItems?.category_name }}</h2>
+        <button class="btn-ghost btn-close-form" type="button" (click)="closeItemsModal()">Close</button>
+      </div>
+
+      <div *ngIf="modalErrorMessage" class="alert alert-error modal-alert">{{ modalErrorMessage }}</div>
+      <div *ngIf="modalSuccessMessage" class="alert alert-success modal-alert">{{ modalSuccessMessage }}</div>
+
+      <div class="assign-section">
+        <h3>Assign registered item to this category</h3>
+        <div class="assign-controls">
+          <input
+            type="text"
+            [(ngModel)]="assignSearch"
+            placeholder="Search items by code or name"
+            (keyup.enter)="loadAssignableItems()"
+          />
+          <button class="btn-ghost" type="button" (click)="loadAssignableItems()">Search</button>
+        </div>
+        <div class="assign-controls">
+          <select [(ngModel)]="selectedItemToAssignId">
+            <option [ngValue]="null">Select item to assign</option>
+            <option *ngFor="let item of assignableItems" [ngValue]="item.item_id">
+              {{ item.item_code }} - {{ item.item_description }}
+              {{ item.category_name ? '(currently: ' + item.category_name + ')' : '(currently: no category)' }}
+            </option>
+          </select>
+          <button class="btn-primary" type="button" [disabled]="assigningItem" (click)="assignSelectedItem()">
+            {{ assigningItem ? 'Assigning...' : 'Assign Item' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="assigned-section">
+        <div class="section-header">
+          <h3>Items in this category ({{ categoryItems.length }})</h3>
+          <div class="assign-controls">
+            <input
+              type="text"
+              [(ngModel)]="itemSearch"
+              placeholder="Search items in this category"
+              (keyup.enter)="loadCategoryItems()"
+            />
+            <button class="btn-ghost" type="button" (click)="loadCategoryItems()">Search</button>
+          </div>
+        </div>
+
+        <div *ngIf="managingItems" class="state-loading">Loading category items...</div>
+
+        <div class="table-wrap" *ngIf="!managingItems">
+          <table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Image</th>
+                <th>Description</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of categoryItems">
+                <td>{{ item.item_code }}</td>
+                <td>
+                  <div class="item-image-preview" *ngIf="item.image_url; else noItemImage">
+                    <img [src]="item.image_url" [alt]="item.item_description" />
+                  </div>
+                  <ng-template #noItemImage>
+                    <span class="item-image-empty">No image</span>
+                  </ng-template>
+                </td>
+                <td>{{ item.item_description }}</td>
+                <td>{{ item.item_type_name || '—' }}</td>
+                <td>{{ item.is_active ? 'Active' : 'Inactive' }}</td>
+                <td>
+                  <button
+                    class="btn-sm btn-delete"
+                    type="button"
+                    [disabled]="removingItemId === item.item_id"
+                    (click)="removeItemFromCategory(item)"
+                  >
+                    {{ removingItemId === item.item_id ? 'Removing...' : 'Remove from Category' }}
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="categoryItems.length === 0">
+                <td colspan="6" class="empty">No items assigned to this category.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true">
     <div class="modal-content category-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
@@ -83,6 +181,7 @@
             <td>{{ category.child_count ?? 0 }}</td>
             <td>{{ category.item_count ?? 0 }}</td>
             <td class="actions">
+              <button class="btn-sm" type="button" (click)="openManageItems(category)">Manage Items</button>
               <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">Edit</button>
               <button class="btn-sm btn-delete" type="button" [disabled]="deletingCategoryId === category.category_id" (click)="deleteCategory(category)">
                 {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}

@@ -9,6 +9,156 @@ use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
+    public function listCategoryItems(Request $request, int $categoryId)
+    {
+        $category = DB::table('categories')->where('category_id', $categoryId)->first();
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found.',
+            ], 404);
+        }
+
+        $search = trim((string) $request->input('search', ''));
+
+        $query = DB::table('items as i')
+            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            ->select(
+                'i.item_id',
+                'i.item_code',
+                'i.item_description',
+                'i.image_url',
+                'i.is_active',
+                'i.category_id',
+                'it.type_name as item_type_name'
+            )
+            ->where('i.category_id', $categoryId)
+            ->orderBy('i.item_description');
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('i.item_code', 'like', "%{$search}%")
+                    ->orWhere('i.item_description', 'like', "%{$search}%")
+                    ->orWhere('it.type_name', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->get()->map(fn ($item) => $this->normalizeCategoryItem($item));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category items retrieved successfully.',
+            'data' => $items,
+        ]);
+    }
+
+    public function listAssignableItems(Request $request)
+    {
+        $search = trim((string) $request->input('search', ''));
+
+        $query = DB::table('items as i')
+            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
+            ->select(
+                'i.item_id',
+                'i.item_code',
+                'i.item_description',
+                'i.image_url',
+                'i.is_active',
+                'i.category_id',
+                'c.category_name',
+                'it.type_name as item_type_name'
+            )
+            ->orderBy('i.item_description');
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('i.item_code', 'like', "%{$search}%")
+                    ->orWhere('i.item_description', 'like', "%{$search}%")
+                    ->orWhere('it.type_name', 'like', "%{$search}%")
+                    ->orWhere('c.category_name', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query->limit(200)->get()->map(fn ($item) => $this->normalizeCategoryItem($item));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Assignable items retrieved successfully.',
+            'data' => $items,
+        ]);
+    }
+
+    public function assignItem(Request $request, int $categoryId)
+    {
+        $category = DB::table('categories')->where('category_id', $categoryId)->first();
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found.',
+            ], 404);
+        }
+
+        $data = $request->validate([
+            'item_id' => ['required', 'integer', 'exists:items,item_id'],
+        ]);
+
+        DB::table('items')
+            ->where('item_id', $data['item_id'])
+            ->update([
+                'category_id' => $categoryId,
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item assigned to category successfully.',
+        ]);
+    }
+
+    public function removeItem(int $categoryId, int $itemId)
+    {
+        $category = DB::table('categories')->where('category_id', $categoryId)->first();
+        if (!$category) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found.',
+            ], 404);
+        }
+
+        $item = DB::table('items')
+            ->select('item_id', 'category_id')
+            ->where('item_id', $itemId)
+            ->first();
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found.',
+            ], 404);
+        }
+
+        if ((int) ($item->category_id ?? 0) !== $categoryId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This item is not assigned to the selected category.',
+                'error_type' => 'item_not_in_category',
+            ], 422);
+        }
+
+        DB::table('items')
+            ->where('item_id', $itemId)
+            ->update([
+                'category_id' => null,
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item removed from category successfully.',
+        ]);
+    }
+
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
@@ -260,5 +410,30 @@ class CategoryController extends Controller
         }
 
         return response()->json($response, 500);
+    }
+
+    private function normalizeCategoryItem(object $item): object
+    {
+        $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
+
+        return $item;
+    }
+
+    private function resolveImageUrl(?string $storedValue): ?string
+    {
+        if (!$storedValue) {
+            return null;
+        }
+
+        if (preg_match('/^https?:\/\//i', $storedValue)) {
+            return $storedValue;
+        }
+
+        $path = ltrim($storedValue, '/');
+        if (str_starts_with($path, 'storage/')) {
+            return url($path);
+        }
+
+        return url('storage/' . $path);
     }
 }

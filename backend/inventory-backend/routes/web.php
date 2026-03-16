@@ -107,6 +107,10 @@ Route::prefix('api/inventory/categories')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->group(function () {
         Route::middleware(['auth:api', 'permission:manage_categories'])->group(function () {
+            Route::get('items/available', [CategoryController::class, 'listAssignableItems']);
+            Route::get('{categoryId}/items', [CategoryController::class, 'listCategoryItems']);
+            Route::post('{categoryId}/items', [CategoryController::class, 'assignItem']);
+            Route::delete('{categoryId}/items/{itemId}', [CategoryController::class, 'removeItem']);
             Route::get('options', [CategoryController::class, 'options']);
             Route::get('/', [CategoryController::class, 'index']);
             Route::get('{categoryId}', [CategoryController::class, 'show']);
