@@ -79,10 +79,16 @@
           <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" placeholder="e.g. 500" />
         </label>
 
-        <label class="full-width">
-          <span>Product image link (optional)</span>
-          <input type="url" [(ngModel)]="formData.image_url" placeholder="https://..." />
-        </label>
+        <div class="full-width image-upload-field">
+          <label>
+            <span>Product image (optional)</span>
+            <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+          </label>
+          <p class="field-hint">Upload a JPG, PNG, WEBP, or GIF image up to 4 MB.</p>
+          <div class="image-preview" *ngIf="imagePreviewUrl">
+            <img [src]="imagePreviewUrl" alt="Selected item image preview" />
+          </div>
+        </div>
 
         <label class="full-width">
           <span>Additional details (optional)</span>

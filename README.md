@@ -35,6 +35,7 @@ php artisan key:generate
 # Configure DB in .env (DB_DATABASE=inventory_backend, DB_USERNAME=root, DB_PASSWORD=)
 php artisan migrate --seed
 php artisan jwt:secret
+php artisan storage:link
 php artisan serve
 
 # Frontend (new terminal)
@@ -90,6 +91,9 @@ php artisan migrate
 # (Optional) Seed database with sample data
 php artisan db:seed
 
+# Create the public storage symlink for uploaded files (required for item images)
+php artisan storage:link
+
 # Start Laravel development server
 php artisan serve
 ```
@@ -130,6 +134,7 @@ What’s already configured:
 - Guard added in `config/auth.php`:
   - Guard `api` uses driver `jwt`
 - Protected routes: `GET /api/auth/me`, `POST /api/auth/logout`
+- Public file serving for uploads uses Laravel's `public/storage` symlink
 
 Optional JWT settings in `.env`:
 ```env
@@ -346,6 +351,11 @@ ng test                       # Run tests
 ```
 
 ## 🐛 Troubleshooting
+
+**Uploaded item images are not showing:**
+- Run: `php artisan storage:link`
+- Confirm `backend/inventory-backend/public/storage` exists
+- Make sure you are loading the backend from the same `APP_URL` used in `.env`
 
 **Port already in use:**
 - Laravel: `php artisan serve --port=8001`

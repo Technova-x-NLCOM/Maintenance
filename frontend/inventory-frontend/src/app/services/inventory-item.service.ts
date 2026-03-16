@@ -24,21 +24,6 @@ export interface InventoryItem {
   updated_at: string;
 }
 
-export interface InventoryItemPayload {
-  item_code: string;
-  item_description: string;
-  item_type_id: number;
-  category_id?: number | null;
-  measurement_unit?: string | null;
-  particular?: string | null;
-  mg_dosage?: number | null;
-  image_url?: string | null;
-  remarks?: string | null;
-  unit_value?: number | null;
-  reorder_level?: number;
-  is_active?: boolean;
-}
-
 export interface ItemFormOptions {
   item_types: Array<{ item_type_id: number; type_name: string }>;
   categories: Array<{ category_id: number; category_name: string }>;
@@ -76,12 +61,17 @@ export class InventoryItemService {
 
   constructor(private http: HttpClient) {}
 
-  private getHeaders(): HttpHeaders {
+  private getHeaders(includeJsonContentType: boolean = true): HttpHeaders {
     const token = localStorage.getItem('access_token');
-    return new HttpHeaders({
-      Authorization: token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
+    let headers = new HttpHeaders({
+      Authorization: token ? `Bearer ${token}` : ''
     });
+
+    if (includeJsonContentType) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+
+    return headers;
   }
 
   list(params: {
@@ -121,15 +111,15 @@ export class InventoryItemService {
     });
   }
 
-  create(payload: InventoryItemPayload): Observable<ItemSingleResponse> {
+  create(payload: FormData): Observable<ItemSingleResponse> {
     return this.http.post<ItemSingleResponse>(`${this.baseUrl}`, payload, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(false)
     });
   }
 
-  update(itemId: number, payload: Partial<InventoryItemPayload>): Observable<ItemSingleResponse> {
+  update(itemId: number, payload: FormData): Observable<ItemSingleResponse> {
     return this.http.put<ItemSingleResponse>(`${this.baseUrl}/${itemId}`, payload, {
-      headers: this.getHeaders()
+      headers: this.getHeaders(false)
     });
   }
 

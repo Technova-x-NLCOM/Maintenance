@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   InventoryItem,
-  InventoryItemPayload,
   InventoryItemService,
   ItemFormOptions
 } from '../../../../services/inventory-item.service';
@@ -35,6 +34,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
 
   errorMessage = '';
   successMessage = '';
+  selectedImageFile: File | null = null;
+  imagePreviewUrl: string | null = null;
 
   formData: {
     item_code: string;
@@ -44,7 +45,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     measurement_unit: string;
     particular: string;
     mg_dosage: number | null;
-    image_url: string;
     remarks: string;
     unit_value: number | null;
     reorder_level: number;
@@ -57,7 +57,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     measurement_unit: '',
     particular: '',
     mg_dosage: null,
-    image_url: '',
     remarks: '',
     unit_value: null,
     reorder_level: 0,
@@ -140,12 +139,14 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: item.measurement_unit || '',
       particular: item.particular || '',
       mg_dosage: item.mg_dosage,
-      image_url: item.image_url || '',
       remarks: item.remarks || '',
       unit_value: item.unit_value,
       reorder_level: item.reorder_level,
       is_active: item.is_active
     };
+
+    this.resetSelectedImage();
+    this.imagePreviewUrl = item.image_url || null;
 
     this.cdr.detectChanges();
   }
@@ -164,12 +165,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: '',
       particular: '',
       mg_dosage: null,
-      image_url: '',
       remarks: '',
       unit_value: null,
       reorder_level: 0,
       is_active: true
     };
+    this.resetSelectedImage();
     this.cdr.detectChanges();
   }
 
@@ -187,12 +188,28 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       measurement_unit: '',
       particular: '',
       mg_dosage: null,
-      image_url: '',
       remarks: '',
       unit_value: null,
       reorder_level: 0,
       is_active: true
     };
+    this.resetSelectedImage();
+    this.cdr.detectChanges();
+  }
+
+  onImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    this.resetSelectedImage();
+
+    if (!file) {
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.selectedImageFile = file;
+    this.imagePreviewUrl = URL.createObjectURL(file);
     this.cdr.detectChanges();
   }
 
@@ -207,20 +224,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
 
     this.saving = true;
 
-    const payload: InventoryItemPayload = {
-      item_code: this.formData.item_code.trim(),
-      item_description: this.formData.item_description.trim(),
-      item_type_id: this.formData.item_type_id,
-      category_id: this.formData.category_id,
-      measurement_unit: this.nullIfEmpty(this.formData.measurement_unit),
-      particular: this.nullIfEmpty(this.formData.particular),
-      mg_dosage: this.formData.mg_dosage,
-      image_url: this.nullIfEmpty(this.formData.image_url),
-      remarks: this.nullIfEmpty(this.formData.remarks),
-      unit_value: this.formData.unit_value,
-      reorder_level: Number.isFinite(this.formData.reorder_level) ? this.formData.reorder_level : 0,
-      is_active: this.formData.is_active
-    };
+    const payload = this.buildPayload();
 
     if (this.selectedItemId) {
       this.itemService.update(this.selectedItemId, payload).subscribe({
@@ -285,6 +289,40 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
   private nullIfEmpty(value: string): string | null {
     const trimmed = value.trim();
     return trimmed ? trimmed : null;
+  }
+
+  private buildPayload(): FormData {
+    const payload = new FormData();
+
+    payload.append('item_code', this.formData.item_code.trim());
+    payload.append('item_description', this.formData.item_description.trim());
+    payload.append('item_type_id', String(this.formData.item_type_id));
+    payload.append('category_id', this.formData.category_id === null ? '' : String(this.formData.category_id));
+    payload.append('measurement_unit', this.nullIfEmpty(this.formData.measurement_unit) ?? '');
+    payload.append('particular', this.nullIfEmpty(this.formData.particular) ?? '');
+    payload.append('mg_dosage', this.formData.mg_dosage === null ? '' : String(this.formData.mg_dosage));
+    payload.append('remarks', this.nullIfEmpty(this.formData.remarks) ?? '');
+    payload.append('unit_value', this.formData.unit_value === null ? '' : String(this.formData.unit_value));
+    payload.append(
+      'reorder_level',
+      String(Number.isFinite(this.formData.reorder_level) ? this.formData.reorder_level : 0)
+    );
+    payload.append('is_active', this.formData.is_active ? '1' : '0');
+
+    if (this.selectedImageFile) {
+      payload.append('image', this.selectedImageFile);
+    }
+
+    return payload;
+  }
+
+  private resetSelectedImage(): void {
+    if (this.imagePreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.imagePreviewUrl);
+    }
+
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
   }
 
   private extractError(err: unknown): string {
