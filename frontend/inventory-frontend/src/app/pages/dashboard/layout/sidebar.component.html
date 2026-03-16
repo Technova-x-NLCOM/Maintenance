@@ -57,7 +57,7 @@
       <span class="label">Inventory</span>
     </a>
 
-    <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
+    <div class="nav-group" *ngIf="hasPermission('manage_inventory') || hasPermission('manage_categories')">
       <button class="nav-group-toggle" (click)="toggleGroup('inventory-master-data')" [class.expanded]="isGroupOpen('inventory-master-data')">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 4h16v4H4z"/>
@@ -69,6 +69,10 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('inventory-master-data')">
+        <a routerLink="/dashboard/inventory/categories" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Category Management</span>
+        </a>
         <a routerLink="/dashboard/inventory/items" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span>
           <span class="label">Item Registration & Updates</span>

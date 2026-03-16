@@ -13,6 +13,7 @@ import { RolesComponent } from './pages/dashboard/roles/roles.component';
 import { BackupComponent } from './pages/dashboard/backup/backup.component';
 import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
 import { SettingsComponent } from './pages/dashboard/settings/settings.component';
+import { CategoryManagementComponent } from './pages/dashboard/inventory-master/categories/category-management.component';
 import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
 
 export const routes: Routes = [
@@ -32,6 +33,7 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
         { path: 'roles', component: RolesComponent },
       { path: 'backup', component: BackupComponent },
+      { path: 'inventory/categories', component: CategoryManagementComponent },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },

@@ -52,6 +52,11 @@ export class HomeComponent implements OnInit {
   }
 
   openTable(tableName: string): void {
+    if (tableName === 'categories') {
+      this.router.navigate(['/dashboard/inventory/categories']);
+      return;
+    }
+
     if (tableName === 'items') {
       this.router.navigate(['/dashboard/inventory/items']);
       return;

@@ -1,0 +1,99 @@
+<div class="categories-page">
+  <header class="page-header">
+    <div class="header-text">
+      <p class="eyebrow">Inventory Master Data</p>
+      <h1 class="page-title">Category Management</h1>
+      <p class="subtitle">Create, organize, update, and remove item categories.</p>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true">
+    <div class="modal-content category-form-modal" (click)="$event.stopPropagation()">
+      <div class="form-panel-header">
+        <h2 class="panel-title">{{ selectedCategoryId ? 'Edit category' : 'Add new category' }}</h2>
+        <button class="btn-ghost btn-close-form" type="button" (click)="closeForm()">Close</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Category name <em>*</em></span>
+          <input type="text" [(ngModel)]="formData.category_name" placeholder="e.g. Medical Supplies" />
+        </label>
+
+        <label>
+          <span>Parent category</span>
+          <select [(ngModel)]="formData.parent_category_id">
+            <option [ngValue]="null">No parent category</option>
+            <option *ngFor="let category of getAvailableParentOptions()" [ngValue]="category.category_id">
+              {{ category.category_name }}
+            </option>
+          </select>
+        </label>
+
+        <label class="full-width">
+          <span>Description</span>
+          <textarea rows="3" [(ngModel)]="formData.description" placeholder="Describe this category"></textarea>
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-primary" type="button" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Saving...' : (selectedCategoryId ? 'Save changes' : 'Add category') }}
+        </button>
+        <button class="btn-ghost" type="button" (click)="closeForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">Categories <span class="count">({{ categories.length }})</span></h2>
+      <div class="toolbar-actions">
+        <button class="btn-primary" (click)="startNew()" type="button">Add new category</button>
+        <div class="search-row">
+          <input type="text" [(ngModel)]="search" placeholder="Search by name, parent, or description" (keyup.enter)="onSearch()" />
+          <button class="btn-ghost" type="button" (click)="onSearch()">Search</button>
+          <button class="btn-ghost" type="button" (click)="clearSearch()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state-loading">Loading categories...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Parent</th>
+            <th>Description</th>
+            <th>Child Categories</th>
+            <th>Assigned Items</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let category of categories">
+            <td><span class="cell-name">{{ category.category_name }}</span></td>
+            <td>{{ category.parent_category_name || 'Top-level' }}</td>
+            <td>{{ category.description || '—' }}</td>
+            <td>{{ category.child_count ?? 0 }}</td>
+            <td>{{ category.item_count ?? 0 }}</td>
+            <td class="actions">
+              <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">Edit</button>
+              <button class="btn-sm btn-delete" type="button" [disabled]="deletingCategoryId === category.category_id" (click)="deleteCategory(category)">
+                {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="categories.length === 0">
+            <td colspan="6" class="empty">No categories found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

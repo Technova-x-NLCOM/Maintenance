@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\ItemController;
 
 Route::get('/', function () {
@@ -98,6 +99,20 @@ Route::prefix('api/inventory/items')
             Route::post('/', [ItemController::class, 'store']);
             Route::put('{itemId}', [ItemController::class, 'update']);
             Route::patch('{itemId}/status', [ItemController::class, 'updateStatus']);
+        });
+    });
+
+// Inventory Master Data - Category Management
+Route::prefix('api/inventory/categories')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_categories'])->group(function () {
+            Route::get('options', [CategoryController::class, 'options']);
+            Route::get('/', [CategoryController::class, 'index']);
+            Route::get('{categoryId}', [CategoryController::class, 'show']);
+            Route::post('/', [CategoryController::class, 'store']);
+            Route::put('{categoryId}', [CategoryController::class, 'update']);
+            Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
         });
     });
 
