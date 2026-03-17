@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -51,23 +51,24 @@ export class IssuanceTransactionComponent implements OnInit {
 
   constructor(
     private itemService: InventoryItemService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadFiltersAndItems();
+    this.loadItems(1);
+    this.loadCategoryOptions();
   }
 
-  loadFiltersAndItems(): void {
-    this.loading = true;
+  loadCategoryOptions(): void {
     this.itemService.getOptions().subscribe({
       next: (options) => {
         this.categories = options.data.categories;
-        this.loadItems(1);
+        this.cdr.detectChanges();
       },
       error: () => {
         this.categories = [];
-        this.loadItems(1);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -93,10 +94,12 @@ export class IssuanceTransactionComponent implements OnInit {
           }
 
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           this.loading = false;
           this.errorMessage = err?.error?.message || 'Failed to load issuable items.';
+          this.cdr.detectChanges();
         }
       });
   }
