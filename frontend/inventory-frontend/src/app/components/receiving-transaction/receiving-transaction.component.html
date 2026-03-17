@@ -1,0 +1,308 @@
+<div class="receiving-transaction-page">
+  <div class="page-header">
+    <h1>Stock Receiving (IN)</h1>
+    <p class="subtitle">Choose an item from the kiosk list, then enter receiving details.</p>
+  </div>
+
+  <!-- Alert Messages -->
+  <div class="messages-container" *ngIf="showSuccessMessage || showErrorMessage">
+    <div class="alert-message" *ngIf="showSuccessMessage" [class.success]="showSuccessMessage">
+      <div class="alert-content">
+        <span class="alert-text">{{ successMessage }}</span>
+        <button class="alert-close" (click)="dismissMessages()">×</button>
+      </div>
+    </div>
+
+    <div class="alert-message" *ngIf="showErrorMessage" [class.error]="showErrorMessage">
+      <div class="alert-content">
+        <span class="alert-text">{{ errorMessage }}</span>
+        <button class="alert-close" (click)="dismissMessages()">×</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="kiosk-layout">
+    <section class="catalog-panel">
+      <div class="catalog-toolbar">
+        <div class="search-wrap">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Search by item code or description"
+            [(ngModel)]="searchQuery"
+            (keyup.enter)="onSearch()"
+          />
+          <button class="btn btn-secondary" type="button" (click)="onSearch()">Search</button>
+          <button class="btn btn-secondary" type="button" (click)="clearSearch()">Reset</button>
+        </div>
+
+        <div class="filter-wrap">
+          <select class="form-control" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+            <option [ngValue]="null">All Categories</option>
+            <option *ngFor="let category of categories" [ngValue]="category.category_id">
+              {{ category.category_name }}
+            </option>
+          </select>
+          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        </div>
+      </div>
+
+      <div class="catalog-grid" *ngIf="!loading">
+        <button
+          type="button"
+          class="item-card"
+          *ngFor="let item of receivingItems"
+          [class.selected]="selectedItem?.item_id === item.item_id"
+          (click)="selectItem(item)"
+        >
+          <div class="card-image">
+            <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+            <span *ngIf="!item.image_url">No Image</span>
+          </div>
+          <div class="card-content">
+            <p class="code">{{ item.item_code }}</p>
+            <p class="desc">{{ item.item_description }}</p>
+            <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+            <div class="stats-row">
+              <span class="pill">Stock: {{ item.current_stock }}</span>
+              <span class="pill" *ngIf="item.shelf_life_days">Shelf life: {{ item.shelf_life_days }}d</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="empty-state" *ngIf="receivingItems.length === 0">
+          <p>No matching items found.</p>
+          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        </div>
+      </div>
+
+      <div class="state-loading" *ngIf="loading">Loading items...</div>
+
+      <div class="pagination" *ngIf="!loading && lastPage > 1">
+        <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+      </div>
+    </section>
+
+    <section class="form-panel">
+      <div class="form-card">
+        <h2>Receiving Details</h2>
+        <p class="hint" *ngIf="!selectedItem">Select an item card from the left to continue.</p>
+
+        <div class="selected-item-summary" *ngIf="selectedItem">
+          <div class="selected-item-box">
+            <img *ngIf="selectedItem.image_url" [src]="selectedItem.image_url" alt="selected" class="selected-item-image" />
+            <span *ngIf="!selectedItem.image_url" class="selected-no-image">No Image</span>
+
+            <div class="selected-item-info">
+              <div class="selected-code">{{ selectedItem.item_code }}</div>
+              <div class="selected-desc">{{ selectedItem.item_description }}</div>
+              <div class="selected-meta">
+                <span *ngIf="selectedItem.item_type_name">{{ selectedItem.item_type_name }}</span>
+                <span *ngIf="selectedItem.category_name">{{ selectedItem.category_name }}</span>
+                <span class="stock-badge">Stock: {{ selectedItem.current_stock }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <!-- Quantity & Batch Section -->
+      <div class="form-section">
+        <h3 class="section-title">Quantity & Batch Information</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="quantity" class="form-label">Quantity Received *</label>
+            <input
+              type="number"
+              id="quantity"
+              class="form-control"
+              placeholder="Enter quantity"
+              min="1"
+              [(ngModel)]="quantity"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="batch-number" class="form-label">Batch Number *</label>
+            <input
+              type="text"
+              id="batch-number"
+              class="form-control"
+              placeholder="e.g., BATCH-2026-001"
+              [(ngModel)]="batchNumber"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="measurement-unit" class="form-label">Measurement Unit</label>
+            <input
+              type="text"
+              id="measurement-unit"
+              class="form-control"
+              [value]="selectedItem?.measurement_unit || 'N/A'"
+              disabled
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="supplier-info" class="form-label">Supplier Information</label>
+            <input
+              type="text"
+              id="supplier-info"
+              class="form-control"
+              placeholder="Supplier name or code"
+              [(ngModel)]="supplierInfo"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="batch-value" class="form-label">Batch Value</label>
+            <input
+              type="number"
+              id="batch-value"
+              class="form-control"
+              placeholder="Total value of batch"
+              min="0"
+              step="0.01"
+              [(ngModel)]="batchValue"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Dates Section -->
+      <div class="form-section">
+        <h3 class="section-title">Dates & Expiry</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="purchase-date" class="form-label">Purchase Date *</label>
+            <input
+              type="date"
+              id="purchase-date"
+              class="form-control"
+              [(ngModel)]="purchaseDate"
+              (change)="onPurchaseDateChange()"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="manufactured-date" class="form-label">Manufactured Date</label>
+            <input
+              type="date"
+              id="manufactured-date"
+              class="form-control"
+              [(ngModel)]="manufacturedDate"
+              [disabled]="!selectedItem || saving"
+            />
+          </div>
+        </div>
+
+        <!-- Expiry Date Auto-Calculation Section -->
+        <div class="expiry-section" *ngIf="selectedItem">
+          <div class="expiry-info-box">
+            <div class="expiry-message">
+              {{ computedExpiryMessage }}
+            </div>
+
+            <div class="expiry-row" *ngIf="selectedItem.shelf_life_days && computedExpiryDate">
+              <div class="expiry-display">
+                <label class="expiry-label">Auto-Calculated Expiry Date</label>
+                <div class="expiry-value">{{ computedExpiryDate }}</div>
+                <div class="expiry-calculation">
+                  Purchase Date ({{ purchaseDate }}) + {{ selectedItem.shelf_life_days }} days
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Expiry Date Override -->
+            <div class="override-section">
+              <label class="override-checkbox">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="expiryDateOverride"
+                  (change)="toggleExpiryDateOverride()"
+                  [disabled]="!selectedItem || saving"
+                />
+                <span class="override-label">Override expiry date (use manual date instead)</span>
+              </label>
+
+              <input
+                type="date"
+                id="expiry-date"
+                class="form-control"
+                placeholder="Manual expiry date"
+                [(ngModel)]="expiryDate"
+                *ngIf="expiryDateOverride"
+                [disabled]="!selectedItem || saving"
+              />
+            </div>
+
+            <!-- Show effective expiry -->
+            <div class="effective-expiry" *ngIf="getEffectiveExpiryDate()">
+              <strong>Effective Expiry Date:</strong> {{ getEffectiveExpiryDate() }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="form-section">
+        <h3 class="section-title">Additional Information</h3>
+
+        <div class="form-group">
+          <label for="reason" class="form-label">Reason/Reference</label>
+          <input
+            type="text"
+            id="reason"
+            class="form-control"
+            placeholder="e.g., Purchase, Donation, Return"
+            [(ngModel)]="reason"
+            [disabled]="!selectedItem || saving"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea
+            id="notes"
+            class="form-control textarea"
+            placeholder="Any additional notes about this shipment..."
+            [(ngModel)]="notes"
+            [disabled]="!selectedItem || saving"
+            rows="3"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="form-actions">
+        <button
+          class="btn btn-primary"
+          (click)="submitForm()"
+          [disabled]="!canSubmit() || saving"
+        >
+          <span *ngIf="!saving">Record Receiving</span>
+          <span *ngIf="saving">Processing...</span>
+        </button>
+        <button
+          class="btn btn-secondary"
+          (click)="resetForm()"
+          [disabled]="saving"
+        >
+          Clear Form
+        </button>
+      </div>
+    </div>
+    </section>
+  </div>
+</div>

@@ -16,6 +16,8 @@ import { SettingsComponent } from './pages/dashboard/settings/settings.component
 import { CategoryManagementComponent } from './pages/dashboard/inventory-master/categories/category-management.component';
 import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
 import { MinimumStockSetupComponent } from './pages/dashboard/inventory-master/minimum-stock/minimum-stock-setup.component';
+import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
+import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -37,6 +39,8 @@ export const routes: Routes = [
       { path: 'inventory/categories', component: CategoryManagementComponent },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
       { path: 'inventory/minimum-stock', component: MinimumStockSetupComponent },
+      { path: 'inventory/receiving', component: ReceivingTransactionComponent },
+      { path: 'inventory/issuance', component: IssuanceTransactionComponent },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
       { path: 'settings', component: SettingsComponent }
