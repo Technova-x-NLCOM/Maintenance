@@ -78,6 +78,66 @@ interface PaginatedMinimumStockResponse {
   };
 }
 
+interface ReceivingItem {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  item_type_name?: string;
+  category_name?: string;
+  measurement_unit: string | null;
+  shelf_life_days: number | null;
+  image_url: string | null;
+  current_stock: number;
+  is_active: boolean;
+}
+
+interface PaginatedReceivingItemsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    data: ReceivingItem[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+interface ReceivingTransactionRequest {
+  item_id: number;
+  quantity: number;
+  batch_number: string;
+  purchase_date: string;
+  expiry_date?: string | null;
+  manufactured_date?: string | null;
+  supplier_info?: string | null;
+  batch_value?: number | null;
+  reason?: string | null;
+  notes?: string | null;
+}
+
+interface ReceivingTransactionResponse {
+  success: boolean;
+  message: string;
+  data: {
+    batch_id: number;
+    item_id: number;
+    item_code: string;
+    item_description: string;
+    batch_number: string;
+    quantity: number;
+    purchase_date: string;
+    expiry_date: string | null;
+    manufactured_date: string | null;
+    supplier_info: string | null;
+    batch_value: number | null;
+    shelf_life_days: number | null;
+    expiry_date_auto_calculated?: boolean;
+  };
+}
+
+export type { ReceivingItem, PaginatedReceivingItemsResponse, ReceivingTransactionRequest, ReceivingTransactionResponse };
+
 @Injectable({
   providedIn: 'root'
 })
@@ -189,6 +249,40 @@ export class InventoryItemService {
     return this.http.patch<{ success: boolean; message: string }>(
       `${this.baseUrl}/minimum-stock/bulk`,
       { updates },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  // Receiving Transaction Methods
+  getReceivingItems(params?: {
+    search?: string;
+    per_page?: number;
+    page?: number;
+    item_type_id?: number;
+    category_id?: number;
+  }): Observable<PaginatedReceivingItemsResponse> {
+    let httpParams = new HttpParams();
+    
+    if (params) {
+      if (params.search) httpParams = httpParams.set('search', params.search);
+      if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
+      if (params.page) httpParams = httpParams.set('page', params.page.toString());
+      if (params.item_type_id) httpParams = httpParams.set('item_type_id', params.item_type_id.toString());
+      if (params.category_id) httpParams = httpParams.set('category_id', params.category_id.toString());
+    } else {
+      httpParams = httpParams.set('per_page', '15');
+    }
+
+    return this.http.get<PaginatedReceivingItemsResponse>(
+      'http://127.0.0.1:8000/api/inventory/receiving/items',
+      { params: httpParams, headers: this.getHeaders() }
+    );
+  }
+
+  createReceivingTransaction(data: ReceivingTransactionRequest): Observable<ReceivingTransactionResponse> {
+    return this.http.post<ReceivingTransactionResponse>(
+      'http://127.0.0.1:8000/api/inventory/receiving/create',
+      data,
       { headers: this.getHeaders() }
     );
   }

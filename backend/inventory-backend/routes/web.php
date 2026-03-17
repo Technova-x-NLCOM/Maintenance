@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\ReceivingTransactionController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -121,6 +122,16 @@ Route::prefix('api/inventory/categories')
             Route::post('/', [CategoryController::class, 'store']);
             Route::put('{categoryId}', [CategoryController::class, 'update']);
             Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+        });
+    });
+
+// Inventory Transactions - Receiving (IN)
+Route::prefix('api/inventory/receiving')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('items', [ReceivingTransactionController::class, 'getReceivingItems']);
+            Route::post('create', [ReceivingTransactionController::class, 'createReceiving']);
         });
     });
 
