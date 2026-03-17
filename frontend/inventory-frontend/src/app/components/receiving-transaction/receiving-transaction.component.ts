@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -49,25 +49,26 @@ export class ReceivingTransactionComponent implements OnInit {
 
   constructor(
     private itemService: InventoryItemService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.loadFiltersAndItems();
     const today = new Date();
     this.purchaseDate = today.toISOString().split('T')[0];
+    this.loadReceivingItems(1);
+    this.loadCategoryOptions();
   }
 
-  loadFiltersAndItems(): void {
-    this.loading = true;
+  loadCategoryOptions(): void {
     this.itemService.getOptions().subscribe({
       next: (options) => {
         this.categories = options.data.categories;
-        this.loadReceivingItems(1);
+        this.cdr.detectChanges();
       },
       error: () => {
         this.categories = [];
-        this.loadReceivingItems(1);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -98,6 +99,7 @@ export class ReceivingTransactionComponent implements OnInit {
           }
         }
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         console.error('Error loading items:', error);
@@ -132,10 +134,12 @@ export class ReceivingTransactionComponent implements OnInit {
           this.currentPage = response.data.current_page;
           this.lastPage = response.data.last_page;
           this.loading = false;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.loading = false;
           this.showError('Failed to load items for receiving. Please try again.');
+          this.cdr.detectChanges();
         }
       });
   }
