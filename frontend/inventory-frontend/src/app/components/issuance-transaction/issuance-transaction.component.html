@@ -1,0 +1,152 @@
+<div class="issuance-page">
+  <div class="page-header">
+    <h1>Stock Issuance (OUT)</h1>
+    <p class="subtitle">Select items in kiosk mode, build the issuance list, and confirm once.</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <div class="kiosk-layout">
+    <section class="catalog-panel">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="searchQuery"
+            placeholder="Search by item code or description"
+            (keyup.enter)="onSearch()"
+          />
+          <button class="btn btn-secondary" type="button" (click)="onSearch()">Search</button>
+          <button class="btn btn-secondary" type="button" (click)="clearSearch()">Reset</button>
+        </div>
+
+        <div class="filter-wrap">
+          <select class="form-control" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+            <option [ngValue]="null">All Categories</option>
+            <option *ngFor="let category of categories" [ngValue]="category.category_id">
+              {{ category.category_name }}
+            </option>
+          </select>
+          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        </div>
+      </div>
+
+      <div class="catalog-grid" *ngIf="!loading">
+        <button
+          type="button"
+          class="item-card"
+          *ngFor="let item of items"
+          [class.selected]="selectedItem?.item_id === item.item_id"
+          (click)="selectItem(item)"
+        >
+          <div class="card-image">
+            <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+            <span *ngIf="!item.image_url">No Image</span>
+          </div>
+          <p class="code">{{ item.item_code }}</p>
+          <p class="desc">{{ item.item_description }}</p>
+          <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+          <span class="stock-pill">Available: {{ item.current_stock }}</span>
+        </button>
+
+        <div class="empty" *ngIf="items.length === 0">
+          <p>No issuable items found.</p>
+          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        </div>
+      </div>
+
+      <div class="state-loading" *ngIf="loading">Loading items...</div>
+
+      <div class="pagination" *ngIf="!loading && lastPage > 1">
+        <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+      </div>
+    </section>
+
+    <section class="cart-panel">
+      <div class="card">
+        <h2>Issuance List</h2>
+
+        <div class="selected-block" *ngIf="selectedItem">
+          <div class="selected-name">{{ selectedItem.item_code }} - {{ selectedItem.item_description }}</div>
+          <div class="selected-meta">Available: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</div>
+          <div class="add-row">
+            <input
+              type="number"
+              class="form-control qty-input"
+              min="1"
+              [max]="selectedItem.current_stock"
+              [(ngModel)]="issueQuantity"
+            />
+            <button class="btn btn-primary" type="button" (click)="addSelectedToCart()">Add To List</button>
+          </div>
+        </div>
+
+        <div class="cart-table-wrap" *ngIf="cartLines.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Avail</th>
+                <th>Issue Qty</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let line of cartLines">
+                <td>{{ line.item_code }} - {{ line.item_description }}</td>
+                <td>{{ line.current_stock }}</td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control qty-inline"
+                    min="1"
+                    [max]="line.current_stock"
+                    [ngModel]="line.quantity"
+                    (ngModelChange)="updateLineQuantity(line, $event)"
+                  />
+                </td>
+                <td>
+                  <button class="btn btn-remove" type="button" (click)="removeLine(line)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="empty-hint" *ngIf="cartLines.length === 0">Add one or more items to build your issuance list.</p>
+
+        <div class="details-section">
+          <label>
+            <span>Destination *</span>
+            <input type="text" class="form-control" [(ngModel)]="destination" placeholder="e.g. Ward A / Department / Requestor" />
+          </label>
+
+          <label>
+            <span>Reason</span>
+            <input type="text" class="form-control" [(ngModel)]="reason" placeholder="e.g. Requisition Release" />
+          </label>
+
+          <label>
+            <span>Notes</span>
+            <textarea class="form-control" rows="3" [(ngModel)]="notes" placeholder="Optional notes for this issuance"></textarea>
+          </label>
+        </div>
+
+        <div class="summary-row">
+          <strong>Total Items:</strong> {{ cartLines.length }}
+          <strong>Total Quantity:</strong> {{ getTotalRequestedQuantity() }}
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" type="button" [disabled]="!canConfirmIssuance()" (click)="confirmAndSubmit()">
+            {{ saving ? 'Processing...' : 'Confirm And Complete Issuance' }}
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
