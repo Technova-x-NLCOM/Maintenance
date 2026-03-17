@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\CategoryController;
+use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
 
@@ -132,6 +133,16 @@ Route::prefix('api/inventory/receiving')
         Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
             Route::get('items', [ReceivingTransactionController::class, 'getReceivingItems']);
             Route::post('create', [ReceivingTransactionController::class, 'createReceiving']);
+        });
+    });
+
+// Inventory Transactions - Issuance (OUT)
+Route::prefix('api/inventory/issuance')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
+            Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
         });
     });
 
