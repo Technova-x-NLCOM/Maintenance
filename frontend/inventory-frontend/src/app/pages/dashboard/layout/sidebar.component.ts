@@ -117,7 +117,8 @@ export class SidebarComponent implements OnInit {
       url.includes('/dashboard/inventory/minimum-stock') ||
       url.includes('/dashboard/inventory/batch-distribution') ||
       url.includes('/dashboard/inventory/receiving') ||
-      url.includes('/dashboard/inventory/issuance')
+      url.includes('/dashboard/inventory/issuance') ||
+      url.includes('/dashboard/inventory/adjustment')
     ) {
       this.openGroups.add('inventory-master-data');
       return;

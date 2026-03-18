@@ -19,6 +19,7 @@ import { MinimumStockSetupComponent } from './pages/dashboard/inventory-master/m
 import { BatchDistributionComponent } from './pages/dashboard/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
+import { StockAdjustmentComponent } from './components/stock-adjustment/stock-adjustment.component';
 import { MonitoringComponent } from './pages/dashboard/monitoring/monitoring.component';
 import { StockReportComponent } from './pages/dashboard/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transaction-history/transaction-history.component';
@@ -46,6 +47,7 @@ export const routes: Routes = [
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
+      { path: 'inventory/adjustment', component: StockAdjustmentComponent },
       { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
       { path: 'monitoring/stock-report', component: StockReportComponent },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },

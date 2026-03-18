@@ -27,6 +27,7 @@
       <option value="">All Types</option>
       <option value="IN">Stock IN</option>
       <option value="OUT">Stock OUT</option>
+      <option value="ADJUSTMENT">Stock Adjustment</option>
     </select>
     <input class="filter-input" type="date" [(ngModel)]="dateFrom" (change)="apply()" />
     <input class="filter-input" type="date" [(ngModel)]="dateTo" (change)="apply()" />
@@ -50,8 +51,13 @@
       <tbody>
         <tr *ngFor="let tx of transactions">
           <td>
-            <span class="type-badge" [class.badge-in]="tx.transaction_type === 'IN'" [class.badge-out]="tx.transaction_type === 'OUT'">
-              {{ tx.transaction_type === 'IN' ? '▲ IN' : '▼ OUT' }}
+            <span
+              class="type-badge"
+              [class.badge-in]="tx.transaction_type === 'IN'"
+              [class.badge-out]="tx.transaction_type === 'OUT'"
+              [class.badge-adjustment]="tx.transaction_type === 'ADJUSTMENT'"
+            >
+              {{ tx.transaction_type === 'IN' ? '▲ IN' : (tx.transaction_type === 'OUT' ? '▼ OUT' : '△ ADJ') }}
             </span>
           </td>
           <td class="code-cell">{{ tx.reference_number }}</td>
