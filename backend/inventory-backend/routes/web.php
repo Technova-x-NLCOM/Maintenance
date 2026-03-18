@@ -7,6 +7,7 @@ use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
+use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\TransactionMonitorController;
 
 Route::get('/', function () {
@@ -155,6 +156,16 @@ Route::prefix('api/inventory/issuance')
         Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
             Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
             Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
+        });
+    });
+
+// Inventory Transactions - Stock Adjustment
+Route::prefix('api/inventory/adjustment')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('items', [StockAdjustmentController::class, 'getAdjustableItems']);
+            Route::post('create', [StockAdjustmentController::class, 'createAdjustment']);
         });
     });
 
