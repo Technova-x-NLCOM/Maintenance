@@ -46,6 +46,16 @@ export class ReceivingTransactionComponent implements OnInit {
   showErrorMessage = false;
   successMessage = '';
   errorMessage = '';
+  showReceivingModal = false;
+
+  openReceivingModal(item: ReceivingItem): void {
+    this.selectItem(item);
+    this.showReceivingModal = true;
+  }
+
+  closeReceivingModal(): void {
+    this.showReceivingModal = false;
+  }
 
   constructor(
     private itemService: InventoryItemService,
@@ -281,6 +291,7 @@ export class ReceivingTransactionComponent implements OnInit {
             this.successMessage += ` Expiry date auto-calculated: ${response.data.expiry_date}`;
           }
           this.resetForm();
+          this.showReceivingModal = false;
           this.loadReceivingItems();
         }
         this.saving = false;
