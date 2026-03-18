@@ -80,6 +80,22 @@
           <span class="sub-dot"></span>
           <span class="label">Minimum Stock Setup</span>
         </a>
+      </div>
+    </div>
+
+    <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
+      <button class="nav-group-toggle" (click)="toggleGroup('inventory-transactions')" [class.expanded]="isGroupOpen('inventory-transactions')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18"/>
+          <path d="M3 12h18"/>
+          <path d="M3 18h18"/>
+        </svg>
+        <span class="label">Inventory Transaction</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('inventory-transactions')">
         <a routerLink="/dashboard/inventory/batch-distribution" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span>
           <span class="label">Batch Distribution</span>
