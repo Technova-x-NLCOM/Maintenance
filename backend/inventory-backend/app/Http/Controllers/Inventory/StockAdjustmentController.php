@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class StockAdjustmentController extends Controller
@@ -41,6 +42,7 @@ class StockAdjustmentController extends Controller
                 'it.type_name as item_type_name',
                 'c.category_name',
                 'i.measurement_unit',
+                'i.shelf_life_days',
                 'i.image_url',
                 DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
                 DB::raw('COALESCE(es.expired_stock, 0) as expired_stock')
@@ -68,6 +70,7 @@ class StockAdjustmentController extends Controller
                 $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
                 $item->current_stock = (int) $item->current_stock;
                 $item->expired_stock = (int) $item->expired_stock;
+                $item->shelf_life_days = $item->shelf_life_days ? (int) $item->shelf_life_days : null;
                 return $item;
             })
         );
@@ -87,6 +90,7 @@ class StockAdjustmentController extends Controller
             'quantity' => ['required', 'integer', 'min:1'],
             'reason' => ['required', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'purchase_date' => ['nullable', 'date'],
             'expiry_date' => ['nullable', 'date'],
             'manufactured_date' => ['nullable', 'date'],
             'confirm_expiration' => ['nullable', 'boolean'],
@@ -144,7 +148,7 @@ class StockAdjustmentController extends Controller
         }
 
         $item = DB::table('items')
-            ->select('item_id', 'item_code', 'item_description')
+            ->select('item_id', 'item_code', 'item_description', 'shelf_life_days')
             ->where('item_id', $itemId)
             ->first();
 
@@ -159,15 +163,43 @@ class StockAdjustmentController extends Controller
         $performedBy = $user?->user_id ?? auth()->id() ?? 1;
         $reference = 'ADJ-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
 
+        $resolvedExpiryDate = !empty($validated['expiry_date']) ? Carbon::parse((string) $validated['expiry_date'])->toDateString() : null;
+        $resolvedManufacturedDate = !empty($validated['manufactured_date']) ? Carbon::parse((string) $validated['manufactured_date'])->toDateString() : null;
+        $resolvedPurchaseDate = !empty($validated['purchase_date']) ? Carbon::parse((string) $validated['purchase_date'])->toDateString() : null;
+
+        $shelfLifeDays = $item->shelf_life_days ? (int) $item->shelf_life_days : null;
+        if ($adjustmentMode === 'increase' && $shelfLifeDays) {
+            if (!$resolvedExpiryDate) {
+                $baseDate = $resolvedManufacturedDate ?? $resolvedPurchaseDate;
+                if (!$baseDate) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Expiry date is required for items with shelf life. Provide expiry date or a purchase/manufactured date for auto-computation.',
+                    ], 422);
+                }
+
+                $resolvedExpiryDate = Carbon::parse($baseDate)->addDays($shelfLifeDays)->toDateString();
+            }
+        }
+
+        if ($adjustmentMode === 'increase' && $resolvedManufacturedDate && $resolvedExpiryDate) {
+            if (strtotime($resolvedManufacturedDate) > strtotime($resolvedExpiryDate)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Manufactured date cannot be after expiry date.',
+                ], 422);
+            }
+        }
+
         try {
-            $result = DB::transaction(function () use ($item, $itemId, $adjustmentMode, $quantity, $validated, $performedBy, $reference, $stock, $confirmExpiration) {
+            $result = DB::transaction(function () use ($item, $itemId, $adjustmentMode, $quantity, $validated, $performedBy, $reference, $stock, $confirmExpiration, $resolvedExpiryDate, $resolvedManufacturedDate, $resolvedPurchaseDate) {
                 if ($adjustmentMode === 'increase') {
                     $batchId = DB::table('inventory_batches')->insertGetId([
                         'item_id' => $itemId,
                         'batch_number' => 'ADJ-IN-' . now()->format('YmdHis'),
                         'quantity' => $quantity,
-                        'expiry_date' => !empty($validated['expiry_date']) ? $validated['expiry_date'] : null,
-                        'manufactured_date' => !empty($validated['manufactured_date']) ? $validated['manufactured_date'] : null,
+                        'expiry_date' => $resolvedExpiryDate,
+                        'manufactured_date' => $resolvedManufacturedDate,
                         'status' => 'active',
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -257,8 +289,9 @@ class StockAdjustmentController extends Controller
                     'previous_stock' => $stock,
                     'new_stock' => $newStock,
                     'confirm_expiration' => $confirmExpiration,
-                    'expiry_date' => !empty($validated['expiry_date']) ? $validated['expiry_date'] : null,
-                    'manufactured_date' => !empty($validated['manufactured_date']) ? $validated['manufactured_date'] : null,
+                    'expiry_date' => $resolvedExpiryDate,
+                    'manufactured_date' => $resolvedManufacturedDate,
+                    'purchase_date' => $resolvedPurchaseDate,
                 ];
             });
 
