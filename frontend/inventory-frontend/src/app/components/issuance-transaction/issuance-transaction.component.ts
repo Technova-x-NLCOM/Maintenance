@@ -48,6 +48,20 @@ export class IssuanceTransactionComponent implements OnInit {
   saving = false;
   successMessage = '';
   errorMessage = '';
+  showCartModal = false;
+
+  isInCart(itemId: number): boolean {
+    return this.cartLines.some(l => l.item_id === itemId);
+  }
+
+  openCartModal(item: IssuanceItem): void {
+    this.selectItem(item);
+    this.showCartModal = true;
+  }
+
+  closeCartModal(): void {
+    this.showCartModal = false;
+  }
 
   constructor(
     private itemService: InventoryItemService,
@@ -181,11 +195,6 @@ export class IssuanceTransactionComponent implements OnInit {
       return;
     }
 
-    const okay = confirm('Confirm issuance for all listed items? This will deduct stock immediately.');
-    if (!okay) {
-      return;
-    }
-
     this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -207,6 +216,7 @@ export class IssuanceTransactionComponent implements OnInit {
           this.destination = '';
           this.reason = 'Stock Issuance';
           this.notes = '';
+          this.showCartModal = false;
           this.loadItems(this.currentPage);
         },
         error: (err: any) => {
