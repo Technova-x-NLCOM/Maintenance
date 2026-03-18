@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\CategoryController;
+use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
@@ -154,6 +155,21 @@ Route::prefix('api/inventory/issuance')
         Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
             Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
             Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
+        });
+    });
+
+// Inventory Transactions - Batch Distribution (Template-based scaling and issuance)
+Route::prefix('api/inventory/batch-distribution')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('items/options', [BatchDistributionController::class, 'itemOptions']);
+            Route::get('templates', [BatchDistributionController::class, 'listTemplates']);
+            Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
+            Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
+            Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
+            Route::post('calculate', [BatchDistributionController::class, 'calculate']);
+            Route::post('issue', [BatchDistributionController::class, 'issue']);
         });
     });
 
