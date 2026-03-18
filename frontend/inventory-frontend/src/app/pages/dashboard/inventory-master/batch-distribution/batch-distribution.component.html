@@ -1,0 +1,251 @@
+<div class="batch-distribution-page">
+  <div class="page-header">
+    <h1>Batch Distribution</h1>
+    <p class="subtitle">Scale recipe or relief templates from a base count to your target count, then issue stock in one step.</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <div class="layout-grid">
+    <section class="panel templates-panel">
+      <div class="panel-header">
+        <h2>Templates</h2>
+        <button class="btn btn-primary" type="button" (click)="startCreateTemplate()">New Template</button>
+      </div>
+
+      <div class="search-row">
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="searchTemplate"
+          placeholder="Search template name"
+          (keyup.enter)="searchTemplates()"
+        />
+        <button class="btn btn-secondary" type="button" (click)="searchTemplates()">Search</button>
+        <button class="btn btn-secondary" type="button" (click)="clearTemplateSearch()">Reset</button>
+      </div>
+
+      <div class="list-wrap" *ngIf="!loadingTemplates">
+        <button
+          type="button"
+          class="template-card"
+          *ngFor="let template of templates"
+          [class.active]="selectedTemplateId === template.template_id"
+          (click)="selectTemplate(template)"
+        >
+          <div class="template-card-top">
+            <strong>{{ template.template_name }}</strong>
+            <span class="tag">{{ template.distribution_type_label }}</span>
+          </div>
+          <div class="template-meta">
+            Base: {{ template.base_unit_count }}
+            <span>•</span>
+            Items: {{ template.item_count }}
+          </div>
+          <div class="template-actions">
+            <button class="btn btn-mini" type="button" (click)="$event.stopPropagation(); editTemplate(template)">Edit</button>
+          </div>
+        </button>
+
+        <p class="empty" *ngIf="templates.length === 0">No templates found.</p>
+      </div>
+
+      <p class="empty" *ngIf="loadingTemplates">Loading templates...</p>
+    </section>
+
+    <section class="panel calculator-panel">
+      <div class="panel-header">
+        <h2>Calculator And Issuance</h2>
+      </div>
+
+      <div class="controls-grid">
+        <label>
+          <span>Selected Template</span>
+          <input class="form-control" [value]="selectedTemplateName || 'None selected'" readonly />
+        </label>
+        <label>
+          <span>Target Count</span>
+          <input type="number" min="1" class="form-control" [(ngModel)]="targetUnitCount" />
+        </label>
+        <div class="calc-actions">
+          <button class="btn btn-primary" type="button" (click)="calculate()" [disabled]="calculating">
+            {{ calculating ? 'Calculating...' : 'Calculate Requirements' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="results-wrap" *ngIf="calculation">
+        <div class="summary-strip">
+          <span><strong>Multiplier:</strong> {{ calculation.multiplier }}</span>
+          <span><strong>Lines:</strong> {{ calculation.summary.line_count }}</span>
+          <span><strong>Total Qty:</strong> {{ calculation.summary.total_required_quantity_for_issuance }}</span>
+          <span [class.bad]="!calculation.summary.can_issue">
+            <strong>Shortages:</strong> {{ calculation.summary.insufficient_items_count }}
+          </span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Per Base</th>
+                <th>Required</th>
+                <th>Stock</th>
+                <th>Shortage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of calculation.items" [class.has-shortage]="row.has_shortage">
+                <td>{{ row.item_code }} - {{ row.item_description }}</td>
+                <td>{{ row.quantity_per_base }}</td>
+                <td>{{ row.required_quantity_for_issuance }}</td>
+                <td>{{ row.current_stock }}</td>
+                <td>{{ row.shortage_quantity }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="issue-form">
+          <h3>Issue Distribution</h3>
+          <div class="issue-grid">
+            <label>
+              <span>Destination *</span>
+              <input type="text" class="form-control" [(ngModel)]="destination" placeholder="e.g. Saturday Feeding Site A" />
+            </label>
+            <label>
+              <span>Reason</span>
+              <input type="text" class="form-control" [(ngModel)]="reason" placeholder="Batch Distribution" />
+            </label>
+            <label class="full">
+              <span>Notes</span>
+              <textarea class="form-control" rows="2" [(ngModel)]="issueNotes" placeholder="Optional notes"></textarea>
+            </label>
+          </div>
+
+          <button
+            class="btn btn-primary"
+            type="button"
+            (click)="issueDistribution()"
+            [disabled]="issuing || !calculation.summary.can_issue"
+          >
+            {{ issuing ? 'Issuing...' : 'Issue From Inventory' }}
+          </button>
+        </div>
+      </div>
+
+      <p class="empty" *ngIf="!calculation">Select a template and calculate requirements.</p>
+    </section>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showTemplateForm" (click)="cancelTemplateForm()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isEditingTemplate ? 'Edit Template' : 'Create Template' }}</h2>
+        <button type="button" class="btn-close" (click)="cancelTemplateForm()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-grid">
+          <label>
+            <span>Template Name *</span>
+            <input type="text" class="form-control" [(ngModel)]="templateForm.template_name" />
+          </label>
+
+          <label>
+            <span>Distribution Type *</span>
+            <select class="form-control" [(ngModel)]="templateForm.distribution_type">
+              <option value="feeding_program">Feeding Program</option>
+              <option value="relief_goods">Relief Goods</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Base Count *</span>
+            <input type="number" min="1" class="form-control" [(ngModel)]="templateForm.base_unit_count" />
+          </label>
+
+          <label class="full">
+            <span>Notes</span>
+            <textarea rows="2" class="form-control" [(ngModel)]="templateForm.notes"></textarea>
+          </label>
+        </div>
+
+        <div class="line-builder">
+          <h3>Template Items</h3>
+
+          <div class="search-row">
+            <input
+              type="text"
+              class="form-control"
+              [(ngModel)]="searchItem"
+              placeholder="Search item options"
+              (keyup.enter)="searchItems()"
+            />
+            <button class="btn btn-secondary" type="button" (click)="searchItems()">Search</button>
+            <button class="btn btn-secondary" type="button" (click)="resetItemSearch()">Reset</button>
+          </div>
+
+          <div class="inline-add-row">
+            <select class="form-control" [(ngModel)]="lineDraftItemId">
+              <option [ngValue]="null">Select an item</option>
+              <option *ngFor="let item of itemOptions" [ngValue]="item.item_id">
+                {{ item.item_code }} - {{ item.item_description }} (Stock: {{ item.current_stock }})
+              </option>
+            </select>
+            <input
+              type="number"
+              min="0.0001"
+              step="0.0001"
+              class="form-control"
+              [(ngModel)]="lineDraftQuantityPerBase"
+              placeholder="Qty per base"
+            />
+            <button class="btn btn-primary" type="button" (click)="addLine()">Add</button>
+          </div>
+
+          <div class="line-table-wrap" *ngIf="templateLines.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty/Base</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let line of templateLines">
+                  <td>{{ getItemLabel(line.item_id) }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      min="0.0001"
+                      step="0.0001"
+                      class="form-control"
+                      [(ngModel)]="line.quantity_per_base"
+                    />
+                  </td>
+                  <td>
+                    <button class="btn btn-mini" type="button" (click)="removeLine(line.item_id)">Remove</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="empty" *ngIf="templateLines.length === 0">No items added yet.</p>
+          <p class="empty" *ngIf="loadingItemOptions">Loading item options...</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" (click)="cancelTemplateForm()">Cancel</button>
+        <button class="btn btn-primary" type="button" [disabled]="savingTemplate" (click)="saveTemplate()">
+          {{ savingTemplate ? 'Saving...' : 'Save Template' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
