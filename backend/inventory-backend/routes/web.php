@@ -6,6 +6,7 @@ use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
+use App\Http\Controllers\Inventory\TransactionMonitorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -123,6 +124,16 @@ Route::prefix('api/inventory/categories')
             Route::post('/', [CategoryController::class, 'store']);
             Route::put('{categoryId}', [CategoryController::class, 'update']);
             Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+        });
+    });
+
+// Inventory Transactions - Monitor (IN/OUT history)
+Route::prefix('api/inventory/transactions')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+            Route::get('/', [TransactionMonitorController::class, 'index']);
+            Route::get('/stock-report', [TransactionMonitorController::class, 'stockReport']);
         });
     });
 
