@@ -9,8 +9,7 @@
   <!-- Navigation Menu -->
   <nav class="sidebar-nav">
     <a routerLink="/dashboard" 
-       routerLinkActive="active" 
-       [routerLinkActiveOptions]="{ exact: true }"
+       [class.active]="isDashboardActive()"
        class="nav-item">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -91,6 +90,18 @@
         </a>
       </div>
     </div>
+
+    <!-- ═══════ MONITORING ═══════ -->
+    <a *ngIf="hasPermission('manage_inventory')"
+       routerLink="/dashboard/monitoring"
+       routerLinkActive="active"
+       class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+      <span class="label">Monitoring</span>
+    </a>
 
     <!-- ═══════ USERS & ACCESS GROUP (Super Admin Only) ═══════ -->
     <div class="nav-group" *ngIf="hasPermission('manage_permissions') || hasPermission('manage_roles')">

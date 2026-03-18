@@ -18,7 +18,6 @@ export class SidebarComponent implements OnInit {
   loadingRole = false;
   showLogoutModal = false;
 
-  // Track which nav groups are open
   openGroups: Set<string> = new Set();
 
   constructor(
@@ -39,7 +38,6 @@ export class SidebarComponent implements OnInit {
       }
     });
 
-    // Auto-expand the group that matches the current route
     this.expandGroupForCurrentRoute(this.router.url);
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
@@ -59,6 +57,53 @@ export class SidebarComponent implements OnInit {
 
   isGroupOpen(group: string): boolean {
     return this.openGroups.has(group);
+  }
+
+  isDashboardActive(): boolean {
+    const url = this.router.url;
+    return url === '/dashboard' ||
+      url.startsWith('/dashboard/super-admin') ||
+      url.startsWith('/dashboard/inventory-manager');
+  }
+
+  hasPermission(permissionName: string): boolean {
+    if (this.loadingRole) return false;
+    if (this.user?.role === 'super_admin') return true;
+    return this.rbacService.roleHasPermission(this.currentRole, permissionName);
+  }
+
+  openLogoutModal(): void {
+    this.showLogoutModal = true;
+  }
+
+  closeLogoutModal(): void {
+    this.showLogoutModal = false;
+  }
+
+  confirmLogout(): void {
+    this.showLogoutModal = false;
+    const role = this.authService.getCurrentUser()?.role;
+    const loginRoute = role === 'super_admin' ? '/admin-login' : '/login';
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate([loginRoute]),
+      error: () => this.router.navigate([loginRoute])
+    });
+  }
+
+  private loadCurrentRole(): void {
+    this.loadingRole = true;
+    this.rbacService.getCurrentRole().subscribe({
+      next: (role) => {
+        this.currentRole = role;
+        this.loadingRole = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.currentRole = null;
+        this.loadingRole = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private expandGroupForCurrentRoute(url: string): void {
@@ -95,54 +140,5 @@ export class SidebarComponent implements OnInit {
         return;
       }
     }
-  }
-
-  openLogoutModal() {
-    this.showLogoutModal = true;
-  }
-
-  closeLogoutModal() {
-    this.showLogoutModal = false;
-  }
-
-  confirmLogout() {
-    this.showLogoutModal = false;
-    const role = this.authService.getCurrentUser()?.role;
-    const loginRoute = role === 'super_admin' ? '/admin-login' : '/login';
-    this.authService.logout().subscribe({
-      next: () => {
-        this.router.navigate([loginRoute]);
-      },
-      error: (error) => {
-        console.error('Logout error:', error);
-        this.router.navigate([loginRoute]);
-      }
-    });
-  }
-
-  private loadCurrentRole(): void {
-    this.loadingRole = true;
-    this.rbacService.getCurrentRole().subscribe({
-      next: (role) => {
-        this.currentRole = role;
-        this.loadingRole = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.currentRole = null;
-        this.loadingRole = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  hasPermission(permissionName: string): boolean {
-    if (this.loadingRole) {
-      return false;
-    }
-    if (this.user?.role === 'super_admin') {
-      return true;
-    }
-    return this.rbacService.roleHasPermission(this.currentRole, permissionName);
   }
 }
