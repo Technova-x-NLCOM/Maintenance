@@ -19,6 +19,8 @@ import { MinimumStockSetupComponent } from './pages/dashboard/inventory-master/m
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 import { MonitoringComponent } from './pages/dashboard/monitoring/monitoring.component';
+import { StockReportComponent } from './pages/dashboard/monitoring/stock-report/stock-report.component';
+import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transaction-history/transaction-history.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -42,7 +44,9 @@ export const routes: Routes = [
       { path: 'inventory/minimum-stock', component: MinimumStockSetupComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
-      { path: 'monitoring', component: MonitoringComponent },
+      { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
+      { path: 'monitoring/stock-report', component: StockReportComponent },
+      { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
       { path: 'settings', component: SettingsComponent }
