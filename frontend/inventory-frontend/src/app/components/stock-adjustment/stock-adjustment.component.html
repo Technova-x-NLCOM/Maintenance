@@ -33,6 +33,7 @@
       <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
       <span class="stock-pill">Current: {{ item.current_stock }} {{ item.measurement_unit || '' }}</span>
       <span class="stock-pill expired">Expired: {{ item.expired_stock }}</span>
+      <span class="stock-pill shelf" *ngIf="item.shelf_life_days">Shelf life: {{ item.shelf_life_days }}d</span>
     </button>
 
     <div class="empty" *ngIf="items.length === 0">
@@ -100,12 +101,29 @@
 
         <div class="form-row" *ngIf="adjustmentMode === 'increase'">
           <div class="form-group">
+            <label class="form-label">Purchase Date</label>
+            <input type="date" class="form-control" [(ngModel)]="purchaseDate" (change)="onDateInputsChange()" [disabled]="saving" />
+          </div>
+          <div class="form-group">
             <label class="form-label">Expiry Date</label>
-            <input type="date" class="form-control" [(ngModel)]="expiryDate" [disabled]="saving" />
+            <input type="date" class="form-control" [(ngModel)]="expiryDate" [disabled]="saving || !expiryDateOverride" />
           </div>
           <div class="form-group">
             <label class="form-label">Manufactured Date</label>
-            <input type="date" class="form-control" [(ngModel)]="manufacturedDate" [disabled]="saving" />
+            <input type="date" class="form-control" [(ngModel)]="manufacturedDate" (change)="onDateInputsChange()" [disabled]="saving" />
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="adjustmentMode === 'increase'">
+          <label class="confirm-checkbox">
+            <input type="checkbox" [(ngModel)]="expiryDateOverride" (change)="toggleExpiryOverride()" [disabled]="saving" />
+            <span>Override auto-computed expiry date</span>
+          </label>
+          <div class="hint" *ngIf="selectedItem.shelf_life_days">
+            Expiry is required for this item because shelf life is configured.
+          </div>
+          <div class="hint" *ngIf="selectedItem.shelf_life_days && !expiryDateOverride">
+            Auto-computed expiry: <strong>{{ getEffectiveExpiryDate() || 'Not available - provide purchase or manufactured date' }}</strong>
           </div>
         </div>
 

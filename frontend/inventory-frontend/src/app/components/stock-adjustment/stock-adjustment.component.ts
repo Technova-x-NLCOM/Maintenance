@@ -31,7 +31,10 @@ export class StockAdjustmentComponent implements OnInit {
   quantity = 1;
   reason = '';
   notes = '';
+  purchaseDate = '';
   expiryDate = '';
+  expiryDateOverride = false;
+  computedExpiryDate: string | null = null;
   manufacturedDate = '';
   confirmExpiration = false;
 
@@ -109,7 +112,10 @@ export class StockAdjustmentComponent implements OnInit {
     this.quantity = 1;
     this.reason = '';
     this.notes = '';
+    this.purchaseDate = new Date().toISOString().split('T')[0];
     this.expiryDate = '';
+    this.expiryDateOverride = false;
+    this.computedExpiryDate = null;
     this.manufacturedDate = '';
     this.confirmExpiration = false;
     this.errorMessage = '';
@@ -144,18 +150,81 @@ export class StockAdjustmentComponent implements OnInit {
       }
     }
 
+    if (this.adjustmentMode === 'increase' && this.selectedItem.shelf_life_days && !this.getEffectiveExpiryDate()) {
+      return false;
+    }
+
     return this.reason.trim().length > 0;
   }
 
   onAdjustmentModeChange(): void {
     if (this.adjustmentMode === 'increase') {
       this.confirmExpiration = false;
+      this.computeExpiryDate();
     }
 
     if (this.adjustmentMode === 'decrease') {
+      this.purchaseDate = new Date().toISOString().split('T')[0];
       this.expiryDate = '';
+      this.expiryDateOverride = false;
+      this.computedExpiryDate = null;
       this.manufacturedDate = '';
     }
+  }
+
+  onDateInputsChange(): void {
+    this.computeExpiryDate();
+  }
+
+  computeExpiryDate(): void {
+    if (this.adjustmentMode !== 'increase' || !this.selectedItem?.shelf_life_days) {
+      this.computedExpiryDate = null;
+      return;
+    }
+
+    if (this.expiryDateOverride && this.expiryDate) {
+      this.computedExpiryDate = null;
+      return;
+    }
+
+    const baseDateRaw = this.manufacturedDate || this.purchaseDate;
+    if (!baseDateRaw) {
+      this.computedExpiryDate = null;
+      return;
+    }
+
+    const base = new Date(baseDateRaw);
+    if (Number.isNaN(base.getTime())) {
+      this.computedExpiryDate = null;
+      return;
+    }
+
+    const expiry = new Date(base);
+    expiry.setDate(expiry.getDate() + this.selectedItem.shelf_life_days);
+    this.computedExpiryDate = expiry.toISOString().split('T')[0];
+  }
+
+  getEffectiveExpiryDate(): string | null {
+    if (this.adjustmentMode !== 'increase') {
+      return null;
+    }
+
+    if (this.expiryDateOverride) {
+      return this.expiryDate || null;
+    }
+
+    return this.computedExpiryDate;
+  }
+
+  toggleExpiryOverride(): void {
+    this.expiryDateOverride = !this.expiryDateOverride;
+    if (!this.expiryDateOverride) {
+      this.expiryDate = '';
+      this.computeExpiryDate();
+      return;
+    }
+
+    this.expiryDate = this.computedExpiryDate || '';
   }
 
   getProjectedStock(): number {
@@ -184,7 +253,8 @@ export class StockAdjustmentComponent implements OnInit {
       quantity: Math.floor(Number(this.quantity)),
       reason: this.reason.trim(),
       notes: this.notes.trim() || undefined,
-      expiry_date: this.adjustmentMode === 'increase' && this.expiryDate ? this.expiryDate : undefined,
+      purchase_date: this.adjustmentMode === 'increase' && this.purchaseDate ? this.purchaseDate : undefined,
+      expiry_date: this.adjustmentMode === 'increase' && this.getEffectiveExpiryDate() ? this.getEffectiveExpiryDate() ?? undefined : undefined,
       manufactured_date: this.adjustmentMode === 'increase' && this.manufacturedDate ? this.manufacturedDate : undefined,
       confirm_expiration: this.adjustmentMode === 'decrease' ? this.confirmExpiration : false,
     }).subscribe({

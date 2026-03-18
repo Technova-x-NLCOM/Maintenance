@@ -199,6 +199,7 @@ interface AdjustmentItem {
   image_url: string | null;
   current_stock: number;
   expired_stock: number;
+  shelf_life_days: number | null;
 }
 
 interface PaginatedAdjustmentItemsResponse {
@@ -219,6 +220,7 @@ interface AdjustmentTransactionRequest {
   quantity: number;
   reason: string;
   notes?: string;
+  purchase_date?: string;
   expiry_date?: string;
   manufactured_date?: string;
   confirm_expiration?: boolean;
@@ -237,6 +239,7 @@ interface AdjustmentTransactionResponse {
     previous_stock: number;
     new_stock: number;
     confirm_expiration: boolean;
+    purchase_date?: string | null;
     expiry_date?: string | null;
     manufactured_date?: string | null;
   };
