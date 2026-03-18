@@ -1,0 +1,321 @@
+.reporting-page {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+// ── Header ──────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .header-icon { width: 2rem; height: 2rem; color: #6366f1; flex-shrink: 0; }
+
+    h1 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .subtitle { font-size: 0.875rem; color: #64748b; margin: 0; }
+  }
+
+  .export-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+
+  svg { width: 1rem; height: 1rem; }
+
+  &:active { transform: scale(0.97); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  &.excel { background: #16a34a; color: #fff; &:hover:not(:disabled) { background: #15803d; } }
+  &.pdf   { background: #dc2626; color: #fff; &:hover:not(:disabled) { background: #b91c1c; } }
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+
+  svg { width: 1rem; height: 1rem; }
+
+  &.active { color: #6366f1; border-bottom-color: #6366f1; font-weight: 600; }
+  &:hover:not(.active) { color: #334155; }
+}
+
+// ── Tab content ───────────────────────────────────────────────────────
+.tab-content { display: flex; flex-direction: column; gap: 1rem; }
+
+// ── Filters ───────────────────────────────────────────────────────────
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+
+  .filter-input {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #1e293b;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+    &:focus { border-color: #6366f1; }
+  }
+
+  .search-input { min-width: 220px; flex: 1; }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    color: #475569;
+    cursor: pointer;
+    input[type="checkbox"] { accent-color: #6366f1; width: 15px; height: 15px; }
+  }
+
+  .btn-apply {
+    padding: 0.5rem 1rem;
+    background: #6366f1;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    &:hover { background: #4f46e5; }
+  }
+
+  .btn-clear {
+    padding: 0.5rem 0.9rem;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    &:hover { background: #e2e8f0; }
+  }
+
+  .record-count {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+}
+
+// ── Error / Loading ───────────────────────────────────────────────────
+.error-msg {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 2rem 0;
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+// ── Table ─────────────────────────────────────────────────────────────
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.print-title {
+  display: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead tr { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+
+  th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s;
+    &:last-child { border-bottom: none; }
+    &:hover { background: #f8fafc; }
+    &.low-stock-row { background: #fff7ed; &:hover { background: #ffedd5; } }
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    color: #334155;
+    vertical-align: middle;
+  }
+
+  .num-col { text-align: right; font-variant-numeric: tabular-nums; }
+  .code-cell { font-family: monospace; font-size: 0.8rem; color: #6366f1; }
+  .date-cell { white-space: nowrap; color: #64748b; font-size: 0.8rem; }
+  .in-val  { color: #16a34a; font-weight: 600; }
+  .out-val { color: #dc2626; font-weight: 600; }
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  &.badge-in  { background: #dcfce7; color: #16a34a; }
+  &.badge-out { background: #fee2e2; color: #dc2626; }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  &.ok  { background: #dcfce7; color: #16a34a; }
+  &.low { background: #fff7ed; color: #ea580c; }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  color: #94a3b8;
+  svg { width: 3rem; height: 3rem; }
+  p { font-size: 0.95rem; margin: 0; }
+}
+
+// ── Pagination ────────────────────────────────────────────────────────
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+
+  .page-btn {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    color: #475569;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    &:hover:not(:disabled) { background: #f1f5f9; border-color: #6366f1; color: #6366f1; }
+    &.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+  }
+
+  .page-info { margin-left: 0.5rem; font-size: 0.8rem; color: #94a3b8; }
+}
+
+// ── Print styles ──────────────────────────────────────────────────────
+@media print {
+  // Hide everything on the page except the reporting-page
+  body > *:not(app-root) { display: none !important; }
+
+  .reporting-page {
+    padding: 0;
+    gap: 0.5rem;
+  }
+
+  // Hide UI chrome — only the table should print
+  .page-header .export-actions,
+  .tabs,
+  .filters-bar,
+  .pagination { display: none !important; }
+
+  .page-header { margin-bottom: 0.5rem; }
+
+  // Show the active tab content
+  .tab-content { display: flex !important; flex-direction: column; gap: 0.5rem; }
+
+  // Show the print title above the table
+  .print-title { display: block; }
+
+  .table-wrapper {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .data-table {
+    font-size: 0.75rem;
+    th, td { padding: 0.4rem 0.5rem; }
+  }
+}

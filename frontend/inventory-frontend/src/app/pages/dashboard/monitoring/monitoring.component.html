@@ -1,0 +1,211 @@
+<div class="reporting-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 17H5a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v0a2 2 0 0 0-2-2h-4"/>
+        <rect x="9" y="3" width="6" height="14" rx="1"/>
+      </svg>
+      <div>
+        <h1>Reports & Monitoring</h1>
+        <p class="subtitle">Stock levels, transaction history, and exports</p>
+      </div>
+    </div>
+
+    <!-- Export buttons -->
+    <div class="export-actions">
+      <button class="btn-export excel" (click)="exportExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="16" y2="17"/>
+        </svg>
+        Export Excel
+      </button>
+      <button class="btn-export pdf" (click)="exportPdf()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <path d="M9 13h1a2 2 0 0 1 0 4H9v-4z"/>
+          <path d="M14 13h2"/>
+          <path d="M14 17h2"/>
+        </svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'stock'" (click)="setTab('stock')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+      Stock Report
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'history'" (click)="setTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Transaction History
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- STOCK REPORT TAB                                              -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'stock'" class="tab-content">
+
+    <div class="filters-bar">
+      <input class="filter-input search-input" type="text" placeholder="Search item, category..."
+        [(ngModel)]="stSearch" (keyup.enter)="applyStock()" />
+      <label class="checkbox-label">
+        <input type="checkbox" [(ngModel)]="stLowStock" (change)="applyStock()" />
+        Low stock only
+      </label>
+      <button class="btn-apply" (click)="applyStock()">Apply</button>
+      <button class="btn-clear" (click)="clearStock()">Clear</button>
+      <span class="record-count">{{ stTotal }} items</span>
+    </div>
+
+    <div class="error-msg" *ngIf="stError">{{ stError }}</div>
+
+    <div class="loading-state" *ngIf="stLoading">
+      <div class="spinner"></div><span>Loading stock report...</span>
+    </div>
+
+    <div class="table-wrapper print-area" *ngIf="!stLoading">
+      <div class="print-title">Stock Report — {{ stTotal }} items</div>
+      <table class="data-table" *ngIf="stockItems.length > 0; else emptyStock">
+        <thead>
+          <tr>
+            <th>Item Code</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>UoM</th>
+            <th class="num-col">Current Stock</th>
+            <th class="num-col">Total IN</th>
+            <th class="num-col">Total OUT</th>
+            <th class="num-col">Reorder Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of stockItems" [class.low-stock-row]="isLowStock(item)">
+            <td class="code-cell">{{ item.item_code }}</td>
+            <td>{{ item.item_description }}</td>
+            <td>{{ item.category_name || '—' }}</td>
+            <td>{{ item.item_type_name || '—' }}</td>
+            <td>{{ item.measurement_unit || '—' }}</td>
+            <td class="num-col">{{ item.current_stock }}</td>
+            <td class="num-col in-val">+{{ item.total_in }}</td>
+            <td class="num-col out-val">-{{ item.total_out }}</td>
+            <td class="num-col">{{ item.reorder_level }}</td>
+            <td>
+              <span class="status-badge" [class.low]="isLowStock(item)" [class.ok]="!isLowStock(item)">
+                {{ isLowStock(item) ? 'Low Stock' : 'OK' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #emptyStock>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <p>No items found.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" *ngIf="!stLoading && stLastPage > 1">
+      <button class="page-btn" (click)="loadStock(stPage - 1)" [disabled]="stPage === 1">‹</button>
+      <button class="page-btn" *ngFor="let p of pageRange(stPage, stLastPage)" [class.active]="p === stPage" (click)="loadStock(p)">{{ p }}</button>
+      <button class="page-btn" (click)="loadStock(stPage + 1)" [disabled]="stPage === stLastPage">›</button>
+      <span class="page-info">Page {{ stPage }} of {{ stLastPage }}</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- TRANSACTION HISTORY TAB                                       -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'history'" class="tab-content">
+
+    <div class="filters-bar">
+      <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..."
+        [(ngModel)]="txSearch" (keyup.enter)="applyTx()" />
+      <select class="filter-input" [(ngModel)]="txType" (change)="applyTx()">
+        <option value="">All Types</option>
+        <option value="IN">Stock IN</option>
+        <option value="OUT">Stock OUT</option>
+      </select>
+      <input class="filter-input" type="date" [(ngModel)]="txDateFrom" (change)="applyTx()" />
+      <input class="filter-input" type="date" [(ngModel)]="txDateTo" (change)="applyTx()" />
+      <button class="btn-apply" (click)="applyTx()">Apply</button>
+      <button class="btn-clear" (click)="clearTx()">Clear</button>
+      <span class="record-count">{{ txTotal }} records</span>
+    </div>
+
+    <div class="error-msg" *ngIf="txError">{{ txError }}</div>
+
+    <div class="loading-state" *ngIf="txLoading">
+      <div class="spinner"></div><span>Loading transactions...</span>
+    </div>
+
+    <div class="table-wrapper print-area" *ngIf="!txLoading">
+      <div class="print-title">Transaction History — {{ txTotal }} records</div>
+      <table class="data-table" *ngIf="transactions.length > 0; else emptyTx">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Item Code</th>
+            <th>Description</th>
+            <th>Batch</th>
+            <th class="num-col">Qty</th>
+            <th>UoM</th>
+            <th>Destination / Reason</th>
+            <th>Performed By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tx of transactions">
+            <td>
+              <span class="type-badge" [class.badge-in]="tx.transaction_type === 'IN'" [class.badge-out]="tx.transaction_type === 'OUT'">
+                {{ tx.transaction_type === 'IN' ? '▲ IN' : '▼ OUT' }}
+              </span>
+            </td>
+            <td class="code-cell">{{ tx.reference_number }}</td>
+            <td>{{ tx.item_code }}</td>
+            <td>{{ tx.item_description }}</td>
+            <td>{{ tx.batch_number || '—' }}</td>
+            <td class="num-col">{{ tx.quantity }}</td>
+            <td>{{ tx.measurement_unit || '—' }}</td>
+            <td>{{ tx.destination || tx.reason || '—' }}</td>
+            <td>{{ tx.performed_by_name }}</td>
+            <td class="date-cell">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #emptyTx>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <p>No transactions found.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" *ngIf="!txLoading && txLastPage > 1">
+      <button class="page-btn" (click)="loadTx(txPage - 1)" [disabled]="txPage === 1">‹</button>
+      <button class="page-btn" *ngFor="let p of pageRange(txPage, txLastPage)" [class.active]="p === txPage" (click)="loadTx(p)">{{ p }}</button>
+      <button class="page-btn" (click)="loadTx(txPage + 1)" [disabled]="txPage === txLastPage">›</button>
+      <span class="page-info">Page {{ txPage }} of {{ txLastPage }}</span>
+    </div>
+  </div>
+
+</div>
