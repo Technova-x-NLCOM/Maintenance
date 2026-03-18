@@ -91,17 +91,29 @@
       </div>
     </div>
 
-    <!-- ═══════ MONITORING ═══════ -->
-    <a *ngIf="hasPermission('manage_inventory')"
-       routerLink="/dashboard/monitoring"
-       routerLinkActive="active"
-       class="nav-item">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-      <span class="label">Monitoring</span>
-    </a>
+    <!-- ═══════ MONITORING GROUP ═══════ -->
+    <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
+      <button class="nav-group-toggle" (click)="toggleGroup('monitoring')" [class.expanded]="isGroupOpen('monitoring')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        <span class="label">Monitoring</span>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      <div class="nav-group-items" [class.open]="isGroupOpen('monitoring')">
+        <a routerLink="/dashboard/monitoring/stock-report" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Stock Report</span>
+        </a>
+        <a routerLink="/dashboard/monitoring/transaction-history" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span>
+          <span class="label">Transaction History</span>
+        </a>
+      </div>
+    </div>
 
     <!-- ═══════ USERS & ACCESS GROUP (Super Admin Only) ═══════ -->
     <div class="nav-group" *ngIf="hasPermission('manage_permissions') || hasPermission('manage_roles')">

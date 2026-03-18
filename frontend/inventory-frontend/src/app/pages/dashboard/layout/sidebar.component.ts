@@ -122,6 +122,14 @@ export class SidebarComponent implements OnInit {
       return;
     }
 
+    if (
+      url.includes('/dashboard/monitoring/stock-report') ||
+      url.includes('/dashboard/monitoring/transaction-history')
+    ) {
+      this.openGroups.add('monitoring');
+      return;
+    }
+
     for (const t of inventoryTables) {
       if (url.includes(`/maintenance/${t}`)) {
         this.openGroups.add('inventory');
