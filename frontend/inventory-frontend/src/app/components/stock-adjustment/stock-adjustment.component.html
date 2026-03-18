@@ -1,0 +1,149 @@
+<div class="adjustment-page">
+  <div class="page-header">
+    <h1>Stock Adjustment</h1>
+    <p class="subtitle">Use this kiosk to correct stock discrepancies from physical count.</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" class="form-control" [(ngModel)]="searchQuery" placeholder="Search by item code or description" (keyup.enter)="onSearch()" />
+      <button class="btn btn-secondary" type="button" (click)="onSearch()">Search</button>
+      <button class="btn btn-secondary" type="button" (click)="clearSearch()">Reset</button>
+    </div>
+    <div class="filter-wrap">
+      <select class="form-control" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+        <option [ngValue]="null">All Categories</option>
+        <option *ngFor="let category of categories" [ngValue]="category.category_id">{{ category.category_name }}</option>
+      </select>
+      <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+    </div>
+  </div>
+
+  <div class="catalog-grid" *ngIf="!loading">
+    <button type="button" class="item-card" *ngFor="let item of items" (click)="openAdjustmentModal(item)">
+      <div class="card-image">
+        <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+        <span *ngIf="!item.image_url">No Image</span>
+      </div>
+      <p class="code">{{ item.item_code }}</p>
+      <p class="desc">{{ item.item_description }}</p>
+      <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+      <span class="stock-pill">Current: {{ item.current_stock }} {{ item.measurement_unit || '' }}</span>
+      <span class="stock-pill expired">Expired: {{ item.expired_stock }}</span>
+      <span class="stock-pill shelf" *ngIf="item.shelf_life_days">Shelf life: {{ item.shelf_life_days }}d</span>
+    </button>
+
+    <div class="empty" *ngIf="items.length === 0">
+      <p>No items found for adjustment.</p>
+    </div>
+  </div>
+
+  <div class="state-loading" *ngIf="loading">Loading items...</div>
+
+  <div class="pagination" *ngIf="!loading && lastPage > 1">
+    <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+    <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+    <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showAdjustmentModal" (click)="closeAdjustmentModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()" *ngIf="selectedItem">
+    <div class="modal-header">
+      <h2>Stock Adjustment</h2>
+      <button class="modal-close" (click)="closeAdjustmentModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="selected-item-box">
+        <img *ngIf="selectedItem.image_url" [src]="selectedItem.image_url" alt="selected" class="selected-item-image" />
+        <span *ngIf="!selectedItem.image_url" class="selected-no-image">No Image</span>
+        <div class="selected-item-info">
+          <div class="selected-code">{{ selectedItem.item_code }}</div>
+          <div class="selected-desc">{{ selectedItem.item_description }}</div>
+          <div class="selected-meta">
+            <span class="stock-badge">Current Stock: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Adjustment Type *</label>
+            <select class="form-control" [(ngModel)]="adjustmentMode" (change)="onAdjustmentModeChange()" [disabled]="saving">
+              <option value="decrease">Decrease Stock</option>
+              <option value="increase">Increase Stock</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity *</label>
+            <input type="number" class="form-control" min="1" [(ngModel)]="quantity" [disabled]="saving" />
+          </div>
+        </div>
+
+        <div class="projection">
+          <span><strong>Projected Stock:</strong> {{ getProjectedStock() }}</span>
+        </div>
+
+        <div class="form-group" *ngIf="adjustmentMode === 'decrease'">
+          <label class="confirm-checkbox">
+            <input type="checkbox" [(ngModel)]="confirmExpiration" [disabled]="saving" />
+            <span>Confirm expiration (deduct from expired stock only)</span>
+          </label>
+          <div class="hint" *ngIf="confirmExpiration">
+            Available expired stock: <strong>{{ selectedItem.expired_stock }}</strong>
+          </div>
+        </div>
+
+        <div class="form-row" *ngIf="adjustmentMode === 'increase'">
+          <div class="form-group">
+            <label class="form-label">Purchase Date</label>
+            <input type="date" class="form-control" [(ngModel)]="purchaseDate" (change)="onDateInputsChange()" [disabled]="saving" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Expiry Date</label>
+            <input type="date" class="form-control" [(ngModel)]="expiryDate" [disabled]="saving || !expiryDateOverride" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Manufactured Date</label>
+            <input type="date" class="form-control" [(ngModel)]="manufacturedDate" (change)="onDateInputsChange()" [disabled]="saving" />
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="adjustmentMode === 'increase'">
+          <label class="confirm-checkbox">
+            <input type="checkbox" [(ngModel)]="expiryDateOverride" (change)="toggleExpiryOverride()" [disabled]="saving" />
+            <span>Override auto-computed expiry date</span>
+          </label>
+          <div class="hint" *ngIf="selectedItem.shelf_life_days">
+            Expiry is required for this item because shelf life is configured.
+          </div>
+          <div class="hint" *ngIf="selectedItem.shelf_life_days && !expiryDateOverride">
+            Auto-computed expiry: <strong>{{ getEffectiveExpiryDate() || 'Not available - provide purchase or manufactured date' }}</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Reason *</label>
+          <input type="text" class="form-control" placeholder="e.g., Physical count correction" [(ngModel)]="reason" [disabled]="saving" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" rows="3" placeholder="Optional details for audit trail" [(ngModel)]="notes" [disabled]="saving"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeAdjustmentModal()" [disabled]="saving">Cancel</button>
+      <button class="btn btn-primary" type="button" [disabled]="!canSubmit() || saving" (click)="submitAdjustment()">
+        {{ saving ? 'Processing...' : 'Record Adjustment' }}
+      </button>
+    </div>
+  </div>
+</div>

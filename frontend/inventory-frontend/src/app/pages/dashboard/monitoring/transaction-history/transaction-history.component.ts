@@ -18,7 +18,7 @@ import { TransactionRecord, Paginated } from '../monitoring.models';
 export class TransactionHistoryComponent implements OnInit {
   transactions: TransactionRecord[] = [];
   page = 1; lastPage = 1; total = 0;
-  search = ''; type: '' | 'IN' | 'OUT' = '';
+  search = ''; type: '' | 'IN' | 'OUT' | 'ADJUSTMENT' = '';
   dateFrom = ''; dateTo = '';
   loading = false; error = '';
 
@@ -86,7 +86,14 @@ export class TransactionHistoryComponent implements OnInit {
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 0) {
-          data.cell.styles.textColor = (data.cell.raw as string) === 'IN' ? [22, 163, 74] : [220, 38, 38];
+          const txType = data.cell.raw as string;
+          if (txType === 'IN') {
+            data.cell.styles.textColor = [22, 163, 74];
+          } else if (txType === 'ADJUSTMENT') {
+            data.cell.styles.textColor = [30, 64, 175];
+          } else {
+            data.cell.styles.textColor = [220, 38, 38];
+          }
           data.cell.styles.fontStyle = 'bold';
         }
       }

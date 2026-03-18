@@ -76,6 +76,7 @@
   display: inline-block; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; white-space: nowrap;
   &.badge-in  { background: #dcfce7; color: #16a34a; }
   &.badge-out { background: #fee2e2; color: #dc2626; }
+  &.badge-adjustment { background: #dbeafe; color: #1d4ed8; }
 }
 
 .empty-state {
