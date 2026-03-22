@@ -1,0 +1,6 @@
+<div class="toast-stack">
+  <div class="toast" *ngFor="let toast of toastService.toasts$ | async" [class.success]="toast.type === 'success'" [class.error]="toast.type === 'error'" [class.info]="toast.type === 'info'">
+    <span>{{ toast.message }}</span>
+    <button type="button" (click)="dismiss(toast.id)" aria-label="Dismiss notification">x</button>
+  </div>
+</div>
