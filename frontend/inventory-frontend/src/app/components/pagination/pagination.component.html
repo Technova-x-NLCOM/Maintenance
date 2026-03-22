@@ -1,0 +1,14 @@
+<nav class="ims-pagination" *ngIf="show" aria-label="Pagination">
+  <button type="button" class="ims-pg-btn ims-pg-nav" [disabled]="currentPage <= 1" (click)="goPrev()">← Prev</button>
+  <button
+    *ngFor="let n of visiblePages"
+    type="button"
+    class="ims-pg-btn ims-pg-num"
+    [class.active]="n === currentPage"
+    [attr.aria-current]="n === currentPage ? 'page' : null"
+    (click)="goTo(n)"
+  >
+    {{ n }}
+  </button>
+  <button type="button" class="ims-pg-btn ims-pg-nav" [disabled]="currentPage >= totalPages" (click)="goNext()">Next →</button>
+</nav>
