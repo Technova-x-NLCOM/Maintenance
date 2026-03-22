@@ -1,11 +1,9 @@
 <div class="categories-page">
-  <header class="page-header">
-    <div class="header-text">
-      <p class="eyebrow">Inventory Master Data</p>
-      <h1 class="page-title">Category Management</h1>
-      <p class="subtitle">Create, organize, update, and remove item categories.</p>
-    </div>
-  </header>
+  <p class="page-intro">
+    Choose an <strong>item type</strong>, name the category, and set where it belongs (top-level or under a parent). Click
+    <strong>Add category</strong> to open the form. If a type or parent does not exist yet, you can create it from the same
+    dialog.
+  </p>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
@@ -158,29 +156,88 @@
   <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true">
     <div class="modal-content category-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
-        <h2 class="panel-title">{{ selectedCategoryId ? 'Edit category' : 'Add new category' }}</h2>
+        <h2 class="panel-title">{{ selectedCategoryId ? 'Edit category' : 'Add category' }}</h2>
         <button class="btn-ghost btn-close-form" type="button" (click)="closeForm()">Close</button>
       </div>
 
       <div class="form-grid">
-        <label>
+        <div class="form-field-group full-width">
+          <label>
+            <span>Item type <em>*</em></span>
+            <div class="input-with-side">
+              <select [(ngModel)]="formData.item_type_id" name="form_item_type">
+                <option [ngValue]="null">Select type…</option>
+                <option *ngFor="let t of itemTypes" [ngValue]="t.item_type_id">{{ t.type_name }}</option>
+              </select>
+              <button type="button" class="link-inline" (click)="openInlineItemType()">+ New item type</button>
+            </div>
+          </label>
+          <div *ngIf="showInlineItemTypeCreate" class="inline-panel modal-inline">
+            <div class="inline-panel-title">New item type</div>
+            <div *ngIf="inlineItemTypeError" class="inline-error">{{ inlineItemTypeError }}</div>
+            <div class="inline-panel-row">
+              <label>
+                <span>Type name <em>*</em></span>
+                <input type="text" [(ngModel)]="newItemTypeName" (keyup.enter)="createItemTypeInline()" />
+              </label>
+              <label>
+                <span>Description</span>
+                <input type="text" [(ngModel)]="newItemTypeDesc" placeholder="Optional" />
+              </label>
+              <div class="inline-panel-actions">
+                <button type="button" class="btn-primary btn-compact" [disabled]="savingInlineItemType" (click)="createItemTypeInline()">
+                  {{ savingInlineItemType ? 'Saving…' : 'Create type' }}
+                </button>
+                <button type="button" class="btn-ghost btn-compact" (click)="cancelInlineItemType()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <label class="full-width">
           <span>Category name <em>*</em></span>
-          <input type="text" [(ngModel)]="formData.category_name" placeholder="e.g. Medical Supplies" />
+          <input type="text" [(ngModel)]="formData.category_name" name="form_name" placeholder="e.g. Medical Supplies" />
         </label>
 
-        <label>
-          <span>Parent category</span>
-          <select [(ngModel)]="formData.parent_category_id">
-            <option [ngValue]="null">No parent category</option>
-            <option *ngFor="let category of getAvailableParentOptions()" [ngValue]="category.category_id">
-              {{ category.category_name }}
-            </option>
-          </select>
-        </label>
+        <div class="form-field-group full-width">
+          <label>
+            <span>Belongs under</span>
+            <div class="input-with-side">
+              <select [(ngModel)]="formData.parent_category_id" name="form_parent">
+                <option [ngValue]="null">Top-level (no parent)</option>
+                <option *ngFor="let category of getAvailableParentOptions()" [ngValue]="category.category_id">
+                  {{ category.category_name }}
+                </option>
+              </select>
+              <button type="button" class="link-inline" (click)="openInlineParent()">+ New parent</button>
+            </div>
+          </label>
+          <div *ngIf="showInlineParentCreate" class="inline-panel modal-inline">
+            <div class="inline-panel-title">New top-level parent category</div>
+            <p class="inline-hint">Creates a parent with no parent of its own. It will appear in “Belongs under” after saving.</p>
+            <div *ngIf="inlineParentError" class="inline-error">{{ inlineParentError }}</div>
+            <div class="inline-panel-row">
+              <label>
+                <span>Parent name <em>*</em></span>
+                <input type="text" [(ngModel)]="newParentName" (keyup.enter)="createParentInline()" />
+              </label>
+              <label>
+                <span>Description</span>
+                <input type="text" [(ngModel)]="newParentDesc" placeholder="Optional" />
+              </label>
+              <div class="inline-panel-actions">
+                <button type="button" class="btn-primary btn-compact" [disabled]="savingInlineParent" (click)="createParentInline()">
+                  {{ savingInlineParent ? 'Saving…' : 'Create parent' }}
+                </button>
+                <button type="button" class="btn-ghost btn-compact" (click)="cancelInlineParent()">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <label class="full-width">
           <span>Description</span>
-          <textarea rows="3" [(ngModel)]="formData.description" placeholder="Describe this category"></textarea>
+          <textarea rows="3" [(ngModel)]="formData.description" name="form_desc" placeholder="Describe this category"></textarea>
         </label>
       </div>
 
@@ -195,9 +252,9 @@
 
   <section class="panel list-panel">
     <div class="list-toolbar">
-      <h2 class="panel-title">Categories <span class="count">({{ categories.length }})</span></h2>
+      <h2 class="panel-title">Categories <span class="count">({{ categoryTotalCount }})</span></h2>
       <div class="toolbar-actions">
-        <button class="btn-primary" (click)="startNew()" type="button">Add new category</button>
+        <button class="btn-primary" (click)="startNew()" type="button">Add category</button>
         <div class="search-row">
           <input type="text" [(ngModel)]="search" placeholder="Search by name, parent, or description" (keyup.enter)="onSearch()" />
           <button class="btn-ghost" type="button" (click)="onSearch()">Search</button>
@@ -213,6 +270,7 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Item type</th>
             <th>Parent</th>
             <th>Description</th>
             <th>Child Categories</th>
@@ -223,6 +281,7 @@
         <tbody>
           <tr *ngFor="let category of categories">
             <td><span class="cell-name">{{ category.category_name }}</span></td>
+            <td>{{ category.item_type_name || '—' }}</td>
             <td>{{ category.parent_category_name || 'Top-level' }}</td>
             <td>{{ category.description || '—' }}</td>
             <td>{{ category.child_count ?? 0 }}</td>
@@ -236,10 +295,17 @@
             </td>
           </tr>
           <tr *ngIf="categories.length === 0">
-            <td colspan="6" class="empty">No categories found.</td>
+            <td colspan="7" class="empty">No categories found.</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <app-pagination
+      *ngIf="!loading"
+      [currentPage]="categoryPage"
+      [totalPages]="categoryTotalPages"
+      (pageChange)="onCategoryPageChange($event)"
+    />
   </section>
 </div>
