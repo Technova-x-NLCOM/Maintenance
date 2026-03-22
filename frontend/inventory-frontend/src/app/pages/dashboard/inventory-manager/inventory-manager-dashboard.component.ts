@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../../services/auth.service';
+import { TopbarActionService } from '../../../services/topbar-action.service';
+import { PaginationComponent } from '../../../components/pagination/pagination.component';
 import { Subscription, filter, forkJoin, catchError, of } from 'rxjs';
 
 export interface InventoryManagerStats {
@@ -37,18 +39,52 @@ export interface SystemAlert {
   acknowledged: boolean;
 }
 
+interface DashboardSectionCard {
+  title: string;
+  count: number;
+  subtitle: string;
+}
+
+interface DashboardExpiryRow {
+  itemName: string;
+  batchLabel: string;
+  daysLeft: number;
+}
+
+interface DashboardTransactionRow {
+  dateLabel: string;
+  itemName: string;
+  type: string;
+  quantityLabel: string;
+  performedBy: string;
+  destination: string;
+}
+
+interface DashboardPreviewResponse {
+  totalItemTypesCount: number;
+  inventoryValue: number;
+  sectionCards: DashboardSectionCard[];
+  expiryRows: DashboardExpiryRow[];
+  recentTransactions: DashboardTransactionRow[];
+}
+
 @Component({
   selector: 'app-inventory-manager-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, PaginationComponent],
   templateUrl: './inventory-manager-dashboard.component.html',
   styleUrl: './inventory-manager-dashboard.component.scss'
 })
 export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
   user: User | null = null;
   stats: InventoryManagerStats | null = null;
-  recentActivity: AuditLogEntry[] = [];
-  systemAlerts: SystemAlert[] = [];
+  sectionCards: DashboardSectionCard[] = [];
+  expiryRows: DashboardExpiryRow[] = [];
+  recentTransactions: DashboardTransactionRow[] = [];
+  txPage = 1;
+  txPerPage = 5;
+  totalItemTypesCount = 0;
+  inventoryValue = 0;
   loading = true;
   private routerSubscription: Subscription | null = null;
 
@@ -60,7 +96,8 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private topbarAction: TopbarActionService
   ) {}
 
   ngOnInit() {
@@ -68,7 +105,8 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
       this.user = user;
     });
     this.loadDashboardData();
-    
+    this.topbarAction.setPrintHandler(() => window.print());
+
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
@@ -82,6 +120,7 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
     }
+    this.topbarAction.setPrintHandler(null);
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -111,24 +150,27 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
         } as InventoryManagerStats);
       }));
 
-    const activity$ = this.http.get<AuditLogEntry[]>(`${this.API_URL}/inventory-manager/activity?limit=10`, { headers: this.getAuthHeaders() })
+    const preview$ = this.http.get<DashboardPreviewResponse>(`${this.API_URL}/inventory-manager/dashboard-preview`, { headers: this.getAuthHeaders() })
       .pipe(catchError(err => {
-        console.error('Error loading activity:', err);
-        return of([] as AuditLogEntry[]);
+        console.error('Error loading dashboard preview:', err);
+        return of({
+          totalItemTypesCount: 0,
+          inventoryValue: 0,
+          sectionCards: [],
+          expiryRows: [],
+          recentTransactions: []
+        } as DashboardPreviewResponse);
       }));
 
-    const alerts$ = this.http.get<SystemAlert[]>(`${this.API_URL}/inventory-manager/alerts`, { headers: this.getAuthHeaders() })
-      .pipe(catchError(err => {
-        console.error('Error loading alerts:', err);
-        return of([] as SystemAlert[]);
-      }));
-
-    forkJoin([stats$, activity$, alerts$]).subscribe({
-      next: ([stats, activity, alerts]) => {
+    forkJoin([stats$, preview$]).subscribe({
+      next: ([stats, preview]) => {
         this.ngZone.run(() => {
           this.stats = stats;
-          this.recentActivity = activity;
-          this.systemAlerts = alerts;
+          this.totalItemTypesCount = Number(preview.totalItemTypesCount || 0);
+          this.inventoryValue = Number(preview.inventoryValue || 0);
+          this.sectionCards = Array.isArray(preview.sectionCards) ? preview.sectionCards : [];
+          this.expiryRows = Array.isArray(preview.expiryRows) ? preview.expiryRows : [];
+          this.recentTransactions = Array.isArray(preview.recentTransactions) ? preview.recentTransactions : [];
           this.loading = false;
           this.cdr.detectChanges();
         });
@@ -142,31 +184,45 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  getActionClass(action: string): string {
-    switch (action) {
-      case 'INSERT': return 'action-insert';
-      case 'UPDATE': return 'action-update';
-      case 'DELETE': return 'action-delete';
-      default: return '';
+  formatCompactPeso(value: number): string {
+    if (!Number.isFinite(value) || value <= 0) {
+      return 'P0';
     }
+
+    if (value >= 1000000) {
+      return `P${(value / 1000000).toFixed(1)}M`;
+    }
+
+    if (value >= 1000) {
+      return `P${(value / 1000).toFixed(1)}K`;
+    }
+
+    return `P${Math.round(value).toLocaleString()}`;
   }
 
-  getAlertClass(severity: string): string {
-    switch (severity) {
-      case 'critical': return 'alert-critical';
-      case 'warning': return 'alert-warning';
-      case 'info': return 'alert-info';
-      default: return '';
-    }
+  getAlertTone(daysLeft: number): 'critical' | 'warning' | 'safe' {
+    if (daysLeft <= 7) return 'critical';
+    if (daysLeft <= 14) return 'warning';
+    return 'safe';
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  getTxTone(type: string): 'in' | 'out' | 'other' {
+    const normalized = String(type || '').toUpperCase();
+    if (normalized === 'IN') return 'in';
+    if (normalized === 'OUT') return 'out';
+    return 'other';
+  }
+
+  get txTotalPages(): number {
+    return Math.max(1, Math.ceil(this.recentTransactions.length / this.txPerPage));
+  }
+
+  get pagedRecentTransactions(): DashboardTransactionRow[] {
+    const start = (this.txPage - 1) * this.txPerPage;
+    return this.recentTransactions.slice(start, start + this.txPerPage);
+  }
+
+  onTxPageChange(page: number): void {
+    this.txPage = page;
   }
 }
