@@ -79,3 +79,12 @@ img {
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
 }
+
+/* Short intro line under the global dashboard top bar (title lives in layout) */
+.page-intro {
+  margin: 0 0 18px;
+  color: #475569;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  max-width: 52rem;
+}
