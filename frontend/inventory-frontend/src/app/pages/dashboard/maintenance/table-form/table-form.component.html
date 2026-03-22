@@ -14,6 +14,15 @@
   </div>
 
   <form (ngSubmit)="onSubmit()" class="form-container">
+    <div class="message info-message" *ngIf="isTransactionTable()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      Quantity must be positive, unless adjustment uses a signed value. OUT/TRANSFER may require approval based on settings.
+    </div>
+
     <!-- Success Message -->
     <div class="message success-message" *ngIf="successMessage">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

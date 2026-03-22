@@ -90,6 +90,12 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   color: #047857;
 }
 
+.info-message {
+  background: rgba(29, 78, 216, 0.08);
+  border: 1px solid #1d4ed8;
+  color: #1e40af;
+}
+
 .error-message {
   background: rgba(220, 38, 38, 0.08);
   border: 1px solid $danger;

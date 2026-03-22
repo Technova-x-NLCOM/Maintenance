@@ -1,7 +1,10 @@
 import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { MaintenanceService } from '../../../../services/maintenance.service';
+import { ToastService } from '../../../../services/toast.service';
 import { 
   getFriendlyTableName as getTableName,
   getFriendlyColumnName as getColName,
@@ -32,10 +35,12 @@ export class TableFormComponent implements OnInit {
   enumValues: { [key: string]: string[] } = {};
   successMessage = '';
   errorMessage = '';
+  settingsMap: Record<string, string> = {};
 
   constructor(
     private api: MaintenanceService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -46,7 +51,14 @@ export class TableFormComponent implements OnInit {
       if (!this.isNew) {
         this.loadFormData();
       }
+      if (this.isTransactionTable()) {
+        this.loadTransactionPolicies();
+      }
     }
+  }
+
+  isTransactionTable(): boolean {
+    return this.selectedTable === 'inventory_transactions';
   }
 
   loadSchema(): void {
@@ -244,15 +256,39 @@ export class TableFormComponent implements OnInit {
       return;
     }
     
-    this.loading = true;
-    this.cdr.markForCheck();
     const payload = this.buildPayload();
 
+    if (this.isTransactionTable()) {
+      this.validateTransactionRules(payload).subscribe((validationError) => {
+        if (validationError) {
+          this.errorMessage = validationError;
+          this.loading = false;
+          this.cdr.markForCheck();
+          return;
+        }
+        this.submitPayload(payload);
+      });
+      return;
+    }
+
+    this.submitPayload(payload);
+  }
+
+  private submitPayload(payload: any): void {
+    if (!this.selectedTable) {
+      return;
+    }
+    const table = this.selectedTable;
+
+    this.loading = true;
+    this.cdr.markForCheck();
+
     if (this.isNew) {
-      this.api.createRow(this.selectedTable, payload).subscribe({
+      this.api.createRow(table, payload).subscribe({
         next: () => {
           this.loading = false;
           this.successMessage = 'Record created successfully!';
+          this.toastService.success(this.successMessage);
           setTimeout(() => {
             this.parent.goToTableListView();
           }, 1000);
@@ -260,6 +296,7 @@ export class TableFormComponent implements OnInit {
         error: (err) => {
           console.error('Error creating row:', err);
           this.errorMessage = 'Error creating record: ' + (err.error?.message || err.error?.error || 'Unknown error');
+          this.toastService.error(this.errorMessage);
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -278,10 +315,11 @@ export class TableFormComponent implements OnInit {
         return;
       }
       
-      this.api.updateRow(this.selectedTable, id, payload).subscribe({
+      this.api.updateRow(table, id, payload).subscribe({
         next: () => {
           this.loading = false;
           this.successMessage = 'Record updated successfully!';
+          this.toastService.success(this.successMessage);
           setTimeout(() => {
             this.parent.goToTableListView();
           }, 1000);
@@ -289,6 +327,7 @@ export class TableFormComponent implements OnInit {
         error: (err) => {
           console.error('Error updating row:', err);
           this.errorMessage = 'Error updating record: ' + (err.error?.message || err.error?.error || 'Unknown error');
+          this.toastService.error(this.errorMessage);
           this.loading = false;
           this.cdr.markForCheck();
         }
@@ -308,6 +347,89 @@ export class TableFormComponent implements OnInit {
       }
     });
     return payload;
+  }
+
+  private loadTransactionPolicies(): void {
+    this.api.listRows('system_settings', { page: 1, perPage: 200 }).pipe(
+      catchError(() => of({ data: [] }))
+    ).subscribe((response: any) => {
+      const settingsRows = Array.isArray(response?.data) ? response.data : [];
+      const map: Record<string, string> = {};
+      settingsRows.forEach((row: any) => {
+        const key = String(row.setting_key || '').toLowerCase();
+        if (key) {
+          map[key] = String(row.setting_value ?? '').toLowerCase();
+        }
+      });
+      this.settingsMap = map;
+    });
+  }
+
+  private validateTransactionRules(payload: any) {
+    const quantity = Number(payload.quantity || 0);
+    const txType = String(payload.transaction_type || '').toLowerCase();
+
+    if (!txType) {
+      return of('Transaction type is required.');
+    }
+
+    if (txType === 'adjustment') {
+      if (quantity === 0) {
+        return of('Adjustment quantity cannot be zero. Use a signed value.');
+      }
+    } else if (quantity <= 0) {
+      return of('Quantity must be greater than zero.');
+    }
+
+    const approvalRequired = this.getBooleanSetting(['approval_required_out_transfer', 'require_approval_out_transfer', 'approval_required']);
+    if (approvalRequired && (txType === 'out' || txType === 'transfer') && !payload.approved_by) {
+      return of('Approval is required for OUT/TRANSFER transactions.');
+    }
+
+    const allowNegativeStock = this.getBooleanSetting(['allow_negative_stock', 'negative_stock_allowed']);
+    if (allowNegativeStock || txType === 'in' || txType === 'adjustment') {
+      return of('');
+    }
+
+    const itemId = payload.item_id;
+    const batchId = payload.batch_id;
+    return this.checkStockAvailability(itemId, batchId, quantity, txType);
+  }
+
+  private checkStockAvailability(itemId: any, batchId: any, quantity: number, txType: string) {
+    if (!itemId) {
+      return of('Item is required for this transaction.');
+    }
+
+    return this.api.listRows('inventory_batches', { page: 1, perPage: 1000 }).pipe(
+      map((response: any) => {
+        const batchRows = Array.isArray(response?.data) ? response.data : [];
+        const available = batchId
+          ? batchRows
+              .filter((row: any) => String(row.batch_id) === String(batchId))
+              .reduce((sum: number, row: any) => sum + Number(row.quantity || 0), 0)
+          : batchRows
+              .filter((row: any) => String(row.item_id) === String(itemId))
+              .reduce((sum: number, row: any) => sum + Number(row.quantity || 0), 0);
+
+        if ((txType === 'out' || txType === 'transfer') && quantity > available) {
+          return `Insufficient stock. Available: ${available}, requested: ${quantity}.`;
+        }
+
+        return '';
+      }),
+      catchError(() => of('Unable to verify stock availability right now. Please try again.'))
+    );
+  }
+
+  private getBooleanSetting(keys: string[]): boolean {
+    for (const key of keys) {
+      const value = this.settingsMap[key];
+      if (value !== undefined) {
+        return ['1', 'true', 'yes', 'enabled', 'on'].includes(value);
+      }
+    }
+    return false;
   }
 
   goBack(): void {
