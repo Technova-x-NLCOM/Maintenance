@@ -25,7 +25,47 @@ export const roleGuard = (roles: ('super_admin' | 'inventory_manager')[]): CanAc
       return true;
     }
 
+    if (user) {
+      router.navigate(['/dashboard/unauthorized']);
+      return false;
+    }
+
     router.navigate(['/login']);
     return false;
   };
+};
+
+export const maintenanceTableGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  const user = authService.getCurrentUser();
+  if (!user) {
+    router.navigate(['/login']);
+    return false;
+  }
+
+  const table = String(route.params['table'] || '').toLowerCase();
+  if (user.role === 'super_admin') {
+    return true;
+  }
+
+  const restrictedTables = new Set([
+    'users',
+    'user_roles',
+    'roles',
+    'permissions',
+    'role_permissions',
+    'audit_log',
+    'system_settings',
+    'item_types',
+    'categories'
+  ]);
+
+  if (restrictedTables.has(table)) {
+    router.navigate(['/dashboard/unauthorized']);
+    return false;
+  }
+
+  return true;
 };
