@@ -1,7 +1,8 @@
-import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MaintenanceService, MaintenanceTableInfo } from '../../../../services/maintenance.service';
+import { TopbarActionService } from '../../../../services/topbar-action.service';
 import { 
   getFriendlyTableName, 
   getTableDescription
@@ -14,7 +15,7 @@ import {
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   @Input() parent: any;
   tables: MaintenanceTableInfo[] = [];
   loading = true;
@@ -23,11 +24,17 @@ export class HomeComponent implements OnInit {
   constructor(
     private api: MaintenanceService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private topbarAction: TopbarActionService
   ) {}
 
   ngOnInit(): void {
     this.loadTables();
+    this.topbarAction.setPrintHandler(() => window.print());
+  }
+
+  ngOnDestroy(): void {
+    this.topbarAction.setPrintHandler(null);
   }
 
   loadTables(): void {

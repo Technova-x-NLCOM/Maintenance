@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService, User } from '../../../services/auth.service';
@@ -14,9 +14,13 @@ import { filter } from 'rxjs/operators';
 })
 export class SidebarComponent implements OnInit {
   @Input() user: User | null = null;
+  @Input() isMobile = false;
+  @Input() mobileOpen = false;
+  @Output() navigateItem = new EventEmitter<void>();
   currentRole: Role | null = null;
   loadingRole = false;
   showLogoutModal = false;
+  alertsCount = 0;
 
   // Track which nav groups are open
   openGroups: Set<string> = new Set();
@@ -57,43 +61,35 @@ export class SidebarComponent implements OnInit {
     }
   }
 
+  onNavItemClick(): void {
+    if (this.isMobile) {
+      this.navigateItem.emit();
+    }
+  }
+
   isGroupOpen(group: string): boolean {
     return this.openGroups.has(group);
   }
 
+  /** Dashboard links to `/dashboard`, which redirects to role-specific home; `routerLinkActive` with exact match never stays active after redirect. */
+  isDashboardNavActive(): boolean {
+    const path = this.router.url.split('?')[0].replace(/\/$/, '') || '/';
+    return (
+      path === '/dashboard' ||
+      path === '/dashboard/super-admin' ||
+      path === '/dashboard/inventory-manager' ||
+      path === '/dashboard/profile'
+    );
+  }
+
   private expandGroupForCurrentRoute(url: string): void {
-    const inventoryTables = ['items', 'categories', 'item_types', 'inventory_batches', 'inventory_transactions', 'inventory_snapshots', 'expiry_alerts'];
-    const userTables = ['users', 'user_roles'];
-    const systemTables = ['audit_log'];
-
     if (
-      url.includes('/dashboard/inventory/items') ||
       url.includes('/dashboard/inventory/categories') ||
-      url.includes('/dashboard/inventory/minimum-stock') ||
-      url.includes('/dashboard/inventory/receiving') ||
-      url.includes('/dashboard/inventory/issuance')
+      url.includes('/dashboard/maintenance/items') ||
+      url.includes('/dashboard/maintenance/inventory_batches') ||
+      url.includes('/dashboard/maintenance/inventory_snapshots')
     ) {
-      this.openGroups.add('inventory-master-data');
-      return;
-    }
-
-    for (const t of inventoryTables) {
-      if (url.includes(`/maintenance/${t}`)) {
-        this.openGroups.add('inventory');
-        return;
-      }
-    }
-    for (const t of userTables) {
-      if (url.includes(`/maintenance/${t}`) || url.includes('/roles')) {
-        this.openGroups.add('users');
-        return;
-      }
-    }
-    for (const t of systemTables) {
-      if (url.includes(`/maintenance/${t}`) || url.includes('/settings')) {
-        this.openGroups.add('system');
-        return;
-      }
+      this.openGroups.add('inventory');
     }
   }
 
@@ -137,11 +133,13 @@ export class SidebarComponent implements OnInit {
   }
 
   hasPermission(permissionName: string): boolean {
-    if (this.loadingRole) {
-      return false;
-    }
+    // Super_admin always has permission
     if (this.user?.role === 'super_admin') {
       return true;
+    }
+    // For others, check if role is still loading
+    if (this.loadingRole) {
+      return false;
     }
     return this.rbacService.roleHasPermission(this.currentRole, permissionName);
   }
