@@ -2,20 +2,25 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { InventoryItemService, ReceivingItem, PaginatedReceivingItemsResponse, ReceivingTransactionResponse } from '../../services/inventory-item.service';
+import {
+  InventoryItemService,
+  ReceivingItem,
+  PaginatedReceivingItemsResponse,
+  ReceivingTransactionResponse,
+} from '../../services/inventory-item.service';
 
 @Component({
   selector: 'app-receiving-transaction',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './receiving-transaction.component.html',
-  styleUrls: ['./receiving-transaction.component.scss']
+  styleUrls: ['./receiving-transaction.component.scss'],
 })
 export class ReceivingTransactionComponent implements OnInit {
   // Items catalog and pagination
   receivingItems: ReceivingItem[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
-  
+
   currentPage = 1;
   lastPage = 1;
   perPage = 12;
@@ -60,7 +65,7 @@ export class ReceivingTransactionComponent implements OnInit {
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -79,43 +84,47 @@ export class ReceivingTransactionComponent implements OnInit {
       error: () => {
         this.categories = [];
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   loadReceivingItems(page: number = 1): void {
     this.loading = true;
-    this.itemService.getReceivingItems({
-      page,
-      per_page: this.perPage,
-      search: this.searchQuery || undefined,
-      category_id: this.selectedCategoryId || undefined
-    }).subscribe({
-      next: (response: PaginatedReceivingItemsResponse) => {
-        if (response.success) {
-          this.receivingItems = response.data.data;
-          this.currentPage = response.data.current_page;
-          this.lastPage = response.data.last_page;
+    this.itemService
+      .getReceivingItems({
+        page,
+        per_page: this.perPage,
+        search: this.searchQuery || undefined,
+        category_id: this.selectedCategoryId || undefined,
+      })
+      .subscribe({
+        next: (response: PaginatedReceivingItemsResponse) => {
+          if (response.success) {
+            this.receivingItems = response.data.data;
+            this.currentPage = response.data.current_page;
+            this.lastPage = response.data.last_page;
 
-          if (this.selectedItem) {
-            const refreshedSelected = this.receivingItems.find((item) => item.item_id === this.selectedItem?.item_id);
-            this.selectedItem = refreshedSelected || this.selectedItem;
-          }
+            if (this.selectedItem) {
+              const refreshedSelected = this.receivingItems.find(
+                (item) => item.item_id === this.selectedItem?.item_id,
+              );
+              this.selectedItem = refreshedSelected || this.selectedItem;
+            }
 
-          // Fallback: if receiving endpoint returns no rows, load from regular items API.
-          if (this.receivingItems.length === 0) {
-            this.loadReceivingItemsFallback(page);
-            return;
+            // Fallback: if receiving endpoint returns no rows, load from regular items API.
+            if (this.receivingItems.length === 0) {
+              this.loadReceivingItemsFallback(page);
+              return;
+            }
           }
-        }
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (error: any) => {
-        console.error('Error loading items:', error);
-        this.loadReceivingItemsFallback(page);
-      }
-    });
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (error: any) => {
+          console.error('Error loading items:', error);
+          this.loadReceivingItemsFallback(page);
+        },
+      });
   }
 
   private loadReceivingItemsFallback(page: number): void {
@@ -125,7 +134,7 @@ export class ReceivingTransactionComponent implements OnInit {
         per_page: this.perPage,
         search: this.searchQuery || undefined,
         category_id: this.selectedCategoryId || undefined,
-        is_active: true
+        is_active: true,
       })
       .subscribe({
         next: (response) => {
@@ -139,7 +148,7 @@ export class ReceivingTransactionComponent implements OnInit {
             shelf_life_days: item.shelf_life_days,
             image_url: item.image_url,
             current_stock: 0,
-            is_active: item.is_active
+            is_active: item.is_active,
           }));
           this.currentPage = response.data.current_page;
           this.lastPage = response.data.last_page;
@@ -150,7 +159,7 @@ export class ReceivingTransactionComponent implements OnInit {
           this.loading = false;
           this.showError('Failed to load items for receiving. Please try again.');
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -279,7 +288,7 @@ export class ReceivingTransactionComponent implements OnInit {
       supplier_info: this.supplierInfo || undefined,
       batch_value: this.batchValue || undefined,
       reason: this.reason || undefined,
-      notes: this.notes || undefined
+      notes: this.notes || undefined,
     };
 
     this.itemService.createReceivingTransaction(payload).subscribe({
@@ -299,10 +308,10 @@ export class ReceivingTransactionComponent implements OnInit {
       error: (error: any) => {
         console.error('Error creating receiving transaction:', error);
         this.showError(
-          error.error?.message || 'Failed to record receiving transaction. Please try again.'
+          error.error?.message || 'Failed to record receiving transaction. Please try again.',
         );
         this.saving = false;
-      }
+      },
     });
   }
 
