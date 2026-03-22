@@ -119,6 +119,15 @@ class TableListController extends Controller
             });
         }
 
+        // Apply configurable expiry window for expiry alerts table.
+        if ($table === 'expiry_alerts') {
+            $expiryAlertDays = $this->getExpiryAlertDays();
+            $query->where(function ($q) use ($expiryAlertDays) {
+                $q->whereNull('days_until_expiry')
+                    ->orWhere('days_until_expiry', '<=', $expiryAlertDays);
+            });
+        }
+
         // Sort descending by primary key to show latest first
         if (is_string($pk)) {
             $query->orderBy($pk, 'desc');
@@ -235,6 +244,20 @@ class TableListController extends Controller
     {
         if (!array_key_exists($table, $this->tables)) {
             abort(404, 'Table not allowed');
+        }
+    }
+
+    private function getExpiryAlertDays(): int
+    {
+        try {
+            $value = DB::table('system_settings')
+                ->where('setting_key', 'expiry_alert_days')
+                ->value('setting_value');
+
+            $days = (int) $value;
+            return $days > 0 ? $days : 30;
+        } catch (\Throwable $e) {
+            return 30;
         }
     }
 
