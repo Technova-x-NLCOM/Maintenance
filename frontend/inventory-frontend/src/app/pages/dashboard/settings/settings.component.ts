@@ -1,7 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { MaintenanceService } from '../../../services/maintenance.service';
+import { ToastService } from '../../../services/toast.service';
+import { TopbarActionService } from '../../../services/topbar-action.service';
 
 interface SystemSetting {
   setting_id: number;
@@ -12,6 +16,16 @@ interface SystemSetting {
   updated_at: string;
 }
 
+interface SettingField {
+  key: string;
+  label: string;
+  hint: string;
+  type: 'number' | 'boolean';
+  value: string | number | boolean;
+  setting_id?: number;
+  dirty?: boolean;
+}
+
 @Component({
   selector: 'app-settings',
   standalone: true,
@@ -19,86 +33,175 @@ interface SystemSetting {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, OnDestroy {
   settings: SystemSetting[] = [];
+  fields: SettingField[] = [
+    {
+      key: 'expiry_alert_days',
+      label: 'Expiry Alert Days',
+      hint: 'Alert when item will expire within this many days',
+      type: 'number',
+      value: 30
+    },
+    {
+      key: 'low_stock_threshold',
+      label: 'Low Stock Threshold (%)',
+      hint: 'Show warning when qty falls below this % of reorder level',
+      type: 'number',
+      value: 20
+    },
+    {
+      key: 'require_approval_out_transactions',
+      label: 'Require Approval for OUT Transactions',
+      hint: 'OUT transactions must be approved by an Admin before processing',
+      type: 'boolean',
+      value: true
+    },
+    {
+      key: 'require_approval_transfer_transactions',
+      label: 'Require Approval for TRANSFER Transactions',
+      hint: 'Transfer transactions must be approved by an Admin',
+      type: 'boolean',
+      value: false
+    },
+    {
+      key: 'auto_create_monthly_snapshots',
+      label: 'Auto-create Monthly Snapshots',
+      hint: 'Automatically save inventory snapshot on the 1st of each month',
+      type: 'boolean',
+      value: true
+    }
+  ];
+
   loading = false;
   error: string | null = null;
-  editingKey: string | null = null;
-  editValue: string = '';
   saving = false;
-  saveError: string | null = null;
-  saveSuccess: string | null = null;
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api/settings';
-
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private maintenanceService: MaintenanceService,
+    private toastService: ToastService,
+    private cdr: ChangeDetectorRef,
+    private topbarAction: TopbarActionService
+  ) {}
 
   ngOnInit(): void {
     this.loadSettings();
+    this.topbarAction.setPrintHandler(() => window.print());
   }
 
-  private authHeaders(): HttpHeaders {
-    const token = localStorage.getItem('access_token');
-    return new HttpHeaders({ Authorization: token ? `Bearer ${token}` : '' });
+  ngOnDestroy(): void {
+    this.topbarAction.setPrintHandler(null);
   }
 
   loadSettings(): void {
     this.loading = true;
     this.error = null;
-    this.http.get<SystemSetting[]>(this.API_URL, { headers: this.authHeaders() }).subscribe({
-      next: (data) => {
-        this.settings = data;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
+
+    this.maintenanceService.listRows('system_settings', { page: 1, perPage: 200 }).pipe(
+      catchError((err) => {
         this.error = err?.error?.message || 'Failed to load settings.';
+        return of({ data: [] });
+      })
+    ).subscribe({
+      next: (response: any) => {
+        this.settings = Array.isArray(response?.data) ? response.data : [];
+        this.mapFieldsFromSettings();
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
   }
 
-  startEdit(setting: SystemSetting): void {
-    this.editingKey = setting.setting_key;
-    this.editValue = setting.setting_value;
-    this.saveError = null;
-    this.saveSuccess = null;
-  }
+  saveSettings(): void {
+    if (this.saving) {
+      return;
+    }
 
-  cancelEdit(): void {
-    this.editingKey = null;
-    this.editValue = '';
-    this.saveError = null;
-  }
+    const changed = this.fields.filter(field => field.dirty);
+    if (!changed.length) {
+      this.toastService.info('No changes to save.');
+      return;
+    }
 
-  save(setting: SystemSetting): void {
-    if (this.saving) return;
     this.saving = true;
-    this.saveError = null;
-    this.saveSuccess = null;
-    this.http
-      .put<SystemSetting>(`${this.API_URL}/${setting.setting_key}`, { setting_value: this.editValue }, { headers: this.authHeaders() })
-      .subscribe({
-        next: (updated) => {
-          const idx = this.settings.findIndex(s => s.setting_key === setting.setting_key);
-          if (idx !== -1) this.settings[idx] = updated;
-          this.editingKey = null;
-          this.editValue = '';
-          this.saving = false;
-          this.saveSuccess = `"${this.formatKey(setting.setting_key)}" updated successfully.`;
-          setTimeout(() => { this.saveSuccess = null; this.cdr.detectChanges(); }, 3000);
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          this.saveError = err?.error?.message || 'Failed to save setting.';
-          this.saving = false;
-          this.cdr.detectChanges();
-        }
+
+    const requests = changed.map(field => {
+      const value = field.type === 'boolean' ? (field.value ? '1' : '0') : String(field.value ?? '');
+
+      if (field.setting_id) {
+        return this.maintenanceService.updateRow('system_settings', field.setting_id, {
+          setting_value: value
+        });
+      }
+
+      return this.maintenanceService.createRow('system_settings', {
+        setting_key: field.key,
+        setting_value: value,
+        description: field.hint
       });
+    });
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.saving = false;
+        this.toastService.success('Settings saved successfully.');
+        this.fields.forEach(field => {
+          field.dirty = false;
+        });
+        this.loadSettings();
+      },
+      error: (err) => {
+        this.saving = false;
+        this.toastService.error(err?.error?.message || 'Failed to save settings.');
+      }
+    });
   }
 
-  formatKey(key: string): string {
-    return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  onNumberChange(field: SettingField, value: string): void {
+    field.value = Number(value || 0);
+    field.dirty = true;
+  }
+
+  onToggleChange(field: SettingField): void {
+    field.value = !Boolean(field.value);
+    field.dirty = true;
+  }
+
+  get alertsFields(): SettingField[] {
+    return this.fields.filter(field => field.key.includes('expiry') || field.key.includes('stock'));
+  }
+
+  get approvalFields(): SettingField[] {
+    return this.fields.filter(field => field.key.includes('approval'));
+  }
+
+  get snapshotFields(): SettingField[] {
+    return this.fields.filter(field => field.key.includes('snapshot'));
+  }
+
+  private mapFieldsFromSettings(): void {
+    const byKey = new Map<string, SystemSetting>();
+    this.settings.forEach(setting => {
+      byKey.set(String(setting.setting_key || '').toLowerCase(), setting);
+    });
+
+    this.fields = this.fields.map(field => {
+      const setting = byKey.get(field.key);
+      if (!setting) {
+        return { ...field, setting_id: undefined, dirty: false };
+      }
+
+      const raw = String(setting.setting_value ?? '');
+      const value = field.type === 'boolean'
+        ? raw.toLowerCase() === '1' || raw.toLowerCase() === 'true'
+        : Number(raw || 0);
+
+      return {
+        ...field,
+        setting_id: setting.setting_id,
+        value,
+        dirty: false
+      };
+    });
   }
 }

@@ -1,63 +1,60 @@
 <div class="settings-page">
-  <header class="page-header">
-    <div class="page-titles">
-      <p class="eyebrow">Configuration</p>
-      <h2>System Settings</h2>
-      <p class="subtitle">Configure system-wide operational parameters.</p>
-    </div>
-    <div class="header-actions">
-      <button class="ghost" (click)="loadSettings()" [disabled]="loading">Refresh</button>
-    </div>
-  </header>
-
-  <div *ngIf="saveSuccess" class="state state-success">{{ saveSuccess }}</div>
   <div *ngIf="loading" class="state state-loading">Loading settings...</div>
   <div *ngIf="error" class="state state-error">{{ error }}</div>
 
-  <div *ngIf="!loading && !error" class="settings-list">
-    <div
-      class="setting-card"
-      *ngFor="let setting of settings"
-      [class.editing]="editingKey === setting.setting_key"
-    >
-      <div class="setting-header">
-        <div class="setting-info">
-          <h3>{{ formatKey(setting.setting_key) }}</h3>
-          <p class="setting-key">{{ setting.setting_key }}</p>
-          <p class="setting-desc" *ngIf="setting.description">{{ setting.description }}</p>
+  <div *ngIf="!loading && !error" class="settings-card">
+    <h3 class="card-title">System Settings</h3>
+
+    <section class="section">
+      <h4>Alerts &amp; Thresholds</h4>
+      <div class="setting-row" *ngFor="let field of alertsFields">
+        <div>
+          <p class="label">{{ field.label }}</p>
+          <p class="hint">{{ field.hint }}</p>
         </div>
-        <div class="setting-actions">
-          <button
-            *ngIf="editingKey !== setting.setting_key"
-            class="ghost"
-            (click)="startEdit(setting)"
-          >
-            Edit
-          </button>
-          <div *ngIf="editingKey === setting.setting_key" class="edit-actions">
-            <button class="ghost" (click)="cancelEdit()" [disabled]="saving">Cancel</button>
-            <button class="primary" (click)="save(setting)" [disabled]="saving">
-              {{ saving ? 'Saving...' : 'Save' }}
-            </button>
-          </div>
+        <div class="control">
+          <input
+            *ngIf="field.type === 'number'"
+            type="number"
+            [ngModel]="field.value"
+            (ngModelChange)="onNumberChange(field, $event)"
+          />
         </div>
       </div>
+    </section>
 
-      <div class="setting-value-row">
-        <span *ngIf="editingKey !== setting.setting_key" class="setting-value">
-          {{ setting.setting_value }}
-        </span>
-        <input
-          *ngIf="editingKey === setting.setting_key"
-          class="setting-input"
-          [(ngModel)]="editValue"
-          [placeholder]="setting.setting_value"
-        />
+    <section class="section">
+      <h4>Approval Settings</h4>
+      <div class="setting-row" *ngFor="let field of approvalFields">
+        <div>
+          <p class="label">{{ field.label }}</p>
+          <p class="hint">{{ field.hint }}</p>
+        </div>
+        <div class="control">
+          <label class="switch">
+            <input type="checkbox" [checked]="!!field.value" (change)="onToggleChange(field)" />
+            <span></span>
+          </label>
+        </div>
       </div>
+    </section>
 
-      <p *ngIf="editingKey === setting.setting_key && saveError" class="save-error">
-        {{ saveError }}
-      </p>
-    </div>
+    <section class="section">
+      <h4>Monthly Snapshots</h4>
+      <div class="setting-row" *ngFor="let field of snapshotFields">
+        <div>
+          <p class="label">{{ field.label }}</p>
+          <p class="hint">{{ field.hint }}</p>
+        </div>
+        <div class="control">
+          <label class="switch">
+            <input type="checkbox" [checked]="!!field.value" (change)="onToggleChange(field)" />
+            <span></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <button class="save-btn" [disabled]="saving" (click)="saveSettings()">{{ saving ? 'Saving...' : 'Save Settings' }}</button>
   </div>
 </div>
