@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Maintenance;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Arr;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Database\QueryException;
 
 class TableFormController extends Controller
 {
@@ -24,6 +26,9 @@ class TableFormController extends Controller
     public function create(Request $request, string $table): JsonResponse
     {
         $this->assertAllowedTable($table);
+        if ($table === 'users') {
+            return $this->createUserRow($request);
+        }
         $data = $this->sanitizePayload($table, $request->all());
         // Ensure timestamps are set when columns exist
         if (Schema::hasColumn($table, 'created_at') && !array_key_exists('created_at', $data)) {
@@ -55,6 +60,9 @@ class TableFormController extends Controller
     public function update(Request $request, string $table, $id): JsonResponse
     {
         $this->assertAllowedTable($table);
+        if ($table === 'users') {
+            return $this->updateUserRow($request, $id);
+        }
         $pk = $this->tables[$table]['primary_key'];
         $data = $this->sanitizePayload($table, $request->all());
         
@@ -118,6 +126,131 @@ class TableFormController extends Controller
         unset($filtered['deleted_at']);
         
         return $filtered;
+    }
+
+    /**
+     * Users: password must be hashed; role lives in user_roles, not users.role (column removed).
+     */
+    private function createUserRow(Request $request): JsonResponse
+    {
+        $password = $request->input('password');
+        if (!is_string($password) || trim($password) === '') {
+            return response()->json(['message' => 'Password is required for new users.'], 422);
+        }
+
+        $roleName = $this->normalizeUserRoleName($request->input('role'));
+        $input = $request->all();
+        $input['password_hash'] = Hash::make($password);
+        unset($input['password']);
+
+        $data = $this->sanitizePayload('users', $input);
+        if (empty($data['password_hash'])) {
+            return response()->json(['message' => 'Could not set password.'], 422);
+        }
+
+        if (Schema::hasColumn('users', 'created_at') && !array_key_exists('created_at', $data)) {
+            $data['created_at'] = now();
+        }
+        if (Schema::hasColumn('users', 'updated_at') && !array_key_exists('updated_at', $data)) {
+            $data['updated_at'] = now();
+        }
+
+        try {
+            $id = DB::table('users')->insertGetId($data);
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Duplicate') || str_contains($msg, 'UNIQUE')) {
+                return response()->json(['message' => 'Username or email is already taken.'], 422);
+            }
+            \Log::error('User create failed: ' . $msg);
+            return response()->json(['message' => 'Could not create user.'], 500);
+        }
+
+        $roleId = DB::table('roles')->where('role_name', $roleName)->value('role_id');
+        if ($roleId) {
+            DB::table('user_roles')->insert([
+                'user_id' => $id,
+                'role_id' => $roleId,
+                'is_primary' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $auditPayload = $data;
+        unset($auditPayload['password_hash']);
+        $this->logAudit('users', $id, 'INSERT', null, $auditPayload, $request);
+
+        return response()->json(['id' => $id], 201);
+    }
+
+    private function updateUserRow(Request $request, $id): JsonResponse
+    {
+        $pk = $this->tables['users']['primary_key'];
+        $input = $request->all();
+
+        $password = $request->input('password');
+        if (is_string($password) && trim($password) !== '') {
+            $input['password_hash'] = Hash::make($password);
+        } else {
+            unset($input['password_hash']);
+        }
+        unset($input['password']);
+
+        $data = $this->sanitizePayload('users', $input);
+        if (!is_string($password) || trim($password) === '') {
+            unset($data['password_hash']);
+        }
+
+        $oldValues = (array) DB::table('users')->where($pk, $id)->first();
+        if (empty($oldValues)) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        if (Schema::hasColumn('users', 'updated_at')) {
+            $data['updated_at'] = now();
+        }
+
+        try {
+            DB::table('users')->where($pk, $id)->update($data);
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Duplicate') || str_contains($msg, 'UNIQUE')) {
+                return response()->json(['message' => 'Username or email is already taken.'], 422);
+            }
+            \Log::error('User update failed: ' . $msg);
+            return response()->json(['message' => 'Could not update user.'], 500);
+        }
+
+        $roleName = $request->has('role') ? $this->normalizeUserRoleName($request->input('role')) : null;
+        if ($roleName !== null) {
+            $roleId = DB::table('roles')->where('role_name', $roleName)->value('role_id');
+            if ($roleId) {
+                DB::table('user_roles')->where('user_id', $id)->delete();
+                DB::table('user_roles')->insert([
+                    'user_id' => $id,
+                    'role_id' => $roleId,
+                    'is_primary' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        $auditPayload = $data;
+        unset($auditPayload['password_hash']);
+        $this->logAudit('users', $id, 'UPDATE', $oldValues, $auditPayload, $request);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    private function normalizeUserRoleName(mixed $role): string
+    {
+        $name = is_string($role) ? strtolower(trim($role)) : '';
+        if ($name === 'super_admin') {
+            return 'super_admin';
+        }
+        return 'inventory_manager';
     }
 
     /**
