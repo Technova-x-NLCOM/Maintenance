@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\ItemTypeController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
 
 Route::get('/', function () {
@@ -72,6 +73,7 @@ Route::prefix('api/super-admin')
     ->group(function () {
         Route::middleware(['auth:api'])->group(function () {
             Route::get('stats', [\App\Http\Controllers\SuperAdminController::class, 'stats']);
+            Route::get('dashboard-preview', [\App\Http\Controllers\SuperAdminController::class, 'dashboardPreview']);
             Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity']);
             Route::get('alerts', [\App\Http\Controllers\SuperAdminController::class, 'alerts']);
             Route::post('alerts/{alertId}/acknowledge', [\App\Http\Controllers\SuperAdminController::class, 'acknowledgeAlert']);
@@ -85,6 +87,7 @@ Route::prefix('api/inventory-manager')
     ->group(function () {
         Route::middleware(['auth:api'])->group(function () {
             Route::get('stats', [\App\Http\Controllers\InventoryManagerController::class, 'stats']);
+            Route::get('dashboard-preview', [\App\Http\Controllers\InventoryManagerController::class, 'dashboardPreview']);
             Route::get('activity', [\App\Http\Controllers\InventoryManagerController::class, 'activity']);
             Route::get('alerts', [\App\Http\Controllers\InventoryManagerController::class, 'alerts']);
         });
@@ -123,6 +126,16 @@ Route::prefix('api/inventory/categories')
             Route::post('/', [CategoryController::class, 'store']);
             Route::put('{categoryId}', [CategoryController::class, 'update']);
             Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+        });
+    });
+
+// Item types (for category setup and item registration)
+Route::prefix('api/inventory/item-types')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_categories'])->group(function () {
+            Route::get('/', [ItemTypeController::class, 'index']);
+            Route::post('/', [ItemTypeController::class, 'store']);
         });
     });
 
