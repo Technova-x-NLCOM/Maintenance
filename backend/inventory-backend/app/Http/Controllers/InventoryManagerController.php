@@ -8,12 +8,98 @@ use Illuminate\Support\Facades\DB;
 class InventoryManagerController extends Controller
 {
     /**
+     * Fast dashboard preview payload for UI cards/lists.
+     */
+    public function dashboardPreview()
+    {
+        try {
+            $expiryAlertDays = $this->getExpiryAlertDays();
+            $totalItemTypes = DB::table('item_types')->count();
+
+            $inventoryValue = (float) DB::table('inventory_batches as ib')
+                ->join('items as i', 'ib.item_id', '=', 'i.item_id')
+                ->where('ib.status', 'active')
+                ->selectRaw('COALESCE(SUM(ib.quantity * COALESCE(i.unit_value, 0)), 0) as total_value')
+                ->value('total_value');
+
+            $sectionCards = DB::table('item_types as it')
+                ->leftJoin('items as i', function ($join) {
+                    $join->on('it.item_type_id', '=', 'i.item_type_id')
+                        ->where('i.is_active', 1);
+                })
+                ->select(
+                    'it.type_name',
+                    DB::raw('COUNT(i.item_id) as item_count')
+                )
+                ->groupBy('it.item_type_id', 'it.type_name')
+                ->orderByDesc('item_count')
+                ->limit(8)
+                ->get()
+                ->map(function ($row) {
+                    return [
+                        'title' => ucwords(str_replace('_', ' ', $row->type_name ?? 'Uncategorized')),
+                        'count' => (int) $row->item_count,
+                        'subtitle' => ((int) $row->item_count === 1) ? 'item' : 'items',
+                    ];
+                })
+                ->values();
+
+            $expiryRows = DB::table('expiry_alerts as ea')
+                ->join('inventory_batches as ib', 'ea.batch_id', '=', 'ib.batch_id')
+                ->join('items as i', 'ib.item_id', '=', 'i.item_id')
+                ->where('ea.status', 'pending')
+                ->where('ea.days_until_expiry', '<=', $expiryAlertDays)
+                ->select(
+                    'i.item_description as itemName',
+                    DB::raw("CONCAT('Batch #', COALESCE(ib.batch_number, ea.batch_id)) as batchLabel"),
+                    DB::raw('COALESCE(ea.days_until_expiry, 0) as daysLeft')
+                )
+                ->orderBy('ea.days_until_expiry', 'asc')
+                ->limit(4)
+                ->get();
+
+            $recentTransactions = DB::table('inventory_transactions as tx')
+                ->leftJoin('items as i', 'tx.item_id', '=', 'i.item_id')
+                ->leftJoin('users as u', 'tx.performed_by', '=', 'u.user_id')
+                ->select(
+                    DB::raw("DATE_FORMAT(tx.transaction_date, '%b %e') as dateLabel"),
+                    DB::raw('COALESCE(i.item_description, CONCAT("Item #", tx.item_id)) as itemName'),
+                    DB::raw('UPPER(tx.transaction_type) as type'),
+                    DB::raw('CONCAT(FORMAT(COALESCE(tx.quantity, 0), 0), " pcs") as quantityLabel'),
+                    DB::raw('COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.first_name, ""), " ", COALESCE(u.last_name, ""))), ""), CONCAT("User #", tx.performed_by)) as performedBy'),
+                    DB::raw('COALESCE(tx.destination, "N/A") as destination')
+                )
+                ->orderByDesc('tx.transaction_date')
+                ->limit(5)
+                ->get();
+
+            return response()->json([
+                'totalItemTypesCount' => $totalItemTypes,
+                'inventoryValue' => $inventoryValue,
+                'sectionCards' => $sectionCards,
+                'expiryRows' => $expiryRows,
+                'recentTransactions' => $recentTransactions,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'totalItemTypesCount' => 0,
+                'inventoryValue' => 0,
+                'sectionCards' => [],
+                'expiryRows' => [],
+                'recentTransactions' => [],
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get dashboard statistics for inventory manager
      * Inventory manager sees comprehensive inventory stats and can manage all inventory operations
      */
     public function stats()
     {
         try {
+            $expiryAlertDays = $this->getExpiryAlertDays();
             $user = auth('api')->user();
             
             // Total active items
@@ -59,6 +145,7 @@ class InventoryManagerController extends Controller
             // Pending alerts
             $pendingAlerts = DB::table('expiry_alerts')
                 ->where('status', 'pending')
+                ->where('days_until_expiry', '<=', $expiryAlertDays)
                 ->count();
 
             // Total categories
@@ -70,7 +157,8 @@ class InventoryManagerController extends Controller
                 $expiringItems = DB::table('inventory_batches')
                     ->where('status', 'active')
                     ->whereNotNull('expiry_date')
-                    ->whereRaw('expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)')
+                    ->whereDate('expiry_date', '>=', now()->toDateString())
+                    ->whereDate('expiry_date', '<=', now()->addDays($expiryAlertDays)->toDateString())
                     ->count();
             } catch (\Exception $e) {
                 $expiringItems = 0;
@@ -142,6 +230,7 @@ class InventoryManagerController extends Controller
      */
     public function alerts()
     {
+        $expiryAlertDays = $this->getExpiryAlertDays();
         $alerts = [];
 
         // Expiry alerts
@@ -149,6 +238,7 @@ class InventoryManagerController extends Controller
             ->join('inventory_batches as ib', 'ea.batch_id', '=', 'ib.batch_id')
             ->join('items as i', 'ib.item_id', '=', 'i.item_id')
             ->where('ea.status', 'pending')
+            ->where('ea.days_until_expiry', '<=', $expiryAlertDays)
             ->select(
                 'ea.alert_id',
                 DB::raw("'expiry' as type"),
@@ -222,5 +312,19 @@ class InventoryManagerController extends Controller
         });
 
         return response()->json(array_slice($alerts, 0, 15));
+    }
+
+    private function getExpiryAlertDays(): int
+    {
+        try {
+            $value = DB::table('system_settings')
+                ->where('setting_key', 'expiry_alert_days')
+                ->value('setting_value');
+
+            $days = (int) $value;
+            return $days > 0 ? $days : 30;
+        } catch (\Throwable $e) {
+            return 30;
+        }
     }
 }
