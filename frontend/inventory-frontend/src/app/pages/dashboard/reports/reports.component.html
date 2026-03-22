@@ -1,0 +1,181 @@
+<div class="reports-page">
+  <div class="tabs-container">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'current'" (click)="setTab('current')">
+      Current Inventory
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'near-expiry'" (click)="setTab('near-expiry')">
+      Near Expiry Report
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'snapshots'" (click)="setTab('snapshots')">
+      Snapshot History
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">Loading reports…</div>
+
+  <ng-container *ngIf="!loading">
+    <ng-container *ngIf="activeTab === 'current'">
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <h2>{{ totalItemTypes }}</h2>
+          <p>Total Item Types</p>
+        </article>
+        <article class="kpi-card">
+          <h2>{{ formatCurrency(totalInventoryValue) }}</h2>
+          <p>Total Inventory Value</p>
+        </article>
+        <article class="kpi-card">
+          <h2>{{ itemsBelowReorder }}</h2>
+          <p>Items Below Reorder</p>
+        </article>
+      </div>
+
+      <section class="report-card">
+        <div class="card-header">
+          <h3>Current Inventory Report</h3>
+          <div class="actions">
+            <button type="button" class="btn-outline" (click)="printCurrentView()">Print</button>
+            <button type="button" class="btn-outline" (click)="exportCurrentView()">Export</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ITEM CODE</th>
+                <th>DESCRIPTION</th>
+                <th>TYPE</th>
+                <th>TOTAL QTY</th>
+                <th>UNIT VALUE</th>
+                <th>TOTAL VALUE</th>
+                <th>NEAREST EXPIRY</th>
+                <th>STOCK HEALTH</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of pagedCurrentRows">
+                <td>{{ row.itemCode }}</td>
+                <td>{{ row.description }}</td>
+                <td><span class="type-chip">{{ row.type }}</span></td>
+                <td>{{ row.totalQty | number }}</td>
+                <td>{{ formatCurrency(row.unitValue) }}</td>
+                <td>{{ formatCurrency(row.totalValue) }}</td>
+                <td [class.expiry-critical]="row.stockHealthClass === 'critical'">{{ row.nearestExpiry }}</td>
+                <td>
+                  <div class="stock-bar">
+                    <span
+                      class="stock-fill"
+                      [class.stock-warning]="row.stockHealthClass === 'warning'"
+                      [class.stock-critical]="row.stockHealthClass === 'critical'"
+                      [style.width.%]="row.stockHealthPct">
+                    </span>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="!currentInventoryRows.length">
+                <td colspan="8" class="empty">No current inventory data available.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <app-pagination
+          *ngIf="currentInventoryRows.length > 0"
+          [currentPage]="pageCurrent"
+          [totalPages]="totalPagesCurrent"
+          [hideWhenSinglePage]="false"
+          (pageChange)="onPageCurrentChange($event)"
+        />
+      </section>
+    </ng-container>
+
+    <section *ngIf="activeTab === 'near-expiry'" class="report-card">
+      <div class="card-header">
+        <h3>Near Expiry Report</h3>
+      </div>
+
+      <div *ngIf="detailLoading" class="loading-state tab-loading">Loading near-expiry data...</div>
+
+      <div class="table-wrap" *ngIf="!detailLoading">
+        <table>
+          <thead>
+            <tr>
+              <th>DAYS LEFT</th>
+              <th>ITEM</th>
+              <th>BATCH #</th>
+              <th>QTY</th>
+              <th>EXPIRY DATE</th>
+              <th>VALUE AT RISK</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of pagedNearExpiryRows">
+              <td class="days-left">{{ row.daysLeft }}</td>
+              <td class="item-bold">{{ row.item }}</td>
+              <td>{{ row.batchNumber }}</td>
+              <td>{{ row.qty }}</td>
+              <td class="expiry-critical">{{ row.expiryDate }}</td>
+              <td>{{ formatCurrency(row.valueAtRisk) }}</td>
+            </tr>
+            <tr *ngIf="!nearExpiryRows.length">
+              <td colspan="6" class="empty">No near-expiry records found.</td>
+            </tr>
+          </tbody>
+        </table>
+        <app-pagination
+          *ngIf="!detailLoading && nearExpiryRows.length > 0"
+          [currentPage]="pageNear"
+          [totalPages]="totalPagesNear"
+          [hideWhenSinglePage]="false"
+          (pageChange)="onPageNearChange($event)"
+        />
+      </div>
+    </section>
+
+    <section *ngIf="activeTab === 'snapshots'" class="report-card">
+      <div class="card-header">
+        <h3>Inventory Snapshots</h3>
+        <div class="actions">
+          <button type="button" class="btn-primary" (click)="openSnapshotTable()">Create Snapshot</button>
+        </div>
+      </div>
+
+      <div *ngIf="detailLoading" class="loading-state tab-loading">Loading snapshot history...</div>
+
+      <div class="table-wrap" *ngIf="!detailLoading">
+        <table>
+          <thead>
+            <tr>
+              <th>SNAPSHOT DATE</th>
+              <th>ITEM</th>
+              <th>TYPE</th>
+              <th>QTY ON DATE</th>
+              <th>CREATED BY</th>
+              <th>NOTES</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of pagedSnapshotRows">
+              <td class="item-bold">{{ row.snapshotDate }}</td>
+              <td>{{ row.item }}</td>
+              <td>{{ row.type }}</td>
+              <td>{{ row.qtyOnDate }}</td>
+              <td>{{ row.createdBy }}</td>
+              <td class="notes">{{ row.notes }}</td>
+            </tr>
+            <tr *ngIf="!snapshotRows.length">
+              <td colspan="6" class="empty">No snapshot history available.</td>
+            </tr>
+          </tbody>
+        </table>
+        <app-pagination
+          *ngIf="!detailLoading && snapshotRows.length > 0"
+          [currentPage]="pageSnap"
+          [totalPages]="totalPagesSnap"
+          [hideWhenSinglePage]="false"
+          (pageChange)="onPageSnapChange($event)"
+        />
+      </div>
+    </section>
+  </ng-container>
+</div>
