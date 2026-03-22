@@ -1,11 +1,5 @@
 <div class="items-page">
-  <header class="page-header">
-    <div class="header-text">
-      <p class="eyebrow">Inventory Master Data</p>
-      <h1 class="page-title">Item Registration & Updates</h1>
-      <p class="subtitle">Add or edit items here. Click <strong>Add new item</strong> to create one, or <strong>Edit</strong> on a row to update.</p>
-    </div>
-  </header>
+  <p class="page-intro">Add or edit items here. Click <strong>Add new item</strong> to create one, or <strong>Edit</strong> on a row to update.</p>
 
   <div *ngIf="errorMessage" class="alert alert-error">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -162,6 +156,7 @@
         <thead>
           <tr>
             <th>Code</th>
+            <th>Image</th>
             <th>Description</th>
             <th>Type</th>
             <th>Category</th>
@@ -173,6 +168,14 @@
         <tbody>
           <tr *ngFor="let item of items">
             <td><span class="cell-code">{{ item.item_code }}</span></td>
+            <td>
+              <div class="list-item-image" *ngIf="item.image_url; else noListImage">
+                <img [src]="item.image_url" [alt]="item.item_description" />
+              </div>
+              <ng-template #noListImage>
+                <span class="list-item-no-image">No image</span>
+              </ng-template>
+            </td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.item_type_name || '—' }}</td>
             <td>{{ item.category_name || '—' }}</td>
@@ -190,16 +193,17 @@
             </td>
           </tr>
           <tr *ngIf="items.length === 0">
-            <td colspan="7" class="empty">No items found.</td>
+            <td colspan="8" class="empty">No items found.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="pagination" *ngIf="!loading && totalPages > 1">
-      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
-    </div>
+    <app-pagination
+      *ngIf="!loading"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    />
   </section>
 </div>

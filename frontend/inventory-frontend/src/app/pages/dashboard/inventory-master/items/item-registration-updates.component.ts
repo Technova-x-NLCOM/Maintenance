@@ -6,11 +6,12 @@ import {
   InventoryItemService,
   ItemFormOptions
 } from '../../../../services/inventory-item.service';
+import { PaginationComponent } from '../../../../components/pagination/pagination.component';
 
 @Component({
   selector: 'app-item-registration-updates',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './item-registration-updates.component.html',
   styleUrls: ['./item-registration-updates.component.scss']
 })
@@ -279,16 +280,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     });
   }
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.loadItems(this.currentPage - 1);
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.loadItems(this.currentPage + 1);
-    }
+  onPageChange(page: number): void {
+    this.loadItems(page);
   }
 
   private nullIfEmpty(value: string): string | null {

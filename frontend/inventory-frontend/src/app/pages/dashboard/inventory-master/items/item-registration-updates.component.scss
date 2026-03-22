@@ -384,6 +384,31 @@ tr:hover td { background: rgba(37, 99, 235, 0.04); }
   color: $primary;
 }
 
+.list-item-image {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  border: 1px solid $border;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.list-item-no-image {
+  color: $text-muted;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
 .actions {
   display: flex;
   gap: 8px;
