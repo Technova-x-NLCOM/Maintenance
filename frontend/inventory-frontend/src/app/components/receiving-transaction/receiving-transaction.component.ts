@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { InventoryItemService, ReceivingItem, PaginatedReceivingItemsResponse, ReceivingTransactionResponse } from '../../services/inventory-item.service';
+import { PaginationComponent } from '../pagination/pagination.component';
 
 @Component({
   selector: 'app-receiving-transaction',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './receiving-transaction.component.html',
   styleUrls: ['./receiving-transaction.component.scss']
 })
@@ -238,16 +239,8 @@ export class ReceivingTransactionComponent implements OnInit {
     this.router.navigate(['/dashboard/inventory/items']);
   }
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.loadReceivingItems(this.currentPage - 1);
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.lastPage) {
-      this.loadReceivingItems(this.currentPage + 1);
-    }
+  onPageChange(page: number): void {
+    this.loadReceivingItems(page);
   }
 
   submitForm(): void {
