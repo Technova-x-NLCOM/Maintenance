@@ -196,16 +196,21 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
+        $perPage = (int) $request->input('per_page', 15);
+        $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
         $query = DB::table('categories as c')
             ->leftJoin('categories as parent', 'c.parent_category_id', '=', 'parent.category_id')
             ->leftJoin('categories as children', 'children.parent_category_id', '=', 'c.category_id')
             ->leftJoin('items as i', 'i.category_id', '=', 'c.category_id')
+            ->leftJoin('item_types as it', 'c.item_type_id', '=', 'it.item_type_id')
             ->select(
                 'c.category_id',
                 'c.category_name',
                 'c.parent_category_id',
+                'c.item_type_id',
                 'parent.category_name as parent_category_name',
+                'it.type_name as item_type_name',
                 'c.description',
                 'c.created_at',
                 DB::raw('COUNT(DISTINCT children.category_id) as child_count'),
@@ -215,7 +220,9 @@ class CategoryController extends Controller
                 'c.category_id',
                 'c.category_name',
                 'c.parent_category_id',
+                'c.item_type_id',
                 'parent.category_name',
+                'it.type_name',
                 'c.description',
                 'c.created_at'
             )
@@ -229,10 +236,12 @@ class CategoryController extends Controller
             });
         }
 
+        $paginator = $query->paginate($perPage)->withQueryString();
+
         return response()->json([
             'success' => true,
             'message' => 'Categories retrieved successfully.',
-            'data' => $query->get(),
+            'data' => $paginator,
         ]);
     }
 
@@ -240,11 +249,14 @@ class CategoryController extends Controller
     {
         $category = DB::table('categories as c')
             ->leftJoin('categories as parent', 'c.parent_category_id', '=', 'parent.category_id')
+            ->leftJoin('item_types as it', 'c.item_type_id', '=', 'it.item_type_id')
             ->select(
                 'c.category_id',
                 'c.category_name',
                 'c.parent_category_id',
+                'c.item_type_id',
                 'parent.category_name as parent_category_name',
+                'it.type_name as item_type_name',
                 'c.description',
                 'c.created_at'
             )
@@ -268,7 +280,7 @@ class CategoryController extends Controller
     public function options()
     {
         $categories = DB::table('categories')
-            ->select('category_id', 'category_name', 'parent_category_id')
+            ->select('category_id', 'category_name', 'parent_category_id', 'item_type_id')
             ->orderBy('category_name')
             ->get();
 
@@ -286,6 +298,7 @@ class CategoryController extends Controller
         $data = $request->validate([
             'category_name' => ['required', 'string', 'max:100', Rule::unique('categories', 'category_name')],
             'parent_category_id' => ['nullable', 'integer', 'exists:categories,category_id'],
+            'item_type_id' => ['nullable', 'integer', 'exists:item_types,item_type_id'],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -293,6 +306,7 @@ class CategoryController extends Controller
             $categoryId = DB::table('categories')->insertGetId([
                 'category_name' => trim($data['category_name']),
                 'parent_category_id' => $data['parent_category_id'] ?? null,
+                'item_type_id' => $data['item_type_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'created_at' => now(),
             ]);
@@ -316,6 +330,7 @@ class CategoryController extends Controller
         $data = $request->validate([
             'category_name' => ['sometimes', 'required', 'string', 'max:100', Rule::unique('categories', 'category_name')->ignore($categoryId, 'category_id')],
             'parent_category_id' => ['nullable', 'integer', 'exists:categories,category_id'],
+            'item_type_id' => ['nullable', 'integer', 'exists:item_types,item_type_id'],
             'description' => ['nullable', 'string'],
         ]);
 
