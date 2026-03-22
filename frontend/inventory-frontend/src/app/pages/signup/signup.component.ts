@@ -1,6 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, NgIf, NgForOf } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+} from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService, RegisterRequest } from '../../services/auth.service';
 import { Subject } from 'rxjs';
@@ -10,7 +17,7 @@ import { Subject } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, NgIf],
   templateUrl: './signup.component.html',
-  styleUrls: ['./signup.component.scss']
+  styleUrls: ['./signup.component.scss'],
 })
 export class SignupComponent implements OnInit, OnDestroy {
   signupForm!: FormGroup;
@@ -32,7 +39,7 @@ export class SignupComponent implements OnInit, OnDestroy {
     uppercase: false,
     lowercase: false,
     number: false,
-    symbol: false
+    symbol: false,
   };
   showPasswordValidation = false;
   private destroy = new Subject<void>();
@@ -40,20 +47,23 @@ export class SignupComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
-    this.signupForm = this.fb.group({
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      email: ['', [Validators.required, Validators.email]],
-      first_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      contact_info: ['', [Validators.maxLength(100)]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', Validators.required],
-      agreeTerms: [false, Validators.requiredTrue]
-    }, { validators: this.passwordMatchValidator });
+    this.signupForm = this.fb.group(
+      {
+        username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+        email: ['', [Validators.required, Validators.email]],
+        first_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+        last_name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+        contact_info: ['', [Validators.maxLength(100)]],
+        password: ['', [Validators.required, Validators.minLength(8)]],
+        confirmPassword: ['', Validators.required],
+        agreeTerms: [false, Validators.requiredTrue],
+      },
+      { validators: this.passwordMatchValidator },
+    );
 
     // Setup password validation with debounce
     // Validation is handled on input events (see template handler)
@@ -108,7 +118,7 @@ export class SignupComponent implements OnInit, OnDestroy {
       first_name: formData.first_name,
       last_name: formData.last_name,
       contact_info: formData.contact_info || null,
-      role: 'inventory_manager' // New users default to inventory manager role
+      role: 'inventory_manager', // New users default to inventory manager role
     };
 
     this.authService.register(registerPayload).subscribe({
@@ -125,11 +135,12 @@ export class SignupComponent implements OnInit, OnDestroy {
         const errors = error.error?.errors;
         if (errors) {
           const firstKey = Object.keys(errors)[0];
-          this.errorMessage = errors[firstKey]?.[0] || error.error?.message || 'Registration failed';
+          this.errorMessage =
+            errors[firstKey]?.[0] || error.error?.message || 'Registration failed';
         } else {
           this.errorMessage = error.error?.message || error.error?.error || 'Registration failed';
         }
-      }
+      },
     });
   }
 
@@ -159,7 +170,7 @@ export class SignupComponent implements OnInit, OnDestroy {
       uppercase: /[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
       number: /[0-9]/.test(password),
-      symbol: /[^A-Za-z0-9]/.test(password)
+      symbol: /[^A-Za-z0-9]/.test(password),
     };
     // Enforce password rules on the form control so the form stays invalid
     const control = this.signupForm?.get('password');
@@ -173,7 +184,7 @@ export class SignupComponent implements OnInit, OnDestroy {
   }
 
   isPasswordValid(): boolean {
-    return Object.values(this.passwordValidation).every(v => v);
+    return Object.values(this.passwordValidation).every((v) => v);
   }
 
   // Step navigation methods

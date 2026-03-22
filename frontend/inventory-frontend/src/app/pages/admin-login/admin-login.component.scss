@@ -1,12 +1,12 @@
 // Administrator portal - dark/navy theme to distinguish from user login
-$admin-primary: #0f172a;   // near-black navy
-$admin-accent:  #1e40af;   // deep blue accent
-$admin-light:   #1d4ed8;   // button blue
-$admin-border:  #334155;
-$text-dark:     #0f172a;
-$text-medium:   #1e293b;
-$text-light:    #475569;
-$error-color:   #991b1b;
+$admin-primary: #0f172a; // near-black navy
+$admin-accent: #1e40af; // deep blue accent
+$admin-light: #1d4ed8; // button blue
+$admin-border: #334155;
+$text-dark: #0f172a;
+$text-medium: #1e293b;
+$text-light: #475569;
+$error-color: #991b1b;
 $border-radius: 12px;
 
 .admin-login-container {
@@ -16,7 +16,8 @@ $border-radius: 12px;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   position: relative;
   box-sizing: border-box;
 }
@@ -34,7 +35,9 @@ $border-radius: 12px;
   text-decoration: none;
   padding: 8px 14px;
   border-radius: 8px;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
 
   svg {
     width: 18px;
@@ -47,7 +50,9 @@ $border-radius: 12px;
   &:hover {
     color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
-    svg { stroke: #ffffff; }
+    svg {
+      stroke: #ffffff;
+    }
   }
 }
 
@@ -110,7 +115,9 @@ $border-radius: 12px;
   height: 0;
   margin-bottom: 0;
   overflow: hidden;
-  transition: height 0.2s ease, margin-bottom 0.2s ease;
+  transition:
+    height 0.2s ease,
+    margin-bottom 0.2s ease;
 
   &.has-error {
     height: 72px;
@@ -207,7 +214,9 @@ form {
   display: flex;
   align-items: center;
 
-  &:hover { opacity: 0.7; }
+  &:hover {
+    opacity: 0.7;
+  }
 
   .eye-icon {
     width: 22px;

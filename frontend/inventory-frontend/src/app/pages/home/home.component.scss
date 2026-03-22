@@ -16,18 +16,34 @@ $shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
 
 // Animations
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // Base Container
@@ -99,7 +115,7 @@ $shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.15);
   text-transform: uppercase;
   display: inline-block;
   position: relative;
-  
+
   &::after {
     content: '';
     position: absolute;
