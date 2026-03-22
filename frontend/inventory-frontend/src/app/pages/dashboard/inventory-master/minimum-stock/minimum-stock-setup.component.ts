@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryItemService } from '../../../../services/inventory-item.service';
+import { PaginationComponent } from '../../../../components/pagination/pagination.component';
 
 interface MinimumStockRow {
   item_id: number;
@@ -18,7 +19,7 @@ interface MinimumStockRow {
 @Component({
   selector: 'app-minimum-stock-setup',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './minimum-stock-setup.component.html',
   styleUrls: ['./minimum-stock-setup.component.scss']
 })
@@ -123,16 +124,8 @@ export class MinimumStockSetupComponent implements OnInit {
     });
   }
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.loadRows(this.currentPage - 1);
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.loadRows(this.currentPage + 1);
-    }
+  onPageChange(page: number): void {
+    this.loadRows(page);
   }
 
   isBelowMinimum(row: MinimumStockRow): boolean {

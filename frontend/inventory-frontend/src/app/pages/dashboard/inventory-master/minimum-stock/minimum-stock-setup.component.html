@@ -1,11 +1,5 @@
 <div class="min-stock-page">
-  <header class="page-header">
-    <div class="header-text">
-      <p class="eyebrow">Inventory Master Data</p>
-      <h1 class="page-title">Minimum Stock Setup</h1>
-      <p class="subtitle">Configure low-stock thresholds per item so alerts and replenishment are more accurate.</p>
-    </div>
-  </header>
+  <p class="page-intro">Configure low-stock thresholds per item so alerts and replenishment are more accurate.</p>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
@@ -76,10 +70,11 @@
       </table>
     </div>
 
-    <div class="pagination" *ngIf="!loading && totalPages > 1">
-      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
-    </div>
+    <app-pagination
+      *ngIf="!loading"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="onPageChange($event)"
+    />
   </section>
 </div>
