@@ -1,14 +1,8 @@
 <div class="roles-page">
-  <header class="page-header">
-    <div class="page-titles">
-      <p class="eyebrow">Access Control</p>
-      <h2>Roles & Permissions</h2>
-      <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
-    </div>
-    <div class="header-actions">
-      <button class="ghost" (click)="loadRoles()" [disabled]="loading">Refresh</button>
-    </div>
-  </header>
+  <div class="roles-toolbar">
+    <p class="page-intro">Assign CRUD access per role. Super admin is locked for safety.</p>
+    <button class="ghost" type="button" (click)="loadRoles()" [disabled]="loading">Refresh</button>
+  </div>
 
   <div *ngIf="loading" class="state state-loading">Loading roles...</div>
   <div *ngIf="error" class="state state-error">{{ error }}</div>
