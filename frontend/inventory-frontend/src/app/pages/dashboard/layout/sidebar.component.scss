@@ -21,7 +21,23 @@ $text-light: #e2e8f0;
 }
 
 .sidebar-header {
-  padding: 24px 20px 10px;
+  padding: 16px 10px 10px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+
+  .sidebar-logo {
+    width: min(220px, 100%);
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+
+  .header-divider {
+    width: 100%;
+    border-top: 2px solid #93c5fd;
+    opacity: 0.95;
+  }
 
   .menu-caption {
     margin: 0;
@@ -301,6 +317,18 @@ $text-light: #e2e8f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    .sidebar-logo {
+      width: 160px;
+    }
+
+    .header-divider {
+      display: none;
+    }
+
+    .menu-caption {
+      display: none;
+    }
   }
 
   .mobile-close {
