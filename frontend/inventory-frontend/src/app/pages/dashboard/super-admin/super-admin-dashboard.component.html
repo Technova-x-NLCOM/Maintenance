@@ -1,152 +1,126 @@
 <div class="dashboard-wrapper">
-  <!-- Welcome Header -->
-  <div class="welcome-header">
-    <div class="welcome-text">
-      <h1>Welcome, {{ user?.first_name }}!</h1>
-      <p class="subtitle">Super Administrator Dashboard</p>
-    </div>
-    <div class="header-actions">
-      <button class="refresh-btn" (click)="loadDashboardData()" [disabled]="loading">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 4v6h-6M1 20v-6h6"/>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-        Refresh
-      </button>
-    </div>
-  </div>
-
-  <!-- Stats Cards -->
   <div class="stats-grid">
-    <div class="stat-card users">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
+    <article class="kpi-card total-types">
+      <div class="kpi-head">
+        <h3>{{ totalItemTypesCount }}</h3>
+        <span class="icon-badge">IT</span>
       </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalUsers || 0 }}</span>
-        <span class="stat-label">Total Users</span>
-        <span class="stat-sub">{{ stats?.activeUsers || 0 }} active</span>
-      </div>
-    </div>
+      <p class="label">Total Item Types</p>
+      <p class="meta">{{ sectionCards.length }} active sections</p>
+    </article>
 
-    <div class="stat-card inventory">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-          <line x1="12" y1="22.08" x2="12" y2="12"/>
-        </svg>
+    <article class="kpi-card inventory-value">
+      <div class="kpi-head">
+        <h3>{{ formatCompactPeso(inventoryValue) }}</h3>
+        <span class="icon-badge">PV</span>
       </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalItems || 0 }}</span>
-        <span class="stat-label">Inventory Items</span>
-        <span class="stat-sub warning" *ngIf="stats?.lowStockItems">{{ stats?.lowStockItems }} low stock</span>
-      </div>
-    </div>
+      <p class="label">Total Inventory Value</p>
+      <p class="meta">Based on active batches</p>
+    </article>
 
-    <div class="stat-card transactions">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
+    <article class="kpi-card low-stock">
+      <div class="kpi-head">
+        <h3>{{ stats?.lowStockItems || 0 }}</h3>
+        <span class="icon-badge">LS</span>
       </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalTransactions || 0 }}</span>
-        <span class="stat-label">Transactions</span>
-        <span class="stat-sub">This month</span>
-      </div>
-    </div>
+      <p class="label">Low Stock Alerts</p>
+      <p class="meta critical" *ngIf="(stats?.lowStockItems || 0) > 0">Needs restock attention</p>
+      <p class="meta" *ngIf="(stats?.lowStockItems || 0) === 0">All stock levels are healthy</p>
+    </article>
 
-    <div class="stat-card alerts">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
+    <article class="kpi-card near-expiry">
+      <div class="kpi-head">
+        <h3>{{ stats?.expiringItems || 0 }}</h3>
+        <span class="icon-badge">EX</span>
       </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.pendingAlerts || 0 }}</span>
-        <span class="stat-label">Pending Alerts</span>
-        <span class="stat-sub warning" *ngIf="stats?.expiringItems">{{ stats?.expiringItems }} expiring soon</span>
-      </div>
-    </div>
+      <p class="label">Near Expiry Items</p>
+      <p class="meta success">Within 30 days</p>
+    </article>
   </div>
 
-  <!-- Main Content Grid -->
-  <div class="content-grid">
-    <!-- System Alerts -->
-    <div class="card system-alerts">
-      <h2 class="card-title">
-        System Alerts
-        <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
-      </h2>
-      <div class="alerts-list" *ngIf="systemAlerts.length; else noAlerts">
-        <div class="alert-item" *ngFor="let alert of systemAlerts" [ngClass]="getAlertClass(alert.severity)">
-          <div class="alert-icon">
-            <svg *ngIf="alert.severity === 'critical'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <svg *ngIf="alert.severity === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <svg *ngIf="alert.severity === 'info'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-          </div>
-          <div class="alert-content">
-            <span class="alert-message">{{ alert.message }}</span>
-            <span class="alert-time">{{ formatDate(alert.created_at) }}</span>
-          </div>
-        </div>
+  <section class="middle-grid">
+    <article class="panel sections-panel">
+      <header class="panel-head">
+        <h2>Inventory Sections</h2>
+        <a [routerLink]="'/dashboard/maintenance/item_types'">View All</a>
+      </header>
+
+      <div class="sections-grid" *ngIf="sectionCards.length; else noSections">
+        <a class="section-card" [routerLink]="'/dashboard/maintenance/items'" *ngFor="let section of sectionCards">
+          <div class="section-icon">{{ section.title.charAt(0) }}</div>
+          <div class="section-name">{{ section.title }}</div>
+          <div class="section-count">{{ section.count }}</div>
+          <div class="section-meta">{{ section.subtitle }}</div>
+        </a>
       </div>
-      <ng-template #noAlerts>
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          <span>No active alerts</span>
-        </div>
+
+      <ng-template #noSections>
+        <div class="empty-state">No item types found.</div>
       </ng-template>
+    </article>
+
+    <article class="panel expiry-panel">
+      <header class="panel-head">
+        <h2>Expiry Alerts</h2>
+        <a [routerLink]="'/dashboard/maintenance/expiry_alerts'">View All</a>
+      </header>
+
+      <div class="expiry-list" *ngIf="expiryRows.length; else noExpiryRows">
+        <a class="expiry-item" [routerLink]="'/dashboard/maintenance/expiry_alerts'" *ngFor="let row of expiryRows">
+          <span class="dot" [ngClass]="getAlertTone(row.daysLeft)"></span>
+          <div class="expiry-main">
+            <div class="item-title">{{ row.itemName }}</div>
+            <div class="item-sub">{{ row.batchLabel }}</div>
+          </div>
+          <div class="days" [ngClass]="getAlertTone(row.daysLeft)">{{ row.daysLeft }} days</div>
+        </a>
+      </div>
+
+      <ng-template #noExpiryRows>
+        <div class="empty-state">No pending expiry alerts.</div>
+      </ng-template>
+    </article>
+  </section>
+
+  <section class="panel transactions-panel">
+    <header class="panel-head">
+      <h2>Recent Transactions</h2>
+      <a [routerLink]="'/dashboard/maintenance/inventory_transactions'">View All</a>
+    </header>
+
+    <div class="table-wrap" *ngIf="recentTransactions.length; else noTransactions">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Item</th>
+            <th>Type</th>
+            <th>Qty</th>
+            <th>Performed By</th>
+            <th>Destination / Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tx of pagedRecentTransactions">
+            <td>{{ tx.dateLabel }}</td>
+            <td>{{ tx.itemName }}</td>
+            <td><span class="type-chip" [ngClass]="getTxTone(tx.type)">{{ tx.type }}</span></td>
+            <td>{{ tx.quantityLabel }}</td>
+            <td>{{ tx.performedBy }}</td>
+            <td>{{ tx.destination }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <app-pagination
+        *ngIf="recentTransactions.length > 0"
+        [currentPage]="txPage"
+        [totalPages]="txTotalPages"
+        (pageChange)="onTxPageChange($event)"
+      />
     </div>
 
-    <!-- Recent Activity -->
-    <div class="card recent-activity">
-      <h2 class="card-title">Recent Activity</h2>
-      <div class="activity-list" *ngIf="recentActivity.length; else noActivity">
-        <div class="activity-item" *ngFor="let log of recentActivity">
-          <div class="activity-badge" [ngClass]="getActionClass(log.action)">
-            {{ log.action }}
-          </div>
-          <div class="activity-content">
-            <span class="activity-table">{{ log.table_name }}</span>
-            <span class="activity-user">by {{ log.performed_by_name || 'System' }}</span>
-          </div>
-          <span class="activity-time">{{ formatDate(log.created_at) }}</span>
-        </div>
-      </div>
-      <ng-template #noActivity>
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>No recent activity</span>
-        </div>
-      </ng-template>
-    </div>
-
-  </div>
+    <ng-template #noTransactions>
+      <div class="empty-state">No recent transactions.</div>
+    </ng-template>
+  </section>
 </div>
