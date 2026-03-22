@@ -1,8 +1,5 @@
 <div class="issuance-page">
-  <div class="page-header">
-    <h1>Stock Issuance (OUT)</h1>
-    <p class="subtitle">Select items in kiosk mode, build the issuance list, and confirm once.</p>
-  </div>
+  <p class="page-intro">Select items in kiosk mode, build the issuance list, and confirm once.</p>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
@@ -59,11 +56,12 @@
 
       <div class="state-loading" *ngIf="loading">Loading items...</div>
 
-      <div class="pagination" *ngIf="!loading && lastPage > 1">
-        <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-        <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
-      </div>
+      <app-pagination
+        *ngIf="!loading"
+        [currentPage]="currentPage"
+        [totalPages]="lastPage"
+        (pageChange)="onPageChange($event)"
+      />
     </section>
 
     <section class="cart-panel">

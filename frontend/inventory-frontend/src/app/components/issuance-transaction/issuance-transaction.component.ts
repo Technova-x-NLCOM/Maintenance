@@ -8,6 +8,7 @@ import {
   PaginatedIssuanceItemsResponse,
   IssuanceTransactionResponse
 } from '../../services/inventory-item.service';
+import { PaginationComponent } from '../pagination/pagination.component';
 
 interface IssuanceCartLine {
   item_id: number;
@@ -21,7 +22,7 @@ interface IssuanceCartLine {
 @Component({
   selector: 'app-issuance-transaction',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent],
   templateUrl: './issuance-transaction.component.html',
   styleUrls: ['./issuance-transaction.component.scss']
 })
@@ -220,15 +221,7 @@ export class IssuanceTransactionComponent implements OnInit {
     this.router.navigate(['/dashboard/inventory/items']);
   }
 
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.loadItems(this.currentPage - 1);
-    }
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.lastPage) {
-      this.loadItems(this.currentPage + 1);
-    }
+  onPageChange(page: number): void {
+    this.loadItems(page);
   }
 }
