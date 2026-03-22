@@ -6,11 +6,19 @@ export interface InventoryCategory {
   category_id: number;
   category_name: string;
   parent_category_id: number | null;
+  item_type_id?: number | null;
+  item_type_name?: string | null;
   parent_category_name?: string | null;
   description: string | null;
   created_at: string;
   child_count?: number;
   item_count?: number;
+}
+
+export interface ItemTypeOption {
+  item_type_id: number;
+  type_name: string;
+  description?: string | null;
 }
 
 export interface CategoryItem {
@@ -24,10 +32,19 @@ export interface CategoryItem {
   item_type_name?: string | null;
 }
 
+/** Laravel length-aware paginator JSON shape */
+export interface LaravelPaginator<T> {
+  data: T[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
 interface CategoryListResponse {
   success: boolean;
   message: string;
-  data: InventoryCategory[];
+  data: LaravelPaginator<InventoryCategory>;
 }
 
 interface CategorySingleResponse {
@@ -54,11 +71,24 @@ interface CategoryItemsResponse {
   data: CategoryItem[];
 }
 
+interface ItemTypesListResponse {
+  success: boolean;
+  message: string;
+  data: ItemTypeOption[];
+}
+
+interface ItemTypeCreateResponse {
+  success: boolean;
+  message: string;
+  data: ItemTypeOption;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class InventoryCategoryService {
   private readonly baseUrl = 'http://127.0.0.1:8000/api/inventory/categories';
+  private readonly itemTypesUrl = 'http://127.0.0.1:8000/api/inventory/item-types';
 
   constructor(private http: HttpClient) {}
 
@@ -70,10 +100,16 @@ export class InventoryCategoryService {
     });
   }
 
-  list(search?: string): Observable<CategoryListResponse> {
+  list(search?: string, page?: number, perPage?: number): Observable<CategoryListResponse> {
     let params = new HttpParams();
     if (search?.trim()) {
       params = params.set('search', search.trim());
+    }
+    if (page != null && page > 0) {
+      params = params.set('page', String(page));
+    }
+    if (perPage != null && perPage > 0) {
+      params = params.set('per_page', String(perPage));
     }
 
     return this.http.get<CategoryListResponse>(this.baseUrl, {
@@ -94,9 +130,22 @@ export class InventoryCategoryService {
     });
   }
 
+  listItemTypes(): Observable<ItemTypesListResponse> {
+    return this.http.get<ItemTypesListResponse>(this.itemTypesUrl, {
+      headers: this.getHeaders()
+    });
+  }
+
+  createItemType(payload: { type_name: string; description?: string | null }): Observable<ItemTypeCreateResponse> {
+    return this.http.post<ItemTypeCreateResponse>(this.itemTypesUrl, payload, {
+      headers: this.getHeaders()
+    });
+  }
+
   create(payload: {
     category_name: string;
     parent_category_id?: number | null;
+    item_type_id?: number | null;
     description?: string | null;
   }): Observable<CategorySingleResponse> {
     return this.http.post<CategorySingleResponse>(this.baseUrl, payload, {
@@ -109,6 +158,7 @@ export class InventoryCategoryService {
     payload: Partial<{
       category_name: string;
       parent_category_id?: number | null;
+      item_type_id?: number | null;
       description?: string | null;
     }>
   ): Observable<CategorySingleResponse> {
