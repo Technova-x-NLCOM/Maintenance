@@ -1,0 +1,138 @@
+<div class="user-page">
+  <section class="card">
+    <div class="card-header">
+      <h2>System Users</h2>
+      <div class="header-actions">
+        <div class="search-box">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+            placeholder="Search users..."
+          />
+        </div>
+        <button class="btn-primary" type="button" (click)="openAddModal()">+ Add User</button>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state">Loading users...</div>
+    <div *ngIf="error" class="state error">{{ error }}</div>
+
+    <div class="table-wrap" *ngIf="!loading && !error">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of pagedUsers">
+            <td>
+              <div class="user-col">
+                <div class="avatar">{{ (user.first_name || user.username || 'U').charAt(0) | uppercase }}</div>
+                <div>
+                  <strong>{{ getFullName(user) }}</strong>
+                  <span>@{{ user.username }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ user.email || '-' }}</td>
+            <td><span class="chip" [class.role-admin]="getRoleClass(user.role) === 'role-admin'">{{ getRoleLabel(user.role) }}</span></td>
+            <td><span class="status" [class.inactive]="!isActive(user)">{{ isActive(user) ? 'Active' : 'Inactive' }}</span></td>
+            <td>{{ formatLastLogin(user) }}</td>
+            <td class="actions">
+              <button class="icon-btn" type="button" (click)="openEditModal(user)" title="Edit">Edit</button>
+              <button class="icon-btn danger" *ngIf="isActive(user)" type="button" (click)="deactivateUser(user)">Deactivate</button>
+              <button class="icon-btn success" *ngIf="!isActive(user)" type="button" (click)="reactivateUser(user)">Reactivate</button>
+            </td>
+          </tr>
+          <tr *ngIf="!filteredUsers.length">
+            <td colspan="6" class="empty">No users found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      *ngIf="!loading && !error && filteredUsers.length > 0"
+      [currentPage]="userPage"
+      [totalPages]="userTotalPages"
+      [hideWhenSinglePage]="false"
+      (pageChange)="onUserPageChange($event)"
+    />
+  </section>
+
+  <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Add / Edit User</h3>
+        <button type="button" class="close" (click)="closeModal()">x</button>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          Full Name
+          <input [(ngModel)]="form.fullName" placeholder="Full name" />
+        </label>
+        <label>
+          Username
+          <input [(ngModel)]="form.username" placeholder="@username" />
+        </label>
+        <label class="full">
+          Email
+          <input [(ngModel)]="form.email" placeholder="user@nlcom.org.ph" />
+        </label>
+        <label>
+          Role
+          <select [(ngModel)]="form.role">
+            <option value="super_admin">Super Admin</option>
+            <option value="inventory_manager">Inventory Manager</option>
+          </select>
+        </label>
+        <label class="password-label">
+          Password
+          <div class="password-field">
+            <input
+              [type]="passwordVisible ? 'text' : 'password'"
+              [(ngModel)]="form.password"
+              placeholder="Set password"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="passwordVisible ? 'Hide password' : 'Show password'"
+              [attr.aria-pressed]="passwordVisible"
+              title="{{ passwordVisible ? 'Hide password' : 'Show password' }}"
+            >
+              <svg *ngIf="!passwordVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg *ngIf="passwordVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+        </label>
+      </div>
+
+      <label class="toggle-row">
+        <input type="checkbox" [(ngModel)]="form.isActive" />
+        <span>Account Active</span>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" (click)="closeModal()">Cancel</button>
+        <button type="button" class="btn-primary" [disabled]="saving" (click)="saveUser()">{{ saving ? 'Saving...' : 'Save User' }}</button>
+      </div>
+    </div>
+  </div>
+</div>
