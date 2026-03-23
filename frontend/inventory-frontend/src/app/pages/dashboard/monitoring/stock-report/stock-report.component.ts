@@ -46,16 +46,16 @@ export class StockReportComponent implements OnInit {
     let p = new HttpParams().set('page', String(page)).set('per_page', '25');
     if (this.lowStock) p = p.set('low_stock', '1');
     this.http
-      .get<
-        Paginated<StockReportRecord>
-      >(`${this.BASE}/stock-report`, { headers: this.authHeaders(), params: p })
+      .get<Paginated<StockReportRecord>>(`${this.BASE}/stock-report`, {
+        headers: this.authHeaders(),
+        params: p,
+      })
       .subscribe({
         next: (res) => {
           this.items = res.data.data;
           this.page = res.data.current_page;
           this.lastPage = res.data.last_page;
           this.total = res.data.total;
-          // Build category list from loaded data
           this.categories = [
             ...new Set(this.items.map((i) => i.category_name ?? '').filter((c) => c)),
           ].sort();
@@ -86,9 +86,11 @@ export class StockReportComponent implements OnInit {
   onLowStockChange(): void {
     this.load(1);
   }
+
   isLow(item: StockReportRecord): boolean {
     return item.current_stock <= item.reorder_level;
   }
+
   pageRange(cur: number, last: number): number[] {
     const s = Math.max(1, cur - 2),
       e = Math.min(last, cur + 2);
@@ -100,18 +102,6 @@ export class StockReportComponent implements OnInit {
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
       ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
-      ...this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK'])
-      [
-        'Item Code',
-        'Description',
-        'Category',
-        'UoM',
-        'Current Stock',
-        'Total IN',
-        'Total OUT',
-        'Reorder Level',
-        'Status',
-      ],
       ...this.filteredItems.map((r) => [
         r.item_code,
         r.item_description,
@@ -158,20 +148,6 @@ export class StockReportComponent implements OnInit {
     autoTable(doc, {
       startY: 80,
       head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-      body: this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK']),
-      head: [
-        [
-          'Item Code',
-          'Description',
-          'Category',
-          'UoM',
-          'Current Stock',
-          'Total IN',
-          'Total OUT',
-          'Reorder Level',
-          'Status',
-        ],
-      ],
       body: this.filteredItems.map((r) => [
         r.item_code,
         r.item_description,
@@ -188,7 +164,6 @@ export class StockReportComponent implements OnInit {
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 8) {
-          data.cell.styles.textColor = (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.textColor =
             (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
