@@ -38,7 +38,7 @@
     <table class="data-table" *ngIf="items.length > 0; else empty">
       <thead>
         <tr>
-          <th>Item Code</th><th>Description</th><th>Category</th><th>Type</th><th>UoM</th>
+          <th>Item Code</th><th>Description</th><th>Category</th><th>UoM</th>
           <th class="num-col">Current Stock</th><th class="num-col">Total IN</th>
           <th class="num-col">Total OUT</th><th class="num-col">Reorder Level</th><th>Status</th>
         </tr>
@@ -48,7 +48,6 @@
           <td class="code-cell">{{ item.item_code }}</td>
           <td>{{ item.item_description }}</td>
           <td>{{ item.category_name || '—' }}</td>
-          <td>{{ item.item_type_name || '—' }}</td>
           <td>{{ item.measurement_unit || '—' }}</td>
           <td class="num-col">{{ item.current_stock }}</td>
           <td class="num-col in-val">+{{ item.total_in }}</td>

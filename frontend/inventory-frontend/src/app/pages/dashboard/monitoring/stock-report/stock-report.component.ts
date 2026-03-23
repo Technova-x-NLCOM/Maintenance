@@ -50,8 +50,8 @@ export class StockReportComponent implements OnInit {
     if (!this.items.length) return;
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
-      ['Item Code', 'Description', 'Category', 'Type', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
-      ...this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.item_type_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK'])
+      ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
+      ...this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK'])
     ];
     const wsData = [['NLCOM - IMS'], ['Stock Report'], [`Generated: ${dateStr}`], [], ...dataRows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -77,13 +77,13 @@ export class StockReportComponent implements OnInit {
     doc.setFontSize(8); doc.setTextColor(100, 116, 139); doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Item Code', 'Description', 'Category', 'Type', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-      body: this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.item_type_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK']),
+      head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+      body: this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK']),
       styles: { fontSize: 7, cellPadding: 4 },
       headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 9) {
+        if (data.section === 'body' && data.column.index === 8) {
           data.cell.styles.textColor = (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
         }
