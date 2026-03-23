@@ -18,7 +18,7 @@
           <input
             type="text"
             [(ngModel)]="search"
-            placeholder="Search by code, item, type, or category"
+            placeholder="Search by code, item, or category"
             (keyup.enter)="onSearch()"
           />
           <button class="btn-ghost" type="button" (click)="onSearch()">Search</button>
@@ -38,7 +38,6 @@
           <tr>
             <th>Code</th>
             <th>Description</th>
-            <th>Type</th>
             <th>Category</th>
             <th>Current Stock</th>
             <th>Minimum Stock</th>
@@ -50,7 +49,6 @@
           <tr *ngFor="let row of rows" [class.row-alert]="isBelowMinimum(row)">
             <td><span class="cell-code">{{ row.item_code }}</span></td>
             <td>{{ row.item_description }}</td>
-            <td>{{ row.item_type_name || '—' }}</td>
             <td>{{ row.category_name || '—' }}</td>
             <td>{{ row.current_stock }}</td>
             <td>
@@ -70,7 +68,7 @@
             </td>
           </tr>
           <tr *ngIf="rows.length === 0">
-            <td colspan="8" class="empty">No items found.</td>
+            <td colspan="7" class="empty">No items found.</td>
           </tr>
         </tbody>
       </table>
