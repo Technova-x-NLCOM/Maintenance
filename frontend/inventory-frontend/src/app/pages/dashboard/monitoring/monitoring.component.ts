@@ -230,6 +230,19 @@ export class MonitoringComponent implements OnInit {
       autoTable(doc, {
         startY: 80,
         head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+        head: [
+          [
+            'Item Code',
+            'Description',
+            'Category',
+            'UoM',
+            'Current Stock',
+            'Total IN',
+            'Total OUT',
+            'Reorder Level',
+            'Status',
+          ],
+        ],
         body: this.stockItems.map((r) => [
           r.item_code,
           r.item_description,
@@ -245,8 +258,9 @@ export class MonitoringComponent implements OnInit {
         headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         didParseCell: (data) => {
+          // Status column is the last one (index 8).
           if (data.section === 'body' && data.column.index === 8) {
-            const val = data.cell.raw as string;
+            const val = String(data.cell.raw ?? '');
             data.cell.styles.textColor = val === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
             data.cell.styles.fontStyle = 'bold';
           }
