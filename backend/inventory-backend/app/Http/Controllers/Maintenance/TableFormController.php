@@ -33,6 +33,12 @@ class TableFormController extends Controller
             $data['updated_at'] = now();
         }
 
+        // When creating RBAC user-role assignments via the generic maintenance form,
+        // the frontend may omit `is_primary`. Keep a consistent single-primary role per user.
+        if ($table === 'user_roles') {
+            $this->applyUserRolesPrimaryRulesOnCreate($data);
+        }
+
         // Insert row (avoid insertGetId for composite PK tables)
         $pk = $this->tables[$table]['primary_key'];
         if (is_array($pk)) {
@@ -118,6 +124,48 @@ class TableFormController extends Controller
         unset($filtered['deleted_at']);
         
         return $filtered;
+    }
+
+    /**
+     * Ensure the created `user_roles` row keeps the user's primary role consistent.
+     *
+     * Rules:
+     * - If `is_primary` is omitted:
+     *   - Set it to `true` only when the user currently has no primary role.
+     * - If `is_primary` is provided:
+     *   - When true: unset other primary rows for the same user.
+     *   - When false: if the user currently has no primary role, keep this row primary.
+     */
+    private function applyUserRolesPrimaryRulesOnCreate(array &$data): void
+    {
+        if (!array_key_exists('user_id', $data)) return;
+
+        $userId = (int)$data['user_id'];
+
+        $hasPrimary = DB::table('user_roles')
+            ->where('user_id', $userId)
+            ->where('is_primary', true)
+            ->exists();
+
+        if (!array_key_exists('is_primary', $data)) {
+            $data['is_primary'] = !$hasPrimary;
+            return;
+        }
+
+        $incoming = $data['is_primary'];
+        $isPrimary = is_bool($incoming) ? $incoming : filter_var($incoming, FILTER_VALIDATE_BOOLEAN);
+
+        if ($isPrimary) {
+            // Enforce single primary role.
+            DB::table('user_roles')
+                ->where('user_id', $userId)
+                ->update(['is_primary' => false]);
+            $data['is_primary'] = true;
+            return;
+        }
+
+        // If user currently has no primary role, keep this one primary.
+        $data['is_primary'] = $hasPrimary ? false : true;
     }
 
     /**
