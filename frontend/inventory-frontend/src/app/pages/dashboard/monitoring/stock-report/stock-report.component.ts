@@ -100,18 +100,6 @@ export class StockReportComponent implements OnInit {
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
       ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
-      ...this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK'])
-      [
-        'Item Code',
-        'Description',
-        'Category',
-        'UoM',
-        'Current Stock',
-        'Total IN',
-        'Total OUT',
-        'Reorder Level',
-        'Status',
-      ],
       ...this.filteredItems.map((r) => [
         r.item_code,
         r.item_description,
@@ -157,8 +145,6 @@ export class StockReportComponent implements OnInit {
     doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-      body: this.items.map(r => [r.item_code, r.item_description, r.category_name ?? '—', r.measurement_unit ?? '—', r.current_stock, r.total_in, r.total_out, r.reorder_level, this.isLow(r) ? 'Low Stock' : 'OK']),
       head: [
         [
           'Item Code',
@@ -188,9 +174,8 @@ export class StockReportComponent implements OnInit {
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
         if (data.section === 'body' && data.column.index === 8) {
-          data.cell.styles.textColor = (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
-          data.cell.styles.textColor =
-            (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
+          const val = String(data.cell.raw ?? '');
+          data.cell.styles.textColor = val === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
         }
       },
