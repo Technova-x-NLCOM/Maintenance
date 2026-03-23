@@ -1,0 +1,245 @@
+<div class="system-users-page">
+  <div class="page-card">
+    <header class="page-header">
+      <div class="title-block">
+        <span class="title-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </span>
+        <div>
+          <h1>System Users</h1>
+          <p class="subtitle">Manage accounts, roles, and access</p>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" (click)="openAdd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/>
+          <line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+        Add User
+      </button>
+    </header>
+
+    <div class="state state-loading" *ngIf="loading">Loading users…</div>
+    <div class="state state-error" *ngIf="!loading && error">{{ error }}</div>
+
+    <div class="table-wrap" *ngIf="!loading && !error">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Last login</th>
+            <th class="col-actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of users">
+            <td>
+              <div class="user-cell">
+                <div class="avatar" [style.background]="avatarColor(u)">{{ initials(u) }}</div>
+                <div class="user-text">
+                  <div class="name">{{ u.first_name }} {{ u.last_name }}</div>
+                  <div class="handle">&#64;{{ u.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="td-email">{{ u.email }}</td>
+            <td>
+              <span class="pill pill-role">{{ roleLabel(u) }}</span>
+            </td>
+            <td>
+              <span class="pill" [class.pill-active]="u.is_active" [class.pill-inactive]="!u.is_active">
+                {{ u.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="td-muted">{{ formatLastLogin(u.last_login_at) }}</td>
+            <td class="col-actions">
+              <div class="action-btns">
+                <button type="button" class="btn-icon btn-edit" (click)="openEdit(u)" title="Edit user">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon"
+                  [class.btn-deactivate]="u.is_active"
+                  [class.btn-activate]="!u.is_active"
+                  [disabled]="isSelf(u)"
+                  (click)="toggleActive(u)"
+                  [title]="u.is_active ? 'Deactivate user' : 'Activate user'"
+                >
+                  <svg *ngIf="u.is_active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="18" y1="8" x2="23" y2="13"/>
+                    <line x1="23" y1="8" x2="18" y2="13"/>
+                  </svg>
+                  <svg *ngIf="!u.is_active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="8.5" cy="7" r="4"/>
+                    <line x1="20" y1="8" x2="20" y2="14"/>
+                    <line x1="23" y1="11" x2="17" y2="11"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty" *ngIf="users.length === 0">No users found.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit User Modal -->
+<div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">×</button>
+    <div class="modal-head">
+      <span class="modal-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/>
+          <line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+      </span>
+      <div>
+        <h2>{{ editingUser ? 'Edit User' : 'Add User' }}</h2>
+        <p class="modal-lead">Fields match your database: first name, last name, username, email, and role.</p>
+      </div>
+    </div>
+
+    <div class="modal-alert" *ngIf="modalError">{{ modalError }}</div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="su-first">First name</label>
+        <input id="su-first" type="text" [(ngModel)]="form.first_name" placeholder="First name" autocomplete="given-name" />
+        <span class="field-err" *ngIf="fieldError('first_name')">{{ fieldError('first_name') }}</span>
+      </div>
+      <div class="field">
+        <label for="su-last">Last name</label>
+        <input id="su-last" type="text" [(ngModel)]="form.last_name" placeholder="Last name" autocomplete="family-name" />
+        <span class="field-err" *ngIf="fieldError('last_name')">{{ fieldError('last_name') }}</span>
+      </div>
+      <div class="field">
+        <label for="su-user">Username</label>
+        <input
+          id="su-user"
+          type="text"
+          [(ngModel)]="form.username"
+          (blur)="normalizeUsername()"
+          placeholder="username"
+          autocomplete="username"
+        />
+        <span class="field-err" *ngIf="fieldError('username')">{{ fieldError('username') }}</span>
+      </div>
+      <div class="field field-full">
+        <label for="su-email">Email</label>
+        <input id="su-email" type="email" [(ngModel)]="form.email" placeholder="user@nlcom.org.ph" autocomplete="email" />
+        <span class="field-err" *ngIf="fieldError('email')">{{ fieldError('email') }}</span>
+      </div>
+      <div class="field field-full">
+        <label for="su-contact">Contact number <span class="optional">(optional)</span></label>
+        <input id="su-contact" type="text" [(ngModel)]="form.contact_info" placeholder="09xxxxxxxxx" autocomplete="tel" />
+        <span class="field-err" *ngIf="fieldError('contact_info')">{{ fieldError('contact_info') }}</span>
+      </div>
+      <div class="field">
+        <label for="su-role">Role</label>
+        <select id="su-role" [(ngModel)]="form.role">
+          <option *ngFor="let r of roles" [ngValue]="r.role_name">{{ r.display_name || r.role_name }}</option>
+          <ng-container *ngIf="roles.length === 0">
+            <option [ngValue]="'inventory_manager'">Inventory Manager</option>
+            <option [ngValue]="'super_admin'">Super Administrator</option>
+          </ng-container>
+        </select>
+        <span class="field-err" *ngIf="fieldError('role')">{{ fieldError('role') }}</span>
+      </div>
+      <div class="field">
+        <label for="su-pass">Password</label>
+        <div class="password-input-wrap">
+          <input
+            id="su-pass"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="form.password"
+            [placeholder]="editingUser ? 'Leave blank to keep current' : 'Set password'"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordField('password', $event)"
+            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="showPassword"
+            title="{{ showPassword ? 'Hide' : 'Show' }} password"
+          >
+            <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <span class="hint">Min 8 chars, upper, lower, number, and one of &#64;$!%*?&amp;</span>
+        <span class="field-err" *ngIf="fieldError('password')">{{ fieldError('password') }}</span>
+      </div>
+      <div class="field" *ngIf="!editingUser || form.password">
+        <label for="su-pass2">Confirm password</label>
+        <div class="password-input-wrap">
+          <input
+            id="su-pass2"
+            [type]="showPasswordConfirm ? 'text' : 'password'"
+            [(ngModel)]="form.password_confirmation"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordField('confirm', $event)"
+            [attr.aria-label]="showPasswordConfirm ? 'Hide confirm password' : 'Show confirm password'"
+            [attr.aria-pressed]="showPasswordConfirm"
+            title="{{ showPasswordConfirm ? 'Hide' : 'Show' }} password"
+          >
+            <svg *ngIf="!showPasswordConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showPasswordConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <span class="field-err" *ngIf="fieldError('password_confirmation')">{{ fieldError('password_confirmation') }}</span>
+      </div>
+    </div>
+
+    <label class="toggle-row">
+      <input type="checkbox" [(ngModel)]="form.is_active" />
+      <span class="toggle-ui" aria-hidden="true"></span>
+      <span>Account active</span>
+    </label>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn-ghost" (click)="closeModal()" [disabled]="saving">Cancel</button>
+      <button type="button" class="btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Saving…' : 'Save User' }}
+      </button>
+    </footer>
+  </div>
+</div>

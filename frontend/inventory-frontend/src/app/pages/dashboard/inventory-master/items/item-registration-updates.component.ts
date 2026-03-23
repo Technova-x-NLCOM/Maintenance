@@ -74,6 +74,52 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.loadOptionsAndItems();
   }
 
+  /**
+   * Because `Type` is effectively redundant with `Category` in this app,
+   * we auto-derive `item_type_id` from the selected `category_id`.
+   * Backend still requires `item_type_id`.
+   */
+  onCategoryChange(): void {
+    this.syncItemTypeIdFromCategory();
+  }
+
+  private syncItemTypeIdFromCategory(): void {
+    if (!this.options?.item_types?.length) return;
+
+    // No category selected -> keep item_type_id null so save validation forces category selection.
+    if (!this.formData.category_id) {
+      // If editing an existing item, keep the backend value to avoid breaking updates.
+      if (this.selectedItemId) {
+        return;
+      }
+      this.formData.item_type_id = null;
+      return;
+    }
+
+    const catId = this.formData.category_id;
+    const category = this.options.categories.find(c => c.category_id === catId);
+    const name = (category?.category_name || '').toLowerCase();
+
+    let desiredTypeName: string | null = null;
+    if (name.includes('medical')) desiredTypeName = 'medicine';
+    else if (name.includes('emergency')) desiredTypeName = 'emergency_safety';
+    else if (name.includes('food')) desiredTypeName = 'consumable';
+    else if (name.includes('clothing')) desiredTypeName = 'nlcom_shirt';
+    else if (name.includes('kitchen')) desiredTypeName = 'tool_utensil';
+    else if (name.includes('general')) desiredTypeName = 'general_item';
+
+    const fallbackType =
+      this.options.item_types.find(t => t.type_name === 'general_item') ??
+      this.options.item_types[0];
+
+    const picked =
+      (desiredTypeName
+        ? this.options.item_types.find(t => t.type_name === desiredTypeName)
+        : null) ?? fallbackType;
+
+    this.formData.item_type_id = picked?.item_type_id ?? null;
+  }
+
   loadOptionsAndItems(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -81,6 +127,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.itemService.getOptions().subscribe({
       next: (optionsRes) => {
         this.options = optionsRes.data;
+        // Ensure item_type_id is always set (backend requirement).
+        this.syncItemTypeIdFromCategory();
         this.loadItems(1);
       },
       error: (err) => {
@@ -147,6 +195,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       reorder_level: item.reorder_level,
       is_active: item.is_active
     };
+    // Hide Type in UI; derive from category selection for consistency.
+    this.syncItemTypeIdFromCategory();
 
     this.resetSelectedImage();
     this.imagePreviewUrl = item.image_url || null;
@@ -174,6 +224,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       reorder_level: 0,
       is_active: true
     };
+    this.syncItemTypeIdFromCategory();
     this.resetSelectedImage();
     this.cdr.detectChanges();
   }
@@ -198,6 +249,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       reorder_level: 0,
       is_active: true
     };
+    this.syncItemTypeIdFromCategory();
     this.resetSelectedImage();
     this.cdr.detectChanges();
   }
@@ -222,8 +274,11 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
+    // Always derive item_type_id from the selected category right before save.
+    this.syncItemTypeIdFromCategory();
+
     if (!this.formData.item_code.trim() || !this.formData.item_description.trim() || !this.formData.item_type_id) {
-      this.errorMessage = 'Please enter item code or SKU, name or description, and select a type of item.';
+      this.errorMessage = 'Please enter item code or SKU, name or description, and select a category.';
       return;
     }
 

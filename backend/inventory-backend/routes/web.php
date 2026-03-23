@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
@@ -45,6 +46,17 @@ Route::prefix('api/auth')->group(function () {
                 Route::patch('role-permission', [\App\Http\Controllers\RBACController::class, 'updatePermissionFlags'])->middleware('permission:manage_permissions');
             });
         });
+
+// System user accounts (admin UI)
+Route::prefix('api/users')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->group(function () {
+        Route::middleware(['auth:api', 'permission:manage_roles'])->group(function () {
+            Route::get('/', [UserManagementController::class, 'index']);
+            Route::post('/', [UserManagementController::class, 'store']);
+            Route::put('{userId}', [UserManagementController::class, 'update']);
+        });
+    });
 
 Route::prefix('api/backup')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])

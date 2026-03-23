@@ -8,11 +8,62 @@ use Illuminate\Support\Facades\DB;
 class SystemSettingsController extends Controller
 {
     /**
+     * Default rows when the table was never seeded (keeps UI usable).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function defaultSettingsRows(): array
+    {
+        $now = now()->format('Y-m-d H:i:s');
+
+        return [
+            [
+                'setting_key' => 'expiry_alert_days',
+                'setting_value' => '30',
+                'description' => 'Number of days before expiry to trigger alert',
+                'updated_by' => null,
+                'updated_at' => $now,
+            ],
+            [
+                'setting_key' => 'low_stock_threshold',
+                'setting_value' => '10',
+                'description' => 'Minimum quantity threshold for low stock alerts',
+                'updated_by' => null,
+                'updated_at' => $now,
+            ],
+            [
+                'setting_key' => 'require_approval_for_out',
+                'setting_value' => 'true',
+                'description' => 'Require approval for OUT transactions',
+                'updated_by' => null,
+                'updated_at' => $now,
+            ],
+        ];
+    }
+
+    /**
+     * Ensure at least the default settings exist (idempotent).
+     */
+    private function ensureDefaultSettingsExist(): void
+    {
+        if (DB::table('system_settings')->exists()) {
+            return;
+        }
+
+        foreach ($this->defaultSettingsRows() as $row) {
+            DB::table('system_settings')->insertOrIgnore($row);
+        }
+    }
+
+    /**
      * List all system settings (super admin only via middleware)
      */
     public function index()
     {
-        $settings = DB::table('system_settings')->get();
+        $this->ensureDefaultSettingsExist();
+
+        $settings = DB::table('system_settings')->orderBy('setting_key')->get();
+
         return response()->json($settings);
     }
 

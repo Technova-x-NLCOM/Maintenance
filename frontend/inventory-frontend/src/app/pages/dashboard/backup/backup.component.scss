@@ -9,6 +9,165 @@ $text-medium: #1f2937;
   padding: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+
+  &.embedded {
+    padding: 0;
+    max-width: none;
+    margin: 0;
+
+    .backup-panels {
+      gap: 14px;
+    }
+
+    .backup-panel {
+      padding: 16px 18px;
+    }
+
+    .backup-panel-title {
+      font-size: 1rem;
+    }
+
+    .backup-panel-desc {
+      font-size: 0.85rem;
+    }
+
+    .backup-panel-hint {
+      font-size: 0.75rem;
+    }
+
+    .backup-alerts .alert {
+      padding: 0.75rem 1rem;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+/* Two matching panels — full width, same border/shadow as System Settings cards */
+.backup-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.backup-panel {
+  background: #fff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.backup-panel-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.backup-panel-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: $primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.backup-panel-titles {
+  min-width: 0;
+}
+
+.backup-panel-title {
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: $text-dark;
+  line-height: 1.3;
+}
+
+.backup-panel-desc {
+  margin: 0;
+  font-size: 0.875rem;
+  color: $text-medium;
+  line-height: 1.45;
+}
+
+.backup-panel-hint {
+  margin: 12px 0 0 0;
+  font-size: 0.8rem;
+  color: $text-medium;
+  line-height: 1.4;
+
+  code {
+    font-size: 0.78em;
+    background: #f1f5f9;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    color: #334155;
+  }
+}
+
+.backup-panel-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.file-input {
+  display: none;
+}
+
+.backup-file-name {
+  margin: 12px 0 0 0;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: $text-dark;
+  word-break: break-all;
+}
+
+.backup-file-label {
+  font-weight: 600;
+  color: $text-medium;
+  margin-right: 6px;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.backup-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  width: 100%;
+
+  .alert {
+    margin-bottom: 0;
+  }
 }
 
 .backup-header {
@@ -27,6 +186,7 @@ $text-medium: #1f2937;
   }
 }
 
+/* Legacy: standalone backup page header actions — panels use .btn-block now */
 .actions-bar {
   display: flex;
   gap: 1rem;

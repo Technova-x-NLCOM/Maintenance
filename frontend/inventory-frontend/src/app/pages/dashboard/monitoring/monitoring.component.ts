@@ -234,6 +234,12 @@ export class MonitoringComponent implements OnInit {
     if (isStock) {
       autoTable(doc, {
         startY: 80,
+        head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+        body: this.stockItems.map(r => [
+          r.item_code, r.item_description, r.category_name ?? '—',
+          r.measurement_unit ?? '—',
+          r.current_stock, r.total_in, r.total_out, r.reorder_level,
+          r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
         head: [
           [
             'Item Code',
@@ -264,7 +270,7 @@ export class MonitoringComponent implements OnInit {
         headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
         didParseCell: (data) => {
-          if (data.section === 'body' && data.column.index === 9) {
+          if (data.section === 'body' && data.column.index === 8) {
             const val = data.cell.raw as string;
             data.cell.styles.textColor = val === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
             data.cell.styles.fontStyle = 'bold';
@@ -318,6 +324,11 @@ export class MonitoringComponent implements OnInit {
 
   private stockToRows(rows: StockReportRecord[]): any[][] {
     return [
+      ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
+      ...rows.map(r => [
+        r.item_code,
+        r.item_description,
+        r.category_name ?? '—',
       [
         'Item Code',
         'Description',
@@ -340,6 +351,8 @@ export class MonitoringComponent implements OnInit {
         r.total_in,
         r.total_out,
         r.reorder_level,
+        r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
+      ])
         r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK',
       ]),
     ];

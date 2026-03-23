@@ -52,7 +52,6 @@
                 <th>Image</th>
                 <th>Code</th>
                 <th>Description</th>
-                <th>Type</th>
                 <th>Current Category</th>
               </tr>
             </thead>
@@ -75,11 +74,10 @@
                 </td>
                 <td>{{ item.item_code }}</td>
                 <td>{{ item.item_description }}</td>
-                <td>{{ item.item_type_name || '—' }}</td>
                 <td>{{ item.category_name || 'No category' }}</td>
               </tr>
               <tr *ngIf="assignableItems.length === 0">
-                <td colspan="6" class="empty">No assignable items found.</td>
+                <td colspan="5" class="empty">No assignable items found.</td>
               </tr>
             </tbody>
           </table>
@@ -115,7 +113,6 @@
                 <th>Code</th>
                 <th>Image</th>
                 <th>Description</th>
-                <th>Type</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
@@ -132,7 +129,6 @@
                   </ng-template>
                 </td>
                 <td>{{ item.item_description }}</td>
-                <td>{{ item.item_type_name || '—' }}</td>
                 <td>{{ item.is_active ? 'Active' : 'Inactive' }}</td>
                 <td>
                   <button
@@ -146,7 +142,7 @@
                 </td>
               </tr>
               <tr *ngIf="categoryItems.length === 0">
-                <td colspan="6" class="empty">No items assigned to this category.</td>
+                <td colspan="5" class="empty">No items assigned to this category.</td>
               </tr>
             </tbody>
           </table>

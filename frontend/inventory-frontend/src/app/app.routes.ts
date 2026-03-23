@@ -10,12 +10,10 @@ import { InventoryManagerDashboardComponent } from './pages/dashboard/inventory-
 import { ProfileComponent } from './pages/dashboard/profile/profile.component';
 import { authGuard } from './guards/auth.guard';
 import { RolesComponent } from './pages/dashboard/roles/roles.component';
-import { BackupComponent } from './pages/dashboard/backup/backup.component';
 import { MaintenanceComponent } from './pages/dashboard/maintenance/maintenance.component';
 import { SettingsComponent } from './pages/dashboard/settings/settings.component';
 import { CategoryManagementComponent } from './pages/dashboard/inventory-master/categories/category-management.component';
 import { ItemRegistrationUpdatesComponent } from './pages/dashboard/inventory-master/items/item-registration-updates.component';
-import { MinimumStockSetupComponent } from './pages/dashboard/inventory-master/minimum-stock/minimum-stock-setup.component';
 import { BatchDistributionComponent } from './pages/dashboard/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
@@ -23,6 +21,7 @@ import { StockAdjustmentComponent } from './components/stock-adjustment/stock-ad
 import { MonitoringComponent } from './pages/dashboard/monitoring/monitoring.component';
 import { StockReportComponent } from './pages/dashboard/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transaction-history/transaction-history.component';
+import { SystemUsersComponent } from './pages/dashboard/system-users/system-users.component';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -39,11 +38,12 @@ export const routes: Routes = [
       { path: 'super-admin', component: SuperAdminDashboardComponent },
       { path: 'inventory-manager', component: InventoryManagerDashboardComponent },
       { path: 'profile', component: ProfileComponent },
-        { path: 'roles', component: RolesComponent },
-      { path: 'backup', component: BackupComponent },
+      { path: 'roles', component: RolesComponent },
+      { path: 'system-users', component: SystemUsersComponent },
+      { path: 'backup', redirectTo: 'settings', pathMatch: 'full' },
       { path: 'inventory/categories', component: CategoryManagementComponent },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
-      { path: 'inventory/minimum-stock', component: MinimumStockSetupComponent },
+      { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },

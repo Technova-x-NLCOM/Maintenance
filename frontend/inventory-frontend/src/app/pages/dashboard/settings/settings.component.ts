@@ -1,7 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { AuthService, User } from '../../../services/auth.service';
+import { RbacService, Role } from '../../../rbac/services/rbac.service';
+import { BackupComponent } from '../backup/backup.component';
 
 interface SystemSetting {
   setting_id: number;
@@ -15,11 +18,15 @@ interface SystemSetting {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackupComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
 })
 export class SettingsComponent implements OnInit {
+  user: User | null = null;
+  currentRole: Role | null = null;
+  loadingRole = false;
+
   settings: SystemSetting[] = [];
   loading = false;
   error: string | null = null;
@@ -31,28 +38,71 @@ export class SettingsComponent implements OnInit {
 
   private readonly API_URL = 'http://127.0.0.1:8000/api/settings';
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService,
+    private rbacService: RbacService
+  ) {}
 
   ngOnInit(): void {
+    this.authService.currentUser$.subscribe((current) => {
+      this.user = current;
+      if (current) {
+        this.loadCurrentRole();
+      } else {
+        this.currentRole = null;
+        this.cdr.detectChanges();
+      }
+    });
     this.loadSettings();
   }
 
-  private authHeaders(): HttpHeaders {
+  hasPermission(permissionName: string): boolean {
+    if (this.loadingRole) return false;
+    if (this.user?.role === 'super_admin') return true;
+    return this.rbacService.roleHasPermission(this.currentRole, permissionName);
+  }
+
+  private loadCurrentRole(): void {
+    this.loadingRole = true;
+    this.rbacService.getCurrentRole().subscribe({
+      next: (role) => {
+        this.currentRole = role;
+        this.loadingRole = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.currentRole = null;
+        this.loadingRole = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private authHeaders(includeJsonBody = false): HttpHeaders {
     const token = localStorage.getItem('access_token');
-    return new HttpHeaders({ Authorization: token ? `Bearer ${token}` : '' });
+    let headers = new HttpHeaders({
+      Authorization: token ? `Bearer ${token}` : '',
+      Accept: 'application/json'
+    });
+    if (includeJsonBody) {
+      headers = headers.set('Content-Type', 'application/json');
+    }
+    return headers;
   }
 
   loadSettings(): void {
     this.loading = true;
     this.error = null;
-    this.http.get<SystemSetting[]>(this.API_URL, { headers: this.authHeaders() }).subscribe({
+    this.http.get<unknown>(this.API_URL, { headers: this.authHeaders(false) }).subscribe({
       next: (data) => {
-        this.settings = data;
+        this.settings = this.normalizeSettings(data);
         this.loading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.error = err?.error?.message || 'Failed to load settings.';
+      error: (err: HttpErrorResponse) => {
+        this.error = this.extractHttpError(err, 'Failed to load settings.');
         this.loading = false;
         this.cdr.detectChanges();
       }
@@ -78,11 +128,12 @@ export class SettingsComponent implements OnInit {
     this.saveError = null;
     this.saveSuccess = null;
     this.http
-      .put<SystemSetting>(`${this.API_URL}/${setting.setting_key}`, { setting_value: this.editValue }, { headers: this.authHeaders() })
+      .put<SystemSetting>(`${this.API_URL}/${setting.setting_key}`, { setting_value: this.editValue }, { headers: this.authHeaders(true) })
       .subscribe({
         next: (updated) => {
+          const row = this.normalizeSettingRow(updated);
           const idx = this.settings.findIndex(s => s.setting_key === setting.setting_key);
-          if (idx !== -1) this.settings[idx] = updated;
+          if (idx !== -1) this.settings[idx] = row;
           this.editingKey = null;
           this.editValue = '';
           this.saving = false;
@@ -90,8 +141,8 @@ export class SettingsComponent implements OnInit {
           setTimeout(() => { this.saveSuccess = null; this.cdr.detectChanges(); }, 3000);
           this.cdr.detectChanges();
         },
-        error: (err) => {
-          this.saveError = err?.error?.message || 'Failed to save setting.';
+        error: (err: HttpErrorResponse) => {
+          this.saveError = this.extractHttpError(err, 'Failed to save setting.');
           this.saving = false;
           this.cdr.detectChanges();
         }
@@ -100,5 +151,47 @@ export class SettingsComponent implements OnInit {
 
   formatKey(key: string): string {
     return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  private normalizeSettings(data: unknown): SystemSetting[] {
+    if (Array.isArray(data)) {
+      return data.map((row) => this.normalizeSettingRow(row));
+    }
+
+    const asRecord = data as { data?: unknown } | null;
+    if (asRecord && Array.isArray(asRecord.data)) {
+      return asRecord.data.map((row) => this.normalizeSettingRow(row));
+    }
+
+    return [];
+  }
+
+  private normalizeSettingRow(row: unknown): SystemSetting {
+    const r = row as Record<string, unknown>;
+    return {
+      setting_id: Number(r['setting_id'] ?? 0),
+      setting_key: String(r['setting_key'] ?? ''),
+      setting_value: r['setting_value'] != null ? String(r['setting_value']) : '',
+      description: r['description'] != null ? String(r['description']) : null,
+      updated_by: r['updated_by'] != null ? Number(r['updated_by']) : null,
+      updated_at: String(r['updated_at'] ?? '')
+    };
+  }
+
+  private extractHttpError(err: HttpErrorResponse, fallback: string): string {
+    const body = err.error as { message?: string; errors?: Record<string, string[]> } | string | null;
+    if (typeof body === 'string' && body.trim()) {
+      return body;
+    }
+    if (body && typeof body === 'object') {
+      if (body.message) {
+        return body.message;
+      }
+      const first = body.errors ? Object.values(body.errors)[0]?.[0] : null;
+      if (first) {
+        return first;
+      }
+    }
+    return err.message || fallback;
   }
 }

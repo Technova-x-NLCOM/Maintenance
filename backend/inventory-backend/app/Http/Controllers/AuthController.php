@@ -7,6 +7,7 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -274,8 +275,19 @@ class AuthController extends Controller
             $token = JWTAuth::fromUser($user);
             $user->load('primaryRole');
 
-            // Update last login timestamp (optional)
-            $user->touch('updated_at');
+            // Record last login — use direct DB update so it always persists (migration must be run).
+            if (Schema::hasColumn('users', 'last_login_at')) {
+                $now = now();
+                DB::table('users')
+                    ->where('user_id', $user->user_id)
+                    ->update([
+                        'last_login_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                $user->last_login_at = $now;
+            } else {
+                $user->touch('updated_at');
+            }
 
             return response()->json([
                 'success' => true,

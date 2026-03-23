@@ -42,17 +42,9 @@
         </label>
 
         <label>
-          <span>Type of item <em>*</em></span>
-          <select [(ngModel)]="formData.item_type_id">
-            <option [ngValue]="null">Select type of item</option>
-            <option *ngFor="let type of options.item_types" [ngValue]="type.item_type_id">{{ type.type_name }}</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Category (optional)</span>
-          <select [(ngModel)]="formData.category_id">
-            <option [ngValue]="null">No category</option>
+          <span>Category <em>*</em></span>
+          <select [(ngModel)]="formData.category_id" (ngModelChange)="onCategoryChange()">
+            <option [ngValue]="null">Select category</option>
             <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
               {{ category.category_name }}
             </option>
@@ -145,7 +137,7 @@
           <input
             type="text"
             [(ngModel)]="search"
-            placeholder="Search by code, description, type, or category"
+            placeholder="Search by code, description, or category"
             (keyup.enter)="onSearch()"
           />
         </div>
@@ -163,7 +155,6 @@
           <tr>
             <th>Code</th>
             <th>Description</th>
-            <th>Type</th>
             <th>Category</th>
             <th>Reorder</th>
             <th>Status</th>
@@ -174,7 +165,6 @@
           <tr *ngFor="let item of items">
             <td><span class="cell-code">{{ item.item_code }}</span></td>
             <td>{{ item.item_description }}</td>
-            <td>{{ item.item_type_name || '—' }}</td>
             <td>{{ item.category_name || '—' }}</td>
             <td>{{ item.reorder_level != null ? item.reorder_level : '—' }}</td>
             <td>
@@ -190,7 +180,7 @@
             </td>
           </tr>
           <tr *ngIf="items.length === 0">
-            <td colspan="7" class="empty">No items found.</td>
+            <td colspan="6" class="empty">No items found.</td>
           </tr>
         </tbody>
       </table>
