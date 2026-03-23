@@ -148,19 +148,6 @@ export class StockReportComponent implements OnInit {
     autoTable(doc, {
       startY: 80,
       head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-      head: [
-        [
-          'Item Code',
-          'Description',
-          'Category',
-          'UoM',
-          'Current Stock',
-          'Total IN',
-          'Total OUT',
-          'Reorder Level',
-          'Status',
-        ],
-      ],
       body: this.filteredItems.map((r) => [
         r.item_code,
         r.item_description,
@@ -179,8 +166,6 @@ export class StockReportComponent implements OnInit {
         if (data.section === 'body' && data.column.index === 8) {
           data.cell.styles.textColor =
             (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
-          const val = String(data.cell.raw ?? '');
-          data.cell.styles.textColor = val === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
         }
       },
