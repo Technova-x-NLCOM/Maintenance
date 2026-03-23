@@ -40,16 +40,44 @@
 }
 
 .catalog-toolbar {
-  display: grid;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 10px;
+  align-items: center;
   margin-bottom: 14px;
 }
 
-.search-wrap,
-.filter-wrap {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+.search-wrap {
+  position: relative;
+  flex: 1;
+
+  .form-control {
+    padding-right: 30px;
+  }
+}
+
+.btn-clear-input {
+  position: absolute;
+  right: 8px;
+  top: 45%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 30px;
+  color: #94a3b8;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+
+  &:hover {
+    color: #334155;
+  }
+}
+
+.category-select {
+  width: auto !important;
+  min-width: 140px;
+  flex-shrink: 0;
 }
 
 .form-control {
@@ -427,7 +455,14 @@
   animation: fadeIn 0.15s ease;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 
 .modal-box {
   background: #fff;
@@ -441,7 +476,16 @@
   max-height: 90vh;
 }
 
-@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 .modal-header {
   display: flex;
@@ -450,7 +494,11 @@
   padding: 1.25rem 1.5rem 1rem;
   border-bottom: 1px solid #e2e8f0;
 
-  h2 { margin: 0; font-size: 1.1rem; color: #0f172a; }
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+  }
 
   .modal-close {
     background: none;
@@ -460,7 +508,9 @@
     color: #94a3b8;
     cursor: pointer;
     padding: 0 4px;
-    &:hover { color: #334155; }
+    &:hover {
+      color: #334155;
+    }
   }
 }
 

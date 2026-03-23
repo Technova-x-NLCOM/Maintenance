@@ -10,7 +10,7 @@ import { filter } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss'
+  styleUrl: './sidebar.component.scss',
 })
 export class SidebarComponent implements OnInit {
   @Input() user: User | null = null;
@@ -24,7 +24,7 @@ export class SidebarComponent implements OnInit {
     private authService: AuthService,
     private rbacService: RbacService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -39,12 +39,12 @@ export class SidebarComponent implements OnInit {
     });
 
     this.expandGroupForCurrentRoute(this.router.url);
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.expandGroupForCurrentRoute(event.urlAfterRedirects || event.url);
-      this.cdr.detectChanges();
-    });
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.expandGroupForCurrentRoute(event.urlAfterRedirects || event.url);
+        this.cdr.detectChanges();
+      });
   }
 
   toggleGroup(group: string): void {
@@ -61,9 +61,11 @@ export class SidebarComponent implements OnInit {
 
   isDashboardActive(): boolean {
     const url = this.router.url;
-    return url === '/dashboard' ||
+    return (
+      url === '/dashboard' ||
       url.startsWith('/dashboard/super-admin') ||
-      url.startsWith('/dashboard/inventory-manager');
+      url.startsWith('/dashboard/inventory-manager')
+    );
   }
 
   hasPermission(permissionName: string): boolean {
@@ -86,7 +88,7 @@ export class SidebarComponent implements OnInit {
     const loginRoute = role === 'super_admin' ? '/admin-login' : '/login';
     this.authService.logout().subscribe({
       next: () => this.router.navigate([loginRoute]),
-      error: () => this.router.navigate([loginRoute])
+      error: () => this.router.navigate([loginRoute]),
     });
   }
 
@@ -102,12 +104,20 @@ export class SidebarComponent implements OnInit {
         this.currentRole = null;
         this.loadingRole = false;
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
   private expandGroupForCurrentRoute(url: string): void {
-    const inventoryTables = ['items', 'categories', 'item_types', 'inventory_batches', 'inventory_transactions', 'inventory_snapshots', 'expiry_alerts'];
+    const inventoryTables = [
+      'items',
+      'categories',
+      'item_types',
+      'inventory_batches',
+      'inventory_transactions',
+      'inventory_snapshots',
+      'expiry_alerts',
+    ];
     const userTables = ['users', 'user_roles'];
     const systemTables = ['audit_log'];
 

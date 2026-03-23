@@ -46,7 +46,9 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .error-state {
@@ -57,8 +59,16 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
   box-shadow: $shadow-sm;
   border: 1px solid $border;
 
-  svg { stroke: #dc2626; margin-bottom: 16px; }
-  p { color: $text-primary; font-size: 1.0625rem; font-weight: 600; margin-bottom: 20px; }
+  svg {
+    stroke: #dc2626;
+    margin-bottom: 16px;
+  }
+  p {
+    color: $text-primary;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
 
   .retry-btn {
     padding: 12px 28px;
@@ -69,7 +79,9 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, transform 0.15s;
+    transition:
+      background 0.2s,
+      transform 0.15s;
 
     &:hover {
       background: $primary-hover;
@@ -99,7 +111,9 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
     justify-content: center;
     border: 1px solid rgba(37, 99, 235, 0.12);
 
-    svg { stroke: $primary; }
+    svg {
+      stroke: $primary;
+    }
   }
 
   h1 {
@@ -158,7 +172,9 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
 
   &:hover {
     border-color: $primary;
-    box-shadow: 0 0 0 3px $primary-soft, $shadow-md;
+    box-shadow:
+      0 0 0 3px $primary-soft,
+      $shadow-md;
     transform: translateY(-2px);
   }
 
@@ -178,31 +194,45 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
 
     &.inventory-color {
       background: rgba(37, 99, 235, 0.1);
-      svg { stroke: $primary; }
+      svg {
+        stroke: $primary;
+      }
     }
     &.category-color {
       background: rgba(5, 150, 105, 0.1);
-      svg { stroke: #059669; }
+      svg {
+        stroke: #059669;
+      }
     }
     &.type-color {
       background: rgba(6, 182, 212, 0.1);
-      svg { stroke: #0891b2; }
+      svg {
+        stroke: #0891b2;
+      }
     }
     &.stock-color {
       background: rgba(16, 185, 129, 0.1);
-      svg { stroke: #059669; }
+      svg {
+        stroke: #059669;
+      }
     }
     &.transaction-color {
       background: rgba(139, 92, 246, 0.1);
-      svg { stroke: #7c3aed; }
+      svg {
+        stroke: #7c3aed;
+      }
     }
     &.snapshot-color {
       background: rgba(236, 72, 153, 0.1);
-      svg { stroke: #db2777; }
+      svg {
+        stroke: #db2777;
+      }
     }
     &.alert-color {
       background: rgba(245, 158, 11, 0.1);
-      svg { stroke: #d97706; }
+      svg {
+        stroke: #d97706;
+      }
     }
   }
 
@@ -235,7 +265,9 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
     height: 20px;
     stroke: #cbd5e1;
     flex-shrink: 0;
-    transition: stroke 0.15s ease, transform 0.15s ease;
+    transition:
+      stroke 0.15s ease,
+      transform 0.15s ease;
   }
 
   &:hover .quick-arrow {
@@ -245,7 +277,13 @@ $shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 640px) {
-  .maintenance-home { padding: 24px 16px 40px; }
-  .quick-grid { grid-template-columns: 1fr; }
-  .welcome-hero h1 { font-size: 1.5rem; }
+  .maintenance-home {
+    padding: 24px 16px 40px;
+  }
+  .quick-grid {
+    grid-template-columns: 1fr;
+  }
+  .welcome-hero h1 {
+    font-size: 1.5rem;
+  }
 }

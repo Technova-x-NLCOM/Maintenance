@@ -9,7 +9,7 @@ import { SidebarComponent } from './sidebar.component';
   standalone: true,
   imports: [CommonModule, RouterModule, SidebarComponent],
   templateUrl: './dashboard-layout.component.html',
-  styleUrl: './dashboard-layout.component.scss'
+  styleUrl: './dashboard-layout.component.scss',
 })
 export class DashboardLayoutComponent implements OnInit {
   currentUser: User | null = null;
@@ -17,7 +17,7 @@ export class DashboardLayoutComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit() {
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       this.currentUser = user;
     });
   }
