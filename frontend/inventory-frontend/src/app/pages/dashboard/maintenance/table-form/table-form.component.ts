@@ -114,6 +114,11 @@ export class TableFormComponent implements OnInit {
     if (column === this.pkKey) {
       return true;
     }
+    // In user role assignments, we don't let admins manually toggle "primary"
+    // from this generic maintenance form; the backend keeps primary consistent.
+    if (this.selectedTable === 'user_roles' && column === 'is_primary') {
+      return true;
+    }
     return column === 'deleted_at' || column === 'created_at' || column === 'updated_at';
   }
 
@@ -123,6 +128,10 @@ export class TableFormComponent implements OnInit {
 
   /** Hide system ID (single primary key) from form so user doesn't see a disabled ID field. */
   isHiddenFromForm(column: string): boolean {
+    // Hide auto-managed timestamps and the primary toggle in user role assignment forms.
+    if (this.selectedTable === 'user_roles' && (column === 'created_at' || column === 'updated_at' || column === 'is_primary')) {
+      return true;
+    }
     return this.pkKey !== null && column === this.pkKey;
   }
 
