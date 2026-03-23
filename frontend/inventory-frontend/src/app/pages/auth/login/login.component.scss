@@ -1,4 +1,4 @@
-$primary: #025B95;
+$primary: #025b95;
 $primary-dark: #1e3a8a;
 $text-dark: #111827;
 $text-medium: #374151;
@@ -114,7 +114,7 @@ $border-radius: 8px;
 }
 
 .login-card {
-  background: #F0F6FF;
+  background: #f0f6ff;
   border-radius: 12px;
   box-shadow: 0 4px 15px #505050;
   padding: 28px 24px;
@@ -166,7 +166,9 @@ $border-radius: 8px;
   height: 0;
   margin-bottom: 0;
   overflow: hidden;
-  transition: height 0.2s ease, margin-bottom 0.2s ease;
+  transition:
+    height 0.2s ease,
+    margin-bottom 0.2s ease;
 
   &.has-error {
     height: 72px;
@@ -211,7 +213,7 @@ $border-radius: 8px;
     display: block;
     font-size: 1rem;
     font-weight: 500;
-    color: #025B95;
+    color: #025b95;
     margin-bottom: 6px;
   }
 }
@@ -219,13 +221,15 @@ $border-radius: 8px;
 .form-control {
   width: 100%;
   padding: 11px 14px;
-  border: 2px solid #025B95;
+  border: 2px solid #025b95;
   border-radius: $border-radius;
   font-size: 1rem;
   color: $text-dark;
-  background: #F0F6FF;
+  background: #f0f6ff;
   box-sizing: border-box;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 
   &:focus {
     outline: none;
@@ -253,7 +257,7 @@ $border-radius: 8px;
   svg {
     width: 20px;
     height: 20px;
-    stroke: #025B95;
+    stroke: #025b95;
   }
 
   &:hover svg {
@@ -283,7 +287,7 @@ $border-radius: 8px;
   width: 100%;
   padding: 12px 14px;
   min-height: 48px;
-  background: #F0F6FF;
+  background: #f0f6ff;
   border: 2px solid $primary;
   border-radius: $border-radius;
   font-size: 1.0625rem;
@@ -293,7 +297,7 @@ $border-radius: 8px;
   transition: all 0.2s;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2A4468 0%, #64A1F4 100%);
+    background: linear-gradient(135deg, #2a4468 0%, #64a1f4 100%);
     border-color: $primary;
     color: white;
   }
@@ -323,18 +327,20 @@ $border-radius: 8px;
   width: 100%;
   padding: 12px 14px;
   min-height: 48px;
-  background: linear-gradient(135deg, #2A4468 0%, #64A1F4 100%);
+  background: linear-gradient(135deg, #2a4468 0%, #64a1f4 100%);
   border-radius: $border-radius;
   font-size: 1.0625rem;
   font-weight: 700;
   text-align: center;
   text-decoration: none;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
   box-sizing: border-box;
   color: white;
 
   &:hover {
-    background: #F0F6FF;
+    background: #f0f6ff;
     border: 2px solid $primary;
     color: $primary;
   }

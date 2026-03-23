@@ -22,20 +22,25 @@
   </div>
 
   <div class="filters-bar">
-    <input class="filter-input search-input" type="text" placeholder="Search item, category..." [(ngModel)]="search" (keyup.enter)="apply()" />
+    <div class="search-wrap">
+      <input class="filter-input search-input" type="text" placeholder="Search item..." [(ngModel)]="search" (ngModelChange)="applyFilters()" />
+      <button class="btn-clear-input" type="button" *ngIf="search" (click)="search = ''; applyFilters()">×</button>
+    </div>
+    <select class="filter-input" [(ngModel)]="categoryFilter" (ngModelChange)="applyFilters()">
+      <option value="">All Categories</option>
+      <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+    </select>
     <label class="checkbox-label">
-      <input type="checkbox" [(ngModel)]="lowStock" (change)="apply()" /> Low stock only
+      <input type="checkbox" [(ngModel)]="lowStock" (change)="onLowStockChange()" /> Low stock only
     </label>
-    <button class="btn-apply" (click)="apply()">Apply</button>
-    <button class="btn-clear" (click)="clear()">Clear</button>
-    <span class="record-count">{{ total }} items</span>
+    <span class="record-count">{{ filteredItems.length }} items</span>
   </div>
 
   <div class="error-msg" *ngIf="error">{{ error }}</div>
   <div class="loading-state" *ngIf="loading"><div class="spinner"></div><span>Loading...</span></div>
 
   <div class="table-wrapper" *ngIf="!loading">
-    <table class="data-table" *ngIf="items.length > 0; else empty">
+    <table class="data-table" *ngIf="filteredItems.length > 0; else empty">
       <thead>
         <tr>
           <th>Item Code</th><th>Description</th><th>Category</th><th>UoM</th>
@@ -44,7 +49,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of items" [class.low-stock-row]="isLow(item)">
+        <tr *ngFor="let item of filteredItems" [class.low-stock-row]="isLow(item)">
           <td class="code-cell">{{ item.item_code }}</td>
           <td>{{ item.item_description }}</td>
           <td>{{ item.category_name || '—' }}</td>

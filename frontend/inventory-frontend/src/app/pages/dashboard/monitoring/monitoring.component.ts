@@ -6,7 +6,6 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-
 export interface TransactionRecord {
   transaction_id: number;
   transaction_type: 'IN' | 'OUT';
@@ -39,7 +38,7 @@ export interface StockReportRecord {
 
 interface Paginated<T> {
   success: boolean;
-  data: { data: T[]; current_page: number; last_page: number; per_page: number; total: number; };
+  data: { data: T[]; current_page: number; last_page: number; per_page: number; total: number };
 }
 
 @Component({
@@ -48,29 +47,44 @@ interface Paginated<T> {
   imports: [CommonModule, FormsModule],
   providers: [DatePipe],
   templateUrl: './monitoring.component.html',
-  styleUrl: './monitoring.component.scss'
+  styleUrl: './monitoring.component.scss',
 })
 export class MonitoringComponent implements OnInit {
   activeTab: 'stock' | 'history' = 'stock';
 
   // Stock Report state
   stockItems: StockReportRecord[] = [];
-  stPage = 1; stLastPage = 1; stTotal = 0;
-  stSearch = ''; stLowStock = false;
-  stLoading = false; stError = '';
+  stPage = 1;
+  stLastPage = 1;
+  stTotal = 0;
+  stSearch = '';
+  stLowStock = false;
+  stLoading = false;
+  stError = '';
 
   // Transaction History state
   transactions: TransactionRecord[] = [];
-  txPage = 1; txLastPage = 1; txTotal = 0;
-  txSearch = ''; txType: '' | 'IN' | 'OUT' = '';
-  txDateFrom = ''; txDateTo = '';
-  txLoading = false; txError = '';
+  txPage = 1;
+  txLastPage = 1;
+  txTotal = 0;
+  txSearch = '';
+  txType: '' | 'IN' | 'OUT' = '';
+  txDateFrom = '';
+  txDateTo = '';
+  txLoading = false;
+  txError = '';
 
   private readonly BASE = 'http://127.0.0.1:8000/api/inventory/transactions';
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private datePipe: DatePipe) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+    private datePipe: DatePipe,
+  ) {}
 
-  ngOnInit(): void { this.loadStock(1); }
+  ngOnInit(): void {
+    this.loadStock(1);
+  }
 
   setTab(tab: 'stock' | 'history'): void {
     this.activeTab = tab;
@@ -80,37 +94,82 @@ export class MonitoringComponent implements OnInit {
 
   // ── Stock Report ─────────────────────────────────────────────────
   loadStock(page = 1): void {
-    this.stLoading = true; this.stError = '';
+    this.stLoading = true;
+    this.stError = '';
     let p = new HttpParams().set('page', String(page)).set('per_page', '25');
     if (this.stSearch.trim()) p = p.set('search', this.stSearch.trim());
     if (this.stLowStock) p = p.set('low_stock', '1');
-    this.http.get<Paginated<StockReportRecord>>(`${this.BASE}/stock-report`, { headers: this.authHeaders(), params: p }).subscribe({
-      next: (res) => { this.stockItems = res.data.data; this.stPage = res.data.current_page; this.stLastPage = res.data.last_page; this.stTotal = res.data.total; this.stLoading = false; this.cdr.detectChanges(); },
-      error: () => { this.stError = 'Failed to load stock report.'; this.stLoading = false; this.cdr.detectChanges(); }
-    });
+    this.http
+      .get<
+        Paginated<StockReportRecord>
+      >(`${this.BASE}/stock-report`, { headers: this.authHeaders(), params: p })
+      .subscribe({
+        next: (res) => {
+          this.stockItems = res.data.data;
+          this.stPage = res.data.current_page;
+          this.stLastPage = res.data.last_page;
+          this.stTotal = res.data.total;
+          this.stLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.stError = 'Failed to load stock report.';
+          this.stLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
-  applyStock(): void { this.loadStock(1); }
-  clearStock(): void { this.stSearch = ''; this.stLowStock = false; this.loadStock(1); }
+  applyStock(): void {
+    this.loadStock(1);
+  }
+  clearStock(): void {
+    this.stSearch = '';
+    this.stLowStock = false;
+    this.loadStock(1);
+  }
 
   // ── Transaction History ──────────────────────────────────────────
   loadTx(page = 1): void {
-    this.txLoading = true; this.txError = '';
+    this.txLoading = true;
+    this.txError = '';
     let p = new HttpParams().set('page', String(page)).set('per_page', '20');
     if (this.txSearch.trim()) p = p.set('search', this.txSearch.trim());
     if (this.txType) p = p.set('type', this.txType);
     if (this.txDateFrom) p = p.set('date_from', this.txDateFrom);
     if (this.txDateTo) p = p.set('date_to', this.txDateTo);
-    this.http.get<Paginated<TransactionRecord>>(this.BASE, { headers: this.authHeaders(), params: p }).subscribe({
-      next: (res) => { this.transactions = res.data.data; this.txPage = res.data.current_page; this.txLastPage = res.data.last_page; this.txTotal = res.data.total; this.txLoading = false; this.cdr.detectChanges(); },
-      error: () => { this.txError = 'Failed to load transactions.'; this.txLoading = false; this.cdr.detectChanges(); }
-    });
+    this.http
+      .get<Paginated<TransactionRecord>>(this.BASE, { headers: this.authHeaders(), params: p })
+      .subscribe({
+        next: (res) => {
+          this.transactions = res.data.data;
+          this.txPage = res.data.current_page;
+          this.txLastPage = res.data.last_page;
+          this.txTotal = res.data.total;
+          this.txLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.txError = 'Failed to load transactions.';
+          this.txLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
-  applyTx(): void { this.loadTx(1); }
-  clearTx(): void { this.txSearch = ''; this.txType = ''; this.txDateFrom = ''; this.txDateTo = ''; this.loadTx(1); }
+  applyTx(): void {
+    this.loadTx(1);
+  }
+  clearTx(): void {
+    this.txSearch = '';
+    this.txType = '';
+    this.txDateFrom = '';
+    this.txDateTo = '';
+    this.loadTx(1);
+  }
 
   // ── Pagination ───────────────────────────────────────────────────
   pageRange(current: number, last: number): number[] {
-    const s = Math.max(1, current - 2), e = Math.min(last, current + 2);
+    const s = Math.max(1, current - 2),
+      e = Math.min(last, current + 2);
     return Array.from({ length: e - s + 1 }, (_, i) => s + i);
   }
 
@@ -181,6 +240,31 @@ export class MonitoringComponent implements OnInit {
           r.measurement_unit ?? '—',
           r.current_stock, r.total_in, r.total_out, r.reorder_level,
           r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
+        head: [
+          [
+            'Item Code',
+            'Description',
+            'Category',
+            'Type',
+            'UoM',
+            'Current Stock',
+            'Total IN',
+            'Total OUT',
+            'Reorder Level',
+            'Status',
+          ],
+        ],
+        body: this.stockItems.map((r) => [
+          r.item_code,
+          r.item_description,
+          r.category_name ?? '—',
+          r.item_type_name ?? '—',
+          r.measurement_unit ?? '—',
+          r.current_stock,
+          r.total_in,
+          r.total_out,
+          r.reorder_level,
+          r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK',
         ]),
         styles: { fontSize: 7, cellPadding: 4 },
         headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
@@ -191,17 +275,36 @@ export class MonitoringComponent implements OnInit {
             data.cell.styles.textColor = val === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
             data.cell.styles.fontStyle = 'bold';
           }
-        }
+        },
       });
     } else {
       autoTable(doc, {
         startY: 80,
-        head: [['Type', 'Reference', 'Item Code', 'Description', 'Batch', 'Qty', 'Unit', 'Destination / Reason', 'Performed By', 'Date']],
-        body: this.transactions.map(r => [
-          r.transaction_type, r.reference_number, r.item_code, r.item_description,
-          r.batch_number ?? '—', r.quantity, r.measurement_unit ?? '—',
-          r.destination ?? r.reason ?? '—', r.performed_by_name,
-          this.datePipe.transform(r.transaction_date, 'MMM d, y, h:mm a') ?? r.transaction_date
+        head: [
+          [
+            'Type',
+            'Reference',
+            'Item Code',
+            'Description',
+            'Batch',
+            'Qty',
+            'Unit',
+            'Destination / Reason',
+            'Performed By',
+            'Date',
+          ],
+        ],
+        body: this.transactions.map((r) => [
+          r.transaction_type,
+          r.reference_number,
+          r.item_code,
+          r.item_description,
+          r.batch_number ?? '—',
+          r.quantity,
+          r.measurement_unit ?? '—',
+          r.destination ?? r.reason ?? '—',
+          r.performed_by_name,
+          this.datePipe.transform(r.transaction_date, 'MMM d, y, h:mm a') ?? r.transaction_date,
         ]),
         styles: { fontSize: 7, cellPadding: 4 },
         headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
@@ -212,7 +315,7 @@ export class MonitoringComponent implements OnInit {
             data.cell.styles.textColor = val === 'IN' ? [22, 163, 74] : [220, 38, 38];
             data.cell.styles.fontStyle = 'bold';
           }
-        }
+        },
       });
     }
 
@@ -226,6 +329,23 @@ export class MonitoringComponent implements OnInit {
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
+      [
+        'Item Code',
+        'Description',
+        'Category',
+        'Type',
+        'Unit',
+        'Current Stock',
+        'Total IN',
+        'Total OUT',
+        'Reorder Level',
+        'Status',
+      ],
+      ...rows.map((r) => [
+        r.item_code,
+        r.item_description,
+        r.category_name ?? '—',
+        r.item_type_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
         r.total_in,
@@ -233,13 +353,37 @@ export class MonitoringComponent implements OnInit {
         r.reorder_level,
         r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
       ])
+        r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK',
+      ]),
     ];
   }
 
   private txToRows(rows: TransactionRecord[]): any[][] {
     return [
-      ['Type', 'Reference', 'Item Code', 'Description', 'Batch', 'Qty', 'Unit', 'Destination/Reason', 'Performed By', 'Date'],
-      ...rows.map(r => [r.transaction_type, r.reference_number, r.item_code, r.item_description, r.batch_number ?? '—', r.quantity, r.measurement_unit ?? '—', r.destination ?? r.reason ?? '—', r.performed_by_name, this.datePipe.transform(r.transaction_date, 'MMM d, y, h:mm a') ?? r.transaction_date])
+      [
+        'Type',
+        'Reference',
+        'Item Code',
+        'Description',
+        'Batch',
+        'Qty',
+        'Unit',
+        'Destination/Reason',
+        'Performed By',
+        'Date',
+      ],
+      ...rows.map((r) => [
+        r.transaction_type,
+        r.reference_number,
+        r.item_code,
+        r.item_description,
+        r.batch_number ?? '—',
+        r.quantity,
+        r.measurement_unit ?? '—',
+        r.destination ?? r.reason ?? '—',
+        r.performed_by_name,
+        this.datePipe.transform(r.transaction_date, 'MMM d, y, h:mm a') ?? r.transaction_date,
+      ]),
     ];
   }
 

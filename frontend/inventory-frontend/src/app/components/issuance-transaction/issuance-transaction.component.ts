@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -23,7 +23,8 @@ interface IssuanceCartLine {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './issuance-transaction.component.html',
-  styleUrls: ['./issuance-transaction.component.scss']
+  styleUrls: ['./issuance-transaction.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class IssuanceTransactionComponent implements OnInit {
   items: IssuanceItem[] = [];
@@ -48,7 +49,7 @@ export class IssuanceTransactionComponent implements OnInit {
   saving = false;
   successMessage = '';
   errorMessage = '';
-  showCartModal = false;
+  showCartDrawer = false;
 
   isInCart(itemId: number): boolean {
     return this.cartLines.some(l => l.item_id === itemId);
@@ -56,11 +57,11 @@ export class IssuanceTransactionComponent implements OnInit {
 
   openCartModal(item: IssuanceItem): void {
     this.selectItem(item);
-    this.showCartModal = true;
+    this.showCartDrawer = true;
   }
 
   closeCartModal(): void {
-    this.showCartModal = false;
+    this.showCartDrawer = false;
   }
 
   constructor(
@@ -168,8 +169,14 @@ export class IssuanceTransactionComponent implements OnInit {
       });
     }
 
-    this.successMessage = 'Item added to issuance list.';
     this.errorMessage = '';
+    this.showToast(`${this.selectedItem.item_description} added to list.`);
+  }
+
+  showToast(message: string): void {
+    this.successMessage = message;
+    this.cdr.detectChanges();
+    setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 3000);
   }
 
   updateLineQuantity(line: IssuanceCartLine, newQty: number): void {
@@ -209,15 +216,21 @@ export class IssuanceTransactionComponent implements OnInit {
       .subscribe({
         next: (response: IssuanceTransactionResponse) => {
           this.saving = false;
-          this.successMessage = `Issuance completed. Reference: ${response.data.reference_number}.`;
           this.cartLines = [];
           this.selectedItem = null;
           this.issueQuantity = 1;
           this.destination = '';
           this.reason = 'Stock Issuance';
           this.notes = '';
-          this.showCartModal = false;
+          this.showCartDrawer = false;
           this.loadItems(this.currentPage);
+
+          this.successMessage = `Issuance completed. Reference: ${response.data.reference_number}.`;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.successMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
         },
         error: (err: any) => {
           this.saving = false;

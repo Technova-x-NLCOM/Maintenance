@@ -30,21 +30,17 @@
             class="form-control"
             placeholder="Search by item code or description"
             [(ngModel)]="searchQuery"
-            (keyup.enter)="onSearch()"
+            (ngModelChange)="onSearch()"
           />
-          <button class="btn btn-secondary" type="button" (click)="onSearch()">Search</button>
-          <button class="btn btn-secondary" type="button" (click)="clearSearch()">Reset</button>
+          <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
         </div>
-
-        <div class="filter-wrap">
-          <select class="form-control" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
-            <option [ngValue]="null">All Categories</option>
-            <option *ngFor="let category of categories" [ngValue]="category.category_id">
-              {{ category.category_name }}
-            </option>
-          </select>
-          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
-        </div>
+        <select class="form-control category-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+          <option [ngValue]="null">All Categories</option>
+          <option *ngFor="let category of categories" [ngValue]="category.category_id">
+            {{ category.category_name }}
+          </option>
+        </select>
+        <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
       </div>
 
       <div class="catalog-grid" *ngIf="!loading">
