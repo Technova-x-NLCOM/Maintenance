@@ -20,8 +20,6 @@ export interface SystemUserDto {
 export interface CreateUserPayload {
   username: string;
   email: string;
-  password: string;
-  password_confirmation: string;
   first_name: string;
   last_name: string;
   contact_info?: string | null;

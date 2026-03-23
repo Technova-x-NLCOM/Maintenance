@@ -189,9 +189,8 @@ class AuthController extends Controller
                     'max:100'
                 ],
                 'password' => [
-                    'required',
+                    'nullable',
                     'string',
-                    'min:1',
                     'max:255'
                 ],
                 'expected_role' => [
@@ -205,8 +204,6 @@ class AuthController extends Controller
                 'identifier.max' => 'Username or email cannot exceed 100 characters.',
                 'identifier.string' => 'Username or email must be a valid text.',
                 
-                'password.required' => 'Password is required.',
-                'password.min' => 'Password cannot be empty.',
                 'password.max' => 'Password is too long.',
                 'password.string' => 'Password must be valid text.',
                 
@@ -223,7 +220,9 @@ class AuthController extends Controller
         }
 
         $identifier = trim($credentials['identifier']);
-        $password = $credentials['password'];
+        $password = isset($credentials['password']) ? (string) $credentials['password'] : null;
+        $password = $password !== null ? trim($password) : null;
+        $password = $password !== null && $password !== '' ? $password : null;
         $expectedRole = $credentials['expected_role'] ?? null;
 
         // Determine if identifier is email or username
@@ -251,15 +250,6 @@ class AuthController extends Controller
                 ], 403);
             }
             
-            // Check password
-            if (!Hash::check($password, $user->password_hash)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Incorrect password. Please check your password and try again.',
-                    'error_type' => 'invalid_password'
-                ], 401);
-            }
-
             // Check if user's role matches expected role BEFORE issuing token
             if ($expectedRole && $user->role !== $expectedRole) {
                 return response()->json([
@@ -269,6 +259,43 @@ class AuthController extends Controller
                     'user_role' => $user->role,
                     'expected_role' => $expectedRole
                 ], 403);
+            }
+
+            // For admin-created users, password is not set yet.
+            $isPasswordUnset = empty($user->password_hash);
+
+        $passwordInitialized = true;
+        if (Schema::hasColumn('users', 'password_initialized')) {
+            $passwordInitialized = (bool) $user->password_initialized && !$isPasswordUnset;
+        } else {
+            // Fallback for older DBs: treat empty password_hash as "not set yet".
+            $passwordInitialized = !$isPasswordUnset;
+        }
+
+        if (!$passwordInitialized) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Password has not been set yet. Please create your password to continue.',
+                    'error_type' => 'password_not_set',
+                    'user_role' => $user->role,
+                ], 428);
+            }
+
+            if (!$password) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Password is required.',
+                    'error_type' => 'password_required',
+                ], 422);
+            }
+
+            // Check password only after we know it is initialized.
+            if (!Hash::check($password, $user->password_hash)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incorrect password. Please check your password and try again.',
+                    'error_type' => 'invalid_password'
+                ], 401);
             }
 
             // Generate JWT token (only after all validation passes)
@@ -322,6 +349,106 @@ class AuthController extends Controller
                 'error_type' => 'system_error'
             ], 500);
         }
+    }
+
+    /**
+     * Users created by admin must set their password on first use.
+     */
+    public function setPassword(Request $request): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $data = $request->validate([
+                'identifier' => [
+                    'required',
+                    'string',
+                    'min:3',
+                    'max:100',
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:255',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                ],
+                'password_confirmation' => [
+                    'required',
+                    'same:password',
+                ],
+                'expected_role' => [
+                    'nullable',
+                    'string',
+                    'in:super_admin,inventory_manager',
+                ],
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed. Please check your input and try again.',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        $identifier = trim($data['identifier']);
+        $password = (string) $data['password'];
+        $expectedRole = $data['expected_role'] ?? null;
+
+        // Determine if identifier is email or username
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $user = User::where($field, $identifier)->first();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No account found with this ' . ($field === 'email' ? 'email address' : 'username') . '.',
+                'error_type' => 'user_not_found',
+            ], 404);
+        }
+
+        if (!$user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account has been deactivated. Please contact the system administrator.',
+                'error_type' => 'account_inactive',
+            ], 403);
+        }
+
+        if ($expectedRole && $user->role !== $expectedRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account does not have access to this portal. Please use the correct login page.',
+                'error_type' => 'unauthorized_portal_access',
+                'user_role' => $user->role,
+                'expected_role' => $expectedRole,
+            ], 403);
+        }
+
+        $isPasswordUnset = empty($user->password_hash);
+        $passwordInitialized = true;
+        if (Schema::hasColumn('users', 'password_initialized')) {
+            $passwordInitialized = (bool) $user->password_initialized && !$isPasswordUnset;
+        } else {
+            $passwordInitialized = !$isPasswordUnset;
+        }
+
+        if ($passwordInitialized) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password is already set for this account.',
+                'error_type' => 'password_already_initialized',
+            ], 409);
+        }
+
+        $user->password_hash = Hash::make($password);
+        if (Schema::hasColumn('users', 'password_initialized')) {
+            $user->password_initialized = true;
+        }
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password created successfully. You can now log in.',
+        ], 200);
     }
 
     /**

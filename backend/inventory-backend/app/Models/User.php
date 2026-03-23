@@ -21,6 +21,7 @@ class User extends Authenticatable implements JWTSubject
         'username',
         'email',
         'password_hash',
+        'password_initialized',
         'first_name',
         'last_name',
         'contact_info',
@@ -38,6 +39,7 @@ class User extends Authenticatable implements JWTSubject
     {
         return [
             'is_active' => 'boolean',
+            'password_initialized' => 'boolean',
             'last_login_at' => 'datetime',
         ];
     }

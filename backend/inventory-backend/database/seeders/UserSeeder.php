@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
@@ -29,6 +30,7 @@ class UserSeeder extends Seeder
                 'last_name' => 'Administrator',
                 'contact_info' => '09170000000',
                 'is_active' => true,
+                'password_initialized' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
@@ -40,10 +42,18 @@ class UserSeeder extends Seeder
                 'last_name' => 'Manager',
                 'contact_info' => '09171111111',
                 'is_active' => true,
+                'password_initialized' => true,
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
         ];
+
+        // If the column doesn't exist yet, keep seeding working.
+        if (!Schema::hasColumn('users', 'password_initialized')) {
+            foreach ($users as &$user) {
+                unset($user['password_initialized']);
+            }
+        }
 
         foreach ($users as $user) {
             DB::table('users')->updateOrInsert(

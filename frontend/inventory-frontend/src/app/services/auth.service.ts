@@ -23,6 +23,11 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface SetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
 export interface LoginRequest {
   identifier: string;
   password: string;
@@ -122,6 +127,27 @@ export class AuthService {
       })
     );
   }
+
+    setPassword(
+      identifier: string,
+      password: string,
+      passwordConfirmation: string,
+      expectedRole?: 'super_admin' | 'inventory_manager'
+    ): Observable<SetPasswordResponse> {
+      const payload: any = {
+        identifier,
+        password,
+        password_confirmation: passwordConfirmation,
+      };
+      if (expectedRole) {
+        payload.expected_role = expectedRole;
+      }
+
+      return this.http.post<SetPasswordResponse>(
+        `${this.API_URL}/set-password`,
+        payload
+      );
+    }
 
     register(data: RegisterRequest): Observable<AuthResponse> {
       return this.http.post<AuthResponse>(

@@ -186,14 +186,8 @@ export class SystemUsersComponent implements OnInit {
     this.normalizeUsername();
 
     if (!this.editingUser) {
-      if (!this.form.password || this.form.password.length < 8) {
-        this.modalError = 'Password must be at least 8 characters and meet complexity rules.';
-        return;
-      }
-      if (this.form.password !== this.form.password_confirmation) {
-        this.modalError = 'Password confirmation does not match.';
-        return;
-      }
+      // Add mode: admin creates the account without a password.
+      // The new user will set their password after first login attempt.
     } else {
       if (this.form.password) {
         if (this.form.password.length < 8) {
@@ -215,8 +209,6 @@ export class SystemUsersComponent implements OnInit {
         .create({
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password,
-          password_confirmation: this.form.password_confirmation,
           first_name: this.form.first_name,
           last_name: this.form.last_name,
           contact_info: contact,
@@ -330,7 +322,13 @@ export class SystemUsersComponent implements OnInit {
       this.fieldErrors = body.errors;
       this.modalError = body.message || 'Please fix the highlighted fields.';
     } else {
-      this.modalError = this.httpErr(err, 'Save failed.');
+      // Surface backend exception message when available to speed up debugging.
+      const anyBody = err.error as any;
+      if (anyBody?.message && typeof anyBody?.error === 'string' && anyBody.error.trim()) {
+        this.modalError = `${anyBody.message} ${anyBody.error}`;
+      } else {
+        this.modalError = this.httpErr(err, 'Save failed.');
+      }
     }
     this.cdr.markForCheck();
   }

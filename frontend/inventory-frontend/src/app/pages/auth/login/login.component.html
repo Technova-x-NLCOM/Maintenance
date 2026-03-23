@@ -65,6 +65,8 @@
               id="password"
               formControlName="password"
               class="form-control"
+              (focus)="onPasswordInputClick()"
+            (click)="onPasswordInputClick()"
             />
             <button type="button" class="password-toggle" (click)="togglePasswordVisibility()" title="Toggle password visibility">
               <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -84,7 +86,7 @@
         </div>
 
         <button type="submit" class="btn-login" [disabled]="isLoading">
-          {{ isLoading ? 'Signing in...' : 'Login' }}
+          {{ isLoading ? 'Signing in...' : (loginForm.value.password ? 'Login' : 'Continue') }}
         </button>
       </form>
 
@@ -92,5 +94,97 @@
         <p>Not a member yet?</p>
         <a routerLink="/signup" class="btn-register">Register</a>
       </div>
+  </div>
+</div>
+
+<!-- Set New Password Modal (for admin-created users) -->
+<div class="modal-backdrop" *ngIf="showSetPasswordModal" (click)="closeSetPasswordModal()">
+  <div class="modal-panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <button type="button" class="modal-close" (click)="closeSetPasswordModal()" aria-label="Close">×</button>
+
+    <div class="modal-head">
+      <span class="modal-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1v22"/>
+          <path d="M17 5h-5V1"/>
+          <path d="M7 19h5v4"/>
+        </svg>
+      </span>
+      <div>
+        <h2>Set New Password</h2>
+        <p class="modal-lead">Create a secure password for your account</p>
+      </div>
+    </div>
+
+    <div class="modal-alert" *ngIf="setPasswordErrorMessage">{{ setPasswordErrorMessage }}</div>
+
+    <form [formGroup]="setPasswordForm" class="modal-body" (ngSubmit)="onSetPasswordSubmit()">
+      <div class="field">
+        <label for="newPassword">New Password</label>
+        <div class="password-input-wrapper">
+          <input
+            id="newPassword"
+            [type]="showNewPassword ? 'text' : 'password'"
+            formControlName="new_password"
+            class="form-control"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleNewPasswordVisibility()"
+            [attr.aria-label]="showNewPassword ? 'Hide password' : 'Show password'"
+            title="{{ showNewPassword ? 'Hide' : 'Show' }} password"
+          >
+            <svg *ngIf="!showNewPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showNewPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+        <span class="hint">Min 8 chars; include uppercase, lowercase, number, and one special (@$!%*?&).</span>
+        <span class="field-err" *ngIf="setPasswordForm.get('new_password')?.invalid && (setPasswordForm.get('new_password')?.touched || setPasswordForm.get('new_password')?.dirty)">
+          Password format is invalid.
+        </span>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="password-input-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            formControlName="confirm_password"
+            class="form-control"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleConfirmPasswordVisibility()"
+            [attr.aria-label]="showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'"
+            title="{{ showConfirmPassword ? 'Hide' : 'Show' }} password"
+          >
+            <svg *ngIf="!showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <svg *ngIf="showConfirmPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" (click)="closeSetPasswordModal()" [disabled]="isSettingPassword">Cancel</button>
+      <button type="button" class="btn-primary" (click)="onSetPasswordSubmit()" [disabled]="isSettingPassword">
+        {{ isSettingPassword ? 'Creating…' : 'Set Password' }}
+      </button>
+    </div>
   </div>
 </div>

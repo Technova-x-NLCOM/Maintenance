@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -90,17 +91,6 @@ class UserManagementController extends Controller
                     'max:100',
                     Rule::unique('users', 'email'),
                 ],
-                'password' => [
-                    'required',
-                    'string',
-                    'min:8',
-                    'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
-                ],
-                'password_confirmation' => [
-                    'required',
-                    'same:password',
-                ],
                 'first_name' => [
                     'required',
                     'string',
@@ -139,7 +129,12 @@ class UserManagementController extends Controller
             $user = new User();
             $user->username = $data['username'];
             $user->email = $data['email'];
-            $user->password_hash = Hash::make($data['password']);
+            // Users are created by admin without a password; they must set it on first use.
+            // Keep password_hash empty until first password creation.
+            $user->password_hash = '';
+            if (Schema::hasColumn('users', 'password_initialized')) {
+                $user->password_initialized = false;
+            }
             $user->first_name = $data['first_name'];
             $user->last_name = $data['last_name'];
             $user->contact_info = $data['contact_info'] ?? null;
