@@ -100,9 +100,10 @@ export class MonitoringComponent implements OnInit {
     if (this.stSearch.trim()) p = p.set('search', this.stSearch.trim());
     if (this.stLowStock) p = p.set('low_stock', '1');
     this.http
-      .get<
-        Paginated<StockReportRecord>
-      >(`${this.BASE}/stock-report`, { headers: this.authHeaders(), params: p })
+      .get<Paginated<StockReportRecord>>(`${this.BASE}/stock-report`, {
+        headers: this.authHeaders(),
+        params: p,
+      })
       .subscribe({
         next: (res) => {
           this.stockItems = res.data.data;
@@ -119,9 +120,11 @@ export class MonitoringComponent implements OnInit {
         },
       });
   }
+
   applyStock(): void {
     this.loadStock(1);
   }
+
   clearStock(): void {
     this.stSearch = '';
     this.stLowStock = false;
@@ -155,9 +158,11 @@ export class MonitoringComponent implements OnInit {
         },
       });
   }
+
   applyTx(): void {
     this.loadTx(1);
   }
+
   clearTx(): void {
     this.txSearch = '';
     this.txType = '';
@@ -173,35 +178,30 @@ export class MonitoringComponent implements OnInit {
     return Array.from({ length: e - s + 1 }, (_, i) => s + i);
   }
 
-  // ── Export Excel — uses currently loaded table data ──────────────
+  // ── Export Excel ─────────────────────────────────────────────────
   exportExcel(): void {
     const isStock = this.activeTab === 'stock';
     const rows = isStock ? this.stockToRows(this.stockItems) : this.txToRows(this.transactions);
     if (rows.length <= 1) return;
 
-    // Prepend NLCOM header rows
     const title = isStock ? 'Stock Report' : 'Transaction History';
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const wsData = [['NLCOM - IMS'], [title], [`Generated: ${dateStr}`], [], ...rows];
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Merge header rows across all columns
     const colCount = rows[0].length;
     ws['!merges'] = [
       { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
       { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
       { s: { r: 2, c: 0 }, e: { r: 2, c: colCount - 1 } },
     ];
-
-    // Auto-fit column widths: measure max char length per column across all data rows
-    const dataRows = wsData.slice(4); // skip the 3 header rows + blank row
+    const dataRows = wsData.slice(4);
     ws['!cols'] = Array.from({ length: colCount }, (_, ci) => {
       const max = dataRows.reduce((w, row) => {
         const val = row[ci] != null ? String(row[ci]) : '';
         return Math.max(w, val.length);
-      }, 10); // minimum width 10
-      return { wch: Math.min(max + 2, 60) }; // +2 padding, cap at 60
+      }, 10);
+      return { wch: Math.min(max + 2, 60) };
     });
 
     const wb = XLSX.utils.book_new();
@@ -209,56 +209,31 @@ export class MonitoringComponent implements OnInit {
     XLSX.writeFile(wb, isStock ? 'stock_report.xlsx' : 'transaction_history.xlsx');
   }
 
-  // ── Export PDF — direct download via jsPDF, no new tab ───────────
+  // ── Export PDF ───────────────────────────────────────────────────
   exportPdf(): void {
     const isStock = this.activeTab === 'stock';
     const title = isStock ? 'Stock Report' : 'Transaction History';
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y, h:mm a') ?? '';
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-
-    // Header
     doc.setFontSize(16);
-    doc.setTextColor(99, 102, 241); // indigo
+    doc.setTextColor(99, 102, 241);
     doc.text('NLCOM - IMS', 40, 36);
-
     doc.setFontSize(11);
     doc.setTextColor(51, 65, 85);
     doc.text(title, 40, 54);
-
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(`Generated: ${dateStr}`, 40, 68);
 
-    // Table
     if (isStock) {
       autoTable(doc, {
         startY: 80,
         head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-        body: this.stockItems.map(r => [
-          r.item_code, r.item_description, r.category_name ?? '—',
-          r.measurement_unit ?? '—',
-          r.current_stock, r.total_in, r.total_out, r.reorder_level,
-          r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
-        head: [
-          [
-            'Item Code',
-            'Description',
-            'Category',
-            'Type',
-            'UoM',
-            'Current Stock',
-            'Total IN',
-            'Total OUT',
-            'Reorder Level',
-            'Status',
-          ],
-        ],
         body: this.stockItems.map((r) => [
           r.item_code,
           r.item_description,
           r.category_name ?? '—',
-          r.item_type_name ?? '—',
           r.measurement_unit ?? '—',
           r.current_stock,
           r.total_in,
@@ -280,20 +255,7 @@ export class MonitoringComponent implements OnInit {
     } else {
       autoTable(doc, {
         startY: 80,
-        head: [
-          [
-            'Type',
-            'Reference',
-            'Item Code',
-            'Description',
-            'Batch',
-            'Qty',
-            'Unit',
-            'Destination / Reason',
-            'Performed By',
-            'Date',
-          ],
-        ],
+        head: [['Type', 'Reference', 'Item Code', 'Description', 'Batch', 'Qty', 'Unit', 'Destination / Reason', 'Performed By', 'Date']],
         body: this.transactions.map((r) => [
           r.transaction_type,
           r.reference_number,
@@ -325,34 +287,15 @@ export class MonitoringComponent implements OnInit {
   private stockToRows(rows: StockReportRecord[]): any[][] {
     return [
       ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
-      ...rows.map(r => [
-        r.item_code,
-        r.item_description,
-        r.category_name ?? '—',
-      [
-        'Item Code',
-        'Description',
-        'Category',
-        'Type',
-        'Unit',
-        'Current Stock',
-        'Total IN',
-        'Total OUT',
-        'Reorder Level',
-        'Status',
-      ],
       ...rows.map((r) => [
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
-        r.item_type_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
         r.total_in,
         r.total_out,
         r.reorder_level,
-        r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK'
-      ])
         r.current_stock <= r.reorder_level ? 'Low Stock' : 'OK',
       ]),
     ];
@@ -360,18 +303,7 @@ export class MonitoringComponent implements OnInit {
 
   private txToRows(rows: TransactionRecord[]): any[][] {
     return [
-      [
-        'Type',
-        'Reference',
-        'Item Code',
-        'Description',
-        'Batch',
-        'Qty',
-        'Unit',
-        'Destination/Reason',
-        'Performed By',
-        'Date',
-      ],
+      ['Type', 'Reference', 'Item Code', 'Description', 'Batch', 'Qty', 'Unit', 'Destination/Reason', 'Performed By', 'Date'],
       ...rows.map((r) => [
         r.transaction_type,
         r.reference_number,
