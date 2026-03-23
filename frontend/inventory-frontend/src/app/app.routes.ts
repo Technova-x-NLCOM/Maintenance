@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/auth/login/login.component';
 import { SignupComponent } from './pages/signup/signup.component';
-import { HomeComponent } from './pages/home/home.component';
 import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
 import { DashboardLayoutComponent } from './pages/dashboard/layout/dashboard-layout.component';
 import { DashboardRedirectComponent } from './pages/dashboard/home/home.component';
@@ -24,8 +23,7 @@ import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transa
 import { SystemUsersComponent } from './pages/dashboard/system-users/system-users.component';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'home', component: HomeComponent },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'admin-login', component: AdminLoginComponent },
   { path: 'signup', component: SignupComponent },
@@ -56,5 +54,5 @@ export const routes: Routes = [
       { path: 'settings', component: SettingsComponent }
     ]
   },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: 'login' }
 ];
