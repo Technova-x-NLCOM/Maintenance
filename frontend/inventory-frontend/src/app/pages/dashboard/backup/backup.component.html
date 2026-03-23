@@ -1,75 +1,38 @@
-<div class="backup-container">
-  <div class="backup-header">
+<div class="backup-container" [class.embedded]="embedded">
+  <div class="backup-header" *ngIf="!embedded">
     <h1>Database Backups</h1>
     <p class="subtitle">Create, restore, and manage database backups</p>
   </div>
 
-  <div class="actions-bar">
-    <button 
-      class="btn btn-primary"
-      (click)="showCreateConfirmModal()"
-      [disabled]="creating || loading">
-      <span *ngIf="!creating" class="btn-content">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        Create & Download Backup
-      </span>
-      <span *ngIf="creating" class="btn-content">
-        <svg class="btn-icon spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="2" x2="12" y2="6"/>
-          <line x1="12" y1="18" x2="12" y2="22"/>
-          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
-          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
-          <line x1="2" y1="12" x2="6" y2="12"/>
-          <line x1="18" y1="12" x2="22" y2="12"/>
-          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
-          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-        </svg>
-        Creating...
-      </span>
-    </button>
-  </div>
-
-  <!-- Upload Backup Section -->
-  <div class="upload-section">
-    <h3>
-      <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-        <polyline points="17 8 12 3 7 8"/>
-        <line x1="12" y1="3" x2="12" y2="15"/>
-      </svg>
-      Restore from Uploaded File
-    </h3>
-    <p class="upload-description">Upload a backup file from your device to restore the database</p>
-    <div class="upload-controls">
-      <input 
-        type="file" 
-        id="backup-file-input"
-        accept=".sql,.sqlite"
-        (change)="onFileSelected($event)"
-        class="file-input">
-      <label for="backup-file-input" class="btn btn-file">
-        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        Choose File
-      </label>
-      <span class="file-name" *ngIf="uploadingFile">{{ uploadingFile.name }}</span>
-      <button 
-        class="btn btn-upload"
-        (click)="showRestoreConfirmModal()"
-        [disabled]="!uploadingFile || restoring">
-        <span *ngIf="!restoring" class="btn-content">
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="23 4 23 10 17 10"/>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+  <div class="backup-panels">
+    <section class="backup-panel" aria-labelledby="backup-create-title">
+      <div class="backup-panel-head">
+        <div class="backup-panel-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
           </svg>
-          Restore from File
+        </div>
+        <div class="backup-panel-titles">
+          <h3 id="backup-create-title" class="backup-panel-title">Create backup</h3>
+          <p class="backup-panel-desc">Download a .sql or .sqlite copy of the database to your device.</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn btn-primary btn-block"
+        (click)="showCreateConfirmModal()"
+        [disabled]="creating || loading">
+        <span *ngIf="!creating" class="btn-content">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Create &amp; download backup
         </span>
-        <span *ngIf="restoring" class="btn-content">
+        <span *ngIf="creating" class="btn-content">
           <svg class="btn-icon spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="2" x2="12" y2="6"/>
             <line x1="12" y1="18" x2="12" y2="22"/>
@@ -80,31 +43,91 @@
             <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
             <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
           </svg>
-          Restoring...
+          Creating…
         </span>
       </button>
+      <p class="backup-panel-hint">If backup fails on Windows, set <code>MYSQLDUMP_PATH</code> in the server <code>.env</code> to your <code>mysqldump.exe</code> path.</p>
+    </section>
+
+    <section class="backup-panel" aria-labelledby="backup-restore-title">
+      <div class="backup-panel-head">
+        <div class="backup-panel-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="backup-panel-titles">
+          <h3 id="backup-restore-title" class="backup-panel-title">Restore from file</h3>
+          <p class="backup-panel-desc">Upload a <strong>.sql</strong> or <strong>.sqlite</strong> backup, then restore.</p>
+        </div>
+      </div>
+      <div class="backup-panel-actions">
+        <input
+          type="file"
+          id="backup-file-input"
+          accept=".sql,.sqlite"
+          (change)="onFileSelected($event)"
+          class="file-input">
+        <label for="backup-file-input" class="btn btn-file btn-block">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Choose file
+        </label>
+        <button
+          type="button"
+          class="btn btn-upload btn-block"
+          (click)="showRestoreConfirmModal()"
+          [disabled]="!uploadingFile || restoring">
+          <span *ngIf="!restoring" class="btn-content">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+            </svg>
+            Restore from file
+          </span>
+          <span *ngIf="restoring" class="btn-content">
+            <svg class="btn-icon spinning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="2" x2="12" y2="6"/>
+              <line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+              <line x1="2" y1="12" x2="6" y2="12"/>
+              <line x1="18" y1="12" x2="22" y2="12"/>
+              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+              <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+            </svg>
+            Restoring…
+          </span>
+        </button>
+      </div>
+      <p class="backup-file-name" *ngIf="uploadingFile">
+        <span class="backup-file-label">Selected:</span> {{ uploadingFile.name }}
+      </p>
+    </section>
+  </div>
+
+  <div class="backup-alerts">
+    <div class="alert alert-warning">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span><strong>Warning:</strong> Restoring a backup will replace all current database data. Always create a backup before restoring.</span>
     </div>
-  </div>
 
-  <div class="divider"></div>
-
-  <div class="alert alert-warning">
-    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-    <span><strong>Warning:</strong> Restoring a backup will replace all current database data. Always create a backup before restoring.</span>
-  </div>
-
-  <div class="alert alert-danger" *ngIf="error">
-    <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" y1="9" x2="9" y2="15"/>
-      <line x1="9" y1="9" x2="15" y2="15"/>
-    </svg>
-    <span><strong>Error:</strong> {{ error }}</span>
-    <button class="close-btn" (click)="error = null">×</button>
+    <div class="alert alert-danger" *ngIf="error">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      <span><strong>Error:</strong> {{ error }}</span>
+      <button type="button" class="close-btn" (click)="error = null">×</button>
+    </div>
   </div>
 </div>
 

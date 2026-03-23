@@ -109,12 +109,10 @@ export class SidebarComponent implements OnInit {
   private expandGroupForCurrentRoute(url: string): void {
     const inventoryTables = ['items', 'categories', 'item_types', 'inventory_batches', 'inventory_transactions', 'inventory_snapshots', 'expiry_alerts'];
     const userTables = ['users', 'user_roles'];
-    const systemTables = ['audit_log'];
 
     if (
       url.includes('/dashboard/inventory/items') ||
-      url.includes('/dashboard/inventory/categories') ||
-      url.includes('/dashboard/inventory/minimum-stock')
+      url.includes('/dashboard/inventory/categories')
     ) {
       this.openGroups.add('inventory-master-data');
       return;
@@ -144,15 +142,13 @@ export class SidebarComponent implements OnInit {
         return;
       }
     }
+    if (url.includes('/dashboard/system-users')) {
+      this.openGroups.add('users');
+      return;
+    }
     for (const t of userTables) {
       if (url.includes(`/maintenance/${t}`) || url.includes('/roles')) {
         this.openGroups.add('users');
-        return;
-      }
-    }
-    for (const t of systemTables) {
-      if (url.includes(`/maintenance/${t}`) || url.includes('/settings')) {
-        this.openGroups.add('system');
         return;
       }
     }

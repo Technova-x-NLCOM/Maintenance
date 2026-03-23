@@ -12,6 +12,27 @@ use ZipArchive;
 class BackupController extends Controller
 {
     /**
+     * Resolve a backup file under storage/app/backups and verify it stays inside that directory.
+     */
+    private function resolveSafeBackupPath(string $relativeFilename): ?string
+    {
+        $backupPath = storage_path('app/backups/' . basename($relativeFilename));
+        if (!is_file($backupPath)) {
+            return null;
+        }
+        $resolvedFile = realpath($backupPath);
+        $resolvedDir = realpath(storage_path('app/backups'));
+        if ($resolvedFile === false || $resolvedDir === false) {
+            return null;
+        }
+        if (!str_starts_with($resolvedFile, $resolvedDir)) {
+            return null;
+        }
+
+        return $resolvedFile;
+    }
+
+    /**
      * Create a database backup and download it
      */
     public function backup(Request $request)
@@ -67,24 +88,42 @@ class BackupController extends Controller
             $timestamp = Carbon::now()->format('Y-m-d_H-i-s');
             $backupFile = $backupDir . '/backup_' . $dbName . '_' . $timestamp . '.sql';
             
-            // Build mysqldump command
-            $command = sprintf(
-                '%s --host=%s --user=%s --password=%s %s > %s',
+            // Pipe mysqldump stdout to file (works on Windows + Linux; shell ">" redirect often fails under PHP exec on Windows)
+            $cmd = sprintf(
+                '%s --host=%s --user=%s --password=%s --single-transaction --routines %s',
                 escapeshellarg($dumpBin),
                 escapeshellarg($host),
                 escapeshellarg($user),
                 escapeshellarg($password),
-                escapeshellarg($dbName),
-                escapeshellarg($backupFile)
+                escapeshellarg($dbName)
             );
-            
-            // Execute mysqldump
-            exec($command, $output, $returnVar);
-            
+
+            $descriptorspec = [
+                0 => ['pipe', 'r'],
+                1 => ['file', $backupFile, 'w'],
+                2 => ['pipe', 'w'],
+            ];
+
+            $process = proc_open($cmd, $descriptorspec, $pipes);
+            if (!is_resource($process)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to start mysqldump process.'
+                ], 500);
+            }
+            if (isset($pipes[0]) && is_resource($pipes[0])) {
+                fclose($pipes[0]);
+            }
+            $stderr = isset($pipes[2]) && is_resource($pipes[2]) ? stream_get_contents($pipes[2]) : '';
+            if (isset($pipes[2]) && is_resource($pipes[2])) {
+                fclose($pipes[2]);
+            }
+            $returnVar = proc_close($process);
+
             if ($returnVar !== 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create MySQL backup. Ensure mysqldump is installed and accessible.'
+                    'message' => 'Failed to create MySQL backup. Ensure mysqldump is installed and accessible. ' . trim($stderr)
                 ], 500);
             }
             
@@ -210,23 +249,14 @@ class BackupController extends Controller
             ]);
             
             $backupFile = $request->input('backup_file');
-            $backupPath = storage_path('app/backups/' . basename($backupFile));
-            
-            // Security check - ensure file is in backups directory
-            if (!str_starts_with(realpath($backupPath), realpath(storage_path('app/backups')))) {
+            $backupPath = $this->resolveSafeBackupPath($backupFile);
+            if ($backupPath === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid backup file path'
-                ], 403);
-            }
-            
-            if (!file_exists($backupPath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Backup file not found'
+                    'message' => 'Backup file not found or invalid path'
                 ], 404);
             }
-            
+
             $dbDriver = config('database.default');
             
             if ($dbDriver === 'mysql') {
@@ -284,23 +314,42 @@ class BackupController extends Controller
                 ], 500);
             }
             
-            // Restore from backup using mysql CLI
-            $command = sprintf(
-                '%s --host=%s --user=%s --password=%s %s < %s',
+            // Pipe SQL file into mysql stdin (reliable on Windows; "< file" redirect often fails under PHP exec)
+            $cmd = sprintf(
+                '%s --host=%s --user=%s --password=%s %s',
                 escapeshellarg($mysqlBin),
                 escapeshellarg($host),
                 escapeshellarg($user),
                 escapeshellarg($password),
-                escapeshellarg($dbName),
-                escapeshellarg($backupPath)
+                escapeshellarg($dbName)
             );
-            
-            exec($command, $output, $returnVar);
-            
+
+            $descriptorspec = [
+                0 => ['file', $backupPath, 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+
+            $process = proc_open($cmd, $descriptorspec, $pipes);
+            if (!is_resource($process)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to start mysql client process.'
+                ], 500);
+            }
+            if (isset($pipes[1]) && is_resource($pipes[1])) {
+                fclose($pipes[1]);
+            }
+            $stderr = isset($pipes[2]) && is_resource($pipes[2]) ? stream_get_contents($pipes[2]) : '';
+            if (isset($pipes[2]) && is_resource($pipes[2])) {
+                fclose($pipes[2]);
+            }
+            $returnVar = proc_close($process);
+
             if ($returnVar !== 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to restore MySQL database. Ensure mysql client is installed and accessible. Command return code: ' . $returnVar
+                    'message' => 'Failed to restore MySQL database. Ensure mysql client is installed and accessible. ' . trim($stderr ?: ('Exit code: ' . $returnVar))
                 ], 500);
             }
             
@@ -420,23 +469,14 @@ class BackupController extends Controller
             ]);
             
             $backupFile = $request->input('backup_file');
-            $backupPath = storage_path('app/backups/' . basename($backupFile));
-            
-            // Security check
-            if (!str_starts_with(realpath($backupPath), realpath(storage_path('app/backups')))) {
+            $backupPath = $this->resolveSafeBackupPath($backupFile);
+            if ($backupPath === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid backup file path'
-                ], 403);
-            }
-            
-            if (!file_exists($backupPath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Backup file not found'
+                    'message' => 'Backup file not found or invalid path'
                 ], 404);
             }
-            
+
             return response()->download($backupPath, basename($backupFile));
             
         } catch (Exception $e) {
@@ -458,23 +498,14 @@ class BackupController extends Controller
             ]);
             
             $backupFile = $request->input('backup_file');
-            $backupPath = storage_path('app/backups/' . basename($backupFile));
-            
-            // Security check
-            if (!str_starts_with(realpath($backupPath), realpath(storage_path('app/backups')))) {
+            $backupPath = $this->resolveSafeBackupPath($backupFile);
+            if ($backupPath === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid backup file path'
-                ], 403);
-            }
-            
-            if (!file_exists($backupPath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Backup file not found'
+                    'message' => 'Backup file not found or invalid path'
                 ], 404);
             }
-            
+
             if (!unlink($backupPath)) {
                 return response()->json([
                     'success' => false,
@@ -516,20 +547,19 @@ class BackupController extends Controller
     {
         try {
             $request->validate([
-                'backup_file' => 'required|file|mimetypes:text/plain,text/x-sql,application/x-sqlite3,application/octet-stream|max:102400' // Max 100MB
+                // max:102400 = 100 MB (kilobytes). Extension checked below — MIME is unreliable on Windows.
+                'backup_file' => 'required|file|max:102400',
             ]);
 
             $uploadedFile = $request->file('backup_file');
-            
-            // Validate file extension
             $extension = strtolower($uploadedFile->getClientOriginalExtension());
-            if (!in_array($extension, ['sql', 'sqlite'])) {
+            if (!in_array($extension, ['sql', 'sqlite'], true)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid file type. Only .sql and .sqlite files are accepted.'
-                ], 400);
+                    'message' => 'Invalid file type. Only .sql and .sqlite files are accepted.',
+                ], 422);
             }
-            
+
             // Create temp directory if not exists
             $tempDir = storage_path('app/temp');
             if (!is_dir($tempDir)) {
@@ -537,8 +567,9 @@ class BackupController extends Controller
             }
 
             // Save uploaded file temporarily
-            $tempPath = $tempDir . '/' . uniqid('restore_') . '_' . $uploadedFile->getClientOriginalName();
-            $uploadedFile->move($tempDir, basename($tempPath));
+            $safeName = uniqid('restore_', true) . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $uploadedFile->getClientOriginalName());
+            $uploadedFile->move($tempDir, $safeName);
+            $tempPath = $tempDir . DIRECTORY_SEPARATOR . $safeName;
 
             $dbDriver = config('database.default');
             

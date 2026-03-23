@@ -6,10 +6,105 @@ $text-dark: #111827;
 $text-medium: #1f2937;
 $text-light: #374151;
 
+/* Shared card shell — both columns use identical frame, size, and alignment */
+$panel-border: 1.5px solid #e2e8f0;
+$panel-radius: 12px;
+$panel-padding: 20px 22px;
+$panel-shadow: 0 1px 3px rgba(15, 23, 42, 0.07);
+
 .settings-page {
   padding: 24px;
   background: #f5f7fa;
   color: $text-dark;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.settings-body {
+  display: block;
+}
+
+.settings-body.with-backups {
+  @media (max-width: 1023px) {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    .settings-backups-aside {
+      order: -1;
+    }
+
+    .settings-main {
+      order: 1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    /* Equal column height so both panels align top-to-bottom */
+    align-items: stretch;
+  }
+}
+
+.settings-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 1024px) {
+    .with-backups & {
+      height: 100%;
+    }
+  }
+}
+
+/* Single column (no backups): keep readable line length */
+.settings-body:not(.with-backups) .settings-main {
+  max-width: 720px;
+}
+
+.settings-panel-shell {
+  background: #fff;
+  border: $panel-border;
+  border-radius: $panel-radius;
+  padding: $panel-padding;
+  box-shadow: $panel-shadow;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (min-width: 1024px) {
+  .with-backups .settings-panel-shell {
+    flex: 1;
+    min-height: 100%;
+  }
+}
+
+.panel-heading-row {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.panel-heading {
+  margin: 0 0 6px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: $text-dark;
+  line-height: 1.25;
+}
+
+.panel-lead {
+  margin: 0;
+  font-size: 0.875rem;
+  color: $text-medium;
+  line-height: 1.45;
 }
 
 .page-header {
@@ -78,8 +173,12 @@ button {
 .state {
   padding: 14px 18px;
   border-radius: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   font-size: 1rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   &-loading { background: #eff6ff; color: $primary-color; }
   &-error   { background: #fef2f2; color: #b91c1c; }
@@ -89,20 +188,30 @@ button {
 .settings-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
   max-width: 720px;
+
+  .with-backups & {
+    @media (min-width: 1024px) {
+      max-width: none;
+      width: 100%;
+    }
+  }
 }
 
 .setting-card {
-  background: #fff;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px 24px;
-  transition: border-color 0.15s;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 
   &.editing {
     border-color: $accent-color;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
   }
 }
 
@@ -111,19 +220,19 @@ button {
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .setting-info h3 {
   margin: 0 0 2px 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: $text-dark;
 }
 
 .setting-key {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: $text-light;
   font-family: monospace;
   letter-spacing: 0.03em;
@@ -131,8 +240,9 @@ button {
 
 .setting-desc {
   margin: 6px 0 0 0;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: $text-light;
+  line-height: 1.4;
 }
 
 .setting-actions {
@@ -145,18 +255,19 @@ button {
 }
 
 .setting-value-row {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .setting-value {
   display: inline-block;
-  background: #f1f5f9;
+  background: #fff;
   color: $text-dark;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-family: monospace;
+  border: 1px solid #e2e8f0;
 }
 
 .setting-input {
@@ -175,10 +286,49 @@ button {
     border-color: $primary-color;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
   }
+
+  .with-backups .settings-main & {
+    @media (min-width: 1024px) {
+      max-width: 100%;
+    }
+  }
 }
 
 .save-error {
   margin: 8px 0 0 0;
   color: #b91c1c;
   font-size: 0.9rem;
+}
+
+.settings-backups-aside {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 1024px) {
+    height: 100%;
+    align-self: stretch;
+  }
+}
+
+.settings-backups-sticky {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  @media (min-width: 1024px) {
+    position: sticky;
+    top: 8px;
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scrollbar-gutter: stable;
+  }
+}
+
+.settings-backups-inner {
+  flex: 1;
 }
