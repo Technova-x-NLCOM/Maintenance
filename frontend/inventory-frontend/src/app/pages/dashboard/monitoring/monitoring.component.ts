@@ -230,19 +230,6 @@ export class MonitoringComponent implements OnInit {
       autoTable(doc, {
         startY: 80,
         head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
-        head: [
-          [
-            'Item Code',
-            'Description',
-            'Category',
-            'UoM',
-            'Current Stock',
-            'Total IN',
-            'Total OUT',
-            'Reorder Level',
-            'Status',
-          ],
-        ],
         body: this.stockItems.map((r) => [
           r.item_code,
           r.item_description,
