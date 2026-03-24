@@ -33,7 +33,6 @@ export class SystemUsersComponent implements OnInit {
   showPassword = false;
   showPasswordConfirm = false;
 
-  /** Form aligned with backend (first_name / last_name, not full name) */
   form = {
     first_name: '',
     last_name: '',
@@ -185,26 +184,17 @@ export class SystemUsersComponent implements OnInit {
     this.fieldErrors = {};
     this.normalizeUsername();
 
-    if (!this.editingUser) {
-      if (!this.form.password || this.form.password.length < 8) {
-        this.modalError = 'Password must be at least 8 characters and meet complexity rules.';
-        return;
-      }
-      if (this.form.password !== this.form.password_confirmation) {
-        this.modalError = 'Password confirmation does not match.';
-        return;
-      }
-    } else {
-      if (this.form.password) {
-        if (this.form.password.length < 8) {
-          this.modalError = 'Password must be at least 8 characters.';
-          return;
-        }
-        if (this.form.password !== this.form.password_confirmation) {
-          this.modalError = 'Password confirmation does not match.';
-          return;
-        }
-      }
+    this.form.first_name = (this.form.first_name || '').trim();
+    this.form.last_name = (this.form.last_name || '').trim();
+
+    if (!this.form.first_name) {
+      this.modalError = 'First name is required.';
+      return;
+    }
+
+    if (!this.form.last_name) {
+      this.modalError = 'Last name is required.';
+      return;
     }
 
     this.saving = true;
@@ -215,8 +205,8 @@ export class SystemUsersComponent implements OnInit {
         .create({
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password,
-          password_confirmation: this.form.password_confirmation,
+          password: undefined as any,
+          password_confirmation: undefined as any,
           first_name: this.form.first_name,
           last_name: this.form.last_name,
           contact_info: contact,

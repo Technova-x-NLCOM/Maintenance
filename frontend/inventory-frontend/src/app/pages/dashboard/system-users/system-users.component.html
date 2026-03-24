@@ -37,7 +37,6 @@
             <th>Email</th>
             <th>Role</th>
             <th>Status</th>
-            <th>Last login</th>
             <th class="col-actions">Actions</th>
           </tr>
         </thead>
@@ -45,10 +44,8 @@
           <tr *ngFor="let u of users">
             <td>
               <div class="user-cell">
-                <div class="avatar" [style.background]="avatarColor(u)">{{ initials(u) }}</div>
                 <div class="user-text">
                   <div class="name">{{ u.first_name }} {{ u.last_name }}</div>
-                  <div class="handle">&#64;{{ u.username }}</div>
                 </div>
               </div>
             </td>
@@ -61,7 +58,6 @@
                 {{ u.is_active ? 'Active' : 'Inactive' }}
               </span>
             </td>
-            <td class="td-muted">{{ formatLastLogin(u.last_login_at) }}</td>
             <td class="col-actions">
               <div class="action-btns">
                 <button type="button" class="btn-icon btn-edit" (click)="openEdit(u)" title="Edit user">
@@ -117,7 +113,7 @@
       </span>
       <div>
         <h2>{{ editingUser ? 'Edit User' : 'Add User' }}</h2>
-        <p class="modal-lead">Fields match your database: first name, last name, username, email, and role.</p>
+        <p class="modal-lead">Fill in the user's details below.</p>
       </div>
     </div>
 
@@ -125,13 +121,25 @@
 
     <div class="form-grid">
       <div class="field">
-        <label for="su-first">First name</label>
-        <input id="su-first" type="text" [(ngModel)]="form.first_name" placeholder="First name" autocomplete="given-name" />
+        <label for="su-first-name">First Name</label>
+        <input
+          id="su-first-name"
+          type="text"
+          [(ngModel)]="form.first_name"
+          placeholder="First name"
+          autocomplete="given-name"
+        />
         <span class="field-err" *ngIf="fieldError('first_name')">{{ fieldError('first_name') }}</span>
       </div>
       <div class="field">
-        <label for="su-last">Last name</label>
-        <input id="su-last" type="text" [(ngModel)]="form.last_name" placeholder="Last name" autocomplete="family-name" />
+        <label for="su-last-name">Last Name</label>
+        <input
+          id="su-last-name"
+          type="text"
+          [(ngModel)]="form.last_name"
+          placeholder="Last name"
+          autocomplete="family-name"
+        />
         <span class="field-err" *ngIf="fieldError('last_name')">{{ fieldError('last_name') }}</span>
       </div>
       <div class="field">
@@ -146,15 +154,10 @@
         />
         <span class="field-err" *ngIf="fieldError('username')">{{ fieldError('username') }}</span>
       </div>
-      <div class="field field-full">
+      <div class="field">
         <label for="su-email">Email</label>
         <input id="su-email" type="email" [(ngModel)]="form.email" placeholder="user@nlcom.org.ph" autocomplete="email" />
         <span class="field-err" *ngIf="fieldError('email')">{{ fieldError('email') }}</span>
-      </div>
-      <div class="field field-full">
-        <label for="su-contact">Contact number <span class="optional">(optional)</span></label>
-        <input id="su-contact" type="text" [(ngModel)]="form.contact_info" placeholder="09xxxxxxxxx" autocomplete="tel" />
-        <span class="field-err" *ngIf="fieldError('contact_info')">{{ fieldError('contact_info') }}</span>
       </div>
       <div class="field">
         <label for="su-role">Role</label>
@@ -166,66 +169,6 @@
           </ng-container>
         </select>
         <span class="field-err" *ngIf="fieldError('role')">{{ fieldError('role') }}</span>
-      </div>
-      <div class="field">
-        <label for="su-pass">Password</label>
-        <div class="password-input-wrap">
-          <input
-            id="su-pass"
-            [type]="showPassword ? 'text' : 'password'"
-            [(ngModel)]="form.password"
-            [placeholder]="editingUser ? 'Leave blank to keep current' : 'Set password'"
-            autocomplete="new-password"
-          />
-          <button
-            type="button"
-            class="password-toggle"
-            (click)="togglePasswordField('password', $event)"
-            [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
-            [attr.aria-pressed]="showPassword"
-            title="{{ showPassword ? 'Hide' : 'Show' }} password"
-          >
-            <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
-          </button>
-        </div>
-        <span class="hint">Min 8 chars, upper, lower, number, and one of &#64;$!%*?&amp;</span>
-        <span class="field-err" *ngIf="fieldError('password')">{{ fieldError('password') }}</span>
-      </div>
-      <div class="field" *ngIf="!editingUser || form.password">
-        <label for="su-pass2">Confirm password</label>
-        <div class="password-input-wrap">
-          <input
-            id="su-pass2"
-            [type]="showPasswordConfirm ? 'text' : 'password'"
-            [(ngModel)]="form.password_confirmation"
-            autocomplete="new-password"
-          />
-          <button
-            type="button"
-            class="password-toggle"
-            (click)="togglePasswordField('confirm', $event)"
-            [attr.aria-label]="showPasswordConfirm ? 'Hide confirm password' : 'Show confirm password'"
-            [attr.aria-pressed]="showPasswordConfirm"
-            title="{{ showPasswordConfirm ? 'Hide' : 'Show' }} password"
-          >
-            <svg *ngIf="!showPasswordConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            <svg *ngIf="showPasswordConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
-          </button>
-        </div>
-        <span class="field-err" *ngIf="fieldError('password_confirmation')">{{ fieldError('password_confirmation') }}</span>
       </div>
     </div>
 
