@@ -20,6 +20,10 @@ Route::prefix('api/auth')->group(function () {
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     Route::post('login', [AuthController::class, 'login'])
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+    Route::post('check-password-set', [AuthController::class, 'checkPasswordSet'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+    Route::post('set-initial-password', [AuthController::class, 'setInitialPassword'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     
         // Protected routes with JWT middleware
         Route::middleware(['auth:api'])->group(function () {
