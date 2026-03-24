@@ -16,6 +16,63 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 class AuthController extends Controller
 {
     /**
+     * Check if a user's password has been set (public endpoint)
+     */
+    public function checkPasswordSet(Request $request)
+    {
+        $request->validate(['username' => 'required|string']);
+        $user = User::where('username', $request->username)->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'password_set' => !is_null($user->password_hash),
+        ]);
+    }
+
+    /**
+     * Set initial password for a user who has none (public endpoint)
+     */
+    public function setInitialPassword(Request $request)
+    {
+        try {
+            $data = $request->validate([
+                'username' => 'required|string',
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:255',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
+                    'confirmed',
+                ],
+            ], [
+                'password.regex' => 'Password must contain uppercase, lowercase, number, and a special character (@$!%*?&).',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Validation failed.', 'errors' => $e->errors()], 422);
+        }
+
+        $user = User::where('username', $data['username'])->first();
+
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User not found.'], 404);
+        }
+
+        if (!is_null($user->password_hash)) {
+            return response()->json(['success' => false, 'message' => 'Password is already set.'], 409);
+        }
+
+        $user->password_hash = Hash::make($data['password']);
+        $user->save();
+
+        return response()->json(['success' => true, 'message' => 'Password set successfully. You can now log in.']);
+    }
+
+    /**
      * Register a new user (Super Admin only)
      */
     public function register(Request $request)
@@ -42,7 +99,7 @@ class AuthController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
                 ],
                 'password_confirmation' => [
                     'required',

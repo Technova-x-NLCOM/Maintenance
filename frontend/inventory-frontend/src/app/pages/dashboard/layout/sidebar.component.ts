@@ -17,6 +17,7 @@ export class SidebarComponent implements OnInit {
   currentRole: Role | null = null;
   loadingRole = false;
   showLogoutModal = false;
+  loggingOut = false;
 
   openGroups: Set<string> = new Set();
 
@@ -84,6 +85,7 @@ export class SidebarComponent implements OnInit {
 
   confirmLogout(): void {
     this.showLogoutModal = false;
+    this.loggingOut = true;
     const role = this.authService.getCurrentUser()?.role;
     const loginRoute = role === 'super_admin' ? '/admin-login' : '/login';
     this.authService.logout().subscribe({

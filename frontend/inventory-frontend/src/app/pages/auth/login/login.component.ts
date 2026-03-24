@@ -3,14 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
-
-interface DemoAccount {
-  role: string;
-  icon: string;
-  identifier: string;
-  password: string;
-  description: string;
-}
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -25,15 +19,25 @@ export class LoginComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  demoAccounts: DemoAccount[] = [
-    {
-      role: 'Inventory Manager',
-      icon: '📦',
-      identifier: 'inventory@nlcom.org',
-      password: 'InventoryManager123!',
-      description: 'Complete inventory operations management'
-    }
-  ];
+  // Set password modal
+  showSetPasswordModal = false;
+  setPasswordForm!: FormGroup;
+  setPasswordError = '';
+  setPasswordLoading = false;
+  showSetPwd = false;
+  showSetPwdConfirm = false;
+  passwordNeedsSet = false;
+
+  toastVisible = false;
+  toastMessage = '';
+  private toastTimer: any;
+
+  showToast(message: string) {
+    this.toastMessage = message;
+    this.toastVisible = true;
+    clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => { this.toastVisible = false; }, 3500);
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -47,19 +51,85 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6)]],
       rememberMe: [false]
     });
-  }
+    this.setPasswordForm = this.fb.group({
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      password_confirmation: ['', [Validators.required]],
+    });
 
+    // Pre-fetch password status as user types the identifier
+    this.loginForm.get('identifier')!.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      switchMap(val => {
+        const id = (val || '').trim();
+        if (!id) { this.passwordNeedsSet = false; return of(null); }
+        return this.authService.checkPasswordSet(id).pipe(catchError(() => of(null)));
+      })
+    ).subscribe(res => {
+      this.passwordNeedsSet = res ? !res.password_set : false;
+    });
+  }
 
   togglePasswordVisibility() {
     this.showPassword = !this.showPassword;
   }
 
-  fillDemoCredentials(account: DemoAccount) {
-    this.loginForm.patchValue({
-      identifier: account.identifier,
-      password: account.password
+  onPasswordClick() {
+    if (this.passwordNeedsSet) {
+      this.showSetPasswordModal = true;
+      this.setPasswordError = '';
+      this.setPasswordForm.reset();
+      return;
+    }
+    // Fallback: check immediately if valueChanges hasn't resolved yet
+    const identifier = this.loginForm.get('identifier')?.value?.trim();
+    if (!identifier) return;
+    this.authService.checkPasswordSet(identifier).subscribe({
+      next: (res) => {
+        this.passwordNeedsSet = !res.password_set;
+        if (!res.password_set) {
+          this.showSetPasswordModal = true;
+          this.setPasswordError = '';
+          this.setPasswordForm.reset();
+        }
+      },
+      error: () => {}
     });
-    this.errorMessage = '';
+  }
+
+  bounceModal() {
+    const el = document.querySelector<HTMLElement>('.modal-panel');
+    if (!el) return;
+    el.animate([
+      { transform: 'scale(1)' },
+      { transform: 'scale(1.05)' },
+      { transform: 'scale(0.97)' },
+      { transform: 'scale(1.02)' },
+      { transform: 'scale(1)' },
+    ], { duration: 400, easing: 'ease' });
+  }
+
+  submitSetPassword() {
+    if (this.setPasswordForm.invalid) return;
+    const { password, password_confirmation } = this.setPasswordForm.value;
+    if (password !== password_confirmation) {
+      this.setPasswordError = 'Passwords do not match.';
+      return;
+    }
+    const username = this.loginForm.get('identifier')?.value?.trim();
+    this.setPasswordLoading = true;
+    this.setPasswordError = '';
+    this.authService.setInitialPassword(username, password, password_confirmation).subscribe({
+      next: () => {
+        this.setPasswordLoading = false;
+        this.showSetPasswordModal = false;
+        this.passwordNeedsSet = false;
+      },
+      error: (err) => {
+        this.setPasswordLoading = false;
+        this.setPasswordError = err.error?.message || 'Failed to set password.';
+      }
+    });
   }
 
   onSubmit() {
@@ -67,11 +137,9 @@ export class LoginComponent implements OnInit {
       this.errorMessage = 'Please fill in all fields correctly';
       return;
     }
-
     this.isLoading = true;
     this.errorMessage = '';
     const { identifier, password } = this.loginForm.value;
-
     this.authService.login(identifier, password, 'inventory_manager').subscribe({
       next: () => {
         this.isLoading = false;
@@ -80,13 +148,16 @@ export class LoginComponent implements OnInit {
       error: (error) => {
         this.isLoading = false;
         if (error.error?.error_type === 'unauthorized_portal_access') {
-          const userRole = error.error?.user_role;
-          if (userRole === 'super_admin') {
-            this.errorMessage = 'This login is for Inventory Manager only. Use the Administrator login for admin accounts.';
+          if (error.error?.user_role === 'super_admin') {
+            this.showToast('This login is for Inventory Manager only. Use the Administrator login for admin accounts.');
             return;
           }
         }
-        this.errorMessage = error.error?.message || 'Invalid credentials or server error';
+        if (error.error?.error_type === 'invalid_password') {
+          this.showToast('Incorrect password. Please try again.');
+        } else {
+          this.showToast(error.error?.message || 'Invalid credentials or server error');
+        }
       }
     });
   }

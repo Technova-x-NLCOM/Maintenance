@@ -23,39 +23,39 @@ interface PasswordForm {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.scss'
+  styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
   user: User | null = null;
-  
+
   // Edit Profile Modal
   showEditModal = false;
   editForm: EditProfileForm = {
     first_name: '',
     last_name: '',
     email: '',
-    contact_info: ''
+    contact_info: '',
   };
   editError = '';
-  
+
   // Change Password Modal
   showPasswordModal = false;
   passwordForm: PasswordForm = {
     current_password: '',
     new_password: '',
-    confirm_password: ''
+    confirm_password: '',
   };
   passwordError = '';
-  
+
   // Password visibility toggles
   showCurrentPassword = false;
   showNewPassword = false;
   showConfirmPassword = false;
-  
+
   // Success modals
   showEditSuccessModal = false;
   showPasswordSuccessModal = false;
-  
+
   saving = false;
 
   private readonly API_URL = 'http://127.0.0.1:8000/api';
@@ -64,11 +64,11 @@ export class ProfileComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit() {
-    this.authService.currentUser$.subscribe(user => {
+    this.authService.currentUser$.subscribe((user) => {
       this.user = user;
     });
   }
@@ -76,8 +76,8 @@ export class ProfileComponent implements OnInit {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('access_token');
     return new HttpHeaders({
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
+      Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json',
     });
   }
 
@@ -88,7 +88,7 @@ export class ProfileComponent implements OnInit {
         first_name: this.user.first_name,
         last_name: this.user.last_name,
         email: this.user.email,
-        contact_info: this.user.contact_info || ''
+        contact_info: this.user.contact_info || '',
       };
     }
     this.editError = '';
@@ -104,36 +104,37 @@ export class ProfileComponent implements OnInit {
     this.saving = true;
     this.editError = '';
 
-    this.http.put<{ message: string; user: User }>(
-      `${this.API_URL}/profile/update`,
-      this.editForm,
-      { headers: this.getAuthHeaders() }
-    ).subscribe({
-      next: (response) => {
-        // Update local user data immediately
-        if (response.user) {
-          this.user = response.user;
-          localStorage.setItem('user', JSON.stringify(response.user));
-        }
-        // Refresh auth service in background (non-blocking)
-        this.authService.me().subscribe();
-        
-        // Use setTimeout to ensure UI updates
-        setTimeout(() => {
-          this.saving = false;
-          this.showEditModal = false;
-          this.showEditSuccessModal = true;
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: (error) => {
-        setTimeout(() => {
-          this.editError = error.error?.message || 'Failed to update profile. Please try again.';
-          this.saving = false;
-          this.cdr.detectChanges();
-        }, 0);
-      }
-    });
+    this.http
+      .put<{
+        message: string;
+        user: User;
+      }>(`${this.API_URL}/profile/update`, this.editForm, { headers: this.getAuthHeaders() })
+      .subscribe({
+        next: (response) => {
+          // Update local user data immediately
+          if (response.user) {
+            this.user = response.user;
+            localStorage.setItem('user', JSON.stringify(response.user));
+          }
+          // Refresh auth service in background (non-blocking)
+          this.authService.me().subscribe();
+
+          // Use setTimeout to ensure UI updates
+          setTimeout(() => {
+            this.saving = false;
+            this.showEditModal = false;
+            this.showEditSuccessModal = true;
+            this.cdr.detectChanges();
+          }, 0);
+        },
+        error: (error) => {
+          setTimeout(() => {
+            this.editError = error.error?.message || 'Failed to update profile. Please try again.';
+            this.saving = false;
+            this.cdr.detectChanges();
+          }, 0);
+        },
+      });
   }
 
   // Change Password Methods
@@ -141,7 +142,7 @@ export class ProfileComponent implements OnInit {
     this.passwordForm = {
       current_password: '',
       new_password: '',
-      confirm_password: ''
+      confirm_password: '',
     };
     this.passwordError = '';
     this.showCurrentPassword = false;
@@ -172,32 +173,36 @@ export class ProfileComponent implements OnInit {
 
     this.saving = true;
 
-    this.http.put<{ message: string }>(
-      `${this.API_URL}/profile/password`,
-      {
-        current_password: this.passwordForm.current_password,
-        new_password: this.passwordForm.new_password,
-        new_password_confirmation: this.passwordForm.confirm_password
-      },
-      { headers: this.getAuthHeaders() }
-    ).subscribe({
-      next: () => {
-        // Use setTimeout to ensure UI updates
-        setTimeout(() => {
-          this.saving = false;
-          this.showPasswordModal = false;
-          this.showPasswordSuccessModal = true;
-          this.cdr.detectChanges();
-        }, 0);
-      },
-      error: (error) => {
-        setTimeout(() => {
-          this.passwordError = error.error?.message || 'Failed to change password. Please check your current password.';
-          this.saving = false;
-          this.cdr.detectChanges();
-        }, 0);
-      }
-    });
+    this.http
+      .put<{ message: string }>(
+        `${this.API_URL}/profile/password`,
+        {
+          current_password: this.passwordForm.current_password,
+          new_password: this.passwordForm.new_password,
+          new_password_confirmation: this.passwordForm.confirm_password,
+        },
+        { headers: this.getAuthHeaders() },
+      )
+      .subscribe({
+        next: () => {
+          // Use setTimeout to ensure UI updates
+          setTimeout(() => {
+            this.saving = false;
+            this.showPasswordModal = false;
+            this.showPasswordSuccessModal = true;
+            this.cdr.detectChanges();
+          }, 0);
+        },
+        error: (error) => {
+          setTimeout(() => {
+            this.passwordError =
+              error.error?.message ||
+              'Failed to change password. Please check your current password.';
+            this.saving = false;
+            this.cdr.detectChanges();
+          }, 0);
+        },
+      });
   }
 
   closeEditSuccessModal() {
@@ -209,14 +214,16 @@ export class ProfileComponent implements OnInit {
   }
 
   logout() {
+    this.loggingOut = true;
     this.authService.logout().subscribe({
       next: () => {
         this.router.navigate(['/login']);
       },
-      error: (error) => {
-        console.error('Logout error:', error);
+      error: () => {
         this.router.navigate(['/login']);
-      }
+      },
     });
   }
+
+  loggingOut = false;
 }

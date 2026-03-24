@@ -179,4 +179,12 @@ export class AuthService {
     // Consider user authenticated if a token exists; user details are refreshed via me()
     return this.getToken() !== null;
   }
+
+  checkPasswordSet(username: string): Observable<{ password_set: boolean }> {
+    return this.http.post<{ password_set: boolean }>(`${this.API_URL}/check-password-set`, { username });
+  }
+
+  setInitialPassword(username: string, password: string, password_confirmation: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/set-initial-password`, { username, password, password_confirmation });
+  }
 }

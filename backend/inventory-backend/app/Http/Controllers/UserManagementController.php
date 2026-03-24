@@ -91,14 +91,15 @@ class UserManagementController extends Controller
                     Rule::unique('users', 'email'),
                 ],
                 'password' => [
-                    'required',
+                    'nullable',
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
                 ],
                 'password_confirmation' => [
-                    'required',
+                    'nullable',
+                    'required_with:password',
                     'same:password',
                 ],
                 'first_name' => [
@@ -139,7 +140,7 @@ class UserManagementController extends Controller
             $user = new User();
             $user->username = $data['username'];
             $user->email = $data['email'];
-            $user->password_hash = Hash::make($data['password']);
+            $user->password_hash = isset($data['password']) ? Hash::make($data['password']) : null;
             $user->first_name = $data['first_name'];
             $user->last_name = $data['last_name'];
             $user->contact_info = $data['contact_info'] ?? null;
@@ -246,7 +247,7 @@ class UserManagementController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
                 ],
                 'password_confirmation' => ['required_with:password', 'same:password'],
                 'is_active' => ['sometimes', 'boolean'],
