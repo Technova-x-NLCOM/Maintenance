@@ -321,7 +321,11 @@ $text-light: #e2e8f0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: white;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -426,6 +430,115 @@ $text-light: #e2e8f0;
         background-color: #b91c1c;
         border-color: #b91c1c;
       }
+    }
+  }
+}
+
+// Logout Loading Modal
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.loading-card {
+  background: $bg-sidebar;
+  border-radius: 16px;
+  padding: 36px 40px 28px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+
+  .loading-logo {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    margin-bottom: 16px;
+  }
+
+  .loading-title {
+    margin: 0 0 6px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+  }
+
+  .loading-sub {
+    margin: 0 0 18px;
+    font-size: 0.875rem;
+    color: #d2d6df;
+  }
+}
+
+@keyframes loading-progress {
+  0% {
+    width: 0%;
+    margin-left: 0;
+  }
+  50% {
+    width: 60%;
+    margin-left: 20%;
+  }
+  100% {
+    width: 0%;
+    margin-left: 100%;
+  }
+}
+
+.loading-bar-wrap {
+  height: 4px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 14px;
+
+  .loading-bar {
+    height: 100%;
+    background: #1d4ed8;
+    border-radius: 4px;
+    animation: loading-progress 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+
+  span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: dot-bounce 1.2s ease-in-out infinite;
+
+    &:nth-child(1) {
+      animation-delay: 0s;
+      background: #1d4ed8;
+    }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+      background: #f59e0b;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+      background: #1d4ed8;
     }
   }
 }
