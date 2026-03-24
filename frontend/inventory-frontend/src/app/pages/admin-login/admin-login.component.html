@@ -12,18 +12,6 @@
       <p class="subtitle">Restricted access — authorized personnel only</p>
     </div>
 
-    <!-- Error Message (slot collapses when no error to avoid empty gap) -->
-    <div class="error-slot" [class.has-error]="errorMessage">
-      <div class="error-message" *ngIf="errorMessage">
-        <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <span class="error-text" [title]="errorMessage">{{ errorMessage }}</span>
-      </div>
-    </div>
-
     <!-- Login Form -->
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
@@ -51,6 +39,7 @@
             placeholder="Enter your password"
             class="form-control"
             autocomplete="current-password"
+            (click)="onPasswordClick()"
           />
           <button
             type="button"
@@ -81,4 +70,62 @@
       </button>
     </form>
   </div>
+</div>
+
+<!-- Set Initial Password Modal -->
+<div class="modal-backdrop" *ngIf="showSetPasswordModal" (click)="bounceModal()">
+  <div class="modal-panel" (click)="$event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Set Your Password</h2>
+      <p>This is your first login. Please set a password to continue.</p>
+      <button type="button" class="modal-close-btn" (click)="showSetPasswordModal = false">&#x2715;</button>
+    </div>
+    <div class="modal-alert" *ngIf="setPasswordError">{{ setPasswordError }}</div>
+    <div class="form-group">
+      <label for="sp-pwd">New Password</label>
+      <div class="password-input-wrapper">
+        <input [type]="showSetPwd ? 'text' : 'password'" id="sp-pwd" [formControl]="$any(setPasswordForm.get('password'))" class="form-control" placeholder="Min 8 chars, upper, lower, number, special" />
+        <button type="button" class="password-toggle" (click)="showSetPwd = !showSetPwd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="sp-confirm">Confirm Password</label>
+      <div class="password-input-wrapper">
+        <input [type]="showSetPwdConfirm ? 'text' : 'password'" id="sp-confirm" [formControl]="$any(setPasswordForm.get('password_confirmation'))" class="form-control" />
+        <button type="button" class="password-toggle" (click)="showSetPwdConfirm = !showSetPwdConfirm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-admin btn-login" (click)="submitSetPassword()" [disabled]="setPasswordLoading">
+      {{ setPasswordLoading ? 'Saving...' : 'Set Password' }}
+    </button>
+  </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="loading-overlay" *ngIf="isLoading">
+  <div class="loading-card">
+    <img src="assets/logo.png" alt="NLCOM Logo" class="loading-logo" />
+    <h2 class="loading-title">Logging you in</h2>
+    <p class="loading-sub">Please wait a moment...</p>
+    <div class="loading-bar-wrap">
+      <div class="loading-bar"></div>
+    </div>
+    <div class="loading-dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" [class.toast-show]="toastVisible">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="12"/>
+    <line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <span>{{ toastMessage }}</span>
 </div>
