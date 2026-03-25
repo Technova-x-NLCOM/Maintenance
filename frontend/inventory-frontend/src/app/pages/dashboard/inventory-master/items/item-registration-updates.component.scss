@@ -453,6 +453,57 @@ tr:hover td { background: rgba(37, 99, 235, 0.04); }
   }
 }
 
+.btn-qr {
+  background: rgba(14, 116, 144, 0.08);
+  color: #0e7490;
+  border-color: rgba(14, 116, 144, 0.35);
+
+  &:hover {
+    background: rgba(14, 116, 144, 0.14);
+    border-color: #0e7490;
+  }
+}
+
+.item-qr-modal {
+  max-width: 420px;
+  width: 100%;
+}
+
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  margin-bottom: 12px;
+
+  img {
+    width: 280px;
+    height: 280px;
+    object-fit: contain;
+    background: #fff;
+    padding: 10px;
+    border-radius: 8px;
+  }
+}
+
+.qr-caption {
+  margin: 0;
+  text-align: center;
+  color: $text-muted;
+  font-size: 0.9rem;
+}
+
+.qr-label {
+  margin: 0 0 6px;
+  text-align: center;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+}
+
 .status-badge {
   display: inline-block;
   padding: 4px 10px;

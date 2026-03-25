@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import * as QRCode from 'qrcode';
 import {
   InventoryItem,
   InventoryItemService,
@@ -46,6 +47,11 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   successMessage = '';
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
+  showQrModal = false;
+  qrModalTitle = '';
+  qrLabel = '';
+  qrPayload = '';
+  qrImageDataUrl: string | null = null;
 
   formData: {
     item_code: string;
@@ -411,6 +417,39 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     if (this.currentPage < this.totalPages) {
       this.loadItems(this.currentPage + 1);
     }
+  }
+
+  openItemQr(item: InventoryItem): void {
+    this.errorMessage = '';
+    this.qrModalTitle = `Item QR: ${item.item_code}`;
+    this.qrLabel = item.qr_label || `ITEM:${item.item_code}`;
+    this.qrPayload = item.qr_payload || JSON.stringify({
+      entity: 'item',
+      item_id: item.item_id,
+      item_code: item.item_code,
+      item_description: item.item_description,
+    });
+    this.showQrModal = true;
+    this.qrImageDataUrl = null;
+
+    QRCode.toDataURL(this.qrPayload, { width: 280, margin: 2 })
+      .then((url: string) => {
+        this.qrImageDataUrl = url;
+        this.cdr.detectChanges();
+      })
+      .catch(() => {
+        this.showQrModal = false;
+        this.errorMessage = 'Unable to generate QR code for this item.';
+        this.cdr.detectChanges();
+      });
+  }
+
+  closeQrModal(): void {
+    this.showQrModal = false;
+    this.qrModalTitle = '';
+    this.qrLabel = '';
+    this.qrPayload = '';
+    this.qrImageDataUrl = null;
   }
 
   private nullIfEmpty(value: string): string | null {

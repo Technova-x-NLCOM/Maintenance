@@ -23,6 +23,8 @@ export interface InventoryItem {
   created_by_name?: string;
   created_at: string;
   updated_at: string;
+  qr_payload?: string;
+  qr_label?: string;
 }
 
 export interface ItemFormOptions {

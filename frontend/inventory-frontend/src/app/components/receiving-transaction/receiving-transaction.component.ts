@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import * as QRCode from 'qrcode';
 import {
   InventoryItemService,
   ReceivingItem,
@@ -68,6 +69,11 @@ export class ReceivingTransactionComponent implements OnInit {
   showReceivingModal = false;
   showListModal = false;
   confirmBatchNumber = '';
+  showBatchQrModal = false;
+  batchQrTitle = '';
+  batchQrLabel = '';
+  batchQrPayload = '';
+  batchQrImageDataUrl: string | null = null;
   receivingLines: ReceivingCartLine[] = [];
 
   openReceivingModal(item: ReceivingItem): void {
@@ -85,6 +91,14 @@ export class ReceivingTransactionComponent implements OnInit {
 
   closeListModal(): void {
     this.showListModal = false;
+  }
+
+  closeBatchQrModal(): void {
+    this.showBatchQrModal = false;
+    this.batchQrTitle = '';
+    this.batchQrLabel = '';
+    this.batchQrPayload = '';
+    this.batchQrImageDataUrl = null;
   }
 
   constructor(
@@ -379,9 +393,29 @@ export class ReceivingTransactionComponent implements OnInit {
           this.showSuccessMessage = true;
           const lineCount = (response as any)?.data?.line_count ?? this.receivingLines.length;
           const reference = (response as any)?.data?.reference_number;
+          const batchNumber = (response as any)?.data?.batch_number ?? this.confirmBatchNumber.trim();
+          const qrPayload = (response as any)?.data?.qr_payload;
           this.successMessage = reference
             ? `Receiving list submitted successfully. Ref: ${reference}. Lines: ${lineCount}.`
             : `Receiving list submitted successfully. Lines: ${lineCount}.`;
+
+          if (qrPayload) {
+            this.batchQrTitle = `Batch QR: ${batchNumber}`;
+            this.batchQrLabel = (response as any)?.data?.qr_label || `BATCH:${batchNumber}`;
+            this.batchQrPayload = qrPayload;
+            this.showBatchQrModal = true;
+            this.batchQrImageDataUrl = null;
+            QRCode.toDataURL(qrPayload, { width: 300, margin: 2 })
+              .then((url: string) => {
+                this.batchQrImageDataUrl = url;
+                this.cdr.detectChanges();
+              })
+              .catch(() => {
+                this.batchQrImageDataUrl = null;
+                this.cdr.detectChanges();
+              });
+          }
+
           this.receivingLines = [];
           this.confirmBatchNumber = '';
           this.resetForm();

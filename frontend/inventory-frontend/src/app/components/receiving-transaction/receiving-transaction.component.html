@@ -266,3 +266,25 @@
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" *ngIf="showBatchQrModal" (click)="closeBatchQrModal()">
+  <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ batchQrTitle }}</h2>
+      <button class="modal-close" (click)="closeBatchQrModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="qr-wrap">
+        <img *ngIf="batchQrImageDataUrl" [src]="batchQrImageDataUrl" alt="Batch transaction QR code" />
+        <div *ngIf="!batchQrImageDataUrl" class="state-loading">Generating QR...</div>
+      </div>
+      <p class="qr-label" *ngIf="batchQrLabel">{{ batchQrLabel }}</p>
+      <p class="qr-caption">Scan this QR to identify the whole submitted batch transaction.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeBatchQrModal()">Close</button>
+    </div>
+  </div>
+</div>

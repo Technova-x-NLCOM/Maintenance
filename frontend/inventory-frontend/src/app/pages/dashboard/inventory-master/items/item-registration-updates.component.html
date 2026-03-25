@@ -176,6 +176,7 @@
             </td>
             <td class="actions">
               <button class="btn-sm btn-edit" (click)="editItem(item)" type="button">Edit</button>
+              <button class="btn-sm btn-qr" (click)="openItemQr(item)" type="button">QR</button>
               <button class="btn-sm btn-toggle" (click)="toggleStatus(item)" type="button">
                 {{ item.is_active ? 'Deactivate' : 'Activate' }}
               </button>
@@ -194,4 +195,21 @@
       <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
     </div>
   </section>
+</div>
+
+<div class="modal-overlay" *ngIf="showQrModal" (click)="closeQrModal()" role="dialog" aria-modal="true" aria-label="Item QR code">
+  <div class="modal-content item-qr-modal" (click)="$event.stopPropagation()">
+    <div class="form-panel-header">
+      <h2 class="panel-title">{{ qrModalTitle }}</h2>
+      <button class="btn-ghost btn-close-form" type="button" (click)="closeQrModal()">Close</button>
+    </div>
+
+    <div class="qr-wrap">
+      <img *ngIf="qrImageDataUrl" [src]="qrImageDataUrl" alt="Item QR Code" />
+      <div *ngIf="!qrImageDataUrl" class="state-loading">Generating QR...</div>
+    </div>
+
+    <p class="qr-label" *ngIf="qrLabel">{{ qrLabel }}</p>
+    <p class="qr-caption">Scan to identify this registered item.</p>
+  </div>
 </div>
