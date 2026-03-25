@@ -61,8 +61,15 @@
   <div *ngIf="activeTab === 'stock'" class="tab-content">
 
     <div class="filters-bar">
-      <input class="filter-input search-input" type="text" placeholder="Search item, category..."
-        [(ngModel)]="stSearch" (keyup.enter)="applyStock()" />
+      <div class="search-wrap">
+        <input class="filter-input search-input" type="text" placeholder="Search item, category..."
+          [(ngModel)]="stSearch" (ngModelChange)="onStockSearchInput()" (keyup.enter)="applyStock()" />
+        <button *ngIf="stSearch" class="btn-clear-input" type="button" (click)="clearStockSearchBox()" aria-label="Clear search" title="Clear search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
       <label class="checkbox-label">
         <input type="checkbox" [(ngModel)]="stLowStock" (change)="applyStock()" />
         Low stock only
@@ -134,8 +141,15 @@
   <div *ngIf="activeTab === 'history'" class="tab-content">
 
     <div class="filters-bar">
-      <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..."
-        [(ngModel)]="txSearch" (keyup.enter)="applyTx()" />
+      <div class="search-wrap">
+        <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..."
+          [(ngModel)]="txSearch" (ngModelChange)="onTxSearchInput()" (keyup.enter)="applyTx()" />
+        <button *ngIf="txSearch" class="btn-clear-input" type="button" (click)="clearTxSearchBox()" aria-label="Clear search" title="Clear search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
       <select class="filter-input" [(ngModel)]="txType" (change)="applyTx()">
         <option value="">All Types</option>
         <option value="IN">Stock IN</option>
