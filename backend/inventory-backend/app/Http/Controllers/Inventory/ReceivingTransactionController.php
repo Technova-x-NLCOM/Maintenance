@@ -171,6 +171,8 @@ class ReceivingTransactionController extends Controller
                 return [
                     'reference_number' => $reference,
                     'batch_number' => $data['batch_number'],
+                    'qr_payload' => $this->buildBatchTransactionQrPayload($reference, $data['batch_number']),
+                    'qr_label' => 'BATCH:' . $data['batch_number'],
                     'line_count' => count($receivedLines),
                     'total_received_quantity' => $totalReceived,
                     'received_lines' => $receivedLines,
@@ -247,6 +249,8 @@ class ReceivingTransactionController extends Controller
             'item_description' => $item->item_description,
             'reference_number' => $reference,
             'batch_number' => $data['batch_number'],
+            'qr_payload' => $this->buildBatchLineQrPayload($batchId, $item, $reference, (string) $data['batch_number']),
+            'qr_label' => 'BATCH:' . $data['batch_number'],
             'quantity' => (int) $data['quantity'],
             'purchase_date' => $purchaseDate->toDateString(),
             'expiry_date' => $expiryDate ? $expiryDate->toDateString() : null,
@@ -263,6 +267,28 @@ class ReceivingTransactionController extends Controller
         }
 
         return $response;
+    }
+
+    private function buildBatchLineQrPayload(int $batchId, object $item, string $reference, string $batchNumber): string
+    {
+        return json_encode([
+            'entity' => 'batch_line',
+            'batch_id' => $batchId,
+            'reference_number' => $reference,
+            'batch_number' => $batchNumber,
+            'item_id' => (int) $item->item_id,
+            'item_code' => (string) $item->item_code,
+            'item_description' => (string) $item->item_description,
+        ], JSON_UNESCAPED_SLASHES);
+    }
+
+    private function buildBatchTransactionQrPayload(string $reference, string $batchNumber): string
+    {
+        return json_encode([
+            'entity' => 'batch_transaction',
+            'reference_number' => $reference,
+            'batch_number' => $batchNumber,
+        ], JSON_UNESCAPED_SLASHES);
     }
 
     private function normalizeItem(object $item): object
