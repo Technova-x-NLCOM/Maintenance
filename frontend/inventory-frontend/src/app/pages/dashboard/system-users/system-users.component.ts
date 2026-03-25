@@ -18,6 +18,8 @@ import { AuthService, User } from '../../../services/auth.service';
 })
 export class SystemUsersComponent implements OnInit {
   users: SystemUserDto[] = [];
+  /** Client-side filter on loaded users (name, email, username, role). */
+  userSearch = '';
   roles: Role[] = [];
   loading = true;
   error: string | null = null;
@@ -271,6 +273,29 @@ export class SystemUsersComponent implements OnInit {
 
   roleLabel(u: SystemUserDto): string {
     return u.role_display_name || u.role_name || '—';
+  }
+
+  get displayedUsers(): SystemUserDto[] {
+    const q = this.userSearch.trim().toLowerCase();
+    if (!q) {
+      return this.users;
+    }
+    return this.users.filter((u) => {
+      const name = `${u.first_name} ${u.last_name}`.toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const username = (u.username || '').toLowerCase();
+      const role = this.roleLabel(u).toLowerCase();
+      return (
+        name.includes(q) ||
+        email.includes(q) ||
+        username.includes(q) ||
+        role.includes(q)
+      );
+    });
+  }
+
+  clearUserSearch(): void {
+    this.userSearch = '';
   }
 
   formatLastLogin(iso: string | null): string {

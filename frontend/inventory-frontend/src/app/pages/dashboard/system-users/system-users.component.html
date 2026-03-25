@@ -29,6 +29,23 @@
     <div class="state state-loading" *ngIf="loading">Loading users…</div>
     <div class="state state-error" *ngIf="!loading && error">{{ error }}</div>
 
+    <div class="toolbar-search" *ngIf="!loading && !error && users.length > 0">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input
+          type="text"
+          [(ngModel)]="userSearch"
+          placeholder="Search by name, email, username, or role"
+          autocomplete="off"
+        />
+        <button *ngIf="userSearch" type="button" class="btn-clear-input" (click)="clearUserSearch()" aria-label="Clear search" title="Clear search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
     <div class="table-wrap" *ngIf="!loading && !error">
       <table class="users-table">
         <thead>
@@ -41,7 +58,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let u of users">
+          <tr *ngFor="let u of displayedUsers">
             <td>
               <div class="user-cell">
                 <div class="user-text">
@@ -94,6 +111,7 @@
         </tbody>
       </table>
       <p class="empty" *ngIf="users.length === 0">No users found.</p>
+      <p class="empty" *ngIf="users.length > 0 && displayedUsers.length === 0">No users match your search.</p>
     </div>
   </div>
 </div>
