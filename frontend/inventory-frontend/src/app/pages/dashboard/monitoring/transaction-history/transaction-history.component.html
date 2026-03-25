@@ -22,7 +22,12 @@
   </div>
 
   <div class="filters-bar">
-    <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..." [(ngModel)]="search" (keyup.enter)="apply()" />
+    <div class="search-wrap">
+      <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..." [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keyup.enter)="apply()" />
+      <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearSearchBoxOnly()" aria-label="Clear search" title="Clear search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <select class="filter-input" [(ngModel)]="type" (change)="apply()">
       <option value="">All Types</option>
       <option value="IN">Stock IN</option>
