@@ -9,6 +9,21 @@ import {
   ReceivingTransactionResponse,
 } from '../../services/inventory-item.service';
 
+interface ReceivingCartLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  measurement_unit: string | null;
+  quantity: number;
+  purchase_date: string;
+  expiry_date: string | null;
+  manufactured_date: string | null;
+  supplier_info: string | null;
+  batch_value: number | null;
+  reason: string | null;
+  notes: string | null;
+}
+
 @Component({
   selector: 'app-receiving-transaction',
   standalone: true,
@@ -31,7 +46,6 @@ export class ReceivingTransactionComponent implements OnInit {
   // Form state
   selectedItem: ReceivingItem | null = null;
   quantity = 1;
-  batchNumber = '';
   purchaseDate = '';
   expiryDate: string | null = null;
   manufacturedDate: string | null = null;
@@ -52,6 +66,9 @@ export class ReceivingTransactionComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   showReceivingModal = false;
+  showListModal = false;
+  confirmBatchNumber = '';
+  receivingLines: ReceivingCartLine[] = [];
 
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
@@ -60,6 +77,14 @@ export class ReceivingTransactionComponent implements OnInit {
 
   closeReceivingModal(): void {
     this.showReceivingModal = false;
+  }
+
+  openListModal(): void {
+    this.showListModal = true;
+  }
+
+  closeListModal(): void {
+    this.showListModal = false;
   }
 
   constructor(
@@ -240,11 +265,8 @@ export class ReceivingTransactionComponent implements OnInit {
     }
   }
 
-  canSubmit(): boolean {
+  canAddToList(): boolean {
     if (!this.selectedItem || !this.quantity || this.quantity <= 0) {
-      return false;
-    }
-    if (!this.batchNumber.trim()) {
       return false;
     }
     if (!this.purchaseDate) {
@@ -269,8 +291,66 @@ export class ReceivingTransactionComponent implements OnInit {
     }
   }
 
-  submitForm(): void {
-    if (!this.canSubmit() || !this.selectedItem) {
+  addToReceivingList(): void {
+    if (!this.canAddToList() || !this.selectedItem) {
+      return;
+    }
+
+    this.showErrorMessage = false;
+
+    const expiry = this.getEffectiveExpiryDate();
+    const line: ReceivingCartLine = {
+      item_id: this.selectedItem.item_id,
+      item_code: this.selectedItem.item_code,
+      item_description: this.selectedItem.item_description,
+      measurement_unit: this.selectedItem.measurement_unit,
+      quantity: this.quantity,
+      purchase_date: this.purchaseDate,
+      expiry_date: expiry,
+      manufactured_date: this.manufacturedDate || null,
+      supplier_info: this.supplierInfo?.trim() || null,
+      batch_value: this.batchValue || null,
+      reason: this.reason?.trim() || 'Stock Received',
+      notes: this.notes?.trim() || null,
+    };
+
+    const existingIndex = this.receivingLines.findIndex((entry) => entry.item_id === line.item_id);
+
+    if (existingIndex >= 0) {
+      this.receivingLines[existingIndex].quantity += line.quantity;
+      this.receivingLines[existingIndex].purchase_date = line.purchase_date;
+      this.receivingLines[existingIndex].expiry_date = line.expiry_date;
+      this.receivingLines[existingIndex].manufactured_date = line.manufactured_date;
+      this.receivingLines[existingIndex].supplier_info = line.supplier_info;
+      this.receivingLines[existingIndex].batch_value = line.batch_value;
+      this.receivingLines[existingIndex].reason = line.reason;
+      this.receivingLines[existingIndex].notes = line.notes;
+    } else {
+      this.receivingLines.push(line);
+    }
+
+    this.showSuccessMessage = true;
+    this.successMessage = `${line.item_description} added to receiving list.`;
+    this.showReceivingModal = false;
+    this.showListModal = true;
+    this.resetForm();
+    this.cdr.detectChanges();
+  }
+
+  removeLine(index: number): void {
+    this.receivingLines.splice(index, 1);
+  }
+
+  getTotalLineQuantity(): number {
+    return this.receivingLines.reduce((sum, line) => sum + line.quantity, 0);
+  }
+
+  canSubmitList(): boolean {
+    return this.receivingLines.length > 0 && !this.saving && this.confirmBatchNumber.trim().length > 0;
+  }
+
+  submitReceivingList(): void {
+    if (!this.canSubmitList()) {
       return;
     }
 
@@ -279,28 +359,34 @@ export class ReceivingTransactionComponent implements OnInit {
     this.showErrorMessage = false;
 
     const payload = {
-      item_id: this.selectedItem.item_id,
-      quantity: this.quantity,
-      batch_number: this.batchNumber,
-      purchase_date: this.purchaseDate,
-      expiry_date: this.getEffectiveExpiryDate(),
-      manufactured_date: this.manufacturedDate || undefined,
-      supplier_info: this.supplierInfo || undefined,
-      batch_value: this.batchValue || undefined,
-      reason: this.reason || undefined,
-      notes: this.notes || undefined,
+      batch_number: this.confirmBatchNumber.trim(),
+      items: this.receivingLines.map((line) => ({
+        item_id: line.item_id,
+        quantity: line.quantity,
+        purchase_date: line.purchase_date,
+        expiry_date: line.expiry_date,
+        manufactured_date: line.manufactured_date,
+        supplier_info: line.supplier_info,
+        batch_value: line.batch_value,
+        reason: line.reason,
+        notes: line.notes,
+      })),
     };
 
     this.itemService.createReceivingTransaction(payload).subscribe({
       next: (response: ReceivingTransactionResponse) => {
         if (response.success) {
           this.showSuccessMessage = true;
-          this.successMessage = `Stock received successfully! Batch #${response.data.batch_number} created with ${response.data.quantity} units.`;
-          if (response.data.expiry_date_auto_calculated) {
-            this.successMessage += ` Expiry date auto-calculated: ${response.data.expiry_date}`;
-          }
+          const lineCount = (response as any)?.data?.line_count ?? this.receivingLines.length;
+          const reference = (response as any)?.data?.reference_number;
+          this.successMessage = reference
+            ? `Receiving list submitted successfully. Ref: ${reference}. Lines: ${lineCount}.`
+            : `Receiving list submitted successfully. Lines: ${lineCount}.`;
+          this.receivingLines = [];
+          this.confirmBatchNumber = '';
           this.resetForm();
           this.showReceivingModal = false;
+          this.showListModal = false;
           this.loadReceivingItems();
         }
         this.saving = false;
@@ -318,7 +404,6 @@ export class ReceivingTransactionComponent implements OnInit {
   resetForm(): void {
     this.selectedItem = null;
     this.quantity = 1;
-    this.batchNumber = '';
     this.purchaseDate = new Date().toISOString().split('T')[0];
     this.expiryDate = null;
     this.manufacturedDate = null;

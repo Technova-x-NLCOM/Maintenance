@@ -104,36 +104,33 @@ interface PaginatedReceivingItemsResponse {
 }
 
 interface ReceivingTransactionRequest {
-  item_id: number;
-  quantity: number;
-  batch_number: string;
-  purchase_date: string;
+  item_id?: number;
+  quantity?: number;
+  batch_number?: string;
+  purchase_date?: string;
   expiry_date?: string | null;
   manufactured_date?: string | null;
   supplier_info?: string | null;
   batch_value?: number | null;
   reason?: string | null;
   notes?: string | null;
+  items?: Array<{
+    item_id: number;
+    quantity: number;
+    purchase_date: string;
+    expiry_date?: string | null;
+    manufactured_date?: string | null;
+    supplier_info?: string | null;
+    batch_value?: number | null;
+    reason?: string | null;
+    notes?: string | null;
+  }>;
 }
 
 interface ReceivingTransactionResponse {
   success: boolean;
   message: string;
-  data: {
-    batch_id: number;
-    item_id: number;
-    item_code: string;
-    item_description: string;
-    batch_number: string;
-    quantity: number;
-    purchase_date: string;
-    expiry_date: string | null;
-    manufactured_date: string | null;
-    supplier_info: string | null;
-    batch_value: number | null;
-    shelf_life_days: number | null;
-    expiry_date_auto_calculated?: boolean;
-  };
+  data: any;
 }
 
 interface IssuanceItem {
