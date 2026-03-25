@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import {
   CategoryItem,
   InventoryCategory,
@@ -14,7 +15,7 @@ import {
   templateUrl: './category-management.component.html',
   styleUrls: ['./category-management.component.scss']
 })
-export class CategoryManagementComponent implements OnInit {
+export class CategoryManagementComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   managingItems = false;
@@ -39,6 +40,19 @@ export class CategoryManagementComponent implements OnInit {
   assignSearch = '';
   selectedAssignableItemIds: number[] = [];
 
+  private readonly SEARCH_DEBOUNCE_MS = 300;
+  private loadCategoriesSub?: Subscription;
+  private catsSearchDebounce?: ReturnType<typeof setTimeout>;
+  private categoriesBaseline: InventoryCategory[] | null = null;
+
+  private loadCatItemsSub?: Subscription;
+  private itemSearchDebounce?: ReturnType<typeof setTimeout>;
+  private categoryItemsBaseline: CategoryItem[] | null = null;
+
+  private loadAssignableSub?: Subscription;
+  private assignSearchDebounce?: ReturnType<typeof setTimeout>;
+  private assignableItemsBaseline: CategoryItem[] | null = null;
+
   formData: {
     category_name: string;
     parent_category_id: number | null;
@@ -58,14 +72,28 @@ export class CategoryManagementComponent implements OnInit {
     this.loadCategories();
   }
 
+  ngOnDestroy(): void {
+    this.cancelCatsSearchDebounce();
+    this.cancelItemSearchDebounce();
+    this.cancelAssignSearchDebounce();
+    this.loadCategoriesSub?.unsubscribe();
+    this.loadCatItemsSub?.unsubscribe();
+    this.loadAssignableSub?.unsubscribe();
+  }
+
   loadCategories(): void {
+    this.cancelCatsSearchDebounce();
     this.loading = true;
     this.errorMessage = '';
 
-    this.categoryService.list(this.search || undefined).subscribe({
+    this.loadCategoriesSub?.unsubscribe();
+    this.loadCategoriesSub = this.categoryService.list(this.search || undefined).subscribe({
       next: (response) => {
         this.categories = response.data;
         this.parentOptions = response.data;
+        if (!this.search.trim()) {
+          this.categoriesBaseline = response.data.slice();
+        }
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -77,13 +105,54 @@ export class CategoryManagementComponent implements OnInit {
     });
   }
 
+  onCategoriesSearchInput(): void {
+    this.cancelCatsSearchDebounce();
+    if (!this.search.trim()) {
+      this.loadCategoriesSub?.unsubscribe();
+      this.loading = false;
+      this.errorMessage = '';
+      this.restoreCategoriesBaseline();
+      return;
+    }
+    this.catsSearchDebounce = setTimeout(() => {
+      this.catsSearchDebounce = undefined;
+      this.loadCategories();
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearCategoriesSearchBox(): void {
+    this.search = '';
+    this.cancelCatsSearchDebounce();
+    this.loadCategoriesSub?.unsubscribe();
+    this.loading = false;
+    this.errorMessage = '';
+    this.restoreCategoriesBaseline();
+  }
+
+  private cancelCatsSearchDebounce(): void {
+    if (this.catsSearchDebounce !== undefined) {
+      clearTimeout(this.catsSearchDebounce);
+      this.catsSearchDebounce = undefined;
+    }
+  }
+
+  private restoreCategoriesBaseline(): void {
+    if (this.categoriesBaseline) {
+      this.categories = this.categoriesBaseline.slice();
+      this.parentOptions = this.categories;
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadCategories();
+  }
+
   onSearch(): void {
+    this.cancelCatsSearchDebounce();
     this.loadCategories();
   }
 
   clearSearch(): void {
-    this.search = '';
-    this.loadCategories();
+    this.clearCategoriesSearchBox();
   }
 
   startNew(): void {
@@ -204,6 +273,8 @@ export class CategoryManagementComponent implements OnInit {
     this.modalSuccessMessage = '';
     this.itemSearch = '';
     this.assignSearch = '';
+    this.categoryItemsBaseline = null;
+    this.assignableItemsBaseline = null;
     this.selectedAssignableItemIds = [];
     this.loadCategoryItems();
     this.loadAssignableItems();
@@ -226,14 +297,19 @@ export class CategoryManagementComponent implements OnInit {
       return;
     }
 
+    this.cancelItemSearchDebounce();
     this.managingItems = true;
     this.modalErrorMessage = '';
 
-    this.categoryService
+    this.loadCatItemsSub?.unsubscribe();
+    this.loadCatItemsSub = this.categoryService
       .listCategoryItems(this.selectedCategoryForItems.category_id, this.itemSearch || undefined)
       .subscribe({
         next: (response) => {
           this.categoryItems = response.data;
+          if (!this.itemSearch.trim()) {
+            this.categoryItemsBaseline = response.data.slice();
+          }
           this.managingItems = false;
           this.cdr.detectChanges();
         },
@@ -245,12 +321,55 @@ export class CategoryManagementComponent implements OnInit {
       });
   }
 
+  onCategoryItemsSearchInput(): void {
+    this.cancelItemSearchDebounce();
+    if (!this.itemSearch.trim()) {
+      this.loadCatItemsSub?.unsubscribe();
+      this.managingItems = false;
+      this.restoreCategoryItemsBaseline();
+      return;
+    }
+    this.itemSearchDebounce = setTimeout(() => {
+      this.itemSearchDebounce = undefined;
+      this.loadCategoryItems();
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearCategoryItemsSearchBox(): void {
+    this.itemSearch = '';
+    this.cancelItemSearchDebounce();
+    this.loadCatItemsSub?.unsubscribe();
+    this.managingItems = false;
+    this.restoreCategoryItemsBaseline();
+  }
+
+  private cancelItemSearchDebounce(): void {
+    if (this.itemSearchDebounce !== undefined) {
+      clearTimeout(this.itemSearchDebounce);
+      this.itemSearchDebounce = undefined;
+    }
+  }
+
+  private restoreCategoryItemsBaseline(): void {
+    if (this.categoryItemsBaseline) {
+      this.categoryItems = this.categoryItemsBaseline.slice();
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadCategoryItems();
+  }
+
   loadAssignableItems(): void {
-    this.categoryService
+    this.cancelAssignSearchDebounce();
+    this.loadAssignableSub?.unsubscribe();
+    this.loadAssignableSub = this.categoryService
       .listAssignableItems(this.assignSearch || undefined, this.selectedCategoryForItems?.category_id)
       .subscribe({
       next: (response) => {
         this.assignableItems = response.data;
+        if (!this.assignSearch.trim()) {
+          this.assignableItemsBaseline = response.data.slice();
+        }
         this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
           this.assignableItems.some((item) => item.item_id === id)
         );
@@ -261,6 +380,45 @@ export class CategoryManagementComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  onAssignSearchInput(): void {
+    this.cancelAssignSearchDebounce();
+    if (!this.assignSearch.trim()) {
+      this.loadAssignableSub?.unsubscribe();
+      this.restoreAssignableBaseline();
+      return;
+    }
+    this.assignSearchDebounce = setTimeout(() => {
+      this.assignSearchDebounce = undefined;
+      this.loadAssignableItems();
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearAssignSearchBox(): void {
+    this.assignSearch = '';
+    this.cancelAssignSearchDebounce();
+    this.loadAssignableSub?.unsubscribe();
+    this.restoreAssignableBaseline();
+  }
+
+  private cancelAssignSearchDebounce(): void {
+    if (this.assignSearchDebounce !== undefined) {
+      clearTimeout(this.assignSearchDebounce);
+      this.assignSearchDebounce = undefined;
+    }
+  }
+
+  private restoreAssignableBaseline(): void {
+    if (this.assignableItemsBaseline) {
+      this.assignableItems = this.assignableItemsBaseline.slice();
+      this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
+        this.assignableItems.some((item) => item.item_id === id)
+      );
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadAssignableItems();
   }
 
   assignSelectedItem(): void {
