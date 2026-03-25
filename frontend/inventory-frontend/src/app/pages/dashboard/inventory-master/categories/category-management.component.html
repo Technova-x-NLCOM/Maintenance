@@ -23,12 +23,18 @@
       <div class="assign-section">
         <h3>Assign Registered Items To This Category</h3>
         <div class="assign-controls">
-          <input
-            type="text"
-            [(ngModel)]="assignSearch"
-            placeholder="Search items by code or name"
-            (keyup.enter)="loadAssignableItems()"
-          />
+          <div class="search-wrap">
+            <input
+              type="text"
+              [(ngModel)]="assignSearch"
+              (ngModelChange)="onAssignSearchInput()"
+              placeholder="Search items by code or name"
+              (keyup.enter)="loadAssignableItems()"
+            />
+            <button *ngIf="assignSearch" class="btn-clear-input" type="button" (click)="clearAssignSearchBox()" aria-label="Clear search" title="Clear search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
           <button class="btn-ghost" type="button" (click)="loadAssignableItems()">Search</button>
           <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(true)">Select all</button>
           <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(false)">Clear</button>
@@ -94,12 +100,18 @@
         <div class="section-header">
           <h3>Items in this category ({{ categoryItems.length }})</h3>
           <div class="assign-controls">
-            <input
-              type="text"
-              [(ngModel)]="itemSearch"
-              placeholder="Search items in this category"
-              (keyup.enter)="loadCategoryItems()"
-            />
+            <div class="search-wrap">
+              <input
+                type="text"
+                [(ngModel)]="itemSearch"
+                (ngModelChange)="onCategoryItemsSearchInput()"
+                placeholder="Search items in this category"
+                (keyup.enter)="loadCategoryItems()"
+              />
+              <button *ngIf="itemSearch" class="btn-clear-input" type="button" (click)="clearCategoryItemsSearchBox()" aria-label="Clear search" title="Clear search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
             <button class="btn-ghost" type="button" (click)="loadCategoryItems()">Search</button>
           </div>
         </div>
@@ -195,9 +207,15 @@
       <div class="toolbar-actions">
         <button class="btn-primary" (click)="startNew()" type="button">Add new category</button>
         <div class="search-row">
-          <input type="text" [(ngModel)]="search" placeholder="Search by name, parent, or description" (keyup.enter)="onSearch()" />
-          <button class="btn-ghost" type="button" (click)="onSearch()">Search</button>
-          <button class="btn-ghost" type="button" (click)="clearSearch()">Reset</button>
+          <div class="search-wrap main-search">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" [(ngModel)]="search" (ngModelChange)="onCategoriesSearchInput()" placeholder="Search by name, parent, or description" (keyup.enter)="onSearch()" />
+            <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearCategoriesSearchBox()" aria-label="Clear search" title="Clear search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

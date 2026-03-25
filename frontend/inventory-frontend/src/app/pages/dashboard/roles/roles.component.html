@@ -5,9 +5,6 @@
       <h2>Roles & Permissions</h2>
       <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
     </div>
-    <div class="header-actions">
-      <button class="ghost" (click)="loadRoles()" [disabled]="loading">Refresh</button>
-    </div>
   </header>
 
   <div *ngIf="loading" class="state state-loading">Loading roles...</div>

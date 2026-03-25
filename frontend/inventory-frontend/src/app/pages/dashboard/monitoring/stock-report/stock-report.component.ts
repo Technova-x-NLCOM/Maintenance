@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -28,6 +29,8 @@ export class StockReportComponent implements OnInit {
   loading = false;
   error = '';
 
+  private loadSub?: Subscription;
+
   private readonly BASE = 'http://127.0.0.1:8000/api/inventory/transactions';
 
   constructor(
@@ -40,12 +43,17 @@ export class StockReportComponent implements OnInit {
     this.load(1);
   }
 
+  ngOnDestroy(): void {
+    this.loadSub?.unsubscribe();
+  }
+
   load(page = 1): void {
+    this.loadSub?.unsubscribe();
     this.loading = true;
     this.error = '';
     let p = new HttpParams().set('page', String(page)).set('per_page', '25');
     if (this.lowStock) p = p.set('low_stock', '1');
-    this.http
+    this.loadSub = this.http
       .get<Paginated<StockReportRecord>>(`${this.BASE}/stock-report`, {
         headers: this.authHeaders(),
         params: p,
@@ -69,6 +77,15 @@ export class StockReportComponent implements OnInit {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  clearSearch(): void {
+    this.search = '';
+    this.applyFilters();
   }
 
   applyFilters(): void {

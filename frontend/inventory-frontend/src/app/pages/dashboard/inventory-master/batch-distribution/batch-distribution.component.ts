@@ -1,4 +1,5 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -69,6 +70,15 @@ export class BatchDistributionComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
 
+  private readonly SEARCH_DEBOUNCE_MS = 300;
+  private loadTemplatesSub?: Subscription;
+  private templateSearchDebounce?: ReturnType<typeof setTimeout>;
+  private templatesBaseline: BatchDistributionTemplateSummary[] | null = null;
+
+  private loadItemOptionsSub?: Subscription;
+  private itemOptionsSearchDebounce?: ReturnType<typeof setTimeout>;
+  private itemOptionsBaseline: BatchDistributionItemOption[] | null = null;
+
   constructor(
     private batchService: BatchDistributionService,
     private cdr: ChangeDetectorRef
@@ -79,11 +89,23 @@ export class BatchDistributionComponent implements OnInit {
     this.loadItemOptions();
   }
 
+  ngOnDestroy(): void {
+    this.cancelTemplateSearchDebounce();
+    this.cancelItemOptionsSearchDebounce();
+    this.loadTemplatesSub?.unsubscribe();
+    this.loadItemOptionsSub?.unsubscribe();
+  }
+
   loadTemplates(): void {
+    this.cancelTemplateSearchDebounce();
     this.loadingTemplates = true;
-    this.batchService.listTemplates(this.searchTemplate || undefined).subscribe({
+    this.loadTemplatesSub?.unsubscribe();
+    this.loadTemplatesSub = this.batchService.listTemplates(this.searchTemplate || undefined).subscribe({
       next: (response) => {
         this.templates = response.data;
+        if (!this.searchTemplate.trim()) {
+          this.templatesBaseline = response.data.slice();
+        }
         this.loadingTemplates = false;
 
         if (this.selectedTemplateId) {
@@ -105,11 +127,62 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
+  onTemplateSearchInput(): void {
+    this.cancelTemplateSearchDebounce();
+    if (!this.searchTemplate.trim()) {
+      this.loadTemplatesSub?.unsubscribe();
+      this.loadingTemplates = false;
+      this.restoreTemplatesBaseline();
+      return;
+    }
+    this.templateSearchDebounce = setTimeout(() => {
+      this.templateSearchDebounce = undefined;
+      this.loadTemplates();
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearTemplateSearchBox(): void {
+    this.searchTemplate = '';
+    this.cancelTemplateSearchDebounce();
+    this.loadTemplatesSub?.unsubscribe();
+    this.loadingTemplates = false;
+    this.restoreTemplatesBaseline();
+  }
+
+  private cancelTemplateSearchDebounce(): void {
+    if (this.templateSearchDebounce !== undefined) {
+      clearTimeout(this.templateSearchDebounce);
+      this.templateSearchDebounce = undefined;
+    }
+  }
+
+  private restoreTemplatesBaseline(): void {
+    if (this.templatesBaseline) {
+      this.templates = this.templatesBaseline.slice();
+      if (this.selectedTemplateId) {
+        const stillExists = this.templates.some(t => t.template_id === this.selectedTemplateId);
+        if (!stillExists) {
+          this.selectedTemplateId = null;
+          this.selectedTemplateName = '';
+          this.calculation = null;
+        }
+      }
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadTemplates();
+  }
+
   loadItemOptions(): void {
+    this.cancelItemOptionsSearchDebounce();
     this.loadingItemOptions = true;
-    this.batchService.listItemOptions(this.searchItem || undefined).subscribe({
+    this.loadItemOptionsSub?.unsubscribe();
+    this.loadItemOptionsSub = this.batchService.listItemOptions(this.searchItem || undefined).subscribe({
       next: (response) => {
         this.itemOptions = response.data;
+        if (!this.searchItem.trim()) {
+          this.itemOptionsBaseline = response.data.slice();
+        }
         this.loadingItemOptions = false;
         this.cdr.detectChanges();
       },
@@ -121,22 +194,60 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
+  onItemOptionsSearchInput(): void {
+    this.cancelItemOptionsSearchDebounce();
+    if (!this.searchItem.trim()) {
+      this.loadItemOptionsSub?.unsubscribe();
+      this.loadingItemOptions = false;
+      this.restoreItemOptionsBaseline();
+      return;
+    }
+    this.itemOptionsSearchDebounce = setTimeout(() => {
+      this.itemOptionsSearchDebounce = undefined;
+      this.loadItemOptions();
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearItemSearchBox(): void {
+    this.searchItem = '';
+    this.cancelItemOptionsSearchDebounce();
+    this.loadItemOptionsSub?.unsubscribe();
+    this.loadingItemOptions = false;
+    this.restoreItemOptionsBaseline();
+  }
+
+  private cancelItemOptionsSearchDebounce(): void {
+    if (this.itemOptionsSearchDebounce !== undefined) {
+      clearTimeout(this.itemOptionsSearchDebounce);
+      this.itemOptionsSearchDebounce = undefined;
+    }
+  }
+
+  private restoreItemOptionsBaseline(): void {
+    if (this.itemOptionsBaseline) {
+      this.itemOptions = this.itemOptionsBaseline.slice();
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadItemOptions();
+  }
+
   searchTemplates(): void {
+    this.cancelTemplateSearchDebounce();
     this.loadTemplates();
   }
 
   clearTemplateSearch(): void {
-    this.searchTemplate = '';
-    this.loadTemplates();
+    this.clearTemplateSearchBox();
   }
 
   searchItems(): void {
+    this.cancelItemOptionsSearchDebounce();
     this.loadItemOptions();
   }
 
   resetItemSearch(): void {
-    this.searchItem = '';
-    this.loadItemOptions();
+    this.clearItemSearchBox();
   }
 
   startCreateTemplate(): void {

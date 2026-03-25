@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import {
   InventoryItem,
   InventoryItemService,
@@ -14,7 +15,7 @@ import {
   templateUrl: './item-registration-updates.component.html',
   styleUrls: ['./item-registration-updates.component.scss']
 })
-export class ItemRegistrationUpdatesComponent implements OnInit {
+export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
 
@@ -27,6 +28,15 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
   perPage = 10;
 
   search = '';
+
+  private readonly SEARCH_DEBOUNCE_MS = 300;
+  private loadItemsSub?: Subscription;
+  private searchDebounceId?: ReturnType<typeof setTimeout>;
+  private itemsPage1Baseline: {
+    items: InventoryItem[];
+    totalPages: number;
+    totalItems: number;
+  } | null = null;
 
   selectedItemId: number | null = null;
   /** When true, the Register/Update form is visible. Hidden by default; shown when user clicks New Item or Edit. */
@@ -139,11 +149,18 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.cancelSearchDebounce();
+    this.loadItemsSub?.unsubscribe();
+  }
+
   loadItems(page: number = 1): void {
+    this.cancelSearchDebounce();
     this.loading = true;
     this.errorMessage = '';
 
-    this.itemService
+    this.loadItemsSub?.unsubscribe();
+    this.loadItemsSub = this.itemService
       .list({
         page,
         per_page: this.perPage,
@@ -155,6 +172,13 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
           this.currentPage = response.data.current_page;
           this.totalPages = response.data.last_page;
           this.totalItems = response.data.total;
+          if (response.data.current_page === 1 && !this.search.trim()) {
+            this.itemsPage1Baseline = {
+              items: response.data.data.slice(),
+              totalPages: response.data.last_page,
+              totalItems: response.data.total,
+            };
+          }
           this.loading = false;
           this.cdr.detectChanges();
         },
@@ -166,13 +190,56 @@ export class ItemRegistrationUpdatesComponent implements OnInit {
       });
   }
 
+  onItemsSearchInput(): void {
+    this.cancelSearchDebounce();
+    if (!this.search.trim()) {
+      this.loadItemsSub?.unsubscribe();
+      this.loading = false;
+      this.errorMessage = '';
+      this.restoreItemsSearchCleared();
+      return;
+    }
+    this.searchDebounceId = setTimeout(() => {
+      this.searchDebounceId = undefined;
+      this.loadItems(1);
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearItemsSearchBox(): void {
+    this.search = '';
+    this.cancelSearchDebounce();
+    this.loadItemsSub?.unsubscribe();
+    this.loading = false;
+    this.errorMessage = '';
+    this.restoreItemsSearchCleared();
+  }
+
+  private cancelSearchDebounce(): void {
+    if (this.searchDebounceId !== undefined) {
+      clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = undefined;
+    }
+  }
+
+  private restoreItemsSearchCleared(): void {
+    if (this.itemsPage1Baseline) {
+      this.items = this.itemsPage1Baseline.items.slice();
+      this.currentPage = 1;
+      this.totalPages = this.itemsPage1Baseline.totalPages;
+      this.totalItems = this.itemsPage1Baseline.totalItems;
+      this.cdr.detectChanges();
+      return;
+    }
+    this.loadItems(1);
+  }
+
   onSearch(): void {
+    this.cancelSearchDebounce();
     this.loadItems(1);
   }
 
   clearSearch(): void {
-    this.search = '';
-    this.loadItems(1);
+    this.clearItemsSearchBox();
   }
 
   editItem(item: InventoryItem): void {

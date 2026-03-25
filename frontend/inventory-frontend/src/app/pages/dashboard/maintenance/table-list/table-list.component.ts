@@ -1,6 +1,7 @@
-import { Component, OnInit, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { MaintenanceService } from '../../../../services/maintenance.service';
 import { 
   getFriendlyTableName as getTableName,
@@ -15,7 +16,7 @@ import {
   templateUrl: './table-list.component.html',
   styleUrls: ['./table-list.component.scss']
 })
-export class TableListComponent implements OnInit {
+export class TableListComponent implements OnInit, OnDestroy {
   @Input() parent: any;
   selectedTable: string | null = null;
   schema: { columns: string[]; primary_key: string | string[]; soft_deletes: boolean; relations?: Record<string, { ref_table: string; ref_key: string; label_column: string }>; lookups?: Record<string, Record<string | number, string>>; column_details?: Record<string, { nullable: boolean; type: string }> } | null = null;
@@ -37,7 +38,15 @@ export class TableListComponent implements OnInit {
   
   // Search
   searchQuery = '';
-  private searchTimeout: any;
+  private searchTimeout: ReturnType<typeof setTimeout> | undefined;
+  private fetchSub?: Subscription;
+  private page1Unfiltered: {
+    rows: any[];
+    total: number;
+    totalPages: number;
+    showDeleted: boolean;
+    table: string;
+  } | null = null;
 
   constructor(
     private api: MaintenanceService,
@@ -73,11 +82,19 @@ export class TableListComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.fetchSub?.unsubscribe();
+    if (this.searchTimeout !== undefined) {
+      clearTimeout(this.searchTimeout);
+    }
+  }
+
   fetchRows(): void {
     if (!this.selectedTable) return;
+    this.fetchSub?.unsubscribe();
     this.loading = true;
     this.cdr.markForCheck();
-    this.api.listRows(this.selectedTable, { 
+    this.fetchSub = this.api.listRows(this.selectedTable, { 
       showDeleted: this.showDeleted, 
       page: this.currentPage, 
       perPage: this.perPage,
@@ -89,6 +106,15 @@ export class TableListComponent implements OnInit {
         this.perPage = perPage;
         this.total = total;
         this.totalPages = Math.ceil(total / perPage);
+        if (page === 1 && !this.searchQuery.trim()) {
+          this.page1Unfiltered = {
+            rows: data.slice(),
+            total,
+            totalPages: Math.ceil(total / perPage),
+            showDeleted: this.showDeleted,
+            table: this.selectedTable as string,
+          };
+        }
         this.loading = false;
         console.log('Loaded rows:', data);
         this.cdr.markForCheck();
@@ -232,19 +258,51 @@ export class TableListComponent implements OnInit {
 
   // Search methods
   onSearchChange(): void {
-    // Debounce search to avoid too many API calls
-    if (this.searchTimeout) {
+    if (this.searchTimeout !== undefined) {
       clearTimeout(this.searchTimeout);
+      this.searchTimeout = undefined;
+    }
+    const q = this.searchQuery.trim();
+    if (!q) {
+      this.fetchSub?.unsubscribe();
+      this.loading = false;
+      this.currentPage = 1;
+      this.restoreUnfilteredPage1OrFetch();
+      return;
     }
     this.searchTimeout = setTimeout(() => {
-      this.currentPage = 1; // Reset to first page on search
+      this.searchTimeout = undefined;
+      this.currentPage = 1;
       this.fetchRows();
     }, 300);
   }
 
   clearSearch(): void {
+    if (this.searchTimeout !== undefined) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = undefined;
+    }
+    this.fetchSub?.unsubscribe();
     this.searchQuery = '';
     this.currentPage = 1;
+    this.loading = false;
+    this.restoreUnfilteredPage1OrFetch();
+  }
+
+  private restoreUnfilteredPage1OrFetch(): void {
+    if (
+      this.page1Unfiltered &&
+      this.selectedTable &&
+      this.page1Unfiltered.table === this.selectedTable &&
+      this.page1Unfiltered.showDeleted === this.showDeleted
+    ) {
+      this.rows = this.page1Unfiltered.rows.slice();
+      this.currentPage = 1;
+      this.total = this.page1Unfiltered.total;
+      this.totalPages = this.page1Unfiltered.totalPages;
+      this.cdr.markForCheck();
+      return;
+    }
     this.fetchRows();
   }
 

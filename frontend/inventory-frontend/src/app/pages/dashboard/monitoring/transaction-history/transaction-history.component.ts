@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -15,7 +16,7 @@ import { TransactionRecord, Paginated } from '../monitoring.models';
   templateUrl: './transaction-history.component.html',
   styleUrl: './transaction-history.component.scss',
 })
-export class TransactionHistoryComponent implements OnInit {
+export class TransactionHistoryComponent implements OnInit, OnDestroy {
   transactions: TransactionRecord[] = [];
   page = 1;
   lastPage = 1;
@@ -26,6 +27,18 @@ export class TransactionHistoryComponent implements OnInit {
   dateTo = '';
   loading = false;
   error = '';
+
+  private readonly SEARCH_DEBOUNCE_MS = 300;
+  private loadSub?: Subscription;
+  private searchDebounceId?: ReturnType<typeof setTimeout>;
+  private page1Baseline: {
+    items: TransactionRecord[];
+    lastPage: number;
+    total: number;
+    type: '' | 'IN' | 'OUT' | 'ADJUSTMENT';
+    dateFrom: string;
+    dateTo: string;
+  } | null = null;
 
   private readonly BASE = 'http://127.0.0.1:8000/api/inventory/transactions';
 
@@ -39,7 +52,14 @@ export class TransactionHistoryComponent implements OnInit {
     this.load(1);
   }
 
+  ngOnDestroy(): void {
+    this.cancelSearchDebounce();
+    this.loadSub?.unsubscribe();
+  }
+
   load(page = 1): void {
+    this.cancelSearchDebounce();
+    this.loadSub?.unsubscribe();
     this.loading = true;
     this.error = '';
     let p = new HttpParams().set('page', String(page)).set('per_page', '20');
@@ -47,7 +67,7 @@ export class TransactionHistoryComponent implements OnInit {
     if (this.type) p = p.set('type', this.type);
     if (this.dateFrom) p = p.set('date_from', this.dateFrom);
     if (this.dateTo) p = p.set('date_to', this.dateTo);
-    this.http
+    this.loadSub = this.http
       .get<Paginated<TransactionRecord>>(this.BASE, { headers: this.authHeaders(), params: p })
       .subscribe({
         next: (res) => {
@@ -55,6 +75,16 @@ export class TransactionHistoryComponent implements OnInit {
           this.page = res.data.current_page;
           this.lastPage = res.data.last_page;
           this.total = res.data.total;
+          if (res.data.current_page === 1 && !this.search.trim()) {
+            this.page1Baseline = {
+              items: res.data.data.slice(),
+              lastPage: res.data.last_page,
+              total: res.data.total,
+              type: this.type,
+              dateFrom: this.dateFrom,
+              dateTo: this.dateTo,
+            };
+          }
           this.loading = false;
           this.cdr.detectChanges();
         },
@@ -66,10 +96,62 @@ export class TransactionHistoryComponent implements OnInit {
       });
   }
 
-  apply(): void {
+  onSearchInput(): void {
+    this.cancelSearchDebounce();
+    if (!this.search.trim()) {
+      this.loadSub?.unsubscribe();
+      this.loading = false;
+      this.error = '';
+      this.restoreSearchCleared();
+      return;
+    }
+    this.searchDebounceId = setTimeout(() => {
+      this.searchDebounceId = undefined;
+      this.load(1);
+    }, this.SEARCH_DEBOUNCE_MS);
+  }
+
+  clearSearchBoxOnly(): void {
+    this.search = '';
+    this.cancelSearchDebounce();
+    this.loadSub?.unsubscribe();
+    this.loading = false;
+    this.error = '';
+    this.restoreSearchCleared();
+  }
+
+  private cancelSearchDebounce(): void {
+    if (this.searchDebounceId !== undefined) {
+      clearTimeout(this.searchDebounceId);
+      this.searchDebounceId = undefined;
+    }
+  }
+
+  private restoreSearchCleared(): void {
+    if (
+      this.page1Baseline &&
+      this.page1Baseline.type === this.type &&
+      this.page1Baseline.dateFrom === this.dateFrom &&
+      this.page1Baseline.dateTo === this.dateTo
+    ) {
+      this.transactions = this.page1Baseline.items.slice();
+      this.page = 1;
+      this.lastPage = this.page1Baseline.lastPage;
+      this.total = this.page1Baseline.total;
+      this.cdr.detectChanges();
+      return;
+    }
     this.load(1);
   }
+
+  apply(): void {
+    this.cancelSearchDebounce();
+    this.load(1);
+  }
+
   clear(): void {
+    this.cancelSearchDebounce();
+    this.loadSub?.unsubscribe();
     this.search = '';
     this.type = '';
     this.dateFrom = '';
