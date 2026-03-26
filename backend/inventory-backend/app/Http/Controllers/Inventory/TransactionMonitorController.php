@@ -119,7 +119,13 @@ class TransactionMonitorController extends Controller
             $query->where('i.category_id', (int) $request->input('category_id'));
         }
 
-        if ($request->input('low_stock') === '1') {
+        $stockStatus = $request->input('stock_status');
+
+        if ($stockStatus === 'out_of_stock') {
+            $query->whereRaw('COALESCE(s.current_stock, 0) = 0');
+        }
+
+        if ($stockStatus === 'low_stock' || $request->input('low_stock') === '1') {
             $query->whereRaw('COALESCE(s.current_stock, 0) <= i.reorder_level');
         }
 
