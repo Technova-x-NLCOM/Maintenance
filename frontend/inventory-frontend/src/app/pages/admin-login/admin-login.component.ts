@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -32,23 +32,37 @@ export class AdminLoginComponent implements OnInit {
   toastMessage = '';
   private toastTimer: any;
 
+  // Deactivated account modal
+  showInactiveAccountModal = false;
+
   showToast(message: string) {
     this.toastMessage = message;
-    this.toastVisible = true;
+    this.toastVisible = false;
+    this.cdr.markForCheck();
     clearTimeout(this.toastTimer);
-    this.toastTimer = setTimeout(() => { this.toastVisible = false; }, 3500);
+    // Force reflow so removing/re-adding the class restarts the animation
+    this.toastTimer = setTimeout(() => {
+      this.toastVisible = true;
+      this.cdr.markForCheck();
+      clearTimeout(this.toastTimer);
+      this.toastTimer = setTimeout(() => {
+        this.toastVisible = false;
+        this.cdr.markForCheck();
+      }, 3500);
+    }, 20);
   }
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loginForm = this.fb.group({
       identifier: ['', [Validators.required]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required]]
     });
     this.setPasswordForm = this.fb.group({
       password: ['', [Validators.required, Validators.minLength(8)]],
@@ -132,13 +146,13 @@ export class AdminLoginComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.loginForm.invalid) {
-      this.errorMessage = 'Please fill in all fields correctly';
-      return;
-    }
+    const identifier = (this.loginForm.get('identifier')?.value || '').trim();
+    const password = this.loginForm.get('password')?.value || '';
+
+    if (!identifier) { this.showToast('Please enter your username or email.'); return; }
+    if (!password) { this.showToast('Please enter your password.'); return; }
+
     this.isLoading = true;
-    this.errorMessage = '';
-    const { identifier, password } = this.loginForm.value;
     this.authService.login(identifier, password, 'super_admin').subscribe({
       next: () => {
         this.isLoading = false;
@@ -146,16 +160,18 @@ export class AdminLoginComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        if (error.error?.error_type === 'unauthorized_portal_access') {
-          if (error.error?.user_role === 'inventory_manager') {
-            this.showToast('This login is for Administrators only. Use the Inventory Manager login for your account.');
-            return;
-          }
-        }
-        if (error.error?.error_type === 'invalid_password') {
+        const errType = error.error?.error_type;
+        if (errType === 'account_inactive') {
+          this.showInactiveAccountModal = true;
+          this.cdr.markForCheck();
+        } else if (errType === 'unauthorized_portal_access') {
+          this.showToast('This login is for Administrators only. Use the Inventory Manager login for your account.');
+        } else if (errType === 'invalid_password') {
           this.showToast('Incorrect password. Please try again.');
+        } else if (errType === 'user_not_found') {
+          this.showToast('No account found with that username or email.');
         } else {
-          this.showToast(error.error?.message || 'Invalid credentials or server error');
+          this.showToast(error.error?.message || 'Login failed. Please try again.');
         }
       }
     });

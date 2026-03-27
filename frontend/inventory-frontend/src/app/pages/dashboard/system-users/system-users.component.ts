@@ -18,7 +18,6 @@ import { AuthService, User } from '../../../services/auth.service';
 })
 export class SystemUsersComponent implements OnInit {
   users: SystemUserDto[] = [];
-  /** Client-side filter on loaded users (name, email, username, role). */
   userSearch = '';
   roles: Role[] = [];
   loading = true;
@@ -26,14 +25,29 @@ export class SystemUsersComponent implements OnInit {
   currentUser: User | null = null;
   currentRole: Role | null = null;
 
+  // Add/Edit modal
   showModal = false;
   editingUser: SystemUserDto | null = null;
   saving = false;
   modalError: string | null = null;
   fieldErrors: Record<string, string[]> = {};
-  /** Password field visibility in Add/Edit modal */
   showPassword = false;
   showPasswordConfirm = false;
+
+  // Inactive users modal
+  showInactiveModal = false;
+  inactivePage = 1;
+  readonly inactivePageSize = 10;
+
+  // Confirmation modal (deactivate / activate)
+  showConfirmModal = false;
+  confirmAction: 'deactivate' | 'activate' = 'deactivate';
+  confirmTargetUser: SystemUserDto | null = null;
+  confirmLoading = false;
+
+  // Active table pagination
+  activePage = 1;
+  readonly activePageSize = 10;
 
   form = {
     first_name: '',
@@ -76,22 +90,15 @@ export class SystemUsersComponent implements OnInit {
   }
 
   private beginLoadForUser(u: User | null): void {
-    if (!u) {
-      this.router.navigate(['/login']);
-      return;
-    }
+    if (!u) { this.router.navigate(['/login']); return; }
     this.currentUser = u;
     this.rbac.getCurrentRole().pipe(catchError(() => of(null))).subscribe((role) => {
       this.currentRole = role;
-      if (!this.hasManageRoles()) {
-        this.router.navigate(['/dashboard']);
-        return;
-      }
+      if (!this.hasManageRoles()) { this.router.navigate(['/dashboard']); return; }
       this.load();
     });
   }
 
-  /** Matches backend: `permission:manage_roles` (super_admin bypasses in middleware). */
   hasManageRoles(): boolean {
     if (this.currentUser?.role === 'super_admin') return true;
     return this.rbac.roleHasPermission(this.currentRole, 'manage_roles');
@@ -109,13 +116,13 @@ export class SystemUsersComponent implements OnInit {
         this.roles = (roles || []).filter((r) =>
           ['super_admin', 'inventory_manager'].includes(r.role_name)
         );
+        this.activePage = 1;
+        this.inactivePage = 1;
         this.loading = false;
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
-        if (err.status === 403 || err.status === 401) {
-          this.router.navigate(['/dashboard']);
-        }
+        if (err.status === 403 || err.status === 401) this.router.navigate(['/dashboard']);
         this.error = this.httpErr(err, 'Could not load users.');
         this.loading = false;
         this.cdr.markForCheck();
@@ -123,6 +130,73 @@ export class SystemUsersComponent implements OnInit {
     });
   }
 
+  // ── Active users (main table) ──────────────────────────────
+  get activeUsers(): SystemUserDto[] {
+    const q = this.userSearch.trim().toLowerCase();
+    const list = this.users.filter((u) => u.is_active);
+    if (!q) return list;
+    return list.filter((u) => {
+      const name = `${u.first_name} ${u.last_name}`.toLowerCase();
+      return (
+        name.includes(q) ||
+        (u.email || '').toLowerCase().includes(q) ||
+        (u.username || '').toLowerCase().includes(q) ||
+        this.roleLabel(u).toLowerCase().includes(q)
+      );
+    });
+  }
+
+  get activeTotalPages(): number {
+    return Math.max(1, Math.ceil(this.activeUsers.length / this.activePageSize));
+  }
+
+  get pagedActiveUsers(): SystemUserDto[] {
+    const start = (this.activePage - 1) * this.activePageSize;
+    return this.activeUsers.slice(start, start + this.activePageSize);
+  }
+
+  activePageRange(): number[] {
+    return Array.from({ length: this.activeTotalPages }, (_, i) => i + 1);
+  }
+
+  goActivePage(p: number): void {
+    if (p < 1 || p > this.activeTotalPages) return;
+    this.activePage = p;
+  }
+
+  // ── Inactive users (modal table) ──────────────────────────
+  get inactiveUsers(): SystemUserDto[] {
+    return this.users.filter((u) => !u.is_active);
+  }
+
+  get inactiveTotalPages(): number {
+    return Math.max(1, Math.ceil(this.inactiveUsers.length / this.inactivePageSize));
+  }
+
+  get pagedInactiveUsers(): SystemUserDto[] {
+    const start = (this.inactivePage - 1) * this.inactivePageSize;
+    return this.inactiveUsers.slice(start, start + this.inactivePageSize);
+  }
+
+  inactivePageRange(): number[] {
+    return Array.from({ length: this.inactiveTotalPages }, (_, i) => i + 1);
+  }
+
+  goInactivePage(p: number): void {
+    if (p < 1 || p > this.inactiveTotalPages) return;
+    this.inactivePage = p;
+  }
+
+  openInactiveModal(): void {
+    this.inactivePage = 1;
+    this.showInactiveModal = true;
+  }
+
+  closeInactiveModal(): void {
+    this.showInactiveModal = false;
+  }
+
+  // ── Add / Edit ─────────────────────────────────────────────
   openAdd(): void {
     this.editingUser = null;
     this.resetForm();
@@ -140,10 +214,7 @@ export class SystemUsersComponent implements OnInit {
       username: u.username,
       email: u.email,
       contact_info: u.contact_info || '',
-      role:
-        u.role_name === 'super_admin' || u.role_name === 'inventory_manager'
-          ? u.role_name
-          : 'inventory_manager',
+      role: u.role_name === 'super_admin' || u.role_name === 'inventory_manager' ? u.role_name : 'inventory_manager',
       password: '',
       password_confirmation: '',
       is_active: u.is_active,
@@ -166,15 +237,6 @@ export class SystemUsersComponent implements OnInit {
     this.showPasswordConfirm = false;
   }
 
-  togglePasswordField(field: 'password' | 'confirm', event?: Event): void {
-    event?.stopPropagation();
-    if (field === 'password') {
-      this.showPassword = !this.showPassword;
-    } else {
-      this.showPasswordConfirm = !this.showPasswordConfirm;
-    }
-  }
-
   normalizeUsername(): void {
     let v = (this.form.username || '').trim();
     if (v.startsWith('@')) v = v.slice(1);
@@ -185,44 +247,30 @@ export class SystemUsersComponent implements OnInit {
     this.modalError = null;
     this.fieldErrors = {};
     this.normalizeUsername();
-
     this.form.first_name = (this.form.first_name || '').trim();
     this.form.last_name = (this.form.last_name || '').trim();
 
-    if (!this.form.first_name) {
-      this.modalError = 'First name is required.';
-      return;
-    }
-
-    if (!this.form.last_name) {
-      this.modalError = 'Last name is required.';
-      return;
-    }
+    if (!this.form.first_name) { this.modalError = 'First name is required.'; return; }
+    if (!this.form.last_name) { this.modalError = 'Last name is required.'; return; }
 
     this.saving = true;
     const contact = this.form.contact_info?.trim() || null;
 
     if (!this.editingUser) {
-      this.api
-        .create({
-          username: this.form.username,
-          email: this.form.email,
-          password: undefined as any,
-          password_confirmation: undefined as any,
-          first_name: this.form.first_name,
-          last_name: this.form.last_name,
-          contact_info: contact,
-          role: this.form.role,
-          is_active: this.form.is_active,
-        })
-        .subscribe({
-          next: () => {
-            this.saving = false;
-            this.showModal = false;
-            this.load();
-          },
-          error: (err: HttpErrorResponse) => this.handleSaveError(err),
-        });
+      this.api.create({
+        username: this.form.username,
+        email: this.form.email,
+        password: undefined as any,
+        password_confirmation: undefined as any,
+        first_name: this.form.first_name,
+        last_name: this.form.last_name,
+        contact_info: contact,
+        role: this.form.role,
+        is_active: this.form.is_active,
+      }).subscribe({
+        next: () => { this.saving = false; this.showModal = false; this.load(); },
+        error: (err: HttpErrorResponse) => this.handleSaveError(err),
+      });
     } else {
       const payload: Record<string, unknown> = {
         first_name: this.form.first_name,
@@ -238,37 +286,51 @@ export class SystemUsersComponent implements OnInit {
         payload['password_confirmation'] = this.form.password_confirmation;
       }
       this.api.update(this.editingUser.user_id, payload as any).subscribe({
-        next: () => {
-          this.saving = false;
-          this.showModal = false;
-          this.load();
-        },
+        next: () => { this.saving = false; this.showModal = false; this.load(); },
         error: (err: HttpErrorResponse) => this.handleSaveError(err),
       });
     }
   }
 
   toggleActive(u: SystemUserDto): void {
-    if (this.currentUser?.user_id === u.user_id) {
-      return;
-    }
-    this.api.update(u.user_id, { is_active: !u.is_active }).subscribe({
-      next: () => this.load(),
+    if (this.currentUser?.user_id === u.user_id) return;
+    this.confirmTargetUser = u;
+    this.confirmAction = 'deactivate';
+    this.showConfirmModal = true;
+  }
+
+  activateUser(u: SystemUserDto): void {
+    this.confirmTargetUser = u;
+    this.confirmAction = 'activate';
+    this.showConfirmModal = true;
+  }
+
+  confirmStatusChange(): void {
+    if (!this.confirmTargetUser) return;
+    const u = this.confirmTargetUser;
+    const newStatus = this.confirmAction === 'activate';
+    this.confirmLoading = true;
+    this.api.update(u.user_id, { is_active: newStatus }).subscribe({
+      next: () => {
+        this.confirmLoading = false;
+        this.showConfirmModal = false;
+        this.confirmTargetUser = null;
+        if (!newStatus && this.pagedInactiveUsers.length === 1 && this.inactivePage > 1) {
+          this.inactivePage--;
+        }
+        this.load();
+      },
       error: (err: HttpErrorResponse) => {
+        this.confirmLoading = false;
         alert(this.httpErr(err, 'Could not update status.'));
       },
     });
   }
 
-  initials(u: SystemUserDto): string {
-    const a = (u.first_name || '?').charAt(0).toUpperCase();
-    const b = (u.last_name || '?').charAt(0).toUpperCase();
-    return a + b;
-  }
-
-  avatarColor(u: SystemUserDto): string {
-    const idx = Math.abs(u.user_id) % this.avatarPalette.length;
-    return this.avatarPalette[idx];
+  cancelConfirm(): void {
+    if (this.confirmLoading) return;
+    this.showConfirmModal = false;
+    this.confirmTargetUser = null;
   }
 
   roleLabel(u: SystemUserDto): string {
@@ -276,48 +338,12 @@ export class SystemUsersComponent implements OnInit {
   }
 
   get displayedUsers(): SystemUserDto[] {
-    const q = this.userSearch.trim().toLowerCase();
-    if (!q) {
-      return this.users;
-    }
-    return this.users.filter((u) => {
-      const name = `${u.first_name} ${u.last_name}`.toLowerCase();
-      const email = (u.email || '').toLowerCase();
-      const username = (u.username || '').toLowerCase();
-      const role = this.roleLabel(u).toLowerCase();
-      return (
-        name.includes(q) ||
-        email.includes(q) ||
-        username.includes(q) ||
-        role.includes(q)
-      );
-    });
+    return this.pagedActiveUsers;
   }
 
   clearUserSearch(): void {
     this.userSearch = '';
-  }
-
-  formatLastLogin(iso: string | null): string {
-    if (iso == null || iso === '') return '—';
-    const normalized =
-      typeof iso === 'string' && iso.includes(' ') && !iso.includes('T')
-        ? iso.replace(' ', 'T')
-        : iso;
-    const d = new Date(normalized);
-    if (Number.isNaN(d.getTime())) return '—';
-    const now = new Date();
-    const sameDay =
-      d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate();
-    if (sameDay) {
-      return (
-        'Today, ' +
-        d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-      );
-    }
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    this.activePage = 1;
   }
 
   isSelf(u: SystemUserDto): boolean {
@@ -353,9 +379,7 @@ export class SystemUsersComponent implements OnInit {
   private httpErr(err: HttpErrorResponse, fallback: string): string {
     const e = err.error;
     if (typeof e === 'string' && e.trim()) return e;
-    if (e && typeof e === 'object' && 'message' in e && typeof (e as any).message === 'string') {
-      return (e as any).message;
-    }
+    if (e && typeof e === 'object' && 'message' in e) return (e as any).message;
     return fallback;
   }
 
