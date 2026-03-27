@@ -66,11 +66,26 @@ export class IssuanceTransactionComponent implements OnInit {
     this.adjustConfirmExpiration = false;
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
-    this.showCartDrawer = true;
+    this.openIssuanceModal();
   }
 
   closeCartModal(): void {
+    if (this.saving) {
+      return;
+    }
     this.showCartDrawer = false;
+  }
+
+  openIssuanceModal(): void {
+    this.showCartDrawer = true;
+  }
+
+  toggleIssuanceModal(): void {
+    if (this.saving && this.showCartDrawer) {
+      return;
+    }
+
+    this.showCartDrawer = !this.showCartDrawer;
   }
 
   constructor(

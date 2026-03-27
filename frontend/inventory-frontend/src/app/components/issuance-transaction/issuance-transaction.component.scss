@@ -80,16 +80,9 @@
   }
 }
 
-// ── Two-column layout ──────────────────────────────────────────────────
+// ── Content layout ─────────────────────────────────────────────────────
 .content-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-  transition: grid-template-columns 0.3s ease;
-
-  &.panel-open {
-    grid-template-columns: 1fr 360px;
-  }
+  display: block;
 }
 
 // ── Catalog ────────────────────────────────────────────────────────────
@@ -194,17 +187,30 @@
 // ── Issuance Panel ─────────────────────────────────────────────────────
 .issuance-panel {
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbe4ef;
   border-radius: 14px;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  align-self: start;
-  position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 140px);
+  max-height: calc(88vh - 24px);
   overflow-y: auto;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(2px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-panel {
+  width: min(100%, 760px);
 }
 
 .panel-header {
@@ -227,6 +233,33 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 999px;
+  }
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-close {
+  border: none;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #334155;
+  background: #f1f5f9;
+
+  &:hover {
+    background: #e2e8f0;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 }
 
@@ -333,9 +366,20 @@
 }
 
 .btn-confirm {
-  width: 100%;
+  min-width: 210px;
   justify-content: center;
   padding: 11px;
+}
+
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  margin-top: 4px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #fff 30%);
 }
 
 // ── Shared ─────────────────────────────────────────────────────────────
@@ -459,5 +503,28 @@
 
   svg {
     flex-shrink: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-panel {
+    width: 100%;
+  }
+
+  .issuance-panel {
+    max-height: calc(100vh - 24px);
+    padding: 14px;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .btn-confirm {
+    width: 100%;
   }
 }
