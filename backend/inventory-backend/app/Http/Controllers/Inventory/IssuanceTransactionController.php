@@ -18,11 +18,21 @@ class IssuanceTransactionController extends Controller
             ->where('status', 'active')
             ->groupBy('item_id');
 
+        $expiredStockSubquery = DB::table('inventory_batches')
+            ->select('item_id', DB::raw('COALESCE(SUM(quantity), 0) as expired_stock'))
+            ->where('status', 'active')
+            ->whereNotNull('expiry_date')
+            ->whereDate('expiry_date', '<', now()->toDateString())
+            ->groupBy('item_id');
+
         $query = DB::table('items as i')
             ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoinSub($stockSubquery, 's', function ($join) {
                 $join->on('i.item_id', '=', 's.item_id');
+            })
+            ->leftJoinSub($expiredStockSubquery, 'es', function ($join) {
+                $join->on('i.item_id', '=', 'es.item_id');
             })
             ->select(
                 'i.item_id',
@@ -32,7 +42,8 @@ class IssuanceTransactionController extends Controller
                 'c.category_name',
                 'i.measurement_unit',
                 'i.image_url',
-                DB::raw('COALESCE(s.current_stock, 0) as current_stock')
+                DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
+                DB::raw('COALESCE(es.expired_stock, 0) as expired_stock')
             )
             ->where('i.is_active', true)
             ->whereRaw('COALESCE(s.current_stock, 0) > 0')
@@ -202,6 +213,7 @@ class IssuanceTransactionController extends Controller
     private function normalizeItem(object $item): object
     {
         $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
+        $item->expired_stock = (int) ($item->expired_stock ?? 0);
 
         return $item;
     }
