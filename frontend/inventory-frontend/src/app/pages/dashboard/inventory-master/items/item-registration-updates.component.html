@@ -128,6 +128,66 @@
           </svg>
           Add new item
         </button>
+        <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
+          <button
+            type="button"
+            class="category-filter-trigger"
+            (click)="toggleCategoryFilterDropdown()"
+            [attr.aria-expanded]="categoryFilterOpen"
+            aria-haspopup="listbox"
+            aria-label="Filter by category"
+          >
+            <span class="trigger-label">Category:</span>
+            <span class="trigger-value">{{ selectedFilterCategoryName }}</span>
+            <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          <button
+            *ngIf="selectedFilterCategoryId"
+            class="clear-category-filter"
+            type="button"
+            (click)="clearCategoryFilter($event)"
+            aria-label="Clear category filter"
+            title="Clear category filter"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          <div class="category-filter-dropdown" *ngIf="categoryFilterOpen">
+            <div class="category-filter-search">
+              <input
+                type="text"
+                [(ngModel)]="categoryFilterQuery"
+                (ngModelChange)="onCategoryFilterQueryChange()"
+                placeholder="Search categories"
+                aria-label="Search categories"
+              />
+            </div>
+
+            <div class="category-filter-options" role="listbox" aria-label="Category options">
+              <button
+                *ngFor="let category of filteredCategoryFilterOptions; let i = index"
+                type="button"
+                class="category-option"
+                [class.active]="i === activeCategoryOptionIndex"
+                [class.selected]="category.category_id === selectedFilterCategoryId"
+                (mouseenter)="onCategoryOptionHover(i)"
+                (click)="selectCategoryFilter(category)"
+              >
+                {{ category.category_name }}
+              </button>
+
+              <div *ngIf="filteredCategoryFilterOptions.length === 0" class="category-filter-empty">
+                No matching categories
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="search-row">
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -188,10 +248,26 @@
       </table>
     </div>
 
-    <div class="pagination" *ngIf="!loading && totalPages > 1">
-      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">First</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">Last</button>
+      </div>
+
+      <div class="page-size-wrap">
+        <label for="items-rows-per-page">Rows per page</label>
+        <select
+          class="rows-per-page"
+          id="items-rows-per-page"
+          [(ngModel)]="perPage"
+          (ngModelChange)="onPageSizeChange()"
+        >
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
     </div>
   </section>
 </div>
