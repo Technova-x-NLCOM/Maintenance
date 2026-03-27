@@ -1,7 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import * as QRCode from 'qrcode';
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
+import { NotFoundException } from '@zxing/library';
 import {
   InventoryItemService,
   ReceivingItem,
@@ -10,6 +13,21 @@ import {
   AdjustmentTransactionResponse,
 } from '../../services/inventory-item.service';
 
+interface ReceivingCartLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  measurement_unit: string | null;
+  quantity: number;
+  purchase_date: string;
+  expiry_date: string | null;
+  manufactured_date: string | null;
+  supplier_info: string | null;
+  batch_value: number | null;
+  reason: string | null;
+  notes: string | null;
+}
+
 @Component({
   selector: 'app-receiving-transaction',
   standalone: true,
@@ -17,7 +35,7 @@ import {
   templateUrl: './receiving-transaction.component.html',
   styleUrls: ['./receiving-transaction.component.scss'],
 })
-export class ReceivingTransactionComponent implements OnInit {
+export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   // Items catalog and pagination
   receivingItems: ReceivingItem[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
@@ -54,6 +72,18 @@ export class ReceivingTransactionComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   showReceivingModal = false;
+  showListModal = false;
+  confirmBatchNumber = '';
+  showBatchQrModal = false;
+  batchQrTitle = '';
+  batchQrLabel = '';
+  batchQrPayload = '';
+  batchQrImageDataUrl: string | null = null;
+  showScanModal = false;
+  scanErrorMessage = '';
+  receivingLines: ReceivingCartLine[] = [];
+  private scanner = new BrowserMultiFormatReader();
+  private scannerControls?: IScannerControls;
 
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
@@ -69,6 +99,37 @@ export class ReceivingTransactionComponent implements OnInit {
     this.showReceivingModal = false;
   }
 
+  openListModal(): void {
+    this.showListModal = true;
+  }
+
+  closeListModal(): void {
+    this.showListModal = false;
+  }
+
+  closeBatchQrModal(): void {
+    this.showBatchQrModal = false;
+    this.batchQrTitle = '';
+    this.batchQrLabel = '';
+    this.batchQrPayload = '';
+    this.batchQrImageDataUrl = null;
+  }
+
+  openQrScanner(): void {
+    this.showScanModal = true;
+    this.scanErrorMessage = '';
+
+    setTimeout(() => {
+      this.startScanner();
+    }, 0);
+  }
+
+  closeQrScanner(): void {
+    this.stopScanner();
+    this.showScanModal = false;
+    this.scanErrorMessage = '';
+  }
+
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
@@ -80,6 +141,145 @@ export class ReceivingTransactionComponent implements OnInit {
     this.purchaseDate = today.toISOString().split('T')[0];
     this.loadReceivingItems(1);
     this.loadCategoryOptions();
+  }
+
+  ngOnDestroy(): void {
+    this.stopScanner();
+  }
+
+  private async startScanner(): Promise<void> {
+    const video = document.getElementById('receivingQrVideo') as HTMLVideoElement | null;
+    if (!video) {
+      this.scanErrorMessage = 'Scanner preview is not ready.';
+      return;
+    }
+
+    try {
+      // Request camera permission explicitly
+      this.scanErrorMessage = 'Requesting camera access...';
+      this.cdr.detectChanges();
+
+      const cameraPermission = await this.requestCameraPermission();
+      if (!cameraPermission) {
+        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+      const deviceId = devices[0]?.deviceId;
+
+      if (!deviceId) {
+        this.scanErrorMessage = 'No camera detected on this device.';
+        return;
+      }
+
+      this.scanErrorMessage = ''; // Clear loading message once camera access is granted
+      this.scannerControls = await this.scanner.decodeFromVideoDevice(
+        deviceId,
+        video,
+        (result, error) => {
+          if (result) {
+            this.handleScannedQr(result.getText());
+            this.closeQrScanner();
+            this.cdr.detectChanges();
+            return;
+          }
+
+          if (error && !(error instanceof NotFoundException)) {
+            this.scanErrorMessage = 'Unable to read QR. Please hold it steady and try again.';
+            this.cdr.detectChanges();
+          }
+        },
+      );
+    } catch (error) {
+      if ((error as Error).name === 'NotAllowedError') {
+        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings.';
+      } else if ((error as Error).name === 'NotFoundError') {
+        this.scanErrorMessage = 'No camera device found on this device.';
+      } else {
+        this.scanErrorMessage = 'Unable to access camera. Check permissions and try again.';
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  private async requestCameraPermission(): Promise<boolean> {
+    try {
+      // Use the Permissions API to request camera access
+      const permissionResult = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      
+      if (permissionResult.state === 'denied') {
+        return false;
+      }
+
+      if (permissionResult.state === 'granted') {
+        return true;
+      }
+
+      // If 'prompt', user will be asked when trying to access the camera
+      // Attempt accessing the camera directly, which will trigger the browser permission prompt
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      
+      // Immediately stop the stream as we only needed to verify permission
+      mediaStream.getTracks().forEach(track => track.stop());
+      
+      return true;
+    } catch {
+      // If Permissions API fails or getUserMedia fails, permission was denied
+      return false;
+    }
+  }
+
+  private stopScanner(): void {
+    this.scannerControls?.stop();
+    this.scannerControls = undefined;
+  }
+
+  private handleScannedQr(rawText: string): void {
+    const parsed = this.tryParseQrPayload(rawText);
+    const itemCode = parsed?.['item_code'] || this.extractCodeFromLabel(rawText, 'ITEM:');
+    const batchCode = parsed?.['batch_number'] || this.extractCodeFromLabel(rawText, 'BATCH:');
+
+    if (itemCode) {
+      this.searchQuery = itemCode;
+      this.loadReceivingItems(1);
+      this.successMessage = `Scanned item QR: ${itemCode}`;
+      this.showSuccessMessage = true;
+      return;
+    }
+
+    if (batchCode) {
+      this.confirmBatchNumber = batchCode;
+      this.showListModal = true;
+      this.successMessage = `Scanned batch QR: ${batchCode}`;
+      this.showSuccessMessage = true;
+      return;
+    }
+
+    this.errorMessage = 'QR scanned, but no recognized item or batch code was found.';
+    this.showErrorMessage = true;
+  }
+
+  private tryParseQrPayload(rawText: string): Record<string, string> | null {
+    try {
+      const parsed = JSON.parse(rawText) as Record<string, string>;
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private extractCodeFromLabel(value: string, prefix: string): string | null {
+    if (!value.startsWith(prefix)) {
+      return null;
+    }
+
+    const code = value.slice(prefix.length).trim();
+    return code ? code : null;
   }
 
   loadCategoryOptions(): void {
@@ -246,7 +446,7 @@ export class ReceivingTransactionComponent implements OnInit {
     }
   }
 
-  canSubmit(): boolean {
+  canAddToList(): boolean {
     if (!this.selectedItem || !this.quantity || this.quantity <= 0) {
       return false;
     }
@@ -294,8 +494,66 @@ export class ReceivingTransactionComponent implements OnInit {
     }
   }
 
-  submitForm(): void {
-    if (!this.canSubmit() || !this.selectedItem) {
+  addToReceivingList(): void {
+    if (!this.canAddToList() || !this.selectedItem) {
+      return;
+    }
+
+    this.showErrorMessage = false;
+
+    const expiry = this.getEffectiveExpiryDate();
+    const line: ReceivingCartLine = {
+      item_id: this.selectedItem.item_id,
+      item_code: this.selectedItem.item_code,
+      item_description: this.selectedItem.item_description,
+      measurement_unit: this.selectedItem.measurement_unit,
+      quantity: this.quantity,
+      purchase_date: this.purchaseDate,
+      expiry_date: expiry,
+      manufactured_date: this.manufacturedDate || null,
+      supplier_info: this.supplierInfo?.trim() || null,
+      batch_value: this.batchValue || null,
+      reason: this.reason?.trim() || 'Stock Received',
+      notes: this.notes?.trim() || null,
+    };
+
+    const existingIndex = this.receivingLines.findIndex((entry) => entry.item_id === line.item_id);
+
+    if (existingIndex >= 0) {
+      this.receivingLines[existingIndex].quantity += line.quantity;
+      this.receivingLines[existingIndex].purchase_date = line.purchase_date;
+      this.receivingLines[existingIndex].expiry_date = line.expiry_date;
+      this.receivingLines[existingIndex].manufactured_date = line.manufactured_date;
+      this.receivingLines[existingIndex].supplier_info = line.supplier_info;
+      this.receivingLines[existingIndex].batch_value = line.batch_value;
+      this.receivingLines[existingIndex].reason = line.reason;
+      this.receivingLines[existingIndex].notes = line.notes;
+    } else {
+      this.receivingLines.push(line);
+    }
+
+    this.showSuccessMessage = true;
+    this.successMessage = `${line.item_description} added to receiving list.`;
+    this.showReceivingModal = false;
+    this.showListModal = true;
+    this.resetForm();
+    this.cdr.detectChanges();
+  }
+
+  removeLine(index: number): void {
+    this.receivingLines.splice(index, 1);
+  }
+
+  getTotalLineQuantity(): number {
+    return this.receivingLines.reduce((sum, line) => sum + line.quantity, 0);
+  }
+
+  canSubmitList(): boolean {
+    return this.receivingLines.length > 0 && !this.saving && this.confirmBatchNumber.trim().length > 0;
+  }
+
+  submitReceivingList(): void {
+    if (!this.canSubmitList()) {
       return;
     }
 
@@ -309,28 +567,54 @@ export class ReceivingTransactionComponent implements OnInit {
     this.showErrorMessage = false;
 
     const payload = {
-      item_id: this.selectedItem.item_id,
-      quantity: this.quantity,
-      batch_number: this.batchNumber,
-      purchase_date: this.purchaseDate,
-      expiry_date: this.getEffectiveExpiryDate(),
-      manufactured_date: this.manufacturedDate || undefined,
-      supplier_info: this.supplierInfo || undefined,
-      batch_value: this.batchValue || undefined,
-      reason: this.reason || undefined,
-      notes: this.notes || undefined,
+      batch_number: this.confirmBatchNumber.trim(),
+      items: this.receivingLines.map((line) => ({
+        item_id: line.item_id,
+        quantity: line.quantity,
+        purchase_date: line.purchase_date,
+        expiry_date: line.expiry_date,
+        manufactured_date: line.manufactured_date,
+        supplier_info: line.supplier_info,
+        batch_value: line.batch_value,
+        reason: line.reason,
+        notes: line.notes,
+      })),
     };
 
     this.itemService.createReceivingTransaction(payload).subscribe({
       next: (response: ReceivingTransactionResponse) => {
         if (response.success) {
           this.showSuccessMessage = true;
-          this.successMessage = `Stock received successfully! Batch #${response.data.batch_number} created with ${response.data.quantity} units.`;
-          if (response.data.expiry_date_auto_calculated) {
-            this.successMessage += ` Expiry date auto-calculated: ${response.data.expiry_date}`;
+          const lineCount = (response as any)?.data?.line_count ?? this.receivingLines.length;
+          const reference = (response as any)?.data?.reference_number;
+          const batchNumber = (response as any)?.data?.batch_number ?? this.confirmBatchNumber.trim();
+          const qrPayload = (response as any)?.data?.qr_payload;
+          this.successMessage = reference
+            ? `Receiving list submitted successfully. Ref: ${reference}. Lines: ${lineCount}.`
+            : `Receiving list submitted successfully. Lines: ${lineCount}.`;
+
+          if (qrPayload) {
+            this.batchQrTitle = `Batch QR: ${batchNumber}`;
+            this.batchQrLabel = (response as any)?.data?.qr_label || `BATCH:${batchNumber}`;
+            this.batchQrPayload = qrPayload;
+            this.showBatchQrModal = true;
+            this.batchQrImageDataUrl = null;
+            QRCode.toDataURL(qrPayload, { width: 300, margin: 2 })
+              .then((url: string) => {
+                this.batchQrImageDataUrl = url;
+                this.cdr.detectChanges();
+              })
+              .catch(() => {
+                this.batchQrImageDataUrl = null;
+                this.cdr.detectChanges();
+              });
           }
+
+          this.receivingLines = [];
+          this.confirmBatchNumber = '';
           this.resetForm();
           this.showReceivingModal = false;
+          this.showListModal = false;
           this.loadReceivingItems();
         }
         this.saving = false;
@@ -385,7 +669,6 @@ export class ReceivingTransactionComponent implements OnInit {
     this.selectedItem = null;
     this.transactionMode = 'receive';
     this.quantity = 1;
-    this.batchNumber = '';
     this.purchaseDate = new Date().toISOString().split('T')[0];
     this.expiryDate = null;
     this.manufacturedDate = null;

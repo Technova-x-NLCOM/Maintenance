@@ -477,8 +477,25 @@ class ItemController extends Controller
     private function normalizeItem(object $item): object
     {
         $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
+        $item->qr_payload = $this->buildItemQrPayload($item);
+        $item->qr_label = $this->buildItemQrLabel($item);
 
         return $item;
+    }
+
+    private function buildItemQrPayload(object $item): string
+    {
+        return json_encode([
+            'entity' => 'item',
+            'item_id' => (int) $item->item_id,
+            'item_code' => (string) $item->item_code,
+            'item_description' => (string) $item->item_description,
+        ], JSON_UNESCAPED_SLASHES);
+    }
+
+    private function buildItemQrLabel(object $item): string
+    {
+        return 'ITEM:' . (string) $item->item_code;
     }
 
     private function resolveImageUrl(?string $storedValue): ?string
