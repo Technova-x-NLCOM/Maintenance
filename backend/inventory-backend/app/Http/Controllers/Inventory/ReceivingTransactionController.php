@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReceivingTransactionController extends Controller
 {
@@ -93,6 +94,21 @@ class ReceivingTransactionController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
+        $expiryDateInput = $data['expiry_date'] ?? null;
+        $manufacturedDateInput = $data['manufactured_date'] ?? null;
+        $supplierInfo = $this->nullIfEmpty($data['supplier_info'] ?? null);
+        $batchValue = array_key_exists('batch_value', $data) ? $data['batch_value'] : null;
+        $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? 'Stock Received';
+        $notes = $this->nullIfEmpty($data['notes'] ?? null);
+        $locationId = $this->resolveLocationId($request);
+
+        if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create receiving transaction: no valid location is configured for inventory batches.',
+            ], 422);
+        }
+
         // Get item details for shelf life calculation
         $item = DB::table('items')
             ->select('item_id', 'item_code', 'item_description', 'shelf_life_days')
@@ -108,12 +124,12 @@ class ReceivingTransactionController extends Controller
 
         // Start a database transaction
         try {
-            return DB::transaction(function () use ($data, $item) {
+            return DB::transaction(function () use ($data, $item, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes, $locationId) {
                 $purchaseDate = Carbon::parse($data['purchase_date'])->startOfDay();
                 
                 // Use provided expiry date or auto-compute from shelf life days
-                if ($data['expiry_date']) {
-                    $expiryDate = Carbon::parse($data['expiry_date'])->startOfDay();
+                if ($expiryDateInput) {
+                    $expiryDate = Carbon::parse($expiryDateInput)->startOfDay();
                 } elseif ($item->shelf_life_days) {
                     // Auto-compute expected expiry from purchase date + shelf life days
                     $expiryDate = $purchaseDate->copy()->addDays((int) $item->shelf_life_days);
@@ -122,34 +138,51 @@ class ReceivingTransactionController extends Controller
                 }
 
                 // Create the batch
-                $batchId = DB::table('inventory_batches')->insertGetId([
+                $batchInsert = [
                     'item_id' => $data['item_id'],
                     'batch_number' => $data['batch_number'],
                     'quantity' => $data['quantity'],
                     'expiry_date' => $expiryDate ? $expiryDate->toDateString() : null,
-                    'manufactured_date' => $data['manufactured_date'] ? Carbon::parse($data['manufactured_date'])->toDateString() : null,
-                    'supplier_info' => $data['supplier_info'] ?? null,
-                    'batch_value' => $data['batch_value'] ?? null,
+                    'manufactured_date' => $manufacturedDateInput ? Carbon::parse($manufacturedDateInput)->toDateString() : null,
+                    'supplier_info' => $supplierInfo,
+                    'batch_value' => $batchValue,
                     'status' => 'active',
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
+                ];
+
+                if (Schema::hasColumn('inventory_batches', 'location_id')) {
+                    $batchInsert['location_id'] = $locationId;
+                }
+
+                $batchId = DB::table('inventory_batches')->insertGetId($batchInsert);
 
                 // Create the transaction record
-                $userId = auth()->id() ?? 1; // Fallback to user 1 if not authenticated
+                $user = auth('api')->user();
+                $userId = $user?->user_id ?? auth()->id() ?? 1;
 
-                DB::table('inventory_transactions')->insert([
+                $transactionInsert = [
                     'item_id' => $data['item_id'],
                     'batch_id' => $batchId,
                     'transaction_type' => 'IN',
                     'quantity' => $data['quantity'],
                     'reference_number' => 'RCV-' . date('YmdHis') . '-' . $batchId,
                     'transaction_date' => now(),
-                    'reason' => $data['reason'] ?? 'Stock Received',
-                    'notes' => $data['notes'] ?? null,
+                    'reason' => $reason,
+                    'notes' => $notes,
                     'performed_by' => $userId,
                     'created_at' => now(),
-                ]);
+                ];
+
+                if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
+                    $transactionInsert['from_location_id'] = $locationId;
+                }
+
+                if (Schema::hasColumn('inventory_transactions', 'to_location_id')) {
+                    $transactionInsert['to_location_id'] = $locationId;
+                }
+
+                DB::table('inventory_transactions')->insert($transactionInsert);
 
                 // Prepare response data
                 $response = [
@@ -161,15 +194,15 @@ class ReceivingTransactionController extends Controller
                     'quantity' => $data['quantity'],
                     'purchase_date' => $purchaseDate->toDateString(),
                     'expiry_date' => $expiryDate ? $expiryDate->toDateString() : null,
-                    'manufactured_date' => $data['manufactured_date'] ?? null,
-                    'supplier_info' => $data['supplier_info'] ?? null,
-                    'batch_value' => $data['batch_value'] ?? null,
+                    'manufactured_date' => $manufacturedDateInput,
+                    'supplier_info' => $supplierInfo,
+                    'batch_value' => $batchValue,
                 ];
 
                 // Include shelf life info if available
                 if ($item->shelf_life_days) {
                     $response['shelf_life_days'] = (int) $item->shelf_life_days;
-                    if (!$data['expiry_date']) {
+                    if (!$expiryDateInput) {
                         $response['expiry_date_auto_calculated'] = true;
                     }
                 }
@@ -180,11 +213,91 @@ class ReceivingTransactionController extends Controller
                     'data' => $response,
                 ], 201);
             });
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create receiving transaction: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    private function nullIfEmpty(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function resolveLocationId(Request $request): ?int
+    {
+        $incoming = $request->input('location_id');
+        if ($incoming !== null && $incoming !== '') {
+            return (int) $incoming;
+        }
+
+        $bootstrapped = $this->ensureDefaultLocation();
+        if ($bootstrapped !== null) {
+            return $bootstrapped;
+        }
+
+        $candidates = [
+            ['table' => 'locations', 'column' => 'location_id'],
+            ['table' => 'inventory_locations', 'column' => 'location_id'],
+            ['table' => 'stock_locations', 'column' => 'location_id'],
+            ['table' => 'warehouses', 'column' => 'warehouse_id'],
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!Schema::hasTable($candidate['table']) || !Schema::hasColumn($candidate['table'], $candidate['column'])) {
+                continue;
+            }
+
+            $id = DB::table($candidate['table'])
+                ->whereNotNull($candidate['column'])
+                ->orderBy($candidate['column'])
+                ->value($candidate['column']);
+
+            if ($id !== null) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    private function ensureDefaultLocation(): ?int
+    {
+        if (!Schema::hasTable('locations') || !Schema::hasColumn('locations', 'location_id')) {
+            return null;
+        }
+
+        $existing = DB::table('locations')->orderBy('location_id')->value('location_id');
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $insert = [
+            'location_code' => 'AUTO-DEFAULT',
+            'location_name' => 'Default Location',
+            'address' => null,
+            'contact_person' => null,
+            'contact_phone' => null,
+            'contact_email' => null,
+            'location_type' => 'warehouse',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        try {
+            $newId = DB::table('locations')->insertGetId($insert, 'location_id');
+            return (int) $newId;
+        } catch (\Throwable $e) {
+            $fallback = DB::table('locations')->orderBy('location_id')->value('location_id');
+            return $fallback !== null ? (int) $fallback : null;
         }
     }
 
