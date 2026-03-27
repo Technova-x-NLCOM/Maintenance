@@ -85,11 +85,11 @@
 </div>
 
 <!-- Receiving Details Modal -->
-<div class="modal-overlay" *ngIf="showReceivingModal" (click)="closeReceivingModal()">
+<div class="modal-overlay" *ngIf="showReceivingModal" (click)="!saving && closeReceivingModal()">
   <div class="modal-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Receiving Details</h2>
-      <button class="modal-close" (click)="closeReceivingModal()">×</button>
+      <button class="modal-close" (click)="closeReceivingModal()" [disabled]="saving">×</button>
     </div>
 
     <div class="modal-body" *ngIf="selectedItem">
@@ -108,15 +108,32 @@
         </div>
       </div>
 
-      <!-- Quantity & Batch -->
       <div class="form-section">
-        <h3 class="section-title">Quantity & Batch Information</h3>
+        <h3 class="section-title">Transaction Mode</h3>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Quantity Received *</label>
+            <label class="form-label">Mode *</label>
+            <select class="form-control" [(ngModel)]="transactionMode" [disabled]="saving">
+              <option value="receive">Stock Receiving (IN)</option>
+              <option value="adjust-increase">Stock Adjustment (+)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quantity & Batch -->
+      <div class="form-section">
+        <h3 class="section-title">
+          {{ transactionMode === 'receive' ? 'Quantity & Batch Information' : 'Quantity Information' }}
+        </h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">
+              {{ transactionMode === 'receive' ? 'Quantity Received *' : 'Adjustment Quantity *' }}
+            </label>
             <input type="number" class="form-control" placeholder="Enter quantity" min="1" [(ngModel)]="quantity" [disabled]="saving" />
           </div>
-          <div class="form-group">
+          <div class="form-group" *ngIf="transactionMode === 'receive'">
             <label class="form-label">Batch Number *</label>
             <input type="text" class="form-control" placeholder="e.g., BATCH-2026-001" [(ngModel)]="batchNumber" [disabled]="saving" />
           </div>
@@ -125,7 +142,7 @@
             <input type="text" class="form-control" [value]="selectedItem.measurement_unit || 'N/A'" disabled />
           </div>
         </div>
-        <div class="form-row">
+        <div class="form-row" *ngIf="transactionMode === 'receive'">
           <div class="form-group">
             <label class="form-label">Supplier Information</label>
             <input type="text" class="form-control" placeholder="Supplier name or code" [(ngModel)]="supplierInfo" [disabled]="saving" />
@@ -177,8 +194,14 @@
       <div class="form-section">
         <h3 class="section-title">Additional Information</h3>
         <div class="form-group">
-          <label class="form-label">Reason/Reference</label>
-          <input type="text" class="form-control" placeholder="e.g., Purchase, Donation, Return" [(ngModel)]="reason" [disabled]="saving" />
+          <label class="form-label">Reason/Reference *</label>
+          <input
+            type="text"
+            class="form-control"
+            [placeholder]="transactionMode === 'receive' ? 'e.g., Purchase, Donation, Return' : 'e.g., Physical count correction'"
+            [(ngModel)]="reason"
+            [disabled]="saving"
+          />
         </div>
         <div class="form-group">
           <label class="form-label">Notes</label>
@@ -190,7 +213,7 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" type="button" (click)="closeReceivingModal()" [disabled]="saving">Cancel</button>
       <button class="btn btn-primary" type="button" [disabled]="!canSubmit() || saving" (click)="submitForm()">
-        {{ saving ? 'Processing...' : 'Record Receiving' }}
+        {{ saving ? 'Processing...' : (transactionMode === 'receive' ? 'Record Receiving' : 'Record Adjustment (+)') }}
       </button>
     </div>
   </div>

@@ -128,6 +128,10 @@
           </svg>
           Add new item
         </button>
+        <div class="view-toggle" role="group" aria-label="Item view mode">
+          <button class="view-btn" type="button" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">Table</button>
+          <button class="view-btn" type="button" [class.active]="viewMode === 'cards'" (click)="viewMode = 'cards'">Cards</button>
+        </div>
         <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
           <button
             type="button"
@@ -211,7 +215,7 @@
 
     <div *ngIf="loading" class="state-loading">Loading items...</div>
 
-    <div class="table-wrap" *ngIf="!loading">
+    <div class="table-wrap" *ngIf="!loading && viewMode === 'table'">
       <table>
         <thead>
           <tr>
@@ -246,6 +250,35 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="item-card-grid" *ngIf="!loading && viewMode === 'cards'">
+      <article class="item-card" *ngFor="let item of items">
+        <div class="item-card-header">
+          <div>
+            <div class="cell-code">{{ item.item_code }}</div>
+            <h3>{{ item.item_description }}</h3>
+          </div>
+          <span class="status-badge" [class.inactive]="!item.is_active">
+            {{ item.is_active ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+
+        <div class="item-card-body">
+          <p><strong>Category:</strong> {{ item.category_name || '—' }}</p>
+          <p><strong>Reorder Level:</strong> {{ item.reorder_level != null ? item.reorder_level : '—' }}</p>
+          <p><strong>Unit:</strong> {{ item.measurement_unit || '—' }}</p>
+        </div>
+
+        <div class="actions">
+          <button class="btn-sm btn-edit" (click)="editItem(item)" type="button">Edit</button>
+          <button class="btn-sm btn-toggle" (click)="toggleStatus(item)" type="button">
+            {{ item.is_active ? 'Deactivate' : 'Activate' }}
+          </button>
+        </div>
+      </article>
+
+      <div class="empty" *ngIf="items.length === 0">No items found.</div>
     </div>
 
     <div class="pagination" *ngIf="!loading">

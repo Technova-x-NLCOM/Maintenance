@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StockAdjustmentController extends Controller
 {
@@ -166,6 +167,16 @@ class StockAdjustmentController extends Controller
         $resolvedExpiryDate = !empty($validated['expiry_date']) ? Carbon::parse((string) $validated['expiry_date'])->toDateString() : null;
         $resolvedManufacturedDate = !empty($validated['manufactured_date']) ? Carbon::parse((string) $validated['manufactured_date'])->toDateString() : null;
         $resolvedPurchaseDate = !empty($validated['purchase_date']) ? Carbon::parse((string) $validated['purchase_date'])->toDateString() : null;
+        $locationId = $this->resolveLocationId($request);
+        $fromLocationId = $locationId;
+        $toLocationId = $locationId;
+
+        if ($adjustmentMode === 'increase' && Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record stock adjustment: no valid location is configured for inventory batches.',
+            ], 422);
+        }
 
         $shelfLifeDays = $item->shelf_life_days ? (int) $item->shelf_life_days : null;
         if ($adjustmentMode === 'increase' && $shelfLifeDays) {
@@ -192,9 +203,9 @@ class StockAdjustmentController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($item, $itemId, $adjustmentMode, $quantity, $validated, $performedBy, $reference, $stock, $confirmExpiration, $resolvedExpiryDate, $resolvedManufacturedDate, $resolvedPurchaseDate) {
+            $result = DB::transaction(function () use ($item, $itemId, $adjustmentMode, $quantity, $validated, $performedBy, $reference, $stock, $confirmExpiration, $resolvedExpiryDate, $resolvedManufacturedDate, $resolvedPurchaseDate, $locationId, $fromLocationId, $toLocationId) {
                 if ($adjustmentMode === 'increase') {
-                    $batchId = DB::table('inventory_batches')->insertGetId([
+                    $batchInsert = [
                         'item_id' => $itemId,
                         'batch_number' => 'ADJ-IN-' . now()->format('YmdHis'),
                         'quantity' => $quantity,
@@ -203,9 +214,15 @@ class StockAdjustmentController extends Controller
                         'status' => 'active',
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]);
+                    ];
 
-                    DB::table('inventory_transactions')->insert([
+                    if (Schema::hasColumn('inventory_batches', 'location_id')) {
+                        $batchInsert['location_id'] = $locationId;
+                    }
+
+                    $batchId = DB::table('inventory_batches')->insertGetId($batchInsert);
+
+                    $transactionInsert = [
                         'item_id' => $itemId,
                         'batch_id' => $batchId,
                         'transaction_type' => 'ADJUSTMENT',
@@ -216,7 +233,17 @@ class StockAdjustmentController extends Controller
                         'notes' => $this->buildAdjustmentNotes('increase', $validated['notes'] ?? null, false),
                         'performed_by' => $performedBy,
                         'created_at' => now(),
-                    ]);
+                    ];
+
+                    if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
+                        $transactionInsert['from_location_id'] = $fromLocationId;
+                    }
+
+                    if (Schema::hasColumn('inventory_transactions', 'to_location_id')) {
+                        $transactionInsert['to_location_id'] = $toLocationId;
+                    }
+
+                    DB::table('inventory_transactions')->insert($transactionInsert);
 
                     $newStock = $stock + $quantity;
                 } else {
@@ -263,7 +290,7 @@ class StockAdjustmentController extends Controller
                         $remaining -= $deduct;
                     }
 
-                    DB::table('inventory_transactions')->insert([
+                    $transactionInsert = [
                         'item_id' => $itemId,
                         'batch_id' => $batchId,
                         'transaction_type' => 'ADJUSTMENT',
@@ -274,7 +301,17 @@ class StockAdjustmentController extends Controller
                         'notes' => $this->buildAdjustmentNotes('decrease', $validated['notes'] ?? null, $confirmExpiration),
                         'performed_by' => $performedBy,
                         'created_at' => now(),
-                    ]);
+                    ];
+
+                    if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
+                        $transactionInsert['from_location_id'] = $fromLocationId;
+                    }
+
+                    if (Schema::hasColumn('inventory_transactions', 'to_location_id')) {
+                        $transactionInsert['to_location_id'] = $toLocationId;
+                    }
+
+                    DB::table('inventory_transactions')->insert($transactionInsert);
 
                     $newStock = $stock - $quantity;
                 }
@@ -331,6 +368,76 @@ class StockAdjustmentController extends Controller
 
         $trimmed = trim($value);
         return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function resolveLocationId(Request $request): ?int
+    {
+        $incoming = $request->input('location_id');
+        if ($incoming !== null && $incoming !== '') {
+            return (int) $incoming;
+        }
+
+        $bootstrapped = $this->ensureDefaultLocation();
+        if ($bootstrapped !== null) {
+            return $bootstrapped;
+        }
+
+        $candidates = [
+            ['table' => 'locations', 'column' => 'location_id'],
+            ['table' => 'inventory_locations', 'column' => 'location_id'],
+            ['table' => 'stock_locations', 'column' => 'location_id'],
+            ['table' => 'warehouses', 'column' => 'warehouse_id'],
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!Schema::hasTable($candidate['table']) || !Schema::hasColumn($candidate['table'], $candidate['column'])) {
+                continue;
+            }
+
+            $id = DB::table($candidate['table'])
+                ->whereNotNull($candidate['column'])
+                ->orderBy($candidate['column'])
+                ->value($candidate['column']);
+
+            if ($id !== null) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    private function ensureDefaultLocation(): ?int
+    {
+        if (!Schema::hasTable('locations') || !Schema::hasColumn('locations', 'location_id')) {
+            return null;
+        }
+
+        $existing = DB::table('locations')->orderBy('location_id')->value('location_id');
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $insert = [
+            'location_code' => 'AUTO-DEFAULT',
+            'location_name' => 'Default Location',
+            'address' => null,
+            'contact_person' => null,
+            'contact_phone' => null,
+            'contact_email' => null,
+            'location_type' => 'warehouse',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        try {
+            $newId = DB::table('locations')->insertGetId($insert, 'location_id');
+            return (int) $newId;
+        } catch (\Throwable $e) {
+            $fallback = DB::table('locations')->orderBy('location_id')->value('location_id');
+            return $fallback !== null ? (int) $fallback : null;
+        }
     }
 
     private function resolveImageUrl(?string $storedValue): ?string
