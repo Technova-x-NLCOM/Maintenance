@@ -63,6 +63,9 @@ export class ReceivingTransactionComponent implements OnInit {
   }
 
   closeReceivingModal(): void {
+    if (this.saving) {
+      return;
+    }
     this.showReceivingModal = false;
   }
 
@@ -233,7 +236,6 @@ export class ReceivingTransactionComponent implements OnInit {
   }
 
   toggleExpiryDateOverride(): void {
-    this.expiryDateOverride = !this.expiryDateOverride;
     if (!this.expiryDateOverride) {
       // If unchecking override, clear manual date and re-compute
       this.expiryDate = null;
