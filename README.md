@@ -59,7 +59,24 @@ git clone https://github.com/Technova-x-NLCOM/Maintenance.git
 cd Maintenance
 ```
 
-### 2️⃣ Backend Setup (Laravel)
+### 2️⃣ Install Dependencies (Required)
+
+Run these commands after cloning so both backend and frontend dependencies are installed:
+
+```bash
+# Backend dependencies
+cd backend/inventory-backend
+composer install
+
+# Frontend dependencies
+cd ../../frontend/inventory-frontend
+npm install
+
+# Return to project root (optional)
+cd ../../
+```
+
+### 3️⃣ Backend Setup (Laravel)
 
 ```bash
 # Navigate to backend directory
@@ -100,7 +117,7 @@ php artisan serve
 
 Backend will run at: `http://localhost:8000`
 
-### 3️⃣ Frontend Setup (Angular)
+### 4️⃣ Frontend Setup (Angular)
 
 Open a new terminal:
 
@@ -117,7 +134,7 @@ ng serve
 
 Frontend will run at: `http://localhost:4200`
 
-### 4️⃣ JWT Authentication Setup (Required)
+### 5️⃣ JWT Authentication Setup (Required)
 
 JWT is already integrated in the backend. After cloning and installing dependencies, each teammate must generate a local JWT secret:
 
@@ -154,7 +171,7 @@ curl http://127.0.0.1:8000/api/auth/me \
   -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
-### 4️⃣ Database Setup
+### 6️⃣ Database Setup
 
 **Option 1: Using XAMPP**
 1. Start XAMPP Control Panel
