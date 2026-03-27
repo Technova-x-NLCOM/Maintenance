@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class IssuanceTransactionController extends Controller
 {
@@ -81,10 +82,29 @@ class IssuanceTransactionController extends Controller
             'destination' => ['required', 'string', 'max:255'],
             'reason' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'from_location_id' => ['nullable', 'integer'],
+            'to_location_id' => ['nullable', 'integer'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:items,item_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
+
+        $fromLocationId = $this->resolveLocationId($data['from_location_id'] ?? null);
+        $toLocationId = $this->resolveLocationId($data['to_location_id'] ?? null) ?? $fromLocationId;
+
+        if (Schema::hasColumn('inventory_transactions', 'from_location_id') && $fromLocationId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record issuance transaction: no valid source location is configured.',
+            ], 422);
+        }
+
+        if (Schema::hasColumn('inventory_transactions', 'to_location_id') && $toLocationId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record issuance transaction: no valid destination location is configured.',
+            ], 422);
+        }
 
         $lineItemIds = collect($data['items'])->pluck('item_id')->map(fn ($id) => (int) $id)->values();
         $availableStock = DB::table('inventory_batches')
@@ -123,7 +143,7 @@ class IssuanceTransactionController extends Controller
         $reference = 'ISS-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
 
         try {
-            $summary = DB::transaction(function () use ($data, $performedBy, $reference) {
+            $summary = DB::transaction(function () use ($data, $performedBy, $reference, $fromLocationId, $toLocationId) {
                 $allocationSummary = [];
                 $totalIssued = 0;
 
@@ -161,7 +181,7 @@ class IssuanceTransactionController extends Controller
                                 'updated_at' => now(),
                             ]);
 
-                        DB::table('inventory_transactions')->insert([
+                        $transactionInsert = [
                             'item_id' => $itemId,
                             'batch_id' => $batch->batch_id,
                             'transaction_type' => 'OUT',
@@ -173,7 +193,17 @@ class IssuanceTransactionController extends Controller
                             'destination' => $data['destination'],
                             'performed_by' => $performedBy,
                             'created_at' => now(),
-                        ]);
+                        ];
+
+                        if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
+                            $transactionInsert['from_location_id'] = $fromLocationId;
+                        }
+
+                        if (Schema::hasColumn('inventory_transactions', 'to_location_id')) {
+                            $transactionInsert['to_location_id'] = $toLocationId;
+                        }
+
+                        DB::table('inventory_transactions')->insert($transactionInsert);
 
                         $remaining -= $deduct;
                         $issuedForItem += $deduct;
@@ -207,6 +237,75 @@ class IssuanceTransactionController extends Controller
                 'error_type' => 'issuance_save_failed',
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
+        }
+    }
+
+    private function resolveLocationId(mixed $incoming): ?int
+    {
+        if ($incoming !== null && $incoming !== '') {
+            return (int) $incoming;
+        }
+
+        $bootstrapped = $this->ensureDefaultLocation();
+        if ($bootstrapped !== null) {
+            return $bootstrapped;
+        }
+
+        $candidates = [
+            ['table' => 'locations', 'column' => 'location_id'],
+            ['table' => 'inventory_locations', 'column' => 'location_id'],
+            ['table' => 'stock_locations', 'column' => 'location_id'],
+            ['table' => 'warehouses', 'column' => 'warehouse_id'],
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!Schema::hasTable($candidate['table']) || !Schema::hasColumn($candidate['table'], $candidate['column'])) {
+                continue;
+            }
+
+            $id = DB::table($candidate['table'])
+                ->whereNotNull($candidate['column'])
+                ->orderBy($candidate['column'])
+                ->value($candidate['column']);
+
+            if ($id !== null) {
+                return (int) $id;
+            }
+        }
+
+        return null;
+    }
+
+    private function ensureDefaultLocation(): ?int
+    {
+        if (!Schema::hasTable('locations') || !Schema::hasColumn('locations', 'location_id')) {
+            return null;
+        }
+
+        $existing = DB::table('locations')->orderBy('location_id')->value('location_id');
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $insert = [
+            'location_code' => 'AUTO-DEFAULT',
+            'location_name' => 'Default Location',
+            'address' => null,
+            'contact_person' => null,
+            'contact_phone' => null,
+            'contact_email' => null,
+            'location_type' => 'warehouse',
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        try {
+            $newId = DB::table('locations')->insertGetId($insert, 'location_id');
+            return (int) $newId;
+        } catch (\Throwable $e) {
+            $fallback = DB::table('locations')->orderBy('location_id')->value('location_id');
+            return $fallback !== null ? (int) $fallback : null;
         }
     }
 
