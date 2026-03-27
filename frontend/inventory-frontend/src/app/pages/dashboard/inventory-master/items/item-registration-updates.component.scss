@@ -212,6 +212,28 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   flex-wrap: wrap;
 }
 
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  background: #fff;
+}
+
+.view-btn {
+  border: 0;
+  background: transparent;
+  color: $text-muted;
+  font-weight: 600;
+  padding: 9px 14px;
+  cursor: pointer;
+
+  &.active {
+    background: #eff6ff;
+    color: $primary-dark;
+  }
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -517,6 +539,44 @@ textarea { resize: vertical; min-height: 72px; }
   overflow-x: auto;
   border-radius: $radius-sm;
   border: 1px solid $border;
+}
+
+.item-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.item-card {
+  border: 1px solid $border;
+  border-radius: $radius-sm;
+  background: #fff;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: $shadow-sm;
+}
+
+.item-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+
+  h3 {
+    margin: 4px 0 0 0;
+    font-size: 1rem;
+    color: $text-primary;
+  }
+}
+
+.item-card-body {
+  p {
+    margin: 0 0 6px 0;
+    font-size: 0.9rem;
+    color: $text-secondary;
+  }
 }
 
 table {

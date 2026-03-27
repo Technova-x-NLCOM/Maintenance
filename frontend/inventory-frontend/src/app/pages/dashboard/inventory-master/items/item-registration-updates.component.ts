@@ -17,6 +17,7 @@ import { InventoryCategoryService } from '../../../../services/inventory-categor
   styleUrls: ['./item-registration-updates.component.scss']
 })
 export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
+  viewMode: 'table' | 'cards' = 'table';
   loading = false;
   saving = false;
 
