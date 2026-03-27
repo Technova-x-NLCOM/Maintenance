@@ -128,6 +128,7 @@
           </svg>
           Add new item
         </button>
+        <button class="btn-scan" (click)="openItemQrScanner()" type="button">Scan QR</button>
         <div class="search-row">
         <div class="search-box">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,6 +196,22 @@
       <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
     </div>
   </section>
+</div>
+
+<div class="modal-overlay" *ngIf="showScanModal" (click)="closeItemQrScanner()" role="dialog" aria-modal="true" aria-label="Scan item QR code">
+  <div class="modal-content item-qr-modal" (click)="$event.stopPropagation()">
+    <div class="form-panel-header">
+      <h2 class="panel-title">Scan Item QR</h2>
+      <button class="btn-ghost btn-close-form" type="button" (click)="closeItemQrScanner()">Close</button>
+    </div>
+
+    <div class="scanner-wrap">
+      <video id="itemQrVideo" class="scanner-video" autoplay muted playsinline></video>
+    </div>
+
+    <p class="scanner-help">Point your camera at an item QR code.</p>
+    <p class="scanner-error" *ngIf="scanErrorMessage">{{ scanErrorMessage }}</p>
+  </div>
 </div>
 
 <div class="modal-overlay" *ngIf="showQrModal" (click)="closeQrModal()" role="dialog" aria-modal="true" aria-label="Item QR code">

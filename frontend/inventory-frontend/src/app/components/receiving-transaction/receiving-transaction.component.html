@@ -41,6 +41,7 @@
           </option>
         </select>
         <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        <button class="btn btn-secondary" type="button" (click)="openQrScanner()">Scan QR</button>
         <button class="btn btn-primary" type="button" (click)="openListModal()">
           Receiving List ({{ receivingLines.length }})
         </button>
@@ -84,6 +85,23 @@
       </div>
     </section>
 
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showScanModal" (click)="closeQrScanner()">
+  <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Scan QR Code</h2>
+      <button class="modal-close" (click)="closeQrScanner()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="scanner-wrap">
+        <video id="receivingQrVideo" class="scanner-video" autoplay muted playsinline></video>
+      </div>
+      <p class="qr-caption">Point camera at item QR or batch QR.</p>
+      <p class="scanner-error" *ngIf="scanErrorMessage">{{ scanErrorMessage }}</p>
+    </div>
   </div>
 </div>
 

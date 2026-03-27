@@ -1,8 +1,10 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import * as QRCode from 'qrcode';
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
+import { NotFoundException } from '@zxing/library';
 import {
   InventoryItemService,
   ReceivingItem,
@@ -32,7 +34,7 @@ interface ReceivingCartLine {
   templateUrl: './receiving-transaction.component.html',
   styleUrls: ['./receiving-transaction.component.scss'],
 })
-export class ReceivingTransactionComponent implements OnInit {
+export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   // Items catalog and pagination
   receivingItems: ReceivingItem[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
@@ -74,7 +76,11 @@ export class ReceivingTransactionComponent implements OnInit {
   batchQrLabel = '';
   batchQrPayload = '';
   batchQrImageDataUrl: string | null = null;
+  showScanModal = false;
+  scanErrorMessage = '';
   receivingLines: ReceivingCartLine[] = [];
+  private scanner = new BrowserMultiFormatReader();
+  private scannerControls?: IScannerControls;
 
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
@@ -101,6 +107,21 @@ export class ReceivingTransactionComponent implements OnInit {
     this.batchQrImageDataUrl = null;
   }
 
+  openQrScanner(): void {
+    this.showScanModal = true;
+    this.scanErrorMessage = '';
+
+    setTimeout(() => {
+      this.startScanner();
+    }, 0);
+  }
+
+  closeQrScanner(): void {
+    this.stopScanner();
+    this.showScanModal = false;
+    this.scanErrorMessage = '';
+  }
+
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
@@ -112,6 +133,145 @@ export class ReceivingTransactionComponent implements OnInit {
     this.purchaseDate = today.toISOString().split('T')[0];
     this.loadReceivingItems(1);
     this.loadCategoryOptions();
+  }
+
+  ngOnDestroy(): void {
+    this.stopScanner();
+  }
+
+  private async startScanner(): Promise<void> {
+    const video = document.getElementById('receivingQrVideo') as HTMLVideoElement | null;
+    if (!video) {
+      this.scanErrorMessage = 'Scanner preview is not ready.';
+      return;
+    }
+
+    try {
+      // Request camera permission explicitly
+      this.scanErrorMessage = 'Requesting camera access...';
+      this.cdr.detectChanges();
+
+      const cameraPermission = await this.requestCameraPermission();
+      if (!cameraPermission) {
+        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
+        this.cdr.detectChanges();
+        return;
+      }
+
+      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+      const deviceId = devices[0]?.deviceId;
+
+      if (!deviceId) {
+        this.scanErrorMessage = 'No camera detected on this device.';
+        return;
+      }
+
+      this.scanErrorMessage = ''; // Clear loading message once camera access is granted
+      this.scannerControls = await this.scanner.decodeFromVideoDevice(
+        deviceId,
+        video,
+        (result, error) => {
+          if (result) {
+            this.handleScannedQr(result.getText());
+            this.closeQrScanner();
+            this.cdr.detectChanges();
+            return;
+          }
+
+          if (error && !(error instanceof NotFoundException)) {
+            this.scanErrorMessage = 'Unable to read QR. Please hold it steady and try again.';
+            this.cdr.detectChanges();
+          }
+        },
+      );
+    } catch (error) {
+      if ((error as Error).name === 'NotAllowedError') {
+        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings.';
+      } else if ((error as Error).name === 'NotFoundError') {
+        this.scanErrorMessage = 'No camera device found on this device.';
+      } else {
+        this.scanErrorMessage = 'Unable to access camera. Check permissions and try again.';
+      }
+      this.cdr.detectChanges();
+    }
+  }
+
+  private async requestCameraPermission(): Promise<boolean> {
+    try {
+      // Use the Permissions API to request camera access
+      const permissionResult = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      
+      if (permissionResult.state === 'denied') {
+        return false;
+      }
+
+      if (permissionResult.state === 'granted') {
+        return true;
+      }
+
+      // If 'prompt', user will be asked when trying to access the camera
+      // Attempt accessing the camera directly, which will trigger the browser permission prompt
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      
+      // Immediately stop the stream as we only needed to verify permission
+      mediaStream.getTracks().forEach(track => track.stop());
+      
+      return true;
+    } catch {
+      // If Permissions API fails or getUserMedia fails, permission was denied
+      return false;
+    }
+  }
+
+  private stopScanner(): void {
+    this.scannerControls?.stop();
+    this.scannerControls = undefined;
+  }
+
+  private handleScannedQr(rawText: string): void {
+    const parsed = this.tryParseQrPayload(rawText);
+    const itemCode = parsed?.['item_code'] || this.extractCodeFromLabel(rawText, 'ITEM:');
+    const batchCode = parsed?.['batch_number'] || this.extractCodeFromLabel(rawText, 'BATCH:');
+
+    if (itemCode) {
+      this.searchQuery = itemCode;
+      this.loadReceivingItems(1);
+      this.successMessage = `Scanned item QR: ${itemCode}`;
+      this.showSuccessMessage = true;
+      return;
+    }
+
+    if (batchCode) {
+      this.confirmBatchNumber = batchCode;
+      this.showListModal = true;
+      this.successMessage = `Scanned batch QR: ${batchCode}`;
+      this.showSuccessMessage = true;
+      return;
+    }
+
+    this.errorMessage = 'QR scanned, but no recognized item or batch code was found.';
+    this.showErrorMessage = true;
+  }
+
+  private tryParseQrPayload(rawText: string): Record<string, string> | null {
+    try {
+      const parsed = JSON.parse(rawText) as Record<string, string>;
+      if (parsed && typeof parsed === 'object') {
+        return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private extractCodeFromLabel(value: string, prefix: string): string | null {
+    if (!value.startsWith(prefix)) {
+      return null;
+    }
+
+    const code = value.slice(prefix.length).trim();
+    return code ? code : null;
   }
 
   loadCategoryOptions(): void {
