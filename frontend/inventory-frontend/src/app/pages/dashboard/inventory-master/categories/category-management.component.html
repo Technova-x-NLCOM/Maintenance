@@ -206,6 +206,10 @@
       <h2 class="panel-title">Categories <span class="count">({{ categories.length }})</span></h2>
       <div class="toolbar-actions">
         <button class="btn-primary" (click)="startNew()" type="button">Add new category</button>
+        <div class="view-toggle" role="group" aria-label="Category view mode">
+          <button class="view-btn" type="button" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">Table</button>
+          <button class="view-btn" type="button" [class.active]="viewMode === 'cards'" (click)="viewMode = 'cards'">Cards</button>
+        </div>
         <div class="search-row">
           <div class="search-wrap main-search">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -222,7 +226,7 @@
 
     <div *ngIf="loading" class="state-loading">Loading categories...</div>
 
-    <div class="table-wrap" *ngIf="!loading">
+    <div class="table-wrap" *ngIf="!loading && viewMode === 'table'">
       <table>
         <thead>
           <tr>
@@ -235,7 +239,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let category of categories">
+          <tr *ngFor="let category of pagedCategories">
             <td><span class="cell-name">{{ category.category_name }}</span></td>
             <td>{{ category.parent_category_name || 'Top-level' }}</td>
             <td>{{ category.description || '—' }}</td>
@@ -254,6 +258,51 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="category-card-grid" *ngIf="!loading && viewMode === 'cards'">
+      <article class="category-card" *ngFor="let category of pagedCategories">
+        <div class="card-header">
+          <h3>{{ category.category_name }}</h3>
+          <span class="pill">{{ category.parent_category_name || 'Top-level' }}</span>
+        </div>
+        <p class="card-desc">{{ category.description || 'No description provided.' }}</p>
+        <div class="card-stats">
+          <span>Child Categories: <strong>{{ category.child_count ?? 0 }}</strong></span>
+          <span>Assigned Items: <strong>{{ category.item_count ?? 0 }}</strong></span>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm" type="button" (click)="openManageItems(category)">Manage Items</button>
+          <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">Edit</button>
+          <button class="btn-sm btn-delete" type="button" [disabled]="deletingCategoryId === category.category_id" (click)="deleteCategory(category)">
+            {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </article>
+
+      <div class="empty" *ngIf="categories.length === 0">No categories found.</div>
+    </div>
+
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">First</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">Last</button>
+      </div>
+
+      <div class="page-size-wrap">
+        <label for="categories-rows-per-page">Rows per page</label>
+        <select
+          class="rows-per-page"
+          id="categories-rows-per-page"
+          [(ngModel)]="perPage"
+          (ngModelChange)="onPageSizeChange()"
+        >
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
     </div>
   </section>
 </div>

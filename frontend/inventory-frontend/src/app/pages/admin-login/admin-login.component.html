@@ -122,10 +122,21 @@
 
 <!-- Toast Notification -->
 <div class="toast" [class.toast-show]="toastVisible">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="12" y1="8" x2="12" y2="12"/>
-    <line x1="12" y1="16" x2="12.01" y2="16"/>
-  </svg>
+  <img src="assets/warning.png" alt="Warning" class="toast-icon" />
   <span>{{ toastMessage }}</span>
+</div>
+
+<!-- Account Deactivated Modal -->
+<div class="modal-backdrop" *ngIf="showInactiveAccountModal">
+  <div class="modal-panel inactive-account-modal">
+    <div class="inactive-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      </svg>
+    </div>
+    <h2 class="inactive-title">Account Deactivated</h2>
+    <p class="inactive-body">Your account has been deactivated. Please contact the system administrator to restore access.</p>
+    <button class="btn btn-admin btn-login" (click)="showInactiveAccountModal = false">OK, Got it</button>
+  </div>
 </div>

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -59,6 +59,8 @@ export class BatchDistributionComponent implements OnInit {
   lineDraftQuantityPerBase = 1;
   lineDraftNotes = '';
   templateLines: EditableTemplateLine[] = [];
+  itemComboboxOpen = false;
+  activeItemOptionIndex = -1;
 
   targetUnitCount = 100;
   destination = '';
@@ -344,7 +346,90 @@ export class BatchDistributionComponent implements OnInit {
     this.lineDraftItemId = null;
     this.lineDraftQuantityPerBase = 1;
     this.lineDraftNotes = '';
+    this.searchItem = '';
+    this.itemComboboxOpen = false;
+    this.activeItemOptionIndex = -1;
+    this.loadItemOptions();
     this.errorMessage = '';
+  }
+
+  openItemCombobox(): void {
+    this.itemComboboxOpen = true;
+    this.activeItemOptionIndex = this.itemOptions.length > 0 ? 0 : -1;
+  }
+
+  onItemComboboxInput(): void {
+    this.lineDraftItemId = null;
+    this.itemComboboxOpen = true;
+    this.onItemOptionsSearchInput();
+  }
+
+  onItemComboboxKeydown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    if (!this.itemComboboxOpen && (key === 'ArrowDown' || key === 'Enter')) {
+      event.preventDefault();
+      this.openItemCombobox();
+      return;
+    }
+
+    if (key === 'Escape') {
+      event.preventDefault();
+      this.itemComboboxOpen = false;
+      this.activeItemOptionIndex = -1;
+      return;
+    }
+
+    if (!this.itemOptions.length) {
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeItemOptionIndex = Math.min(this.activeItemOptionIndex + 1, this.itemOptions.length - 1);
+      return;
+    }
+
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeItemOptionIndex = Math.max(this.activeItemOptionIndex - 1, 0);
+      return;
+    }
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (this.activeItemOptionIndex >= 0) {
+        this.selectItemOption(this.itemOptions[this.activeItemOptionIndex]);
+      }
+    }
+  }
+
+  onItemOptionHover(index: number): void {
+    this.activeItemOptionIndex = index;
+  }
+
+  selectItemOption(item: BatchDistributionItemOption): void {
+    this.lineDraftItemId = item.item_id;
+    this.searchItem = `${item.item_code} - ${item.item_description} (Stock: ${item.current_stock})`;
+    this.itemComboboxOpen = false;
+    this.activeItemOptionIndex = -1;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.itemComboboxOpen) {
+      return;
+    }
+
+    const target = event.target as Element | null;
+    if (!target) {
+      return;
+    }
+
+    if (!target.closest('.template-item-combobox')) {
+      this.itemComboboxOpen = false;
+      this.activeItemOptionIndex = -1;
+    }
   }
 
   removeLine(itemId: number): void {

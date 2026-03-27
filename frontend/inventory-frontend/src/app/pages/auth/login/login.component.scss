@@ -346,6 +346,44 @@ $border-radius: 8px;
   }
 }
 
+// Account Deactivated Modal
+.inactive-account-modal {
+  max-width: 400px;
+  text-align: center;
+  padding: 36px 28px 28px;
+}
+
+.inactive-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #fef2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+
+  svg {
+    width: 32px;
+    height: 32px;
+    stroke: #dc2626;
+  }
+}
+
+.inactive-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.inactive-body {
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  color: #6b7280;
+  line-height: 1.55;
+}
+
 @media (max-width: 768px) {
   .login-wrapper {
     flex-direction: column;
@@ -464,14 +502,15 @@ $border-radius: 8px;
 .loading-card {
   background: #2f4c88;
   border-radius: 16px;
-  padding: 36px 40px 28px;
-  width: 300px;
+  padding: 36px 28px 28px;
+  width: 100%;
+  max-width: 400px;
   text-align: center;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
 
   .loading-logo {
-    width: 72px;
-    height: 72px;
+    width: 96px;
+    height: 96px;
     object-fit: contain;
     margin-bottom: 16px;
   }
@@ -507,14 +546,14 @@ $border-radius: 8px;
 
 .loading-bar-wrap {
   height: 4px;
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 14px;
 
   .loading-bar {
     height: 100%;
-    background: #1d4ed8;
+    background: #ffffff;
     border-radius: 4px;
     animation: loading-progress 1.2s ease-in-out infinite;
   }
@@ -545,18 +584,9 @@ $border-radius: 8px;
     background: #1d4ed8;
     animation: dot-bounce 1.2s ease-in-out infinite;
 
-    &:nth-child(1) {
-      animation-delay: 0s;
-      background: #1d4ed8;
-    }
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-      background: #f59e0b;
-    }
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-      background: #1d4ed8;
-    }
+    &:nth-child(1) { animation-delay: 0s;   background: #ffffff; }
+    &:nth-child(2) { animation-delay: 0.2s; background: #f59e0b; }
+    &:nth-child(3) { animation-delay: 0.4s; background: #ffffff; }
   }
 }
 
@@ -590,23 +620,26 @@ $border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #1f2937;
-  color: #fff;
+  background: rgba(254, 226, 226, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #7f1d1d;
+  border: 1px solid rgba(252, 165, 165, 0.6);
   padding: 12px 18px;
   border-radius: 10px;
   font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(220, 38, 38, 0.15);
   max-width: 340px;
   pointer-events: none;
   transform: translateX(110%);
   opacity: 0;
 
-  svg {
-    width: 18px;
-    height: 18px;
+  .toast-icon {
+    width: 22px;
+    height: 22px;
     flex-shrink: 0;
-    stroke: #f87171;
+    object-fit: contain;
   }
 
   &.toast-show {

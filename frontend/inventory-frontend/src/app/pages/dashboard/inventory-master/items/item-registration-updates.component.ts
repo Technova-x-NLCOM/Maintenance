@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -10,6 +10,7 @@ import {
   InventoryItemService,
   ItemFormOptions
 } from '../../../../services/inventory-item.service';
+import { InventoryCategoryService } from '../../../../services/inventory-category.service';
 
 @Component({
   selector: 'app-item-registration-updates',
@@ -19,6 +20,7 @@ import {
   styleUrls: ['./item-registration-updates.component.scss']
 })
 export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
+  viewMode: 'table' | 'cards' = 'table';
   loading = false;
   saving = false;
 
@@ -28,18 +30,21 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   currentPage = 1;
   totalPages = 1;
   totalItems = 0;
-  perPage = 10;
+  perPage = 20;
+  readonly pageSizeOptions = [10, 20, 50];
 
   search = '';
+  selectedFilterCategoryId: number | null = null;
+  selectedFilterCategoryName = 'All categories';
+  categoryFilterOpen = false;
+  categoryFilterQuery = '';
+  activeCategoryOptionIndex = -1;
+  categoryFilterOptions: Array<{ category_id: number; category_name: string }> = [];
+  filteredCategoryFilterOptions: Array<{ category_id: number; category_name: string }> = [];
 
   private readonly SEARCH_DEBOUNCE_MS = 300;
   private loadItemsSub?: Subscription;
   private searchDebounceId?: ReturnType<typeof setTimeout>;
-  private itemsPage1Baseline: {
-    items: InventoryItem[];
-    totalPages: number;
-    totalItems: number;
-  } | null = null;
 
   selectedItemId: number | null = null;
   /** When true, the Register/Update form is visible. Hidden by default; shown when user clicks New Item or Edit. */
@@ -89,6 +94,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
   constructor(
     private itemService: InventoryItemService,
+    private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -145,6 +151,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   loadOptionsAndItems(): void {
     this.loading = true;
     this.errorMessage = '';
+    this.loadCategoryFilterOptions();
 
     this.itemService.getOptions().subscribe({
       next: (optionsRes) => {
@@ -177,7 +184,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       .list({
         page,
         per_page: this.perPage,
-        search: this.search || undefined
+        search: this.search || undefined,
+        category_id: this.selectedFilterCategoryId || undefined
       })
       .subscribe({
         next: (response) => {
@@ -185,13 +193,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
           this.currentPage = response.data.current_page;
           this.totalPages = response.data.last_page;
           this.totalItems = response.data.total;
-          if (response.data.current_page === 1 && !this.search.trim()) {
-            this.itemsPage1Baseline = {
-              items: response.data.data.slice(),
-              totalPages: response.data.last_page,
-              totalItems: response.data.total,
-            };
-          }
           this.loading = false;
           this.cdr.detectChanges();
         },
@@ -205,13 +206,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
   onItemsSearchInput(): void {
     this.cancelSearchDebounce();
-    if (!this.search.trim()) {
-      this.loadItemsSub?.unsubscribe();
-      this.loading = false;
-      this.errorMessage = '';
-      this.restoreItemsSearchCleared();
-      return;
-    }
     this.searchDebounceId = setTimeout(() => {
       this.searchDebounceId = undefined;
       this.loadItems(1);
@@ -221,10 +215,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   clearItemsSearchBox(): void {
     this.search = '';
     this.cancelSearchDebounce();
-    this.loadItemsSub?.unsubscribe();
-    this.loading = false;
-    this.errorMessage = '';
-    this.restoreItemsSearchCleared();
+    this.loadItems(1);
   }
 
   private cancelSearchDebounce(): void {
@@ -234,18 +225,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     }
   }
 
-  private restoreItemsSearchCleared(): void {
-    if (this.itemsPage1Baseline) {
-      this.items = this.itemsPage1Baseline.items.slice();
-      this.currentPage = 1;
-      this.totalPages = this.itemsPage1Baseline.totalPages;
-      this.totalItems = this.itemsPage1Baseline.totalItems;
-      this.cdr.detectChanges();
-      return;
-    }
-    this.loadItems(1);
-  }
-
   onSearch(): void {
     this.cancelSearchDebounce();
     this.loadItems(1);
@@ -253,6 +232,168 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
   clearSearch(): void {
     this.clearItemsSearchBox();
+  }
+
+  loadCategoryFilterOptions(): void {
+    this.categoryService.getOptions().subscribe({
+      next: (response) => {
+        this.categoryFilterOptions = (response.data.categories || [])
+          .map((category) => ({
+            category_id: category.category_id,
+            category_name: category.category_name
+          }))
+          .sort((a, b) => a.category_name.localeCompare(b.category_name));
+
+        this.applyCategoryFilterSearch();
+
+        if (this.selectedFilterCategoryId) {
+          const selected = this.categoryFilterOptions.find(
+            (category) => category.category_id === this.selectedFilterCategoryId
+          );
+          if (selected) {
+            this.selectedFilterCategoryName = selected.category_name;
+          } else {
+            this.selectedFilterCategoryId = null;
+            this.selectedFilterCategoryName = 'All categories';
+            this.loadItems(1);
+          }
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.categoryFilterOptions = [];
+        this.filteredCategoryFilterOptions = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleCategoryFilterDropdown(): void {
+    this.categoryFilterOpen = !this.categoryFilterOpen;
+    if (this.categoryFilterOpen) {
+      this.categoryFilterQuery = '';
+      this.applyCategoryFilterSearch();
+      this.activeCategoryOptionIndex = this.getActiveIndexFromSelection();
+      this.cdr.detectChanges();
+    }
+  }
+
+  onCategoryFilterQueryChange(): void {
+    this.applyCategoryFilterSearch();
+  }
+
+  selectCategoryFilter(category: { category_id: number; category_name: string } | null): void {
+    this.selectedFilterCategoryId = category?.category_id ?? null;
+    this.selectedFilterCategoryName = category?.category_name ?? 'All categories';
+    this.categoryFilterOpen = false;
+    this.categoryFilterQuery = '';
+    this.activeCategoryOptionIndex = -1;
+    this.loadItems(1);
+  }
+
+  clearCategoryFilter(event?: Event): void {
+    event?.stopPropagation();
+    if (!this.selectedFilterCategoryId) {
+      return;
+    }
+    this.selectCategoryFilter(null);
+  }
+
+  onCategoryComboboxKeydown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    if (!this.categoryFilterOpen) {
+      if (key === 'ArrowDown' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        this.toggleCategoryFilterDropdown();
+      }
+      return;
+    }
+
+    if (key === 'Escape') {
+      event.preventDefault();
+      this.categoryFilterOpen = false;
+      this.activeCategoryOptionIndex = -1;
+      return;
+    }
+
+    if (!this.filteredCategoryFilterOptions.length) {
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeCategoryOptionIndex = Math.min(
+        this.activeCategoryOptionIndex + 1,
+        this.filteredCategoryFilterOptions.length - 1
+      );
+      return;
+    }
+
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeCategoryOptionIndex = Math.max(this.activeCategoryOptionIndex - 1, 0);
+      return;
+    }
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (this.activeCategoryOptionIndex >= 0) {
+        this.selectCategoryFilter(this.filteredCategoryFilterOptions[this.activeCategoryOptionIndex]);
+      }
+    }
+  }
+
+  onCategoryOptionHover(index: number): void {
+    this.activeCategoryOptionIndex = index;
+  }
+
+  private applyCategoryFilterSearch(): void {
+    const query = this.categoryFilterQuery.trim().toLowerCase();
+    this.filteredCategoryFilterOptions = this.categoryFilterOptions.filter((category) => {
+      if (!query) {
+        return true;
+      }
+      return category.category_name.toLowerCase().includes(query);
+    });
+
+    if (!this.filteredCategoryFilterOptions.length) {
+      this.activeCategoryOptionIndex = -1;
+      return;
+    }
+
+    const selectedIndex = this.filteredCategoryFilterOptions.findIndex(
+      (category) => category.category_id === this.selectedFilterCategoryId
+    );
+    this.activeCategoryOptionIndex = selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
+  private getActiveIndexFromSelection(): number {
+    if (!this.filteredCategoryFilterOptions.length) {
+      return -1;
+    }
+    const selectedIndex = this.filteredCategoryFilterOptions.findIndex(
+      (category) => category.category_id === this.selectedFilterCategoryId
+    );
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.categoryFilterOpen) {
+      return;
+    }
+
+    const target = event.target as Element | null;
+    if (!target) {
+      return;
+    }
+
+    if (!target.closest('.category-filter-combobox')) {
+      this.categoryFilterOpen = false;
+      this.activeCategoryOptionIndex = -1;
+    }
   }
 
   editItem(item: InventoryItem): void {
@@ -596,6 +737,22 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     this.qrLabel = '';
     this.qrPayload = '';
     this.qrImageDataUrl = null;
+  }
+
+  firstPage(): void {
+    if (this.currentPage > 1) {
+      this.loadItems(1);
+    }
+  }
+
+  lastPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.loadItems(this.totalPages);
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.loadItems(1);
   }
 
   private nullIfEmpty(value: string): string | null {

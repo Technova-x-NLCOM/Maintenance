@@ -144,6 +144,7 @@ interface IssuanceItem {
   measurement_unit: string | null;
   image_url: string | null;
   current_stock: number;
+  expired_stock?: number;
   expiry_date?: string | null; // Added expiration date
   shelf_life_days?: number | null; // Added shelf life in days
   adjustment_reason?: string; // Added reason for adjustment

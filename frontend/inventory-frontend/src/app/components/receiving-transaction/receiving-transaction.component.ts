@@ -10,6 +10,7 @@ import {
   ReceivingItem,
   PaginatedReceivingItemsResponse,
   ReceivingTransactionResponse,
+  AdjustmentTransactionResponse,
 } from '../../services/inventory-item.service';
 
 interface ReceivingCartLine {
@@ -48,7 +49,9 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   // Form state
   selectedItem: ReceivingItem | null = null;
+  transactionMode: 'receive' | 'adjust-increase' = 'receive';
   quantity = 1;
+  batchNumber = '';
   purchaseDate = '';
   expiryDate: string | null = null;
   manufacturedDate: string | null = null;
@@ -84,10 +87,15 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
+    this.transactionMode = 'receive';
+    this.reason = 'Stock Received';
     this.showReceivingModal = true;
   }
 
   closeReceivingModal(): void {
+    if (this.saving) {
+      return;
+    }
     this.showReceivingModal = false;
   }
 
@@ -428,7 +436,6 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   toggleExpiryDateOverride(): void {
-    this.expiryDateOverride = !this.expiryDateOverride;
     if (!this.expiryDateOverride) {
       // If unchecking override, clear manual date and re-compute
       this.expiryDate = null;
@@ -441,6 +448,28 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   canAddToList(): boolean {
     if (!this.selectedItem || !this.quantity || this.quantity <= 0) {
+      return false;
+    }
+
+    if (this.transactionMode === 'adjust-increase') {
+      if (!this.reason.trim()) {
+        return false;
+      }
+
+      if (this.selectedItem.shelf_life_days && !this.getEffectiveExpiryDate()) {
+        return false;
+      }
+
+      if (this.manufacturedDate && this.getEffectiveExpiryDate()) {
+        if (new Date(this.manufacturedDate) > new Date(this.getEffectiveExpiryDate() as string)) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    if (!this.batchNumber.trim()) {
       return false;
     }
     if (!this.purchaseDate) {
@@ -528,6 +557,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.transactionMode === 'adjust-increase') {
+      this.submitIncreaseAdjustment();
+      return;
+    }
+
     this.saving = true;
     this.showSuccessMessage = false;
     this.showErrorMessage = false;
@@ -595,8 +629,45 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     });
   }
 
+  private submitIncreaseAdjustment(): void {
+    if (!this.selectedItem) {
+      return;
+    }
+
+    this.saving = true;
+    this.showSuccessMessage = false;
+    this.showErrorMessage = false;
+
+    this.itemService
+      .createAdjustmentTransaction({
+        item_id: this.selectedItem.item_id,
+        adjustment_mode: 'increase',
+        quantity: this.quantity,
+        reason: this.reason.trim(),
+        notes: this.notes || undefined,
+        purchase_date: this.purchaseDate || undefined,
+        expiry_date: this.getEffectiveExpiryDate() || undefined,
+        manufactured_date: this.manufacturedDate || undefined,
+      })
+      .subscribe({
+        next: (response: AdjustmentTransactionResponse) => {
+          this.showSuccessMessage = true;
+          this.successMessage = `Stock adjusted (+) successfully. Reference: ${response.data.reference_number}.`;
+          this.resetForm();
+          this.showReceivingModal = false;
+          this.loadReceivingItems();
+          this.saving = false;
+        },
+        error: (error: any) => {
+          this.showError(error.error?.message || 'Failed to record stock adjustment (+). Please try again.');
+          this.saving = false;
+        },
+      });
+  }
+
   resetForm(): void {
     this.selectedItem = null;
+    this.transactionMode = 'receive';
     this.quantity = 1;
     this.purchaseDate = new Date().toISOString().split('T')[0];
     this.expiryDate = null;

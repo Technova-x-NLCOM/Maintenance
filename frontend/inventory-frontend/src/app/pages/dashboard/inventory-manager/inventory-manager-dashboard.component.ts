@@ -50,6 +50,7 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
   recentActivity: AuditLogEntry[] = [];
   systemAlerts: SystemAlert[] = [];
   loading = true;
+  readonly skeletonCards = Array.from({ length: 4 });
   private routerSubscription: Subscription | null = null;
 
   private readonly API_URL = 'http://127.0.0.1:8000/api';
@@ -62,6 +63,26 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) {}
+
+  get topPriorityMessage(): string {
+    if (!this.stats) {
+      return 'Loading inventory priorities...';
+    }
+
+    if (this.stats.pendingAlerts > 0) {
+      return `${this.stats.pendingAlerts} alert(s) require immediate inventory follow-up.`;
+    }
+
+    if (this.stats.expiringItems > 0) {
+      return `${this.stats.expiringItems} item(s) are approaching expiration and should be rotated.`;
+    }
+
+    if (this.stats.lowStockItems > 0) {
+      return `${this.stats.lowStockItems} item(s) are below stock threshold.`;
+    }
+
+    return 'Inventory operations are currently stable.';
+  }
 
   ngOnInit() {
     this.authService.currentUser$.subscribe(user => {
@@ -160,6 +181,38 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  getAlertRoute(alert: SystemAlert): string {
+    const lookup = `${alert.type} ${alert.message}`.toLowerCase();
+
+    if (lookup.includes('batch')) {
+      return '/dashboard/inventory/batch-distribution';
+    }
+
+    if (lookup.includes('receive') || lookup.includes('receiving')) {
+      return '/dashboard/inventory/receiving';
+    }
+
+    if (lookup.includes('issue') || lookup.includes('issuance')) {
+      return '/dashboard/inventory/issuance';
+    }
+
+    if (lookup.includes('transaction') || lookup.includes('audit') || lookup.includes('log')) {
+      return '/dashboard/monitoring/transaction-history';
+    }
+
+    if (
+      lookup.includes('stock') ||
+      lookup.includes('inventory') ||
+      lookup.includes('item') ||
+      lookup.includes('expire') ||
+      lookup.includes('category')
+    ) {
+      return '/dashboard/inventory/items';
+    }
+
+    return '/dashboard/inventory/items';
+  }
+
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -168,5 +221,44 @@ export class InventoryManagerDashboardComponent implements OnInit, OnDestroy {
       hour: '2-digit',
       minute: '2-digit'
     });
+  }
+
+  getRelativeTime(dateString: string): string {
+    const eventDate = new Date(dateString);
+    const elapsed = Date.now() - eventDate.getTime();
+
+    if (Number.isNaN(eventDate.getTime())) {
+      return this.formatDate(dateString);
+    }
+
+    const minutes = Math.floor(elapsed / (1000 * 60));
+
+    if (minutes < 1) {
+      return 'Just now';
+    }
+
+    if (minutes < 60) {
+      return `${minutes} min ago`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return `${hours} hr ago`;
+    }
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) {
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    return this.formatDate(dateString);
+  }
+
+  trackByAlert(_: number, alert: SystemAlert): string | number {
+    return alert.alert_id;
+  }
+
+  trackByLog(_: number, log: AuditLogEntry): number {
+    return log.log_id;
   }
 }

@@ -16,6 +16,7 @@ import {
   styleUrls: ['./category-management.component.scss']
 })
 export class CategoryManagementComponent implements OnInit, OnDestroy {
+  viewMode: 'table' | 'cards' = 'table';
   loading = false;
   saving = false;
   managingItems = false;
@@ -39,6 +40,10 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   itemSearch = '';
   assignSearch = '';
   selectedAssignableItemIds: number[] = [];
+
+  currentPage = 1;
+  perPage = 10;
+  readonly pageSizeOptions = [10, 20, 50];
 
   private readonly SEARCH_DEBOUNCE_MS = 300;
   private loadCategoriesSub?: Subscription;
@@ -91,6 +96,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.categories = response.data;
         this.parentOptions = response.data;
+        this.ensureCurrentPageInRange();
         if (!this.search.trim()) {
           this.categoriesBaseline = response.data.slice();
         }
@@ -114,6 +120,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
       this.restoreCategoriesBaseline();
       return;
     }
+    this.currentPage = 1;
     this.catsSearchDebounce = setTimeout(() => {
       this.catsSearchDebounce = undefined;
       this.loadCategories();
@@ -122,6 +129,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
 
   clearCategoriesSearchBox(): void {
     this.search = '';
+    this.currentPage = 1;
     this.cancelCatsSearchDebounce();
     this.loadCategoriesSub?.unsubscribe();
     this.loading = false;
@@ -140,6 +148,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     if (this.categoriesBaseline) {
       this.categories = this.categoriesBaseline.slice();
       this.parentOptions = this.categories;
+      this.ensureCurrentPageInRange();
       this.cdr.detectChanges();
       return;
     }
@@ -148,11 +157,62 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
 
   onSearch(): void {
     this.cancelCatsSearchDebounce();
+    this.currentPage = 1;
     this.loadCategories();
   }
 
   clearSearch(): void {
     this.clearCategoriesSearchBox();
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.categories.length / this.perPage));
+  }
+
+  get pagedCategories(): InventoryCategory[] {
+    const start = (this.currentPage - 1) * this.perPage;
+    return this.categories.slice(start, start + this.perPage);
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1;
+  }
+
+  firstPage(): void {
+    if (this.currentPage <= 1) {
+      return;
+    }
+    this.currentPage = 1;
+  }
+
+  previousPage(): void {
+    if (this.currentPage <= 1) {
+      return;
+    }
+    this.currentPage -= 1;
+  }
+
+  nextPage(): void {
+    if (this.currentPage >= this.totalPages) {
+      return;
+    }
+    this.currentPage += 1;
+  }
+
+  lastPage(): void {
+    if (this.currentPage >= this.totalPages) {
+      return;
+    }
+    this.currentPage = this.totalPages;
+  }
+
+  private ensureCurrentPageInRange(): void {
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages;
+    }
+    if (this.currentPage < 1) {
+      this.currentPage = 1;
+    }
   }
 
   startNew(): void {

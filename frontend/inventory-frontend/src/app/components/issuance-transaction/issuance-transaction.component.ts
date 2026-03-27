@@ -6,7 +6,8 @@ import {
   InventoryItemService,
   IssuanceItem,
   PaginatedIssuanceItemsResponse,
-  IssuanceTransactionResponse
+  IssuanceTransactionResponse,
+  AdjustmentTransactionResponse
 } from '../../services/inventory-item.service';
 
 interface IssuanceCartLine {
@@ -37,7 +38,11 @@ export class IssuanceTransactionComponent implements OnInit {
   selectedCategoryId: number | null = null;
 
   selectedItem: IssuanceItem | null = null;
+  transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
   issueQuantity = 1;
+  adjustConfirmExpiration = false;
+  adjustReason = 'Stock Adjustment (Decrease)';
+  adjustNotes = '';
 
   destination = '';
   reason = 'Stock Issuance';
@@ -57,11 +62,30 @@ export class IssuanceTransactionComponent implements OnInit {
 
   openCartModal(item: IssuanceItem): void {
     this.selectItem(item);
-    this.showCartDrawer = true;
+    this.transactionMode = 'issuance';
+    this.adjustConfirmExpiration = false;
+    this.adjustReason = 'Stock Adjustment (Decrease)';
+    this.adjustNotes = '';
+    this.openIssuanceModal();
   }
 
   closeCartModal(): void {
+    if (this.saving) {
+      return;
+    }
     this.showCartDrawer = false;
+  }
+
+  openIssuanceModal(): void {
+    this.showCartDrawer = true;
+  }
+
+  toggleIssuanceModal(): void {
+    if (this.saving && this.showCartDrawer) {
+      return;
+    }
+
+    this.showCartDrawer = !this.showCartDrawer;
   }
 
   constructor(
@@ -196,7 +220,31 @@ export class IssuanceTransactionComponent implements OnInit {
     return this.cartLines.length > 0 && this.destination.trim().length > 0 && !this.saving;
   }
 
+  canSubmitDecreaseAdjustment(): boolean {
+    if (!this.selectedItem || this.saving) {
+      return false;
+    }
+
+    const quantity = Math.max(1, Math.floor(this.issueQuantity || 1));
+    if (quantity > this.selectedItem.current_stock) {
+      return false;
+    }
+
+    return this.adjustReason.trim().length > 0;
+  }
+
+  canSubmitPrimaryAction(): boolean {
+    return this.transactionMode === 'issuance'
+      ? this.canConfirmIssuance()
+      : this.canSubmitDecreaseAdjustment();
+  }
+
   confirmAndSubmit(): void {
+    if (this.transactionMode === 'adjust-decrease') {
+      this.submitDecreaseAdjustment();
+      return;
+    }
+
     if (!this.canConfirmIssuance()) {
       this.errorMessage = 'Add items and destination before confirming issuance.';
       return;
@@ -235,6 +283,51 @@ export class IssuanceTransactionComponent implements OnInit {
         error: (err: any) => {
           this.saving = false;
           this.errorMessage = err?.error?.message || 'Failed to complete issuance.';
+        }
+      });
+  }
+
+  private submitDecreaseAdjustment(): void {
+    if (!this.selectedItem || !this.canSubmitDecreaseAdjustment()) {
+      this.errorMessage = 'Select an item, quantity, and reason for adjustment.';
+      return;
+    }
+
+    const quantity = Math.max(1, Math.floor(this.issueQuantity || 1));
+
+    this.saving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.itemService
+      .createAdjustmentTransaction({
+        item_id: this.selectedItem.item_id,
+        adjustment_mode: 'decrease',
+        quantity,
+        reason: this.adjustReason.trim(),
+        notes: this.adjustNotes.trim() || undefined,
+        confirm_expiration: this.adjustConfirmExpiration,
+      })
+      .subscribe({
+        next: (response: AdjustmentTransactionResponse) => {
+          this.saving = false;
+          this.adjustConfirmExpiration = false;
+          this.adjustReason = 'Stock Adjustment (Decrease)';
+          this.adjustNotes = '';
+          this.issueQuantity = 1;
+          this.selectedItem = null;
+          this.loadItems(this.currentPage);
+
+          this.successMessage = `Adjustment completed. Reference: ${response.data.reference_number}.`;
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            this.successMessage = '';
+            this.cdr.detectChanges();
+          }, 3500);
+        },
+        error: (err: any) => {
+          this.saving = false;
+          this.errorMessage = err?.error?.message || 'Failed to complete stock adjustment.';
         }
       });
   }

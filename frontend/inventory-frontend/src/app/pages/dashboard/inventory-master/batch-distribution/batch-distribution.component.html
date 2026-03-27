@@ -182,31 +182,44 @@
         <div class="line-builder">
           <h3>Template Items</h3>
 
-          <div class="search-row">
-            <div class="search-wrap">
+          <div class="inline-add-row">
+            <div class="template-item-combobox" (keydown)="onItemComboboxKeydown($event)">
               <input
                 type="text"
                 class="form-control"
                 [(ngModel)]="searchItem"
-                (ngModelChange)="onItemOptionsSearchInput()"
-                placeholder="Search item options"
-                (keyup.enter)="searchItems()"
+                (focus)="openItemCombobox()"
+                (ngModelChange)="onItemComboboxInput()"
+                placeholder="Search and select item"
+                [attr.aria-expanded]="itemComboboxOpen"
+                aria-haspopup="listbox"
+                aria-label="Template item combobox"
               />
-              <button *ngIf="searchItem" class="btn-clear-input" type="button" (click)="clearItemSearchBox()" aria-label="Clear search" title="Clear search">
+              <button *ngIf="searchItem" class="btn-clear-input" type="button" (click)="clearItemSearchBox(); openItemCombobox()" aria-label="Clear search" title="Clear search">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-            </div>
-            <button class="btn btn-secondary" type="button" (click)="searchItems()">Search</button>
-            <button class="btn btn-secondary" type="button" (click)="resetItemSearch()">Reset</button>
-          </div>
 
-          <div class="inline-add-row">
-            <select class="form-control" [(ngModel)]="lineDraftItemId">
-              <option [ngValue]="null">Select an item</option>
-              <option *ngFor="let item of itemOptions" [ngValue]="item.item_id">
-                {{ item.item_code }} - {{ item.item_description }} (Stock: {{ item.current_stock }})
-              </option>
-            </select>
+              <div class="combobox-dropdown" *ngIf="itemComboboxOpen">
+                <button
+                  *ngFor="let item of itemOptions; let i = index"
+                  type="button"
+                  class="combobox-option"
+                  [class.active]="i === activeItemOptionIndex"
+                  (mouseenter)="onItemOptionHover(i)"
+                  (click)="selectItemOption(item)"
+                >
+                  {{ item.item_code }} - {{ item.item_description }} (Stock: {{ item.current_stock }})
+                </button>
+
+                <div *ngIf="itemOptions.length === 0 && !loadingItemOptions" class="combobox-empty">
+                  No matching items.
+                </div>
+
+                <div *ngIf="loadingItemOptions" class="combobox-empty">
+                  Loading item options...
+                </div>
+              </div>
+            </div>
             <input
               type="number"
               min="0.0001"

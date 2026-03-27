@@ -133,8 +133,7 @@ export class SidebarComponent implements OnInit {
     if (
       url.includes('/dashboard/inventory/batch-distribution') ||
       url.includes('/dashboard/inventory/receiving') ||
-      url.includes('/dashboard/inventory/issuance') ||
-      url.includes('/dashboard/inventory/adjustment')
+      url.includes('/dashboard/inventory/issuance')
     ) {
       this.openGroups.add('inventory-transactions');
       return;
