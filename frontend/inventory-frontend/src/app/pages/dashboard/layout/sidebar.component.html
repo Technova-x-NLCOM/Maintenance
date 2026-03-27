@@ -66,21 +66,17 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('inventory-transactions')">
-        <a routerLink="/dashboard/inventory/batch-distribution" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/batch-distribution" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
           <span class="sub-dot"></span>
           <span class="label">Batch Distribution</span>
         </a>
-        <a routerLink="/dashboard/inventory/receiving" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/receiving" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
           <span class="sub-dot"></span>
           <span class="label">Stock Receiving (IN)</span>
         </a>
-        <a routerLink="/dashboard/inventory/issuance" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/issuance" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
           <span class="sub-dot"></span>
           <span class="label">Stock Issuance (OUT)</span>
-        </a>
-        <a routerLink="/dashboard/inventory/adjustment" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span>
-          <span class="label">Stock Adjustment</span>
         </a>
       </div>
     </div>
