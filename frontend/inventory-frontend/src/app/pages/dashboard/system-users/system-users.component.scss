@@ -32,6 +32,55 @@ $shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
   margin-bottom: 20px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-inactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  position: relative;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+  }
+}
+
+.inactive-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .toolbar-search {
   margin-bottom: 16px;
 }
@@ -187,9 +236,37 @@ h1 {
 }
 
 .table-wrap {
-  overflow-x: auto;
   border: 1px solid $border;
   border-radius: 10px;
+  overflow: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+.inactive-table-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 360px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  margin-bottom: 12px;
+
+  .users-table {
+    min-width: unset;
+    width: 100%;
+
+    // Truncate long emails so they don't overflow
+    .td-email {
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }
 
 .users-table {
@@ -602,6 +679,162 @@ h1 {
   margin-top: 22px;
   padding-top: 16px;
   border-top: 1px solid $border;
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 16px;
+  border-top: 1px solid $border;
+  flex-wrap: wrap;
+}
+
+.pg-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  background: #fff;
+  color: $text;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled):not(.pg-active) {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+  }
+
+  &.pg-active {
+    background: $primary;
+    border-color: $primary;
+    color: #fff;
+    cursor: default;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.pg-info {
+  font-size: 0.8125rem;
+  color: $muted;
+  margin-left: 6px;
+}
+
+// Wide modal for inactive users
+.modal-wide {
+  max-width: min(760px, calc(100vw - 40px));
+  width: 100%;
+}
+
+.modal-icon-warn {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+// Confirmation modal
+.modal-confirm {
+  max-width: 420px;
+  text-align: center;
+  padding: 32px 28px 24px;
+}
+
+.confirm-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+
+  svg {
+    width: 30px;
+    height: 30px;
+  }
+
+  &.confirm-icon-danger {
+    background: #fef2f2;
+    color: #dc2626;
+    svg { stroke: #dc2626; }
+  }
+
+  &.confirm-icon-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    svg { stroke: #16a34a; }
+  }
+}
+
+.confirm-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: $text;
+}
+
+.confirm-body {
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  color: $muted;
+  line-height: 1.55;
+
+  strong {
+    color: $text;
+    font-weight: 600;
+  }
+}
+
+.confirm-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-danger {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #b91c1c; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-success {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #15803d; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 @media (max-width: 640px) {
