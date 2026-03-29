@@ -1,7 +1,7 @@
 <div class="receiving-transaction-page">
   <div class="page-header">
     <h1>Stock Receiving (IN)</h1>
-    <p class="subtitle">Choose an item from the kiosk list, then enter receiving details.</p>
+    <p class="subtitle">Choose items, add them to a receiving list, then submit all lines in one action.</p>
   </div>
 
   <!-- Alert Messages -->
@@ -41,6 +41,10 @@
           </option>
         </select>
         <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        <button class="btn btn-secondary" type="button" (click)="openQrScanner()">Scan QR</button>
+        <button class="btn btn-primary" type="button" (click)="openListModal()">
+          Receiving List ({{ receivingLines.length }})
+        </button>
       </div>
 
       <div class="catalog-grid" *ngIf="!loading">
@@ -84,6 +88,23 @@
   </div>
 </div>
 
+<div class="modal-overlay" *ngIf="showScanModal" (click)="closeQrScanner()">
+  <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Scan QR Code</h2>
+      <button class="modal-close" (click)="closeQrScanner()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="scanner-wrap">
+        <video id="receivingQrVideo" class="scanner-video" autoplay muted playsinline></video>
+      </div>
+      <p class="qr-caption">Point camera at item QR or batch QR.</p>
+      <p class="scanner-error" *ngIf="scanErrorMessage">{{ scanErrorMessage }}</p>
+    </div>
+  </div>
+</div>
+
 <!-- Receiving Details Modal -->
 <div class="modal-overlay" *ngIf="showReceivingModal" (click)="!saving && closeReceivingModal()">
   <div class="modal-box" (click)="$event.stopPropagation()">
@@ -108,6 +129,7 @@
         </div>
       </div>
 
+      <!-- Transaction Mode -->
       <div class="form-section">
         <h3 class="section-title">Transaction Mode</h3>
         <div class="form-row">
@@ -120,6 +142,10 @@
           </div>
         </div>
       </div>
+
+      <!-- Quantity -->
+      <div class="form-section">
+        <h3 class="section-title">Quantity Information</h3>
 
       <!-- Quantity & Batch -->
       <div class="form-section">
@@ -212,9 +238,103 @@
 
     <div class="modal-footer">
       <button class="btn btn-secondary" type="button" (click)="closeReceivingModal()" [disabled]="saving">Cancel</button>
-      <button class="btn btn-primary" type="button" [disabled]="!canSubmit() || saving" (click)="submitForm()">
-        {{ saving ? 'Processing...' : (transactionMode === 'receive' ? 'Record Receiving' : 'Record Adjustment (+)') }}
+      <button class="btn btn-primary" type="button" [disabled]="!canAddToList() || saving" (click)="addToReceivingList()">
+        {{ transactionMode === 'receive' ? 'Add To List' : 'Add Adjustment' }}
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Receiving List Modal -->
+<div class="modal-overlay" *ngIf="showListModal" (click)="closeListModal()">
+  <div class="modal-box modal-list-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Receiving List Confirmation</h2>
+      <button class="modal-close" (click)="closeListModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="list-panel-header">
+        <span class="pill">Lines: {{ receivingLines.length }}</span>
+        <span class="pill">Total Qty: {{ getTotalLineQuantity() }}</span>
+      </div>
+
+      <div class="empty-state" *ngIf="receivingLines.length === 0">
+        <p>No items in the receiving list yet.</p>
+      </div>
+
+      <div class="list-table-wrap" *ngIf="receivingLines.length > 0">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Purchase</th>
+              <th>Expiry</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let line of receivingLines; let i = index">
+              <td>
+                <div class="line-code">{{ line.item_code }}</div>
+                <div class="line-desc">{{ line.item_description }}</div>
+              </td>
+              <td>{{ line.quantity }} {{ line.measurement_unit || '' }}</td>
+              <td>{{ line.purchase_date }}</td>
+              <td>{{ line.expiry_date || 'N/A' }}</td>
+              <td>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="removeLine(i)" [disabled]="saving">
+                  Remove
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-group" *ngIf="receivingLines.length > 0">
+        <label class="form-label">Batch Number For Whole List *</label>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="e.g., BATCH-2026-001"
+          [(ngModel)]="confirmBatchNumber"
+          [disabled]="saving"
+        />
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" [disabled]="saving || receivingLines.length === 0" (click)="receivingLines = []">
+        Clear List
+      </button>
+      <button class="btn btn-secondary" type="button" (click)="closeListModal()" [disabled]="saving">Close</button>
+      <button type="button" class="btn btn-primary" [disabled]="!canSubmitList()" (click)="submitReceivingList()">
+        {{ saving ? 'Submitting...' : 'Confirm & Submit' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showBatchQrModal" (click)="closeBatchQrModal()">
+  <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ batchQrTitle }}</h2>
+      <button class="modal-close" (click)="closeBatchQrModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="qr-wrap">
+        <img *ngIf="batchQrImageDataUrl" [src]="batchQrImageDataUrl" alt="Batch transaction QR code" />
+        <div *ngIf="!batchQrImageDataUrl" class="state-loading">Generating QR...</div>
+      </div>
+      <p class="qr-label" *ngIf="batchQrLabel">{{ batchQrLabel }}</p>
+      <p class="qr-caption">Scan this QR to identify the whole submitted batch transaction.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button" (click)="closeBatchQrModal()">Close</button>
     </div>
   </div>
 </div>
