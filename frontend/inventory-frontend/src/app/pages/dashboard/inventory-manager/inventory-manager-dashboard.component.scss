@@ -54,68 +54,6 @@ $info-blue: #1d4ed8;
   }
 }
 
-.priority-banner {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: $primary-soft;
-  border: 1px solid #b9e7df;
-
-  .priority-title {
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #1f6d65;
-    margin-bottom: 4px;
-  }
-
-  .priority-message {
-    color: $text-dark;
-    font-weight: 600;
-    font-size: 0.95rem;
-  }
-
-  &.priority-banner-alert {
-    background: #fff4f4;
-    border-color: #fecaca;
-
-    .priority-title {
-      color: #991b1b;
-    }
-
-    .priority-message {
-      color: #7f1d1d;
-    }
-  }
-}
-
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.action-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 9px 14px;
-  border-radius: 999px;
-  border: 1px solid $border-color;
-  background: #ffffff;
-  color: $primary-dark;
-  font-size: 0.86rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-
-  &:hover {
-    transform: translateY(-1px);
-    border-color: #99d8cc;
-    background: #ecfdf8;
-  }
-}
-
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));

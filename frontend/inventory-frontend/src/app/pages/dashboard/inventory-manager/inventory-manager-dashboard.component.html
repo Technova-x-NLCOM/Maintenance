@@ -6,18 +6,6 @@
         <p class="subtitle">Track stock health, execute inventory workflows, and clear operational bottlenecks.</p>
       </div>
     </div>
-
-    <div class="priority-banner" [class.priority-banner-alert]="(stats?.pendingAlerts || 0) > 0 || (stats?.expiringItems || 0) > 0 || (stats?.lowStockItems || 0) > 0">
-      <div class="priority-title">Priority Queue</div>
-      <div class="priority-message">{{ topPriorityMessage }}</div>
-    </div>
-  </div>
-
-  <div class="quick-actions" *ngIf="!loading">
-    <a class="action-chip" routerLink="/dashboard/inventory/items">Manage Items</a>
-    <a class="action-chip" routerLink="/dashboard/inventory/batch-distribution">Batch Distribution</a>
-    <a class="action-chip" routerLink="/dashboard/inventory/receiving">Receiving</a>
-    <a class="action-chip" routerLink="/dashboard/inventory/issuance">Issuance</a>
   </div>
 
   <div class="stats-grid" *ngIf="!loading; else loadingStats">
