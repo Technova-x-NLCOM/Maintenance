@@ -9,7 +9,6 @@ $shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 .system-users-page {
   padding: 24px;
   background: #f5f7fa;
-  min-height: 100%;
   box-sizing: border-box;
 }
 
@@ -244,7 +243,7 @@ h1 {
 .table-scroll {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 480px;
+  max-height: 520px;
 }
 
 .inactive-table-scroll {
@@ -284,6 +283,9 @@ h1 {
     padding: 14px 16px;
     background: #f8fafc;
     border-bottom: 1px solid $border;
+    position: sticky;
+    top: 0;
+    z-index: 1;
   }
 
   td {

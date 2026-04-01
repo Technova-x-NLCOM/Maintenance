@@ -33,7 +33,7 @@ export class IssuanceTransactionComponent implements OnInit {
 
   currentPage = 1;
   lastPage = 1;
-  perPage = 12;
+  perPage = 10;
   searchQuery = '';
   selectedCategoryId: number | null = null;
 
@@ -66,13 +66,14 @@ export class IssuanceTransactionComponent implements OnInit {
     this.adjustConfirmExpiration = false;
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
-    this.openIssuanceModal();
+    // Open drawer if not already open; don't close it if already open
+    if (!this.showCartDrawer) {
+      this.showCartDrawer = true;
+    }
   }
 
   closeCartModal(): void {
-    if (this.saving) {
-      return;
-    }
+    if (this.saving) return;
     this.showCartDrawer = false;
   }
 

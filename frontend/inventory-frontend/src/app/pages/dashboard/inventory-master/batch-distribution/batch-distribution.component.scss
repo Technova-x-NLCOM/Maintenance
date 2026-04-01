@@ -1,7 +1,6 @@
 .batch-distribution-page {
   padding: 24px;
   background: #f8fafc;
-  min-height: calc(100vh - 80px);
 }
 
 .page-header {
@@ -207,7 +206,9 @@
 .table-wrap {
   border: 1px solid #dbe4ef;
   border-radius: 10px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 520px;
   margin-bottom: 12px;
 }
 

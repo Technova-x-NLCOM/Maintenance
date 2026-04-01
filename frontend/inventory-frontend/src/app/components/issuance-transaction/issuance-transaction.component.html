@@ -20,158 +20,155 @@
       </option>
     </select>
     <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
-
-    <button class="btn btn-cart" type="button" (click)="toggleIssuanceModal()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-      </svg>
-      {{ showCartDrawer ? 'Hide Issuance Modal' : 'Issuance List' }}
-      <span class="cart-count" *ngIf="cartLines.length > 0">{{ cartLines.length }}</span>
-    </button>
   </div>
 
-  <!-- Main layout: catalog only -->
-  <div class="content-layout">
-
-    <!-- Catalog -->
-    <div class="catalog-area">
-      <div class="catalog-grid" *ngIf="!loading">
-        <button type="button" class="item-card" *ngFor="let item of items"
-          [class.selected]="selectedItem?.item_id === item.item_id"
-          [class.in-cart]="isInCart(item.item_id)"
-          (click)="openCartModal(item)">
-          <div class="card-image">
-            <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
-            <span *ngIf="!item.image_url">No Image</span>
-          </div>
-          <p class="code">{{ item.item_code }}</p>
-          <p class="desc">{{ item.item_description }}</p>
-          <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
-          <span class="stock-pill">Available: {{ item.current_stock }}</span>
-        </button>
-
-        <div class="empty" *ngIf="items.length === 0">
-          <p>No issuable items found.</p>
-          <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+  <!-- Catalog -->
+  <div class="catalog-area">
+    <div class="catalog-grid" *ngIf="!loading">
+      <button type="button" class="item-card" *ngFor="let item of items"
+        [class.selected]="selectedItem?.item_id === item.item_id"
+        [class.in-cart]="isInCart(item.item_id)"
+        (click)="openCartModal(item)">
+        <div class="card-image">
+          <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+          <span *ngIf="!item.image_url">No Image</span>
         </div>
-      </div>
+        <p class="code">{{ item.item_code }}</p>
+        <p class="desc">{{ item.item_description }}</p>
+        <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+        <span class="stock-pill">Available: {{ item.current_stock }}</span>
+      </button>
 
-      <div class="state-loading" *ngIf="loading">Loading items...</div>
-
-      <div class="pagination" *ngIf="!loading && lastPage > 1">
-        <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-        <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+      <div class="empty" *ngIf="items.length === 0">
+        <p>No issuable items found.</p>
+        <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
       </div>
     </div>
 
+    <div class="state-loading" *ngIf="loading">Loading items...</div>
+
+    <div class="pagination" *ngIf="!loading && lastPage > 1">
+      <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+      <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+    </div>
   </div>
 </div>
 
-<!-- Issuance Modal -->
-<div class="modal-overlay" *ngIf="showCartDrawer" (click)="!saving && closeCartModal()">
-  <div class="modal-panel" (click)="$event.stopPropagation()">
-    <div class="issuance-panel">
-      <div class="panel-header">
-        <h2>Issuance List</h2>
-        <div class="panel-header-actions">
-          <span class="panel-count" *ngIf="cartLines.length > 0">{{ cartLines.length }} item(s)</span>
-          <button class="modal-close" type="button" (click)="closeCartModal()" [disabled]="saving">×</button>
+<!-- Slide-in Drawer (no backdrop — catalog stays fully clickable) -->
+<div class="issuance-drawer" [class.drawer-open]="showCartDrawer">
+
+  <!-- Toggle tab button on the left edge of the drawer -->
+  <button class="drawer-tab" type="button" (click)="toggleIssuanceModal()" [attr.aria-label]="showCartDrawer ? 'Hide issuance list' : 'Show issuance list'">
+    <span class="drawer-tab-label">Issuance List</span>
+    <span class="cart-badge" *ngIf="cartLines.length > 0">{{ cartLines.length }}</span>
+    <!-- Arrow icon -->
+    <svg class="tab-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <polyline *ngIf="!showCartDrawer" points="15 18 9 12 15 6"/>
+      <polyline *ngIf="showCartDrawer"  points="9 18 15 12 9 6"/>
+    </svg>
+  </button>
+
+  <!-- Drawer content -->
+  <div class="drawer-content">
+    <div class="panel-header">
+      <h2>Issuance List</h2>
+      <div class="panel-header-actions">
+        <span class="panel-count" *ngIf="cartLines.length > 0">{{ cartLines.length }} item(s)</span>
+        <button class="modal-close" type="button" (click)="toggleIssuanceModal()" [disabled]="saving">×</button>
+      </div>
+    </div>
+
+    <div class="details-section">
+      <label>
+        <span>Transaction Mode</span>
+        <select class="form-control" [(ngModel)]="transactionMode" [disabled]="saving">
+          <option value="issuance">Stock Issuance (OUT)</option>
+          <option value="adjust-decrease">Stock Adjustment (-)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="selected-block" *ngIf="selectedItem">
+      <div class="selected-name">{{ selectedItem.item_code }} — {{ selectedItem.item_description }}</div>
+      <div class="selected-meta">Available: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</div>
+      <div class="selected-meta" *ngIf="transactionMode === 'adjust-decrease' && (selectedItem.expired_stock || 0) > 0">
+        Expired Available: {{ selectedItem.expired_stock }}
+      </div>
+      <div class="add-row">
+        <input type="number" class="form-control qty-input" min="1"
+          [max]="selectedItem.current_stock" [(ngModel)]="issueQuantity" />
+        <button class="btn btn-primary" type="button" *ngIf="transactionMode === 'issuance'" (click)="addSelectedToCart()">Add</button>
+      </div>
+    </div>
+
+    <p class="empty-hint" *ngIf="transactionMode === 'issuance' && cartLines.length === 0">Click an item from the catalog to add it here.</p>
+    <p class="empty-hint" *ngIf="transactionMode === 'adjust-decrease' && !selectedItem">Click an item from the catalog to adjust stock down.</p>
+
+    <div class="cart-lines" *ngIf="transactionMode === 'issuance' && cartLines.length > 0">
+      <div class="cart-line" *ngFor="let line of cartLines">
+        <div class="line-info">
+          <span class="line-code">{{ line.item_code }}</span>
+          <span class="line-desc">{{ line.item_description }}</span>
+          <span class="line-avail">Avail: {{ line.current_stock }}</span>
+        </div>
+        <div class="line-controls">
+          <input type="number" class="form-control qty-inline" min="1"
+            [max]="line.current_stock" [ngModel]="line.quantity"
+            (ngModelChange)="updateLineQuantity(line, $event)" />
+          <button class="btn btn-remove" type="button" (click)="removeLine(line)">✕</button>
         </div>
       </div>
+    </div>
 
-      <div class="details-section">
-        <label>
-          <span>Transaction Mode</span>
-          <select class="form-control" [(ngModel)]="transactionMode" [disabled]="saving">
-            <option value="issuance">Stock Issuance (OUT)</option>
-            <option value="adjust-decrease">Stock Adjustment (-)</option>
-          </select>
-        </label>
-      </div>
+    <div class="summary-row" *ngIf="transactionMode === 'issuance' && cartLines.length > 0">
+      <span>Total Items: <strong>{{ cartLines.length }}</strong></span>
+      <span>Total Qty: <strong>{{ getTotalRequestedQuantity() }}</strong></span>
+    </div>
 
-      <div class="selected-block" *ngIf="selectedItem">
-        <div class="selected-name">{{ selectedItem.item_code }} — {{ selectedItem.item_description }}</div>
-        <div class="selected-meta">Available: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</div>
-        <div class="selected-meta" *ngIf="transactionMode === 'adjust-decrease' && (selectedItem.expired_stock || 0) > 0">
-          Expired Available: {{ selectedItem.expired_stock }}
-        </div>
-        <div class="add-row">
-          <input type="number" class="form-control qty-input" min="1"
-            [max]="selectedItem.current_stock" [(ngModel)]="issueQuantity" />
-          <button class="btn btn-primary" type="button" *ngIf="transactionMode === 'issuance'" (click)="addSelectedToCart()">Add</button>
-        </div>
-      </div>
+    <div class="details-section" *ngIf="transactionMode === 'issuance'">
+      <label>
+        <span>Destination *</span>
+        <input type="text" class="form-control" [(ngModel)]="destination"
+          placeholder="e.g. Ward A / Department" />
+      </label>
+      <label>
+        <span>Reason</span>
+        <input type="text" class="form-control" [(ngModel)]="reason"
+          placeholder="e.g. Requisition Release" />
+      </label>
+      <label>
+        <span>Notes</span>
+        <textarea class="form-control" rows="2" [(ngModel)]="notes"
+          placeholder="Optional notes"></textarea>
+      </label>
+    </div>
 
-      <p class="empty-hint" *ngIf="transactionMode === 'issuance' && cartLines.length === 0">Click an item from the catalog to add it here.</p>
-      <p class="empty-hint" *ngIf="transactionMode === 'adjust-decrease' && !selectedItem">Click an item from the catalog to adjust stock down.</p>
+    <div class="details-section" *ngIf="transactionMode === 'adjust-decrease'">
+      <label>
+        <span>Adjustment Reason *</span>
+        <input type="text" class="form-control" [(ngModel)]="adjustReason"
+          placeholder="e.g. Physical count correction" />
+      </label>
+      <label>
+        <span>Adjustment Notes</span>
+        <textarea class="form-control" rows="2" [(ngModel)]="adjustNotes"
+          placeholder="Optional details for audit trail"></textarea>
+      </label>
+      <label>
+        <span class="selected-meta">
+          <input type="checkbox" [(ngModel)]="adjustConfirmExpiration" />
+          Confirm expiration (deduct only from expired stock)
+        </span>
+      </label>
+    </div>
 
-      <div class="cart-lines" *ngIf="transactionMode === 'issuance' && cartLines.length > 0">
-        <div class="cart-line" *ngFor="let line of cartLines">
-          <div class="line-info">
-            <span class="line-code">{{ line.item_code }}</span>
-            <span class="line-desc">{{ line.item_description }}</span>
-            <span class="line-avail">Avail: {{ line.current_stock }}</span>
-          </div>
-          <div class="line-controls">
-            <input type="number" class="form-control qty-inline" min="1"
-              [max]="line.current_stock" [ngModel]="line.quantity"
-              (ngModelChange)="updateLineQuantity(line, $event)" />
-            <button class="btn btn-remove" type="button" (click)="removeLine(line)">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="summary-row" *ngIf="transactionMode === 'issuance' && cartLines.length > 0">
-        <span>Total Items: <strong>{{ cartLines.length }}</strong></span>
-        <span>Total Qty: <strong>{{ getTotalRequestedQuantity() }}</strong></span>
-      </div>
-
-      <div class="details-section" *ngIf="transactionMode === 'issuance'">
-        <label>
-          <span>Destination *</span>
-          <input type="text" class="form-control" [(ngModel)]="destination"
-            placeholder="e.g. Ward A / Department" />
-        </label>
-        <label>
-          <span>Reason</span>
-          <input type="text" class="form-control" [(ngModel)]="reason"
-            placeholder="e.g. Requisition Release" />
-        </label>
-        <label>
-          <span>Notes</span>
-          <textarea class="form-control" rows="2" [(ngModel)]="notes"
-            placeholder="Optional notes"></textarea>
-        </label>
-      </div>
-
-      <div class="details-section" *ngIf="transactionMode === 'adjust-decrease'">
-        <label>
-          <span>Adjustment Reason *</span>
-          <input type="text" class="form-control" [(ngModel)]="adjustReason"
-            placeholder="e.g. Physical count correction" />
-        </label>
-        <label>
-          <span>Adjustment Notes</span>
-          <textarea class="form-control" rows="2" [(ngModel)]="adjustNotes"
-            placeholder="Optional details for audit trail"></textarea>
-        </label>
-        <label>
-          <span class="selected-meta">
-            <input type="checkbox" [(ngModel)]="adjustConfirmExpiration" />
-            Confirm expiration (deduct only from expired stock)
-          </span>
-        </label>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="closeCartModal()" [disabled]="saving">Cancel</button>
-        <button class="btn btn-primary btn-confirm" type="button"
-          [disabled]="!canSubmitPrimaryAction()" (click)="confirmAndSubmit()">
-          {{ saving ? 'Processing...' : (transactionMode === 'issuance' ? 'Confirm Issuance' : 'Record Adjustment (-)') }}
-        </button>
-      </div>
+    <div class="drawer-footer">
+      <button class="btn btn-secondary" type="button" (click)="toggleIssuanceModal()" [disabled]="saving">Cancel</button>
+      <button class="btn btn-primary btn-confirm" type="button"
+        [disabled]="!canSubmitPrimaryAction()" (click)="confirmAndSubmit()">
+        {{ saving ? 'Processing...' : (transactionMode === 'issuance' ? 'Confirm Issuance' : 'Record Adjustment (-)') }}
+      </button>
     </div>
   </div>
 </div>

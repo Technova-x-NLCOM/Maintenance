@@ -30,7 +30,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   currentPage = 1;
   totalPages = 1;
   totalItems = 0;
-  perPage = 20;
+  perPage = 10;
   readonly pageSizeOptions = [10, 20, 50];
 
   search = '';
@@ -638,7 +638,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       this.itemScannerControls = await this.itemScanner.decodeFromVideoDevice(
         deviceId,
         video,
-        (result, error) => {
+        (result: any, error: any) => {
           if (result) {
             this.handleScannedItemQr(result.getText());
             this.closeItemQrScanner();

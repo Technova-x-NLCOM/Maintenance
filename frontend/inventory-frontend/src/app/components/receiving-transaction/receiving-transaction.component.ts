@@ -42,7 +42,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   currentPage = 1;
   lastPage = 1;
-  perPage = 12;
+  perPage = 10;
   searchQuery = '';
   selectedCategoryId: number | null = null;
   loading = false;
@@ -105,6 +105,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   closeListModal(): void {
     this.showListModal = false;
+  }
+
+  toggleListDrawer(): void {
+    if (this.saving) return;
+    this.showListModal = !this.showListModal;
   }
 
   closeBatchQrModal(): void {
@@ -178,7 +183,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       this.scannerControls = await this.scanner.decodeFromVideoDevice(
         deviceId,
         video,
-        (result, error) => {
+        (result: any, error: any) => {
           if (result) {
             this.handleScannedQr(result.getText());
             this.closeQrScanner();

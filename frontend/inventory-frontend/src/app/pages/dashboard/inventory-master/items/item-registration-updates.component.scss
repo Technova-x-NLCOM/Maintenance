@@ -14,10 +14,9 @@ $shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
 $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 
 .items-page {
-  padding: 28px 24px 48px;
+  padding: 28px 24px 32px;
   background: $bg-base;
   color: $text-primary;
-  min-height: 100vh;
 }
 
 .page-header {
@@ -537,6 +536,8 @@ textarea { resize: vertical; min-height: 72px; }
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 520px;
   border-radius: $radius-sm;
   border: 1px solid $border;
 }
@@ -597,6 +598,9 @@ th {
   font-weight: 600;
   color: $text-primary;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 tr:last-child td { border-bottom: none; }

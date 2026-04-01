@@ -20,7 +20,7 @@ import { InventoryCategoryService } from '../../../../services/inventory-categor
 export class StockReportComponent implements OnInit {
   items: StockReportRecord[] = [];
   page = 1;
-  pageSize = 20;
+  pageSize = 10;
   readonly pageSizeOptions = [10, 20, 50];
   lastPage = 1;
   totalCount = 0;

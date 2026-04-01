@@ -1,94 +1,112 @@
 <div class="report-page">
   <div class="page-header">
     <div class="header-title">
-      <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
       <div>
+        <p class="eyebrow">Inventory Monitoring</p>
         <h1>Transaction History</h1>
-        <p class="subtitle">All stock IN and OUT transactions</p>
+        <p class="subtitle">All stock IN and OUT transactions.</p>
       </div>
     </div>
     <div class="export-actions">
-      <button class="btn-export excel" (click)="exportExcel()">
+      <button class="btn-primary btn-export" (click)="exportExcel()" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
         Export Excel
       </button>
-      <button class="btn-export pdf" (click)="exportPdf()">
+      <button class="btn-ghost btn-export" (click)="exportPdf()" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         Export PDF
       </button>
     </div>
   </div>
 
-  <div class="filters-bar">
-    <div class="search-wrap">
-      <input class="filter-input search-input" type="text" placeholder="Search item, reference, destination..." [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keyup.enter)="apply()" />
-      <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearSearchBoxOnly()" aria-label="Clear search" title="Clear search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <select class="filter-input" [(ngModel)]="type" (change)="apply()">
-      <option value="">All Types</option>
-      <option value="IN">Stock IN</option>
-      <option value="OUT">Stock OUT</option>
-      <option value="ADJUSTMENT">Stock Adjustment</option>
-    </select>
-    <input class="filter-input" type="date" [(ngModel)]="dateFrom" (change)="apply()" />
-    <input class="filter-input" type="date" [(ngModel)]="dateTo" (change)="apply()" />
-    <button class="btn-apply" (click)="apply()">Apply</button>
-    <button class="btn-clear" (click)="clear()">Clear</button>
-    <span class="record-count">{{ total }} records</span>
-  </div>
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">Transactions <span class="count">({{ total }})</span></h2>
 
-  <div class="error-msg" *ngIf="error">{{ error }}</div>
-  <div class="loading-state" *ngIf="loading"><div class="spinner"></div><span>Loading...</span></div>
+      <div class="filters-bar">
+        <div class="search-wrap">
+          <input class="filter-input search-input" type="text"
+            placeholder="Search item, reference, destination..."
+            [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keyup.enter)="apply()" />
+          <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearSearchBoxOnly()" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
 
-  <div class="table-wrapper" *ngIf="!loading">
-    <table class="data-table" *ngIf="transactions.length > 0; else empty">
-      <thead>
-        <tr>
-          <th>Type</th><th>Reference</th><th>Item Code</th><th>Description</th>
-          <th>Batch</th><th class="num-col">Qty</th><th>Unit</th>
-          <th>Destination / Reason</th><th>Performed By</th><th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let tx of transactions">
-          <td>
-            <span
-              class="type-badge"
-              [class.badge-in]="tx.transaction_type === 'IN'"
-              [class.badge-out]="tx.transaction_type === 'OUT'"
-              [class.badge-adjustment]="tx.transaction_type === 'ADJUSTMENT'"
-            >
-              {{ tx.transaction_type === 'IN' ? '▲ IN' : (tx.transaction_type === 'OUT' ? '▼ OUT' : '△ ADJ') }}
-            </span>
-          </td>
-          <td class="code-cell">{{ tx.reference_number }}</td>
-          <td>{{ tx.item_code }}</td>
-          <td>{{ tx.item_description }}</td>
-          <td>{{ tx.batch_number || '—' }}</td>
-          <td class="num-col">{{ tx.quantity }}</td>
-          <td>{{ tx.measurement_unit || '—' }}</td>
-          <td>{{ tx.destination || tx.reason || '—' }}</td>
-          <td>{{ tx.performed_by_name }}</td>
-          <td class="date-cell">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <ng-template #empty>
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <p>No transactions found.</p>
+        <select class="filter-input" [(ngModel)]="type" (change)="apply()">
+          <option value="">All Types</option>
+          <option value="IN">Stock IN</option>
+          <option value="OUT">Stock OUT</option>
+          <option value="ADJUSTMENT">Stock Adjustment</option>
+        </select>
+
+        <input class="filter-input" type="date" [(ngModel)]="dateFrom" (change)="apply()" />
+        <input class="filter-input" type="date" [(ngModel)]="dateTo" (change)="apply()" />
+
+        <button class="btn-primary btn-apply" type="button" (click)="apply()">Apply</button>
+        <button class="btn-ghost" type="button" (click)="clear()">Clear</button>
       </div>
-    </ng-template>
-  </div>
+    </div>
 
-  <div class="pagination" *ngIf="!loading && lastPage > 1">
-    <button class="page-btn" (click)="load(page - 1)" [disabled]="page === 1">‹</button>
-    <button class="page-btn" *ngFor="let p of pageRange(page, lastPage)" [class.active]="p === page" (click)="load(p)">{{ p }}</button>
-    <button class="page-btn" (click)="load(page + 1)" [disabled]="page === lastPage">›</button>
-    <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
-  </div>
+    <div class="alert alert-error" *ngIf="error">{{ error }}</div>
+    <div class="state-loading" *ngIf="loading">Loading transactions...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table class="data-table" *ngIf="transactions.length > 0; else empty">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Item Code</th>
+            <th>Description</th>
+            <th>Batch</th>
+            <th class="num-col">Qty</th>
+            <th>UoM</th>
+            <th>Destination / Reason</th>
+            <th>Performed By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tx of transactions">
+            <td>
+              <span class="type-badge"
+                [class.badge-in]="tx.transaction_type === 'IN'"
+                [class.badge-out]="tx.transaction_type === 'OUT'"
+                [class.badge-adjustment]="tx.transaction_type === 'ADJUSTMENT'">
+                {{ tx.transaction_type === 'IN' ? '▲ IN' : (tx.transaction_type === 'OUT' ? '▼ OUT' : '△ ADJ') }}
+              </span>
+            </td>
+            <td class="cell-code">{{ tx.reference_number }}</td>
+            <td>{{ tx.item_code }}</td>
+            <td>{{ tx.item_description }}</td>
+            <td>{{ tx.batch_number || '—' }}</td>
+            <td class="num-col">{{ tx.quantity }}</td>
+            <td>{{ tx.measurement_unit || '—' }}</td>
+            <td>{{ tx.destination || tx.reason || '—' }}</td>
+            <td>{{ tx.performed_by_name }}</td>
+            <td class="date-cell">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #empty>
+        <div class="empty-state">
+          <p>No transactions found.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" (click)="load(1)" [disabled]="page === 1">First</button>
+        <button class="btn-ghost page-btn" (click)="load(page - 1)" [disabled]="page === 1">Previous</button>
+        <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
+        <button class="btn-ghost page-btn" (click)="load(page + 1)" [disabled]="page === lastPage">Next</button>
+        <button class="btn-ghost page-btn" (click)="load(lastPage)" [disabled]="page === lastPage">Last</button>
+      </div>
+    </div>
+  </section>
 </div>
