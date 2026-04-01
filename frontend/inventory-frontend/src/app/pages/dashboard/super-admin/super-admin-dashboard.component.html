@@ -7,17 +7,7 @@
       </div>
     </div>
 
-    <div class="priority-banner" [class.priority-banner-alert]="(stats?.pendingAlerts || 0) > 0 || (stats?.expiringItems || 0) > 0">
-      <div class="priority-title">Priority Queue</div>
-      <div class="priority-message">{{ topPriorityMessage }}</div>
-    </div>
-  </div>
 
-  <div class="quick-actions" *ngIf="!loading">
-    <a class="action-chip" routerLink="/dashboard/system-users">Manage Users</a>
-    <a class="action-chip" routerLink="/dashboard/roles">Roles &amp; Access</a>
-    <a class="action-chip" routerLink="/dashboard/settings">System Settings</a>
-    <a class="action-chip" routerLink="/dashboard/monitoring/transaction-history">Transaction Logs</a>
   </div>
 
   <div class="stats-grid" *ngIf="!loading; else loadingStats">
