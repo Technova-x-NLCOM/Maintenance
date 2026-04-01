@@ -44,10 +44,12 @@ class SuperAdminController extends Controller
                 ->whereYear('transaction_date', now()->year)
                 ->count();
 
-            // Pending alerts
-            $pendingAlerts = DB::table('expiry_alerts')
+            // Pending alerts - count both expiry alerts and low stock items
+            $expiryAlertCount = DB::table('expiry_alerts')
                 ->where('status', 'pending')
                 ->count();
+            
+            $pendingAlerts = $expiryAlertCount + $lowStockItems;
 
             // Total categories
             $totalCategories = DB::table('categories')->count();
