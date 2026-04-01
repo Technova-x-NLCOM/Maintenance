@@ -14,7 +14,6 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   padding: 18px 18px 26px;
   background: $bg-base;
   color: $text-primary;
-  min-height: 100vh;
 }
 
 .page-header {
@@ -297,6 +296,8 @@ button:disabled {
 
 .table-wrap {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 520px;
   background: #ffffff;
   border: 1px solid #dbe4ef;
   border-radius: $radius-sm;
@@ -369,18 +370,38 @@ td {
   padding: 9px 10px;
   border-top: 1px solid $border;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 th {
   background: #f8fafc;
   font-size: 0.875rem;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+// Give Parent column enough room so "Top-level" never wraps
+td:nth-child(2),
+th:nth-child(2) {
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+// Actions column — never shrink, keep buttons on one line
+td:last-child,
+th:last-child {
+  min-width: 220px;
+  white-space: nowrap;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .cell-name {
