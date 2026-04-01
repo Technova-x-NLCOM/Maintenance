@@ -62,7 +62,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     this.loadSub?.unsubscribe();
     this.loading = true;
     this.error = '';
-    let p = new HttpParams().set('page', String(page)).set('per_page', '20');
+    let p = new HttpParams().set('page', String(page)).set('per_page', '10');
     if (this.search.trim()) p = p.set('search', this.search.trim());
     if (this.type) p = p.set('type', this.type);
     if (this.dateFrom) p = p.set('date_from', this.dateFrom);
