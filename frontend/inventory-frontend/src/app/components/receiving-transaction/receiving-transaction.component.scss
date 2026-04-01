@@ -1,7 +1,6 @@
 .receiving-transaction-page {
   padding: 24px;
   background: #f8fafc;
-  min-height: calc(100vh - 80px);
 }
 
 .page-header {
@@ -563,6 +562,132 @@
   .kiosk-layout {
     grid-template-columns: 1fr;
   }
+}
+
+// ── Receiving List Slide-in Drawer ────────────────────────────────────
+$drawer-width: 440px;
+$tab-width: 36px;
+
+.receiving-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: $drawer-width;
+  z-index: 1100;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.drawer-open {
+    transform: translateX(0);
+  }
+}
+
+.drawer-tab {
+  position: absolute;
+  left: -($tab-width + 120px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 10px 0 0 10px;
+  padding: 10px 12px 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: -4px 0 16px rgba(37, 99, 235, 0.25);
+  transition: background 0.15s;
+  z-index: 1;
+
+  &:hover { background: #1d4ed8; }
+
+  .drawer-tab-label { font-size: 13px; font-weight: 600; }
+
+  .cart-badge {
+    background: #ef4444;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 1px 6px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .tab-arrow { width: 16px; height: 16px; flex-shrink: 0; }
+}
+
+.drawer-content {
+  height: 100%;
+  background: #fff;
+  border-left: 1px solid #dbe4ef;
+  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+  flex-shrink: 0;
+
+  h2 { margin: 0; font-size: 16px; font-weight: 700; color: #0f172a; }
+
+  .panel-count {
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+}
+
+.panel-header-actions { display: flex; align-items: center; gap: 8px; }
+
+.modal-close-btn {
+  border: none;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #334155;
+  background: #f1f5f9;
+  &:hover { background: #e2e8f0; }
+  &:disabled { cursor: not-allowed; opacity: 0.6; }
+}
+
+.drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 10px;
+  margin-top: auto;
+  border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.btn-remove { background: #fee2e2; color: #b91c1c; padding: 6px 10px; font-size: 12px; }
+
+@media (max-width: 768px) {
+  .receiving-drawer { width: 100vw; }
+  .drawer-tab { left: -($tab-width + 90px); padding: 8px 10px; }
+  .drawer-footer { flex-direction: column-reverse; }
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────
