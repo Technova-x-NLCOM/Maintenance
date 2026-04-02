@@ -64,10 +64,29 @@
 
     <div class="state-loading" *ngIf="loading">Loading items...</div>
 
-    <div class="pagination" *ngIf="!loading && lastPage > 1">
-      <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-      <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-      <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="currentPage = 1; loadReceivingItems(1)" type="button">&laquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
+        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">&rsaquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="currentPage = lastPage; loadReceivingItems(lastPage)" type="button">&raquo;</button>
+      </div>
+
+      <div class="page-size-wrap">
+        <label for="receiving-rows-per-page">Rows per page</label>
+        <select
+          class="rows-per-page"
+          id="receiving-rows-per-page"
+          [(ngModel)]="perPage"
+          (change)="loadReceivingItems(1)"
+        >
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
     </div>
   </section>
 </div>
