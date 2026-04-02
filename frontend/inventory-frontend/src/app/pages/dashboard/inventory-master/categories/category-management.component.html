@@ -285,11 +285,11 @@
 
     <div class="pagination" *ngIf="!loading">
       <div class="pagination-nav">
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">First</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">&laquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
         <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">Last</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">&rsaquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">&raquo;</button>
       </div>
 
       <div class="page-size-wrap">

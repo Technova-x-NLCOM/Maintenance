@@ -459,6 +459,10 @@ th:last-child {
     padding: 0 0.75rem;
     border-radius: 10px;
     transition: all 0.15s;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     &:hover:not(:disabled) {
       background: #f1f5f9;
@@ -467,8 +471,11 @@ th:last-child {
     }
 
     &:disabled {
-      opacity: 0.45;
+      background: #f9fafb !important;
+      color: #cbd5e1 !important;
+      border-color: #e5e7eb !important;
       cursor: not-allowed;
+      opacity: 0.6;
     }
   }
 
