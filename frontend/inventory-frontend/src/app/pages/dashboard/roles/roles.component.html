@@ -28,9 +28,8 @@
         <div class="role-header">
           <div>
             <p class="eyebrow">Role</p>
-            <h3>{{ role.display_name || role.role_name }}</h3>
-            <div class="role-meta">
-              <span class="muted">{{ role.role_name }}</span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <h3>{{ role.display_name || role.role_name }}</h3>
               <span *ngIf="role.role_name === 'super_admin'" class="badge protected">Protected</span>
               <span *ngIf="editingRoleId === role.role_id" class="badge live">Editing</span>
             </div>
@@ -70,7 +69,6 @@
               <tr *ngFor="let perm of (permissions || [])">
                 <td class="perm-name">
                   <div class="perm-name-text">{{ perm.display_name || perm.permission_name }}</div>
-                  <div class="perm-subtitle">{{ perm.permission_name }}</div>
                 </td>
                 <td class="center">
                   <ng-container *ngIf="editingRoleId === role.role_id; else viewCreate">
