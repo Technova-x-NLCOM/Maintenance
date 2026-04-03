@@ -44,9 +44,11 @@
   <div class="state-loading" *ngIf="loading">Loading items...</div>
 
   <div class="pagination" *ngIf="!loading && lastPage > 1">
-    <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+    <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="currentPage = 1; loadItems()" type="button">&laquo;</button>
+    <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
     <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-    <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+    <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">&rsaquo;</button>
+    <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="currentPage = lastPage; loadItems()" type="button">&raquo;</button>
   </div>
 </div>
 

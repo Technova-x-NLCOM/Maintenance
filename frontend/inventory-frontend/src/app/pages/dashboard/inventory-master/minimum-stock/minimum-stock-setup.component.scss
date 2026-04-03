@@ -202,3 +202,13 @@ th {
   font-size: 0.92rem;
   color: $text-muted;
 }
+
+.btn-ghost.page-btn {
+  &:disabled {
+    background: #f9fafb !important;
+    color: #cbd5e1 !important;
+    border-color: #e5e7eb !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}

@@ -144,11 +144,11 @@
 
     <div class="pagination" *ngIf="!loading">
       <div class="pagination-nav">
-        <button class="btn-ghost page-btn" (click)="goFirst()" [disabled]="page === 1">First</button>
-        <button class="btn-ghost page-btn" (click)="goPrevious()" [disabled]="page === 1">Previous</button>
+        <button class="btn-ghost page-btn" (click)="goFirst()" [disabled]="page === 1">&laquo;</button>
+        <button class="btn-ghost page-btn" (click)="goPrevious()" [disabled]="page === 1">&lsaquo;</button>
         <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
-        <button class="btn-ghost page-btn" (click)="goNext()" [disabled]="page === lastPage">Next</button>
-        <button class="btn-ghost page-btn" (click)="goLast()" [disabled]="page === lastPage">Last</button>
+        <button class="btn-ghost page-btn" (click)="goNext()" [disabled]="page === lastPage">&rsaquo;</button>
+        <button class="btn-ghost page-btn" (click)="goLast()" [disabled]="page === lastPage">&raquo;</button>
       </div>
 
       <div class="page-size-wrap">

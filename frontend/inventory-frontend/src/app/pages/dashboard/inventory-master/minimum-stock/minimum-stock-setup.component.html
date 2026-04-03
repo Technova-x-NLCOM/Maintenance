@@ -75,9 +75,11 @@
     </div>
 
     <div class="pagination" *ngIf="!loading && totalPages > 1">
-      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
+      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="currentPage = 1; loadRows(1)" type="button">&laquo;</button>
+      <button class="btn-ghost" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
       <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">Next</button>
+      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">&rsaquo;</button>
+      <button class="btn-ghost" [disabled]="currentPage >= totalPages" (click)="currentPage = totalPages; loadRows(totalPages)" type="button">&raquo;</button>
     </div>
   </section>
 </div>

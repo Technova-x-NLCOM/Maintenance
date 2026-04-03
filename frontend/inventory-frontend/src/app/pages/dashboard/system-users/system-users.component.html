@@ -121,20 +121,14 @@
       <p class="empty" *ngIf="activeUsers.length === 0 && userSearch">No users match your search.</p>
 
       <!-- Pagination -->
-      <div class="pagination" *ngIf="activeTotalPages > 1">
-        <button class="pg-btn" (click)="goActivePage(activePage - 1)" [disabled]="activePage === 1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button
-          *ngFor="let p of activePageRange()"
-          class="pg-btn"
-          [class.pg-active]="p === activePage"
-          (click)="goActivePage(p)"
-        >{{ p }}</button>
-        <button class="pg-btn" (click)="goActivePage(activePage + 1)" [disabled]="activePage === activeTotalPages">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <span class="pg-info">{{ activePage }} / {{ activeTotalPages }}</span>
+      <div class="pagination">
+        <div class="pagination-nav">
+          <button class="btn-ghost page-btn" (click)="goActivePage(1)" [disabled]="activePage === 1">&laquo;</button>
+          <button class="btn-ghost page-btn" (click)="goActivePage(activePage - 1)" [disabled]="activePage === 1">&lsaquo;</button>
+          <span class="page-info">Page {{ activePage }} of {{ activeTotalPages }}</span>
+          <button class="btn-ghost page-btn" (click)="goActivePage(activePage + 1)" [disabled]="activePage === activeTotalPages">&rsaquo;</button>
+          <button class="btn-ghost page-btn" (click)="goActivePage(activeTotalPages)" [disabled]="activePage === activeTotalPages">&raquo;</button>
+        </div>
       </div>
     </div>
   </div>
@@ -200,20 +194,14 @@
     <p class="empty" *ngIf="inactiveUsers.length === 0">No inactive users.</p>
 
     <!-- Inactive Pagination -->
-    <div class="pagination" *ngIf="inactiveTotalPages > 1">
-      <button class="pg-btn" (click)="goInactivePage(inactivePage - 1)" [disabled]="inactivePage === 1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <button
-        *ngFor="let p of inactivePageRange()"
-        class="pg-btn"
-        [class.pg-active]="p === inactivePage"
-        (click)="goInactivePage(p)"
-      >{{ p }}</button>
-      <button class="pg-btn" (click)="goInactivePage(inactivePage + 1)" [disabled]="inactivePage === inactiveTotalPages">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <span class="pg-info">{{ inactivePage }} / {{ inactiveTotalPages }}</span>
+    <div class="pagination">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" (click)="goInactivePage(1)" [disabled]="inactivePage === 1">&laquo;</button>
+        <button class="btn-ghost page-btn" (click)="goInactivePage(inactivePage - 1)" [disabled]="inactivePage === 1">&lsaquo;</button>
+        <span class="page-info">Page {{ inactivePage }} of {{ inactiveTotalPages }}</span>
+        <button class="btn-ghost page-btn" (click)="goInactivePage(inactivePage + 1)" [disabled]="inactivePage === inactiveTotalPages">&rsaquo;</button>
+        <button class="btn-ghost page-btn" (click)="goInactivePage(inactiveTotalPages)" [disabled]="inactivePage === inactiveTotalPages">&raquo;</button>
+      </div>
     </div>
 
     <footer class="modal-footer">

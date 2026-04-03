@@ -1,29 +1,28 @@
 <div class="issuance-page">
   <div class="page-header">
     <h1>Stock Issuance (OUT)</h1>
-    <p class="subtitle">Click an item to add it to the issuance list.</p>
+    <p class="subtitle">Choose items, add them to an issuance list, then submit all lines in one action.</p>
   </div>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="search-wrap">
-      <input type="text" class="form-control" [(ngModel)]="searchQuery"
-        placeholder="Search by item code or description" (ngModelChange)="onSearch()" />
-      <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
-    </div>
-    <select class="form-control category-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
-      <option [ngValue]="null">All Categories</option>
-      <option *ngFor="let category of categories" [ngValue]="category.category_id">
-        {{ category.category_name }}
-      </option>
-    </select>
-    <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
-  </div>
-
   <!-- Catalog -->
-  <div class="catalog-area">
+  <section class="catalog-panel">
+    <div class="catalog-toolbar">
+      <div class="search-wrap">
+        <input type="text" class="form-control" [(ngModel)]="searchQuery"
+          placeholder="Search by item code or description" (ngModelChange)="onSearch()" />
+        <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
+      </div>
+      <select class="form-control category-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+        <option [ngValue]="null">All Categories</option>
+        <option *ngFor="let category of categories" [ngValue]="category.category_id">
+          {{ category.category_name }}
+        </option>
+      </select>
+      <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+    </div>
+
     <div class="catalog-grid" *ngIf="!loading">
       <button type="button" class="item-card" *ngFor="let item of items"
         [class.selected]="selectedItem?.item_id === item.item_id"
@@ -33,13 +32,17 @@
           <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
           <span *ngIf="!item.image_url">No Image</span>
         </div>
-        <p class="code">{{ item.item_code }}</p>
-        <p class="desc">{{ item.item_description }}</p>
-        <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
-        <span class="stock-pill">Available: {{ item.current_stock }}</span>
+        <div class="card-content">
+          <p class="code">{{ item.item_code }}</p>
+          <p class="desc">{{ item.item_description }}</p>
+          <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+          <div class="stats-row">
+            <span class="pill">Available: {{ item.current_stock }}</span>
+          </div>
+        </div>
       </button>
 
-      <div class="empty" *ngIf="items.length === 0">
+      <div class="empty-state" *ngIf="items.length === 0">
         <p>No issuable items found.</p>
         <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
       </div>
@@ -47,12 +50,31 @@
 
     <div class="state-loading" *ngIf="loading">Loading items...</div>
 
-    <div class="pagination" *ngIf="!loading && lastPage > 1">
-      <button class="btn btn-secondary" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">Previous</button>
-      <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-      <button class="btn btn-secondary" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">Next</button>
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="currentPage = 1; loadItems(1)" type="button">&laquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
+        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">&rsaquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="currentPage = lastPage; loadItems(lastPage)" type="button">&raquo;</button>
+      </div>
+
+      <div class="page-size-wrap">
+        <label for="issuance-rows-per-page">Rows per page</label>
+        <select
+          class="rows-per-page"
+          id="issuance-rows-per-page"
+          [(ngModel)]="perPage"
+          (change)="loadItems(1)"
+        >
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
     </div>
-  </div>
+  </section>
 </div>
 
 <!-- Slide-in Drawer (no backdrop — catalog stays fully clickable) -->
