@@ -675,58 +675,149 @@ tr:hover td { background: rgba(37, 99, 235, 0.04); }
   }
 }
 
+// QR Modal - Aligned with system theme
 .item-qr-modal {
-  max-width: 420px;
+  max-width: 480px;
   width: 100%;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  animation: slideUp 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    line-height: 1;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.15s;
+    
+    &:hover {
+      color: #334155;
+    }
+  }
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .qr-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
+  min-height: 320px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
   background: #f8fafc;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 20px;
 
   img {
     width: 280px;
     height: 280px;
     object-fit: contain;
     background: #fff;
-    padding: 10px;
-    border-radius: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 }
 
+.qr-label {
+  margin: 0 0 8px 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+}
+
+.qr-caption {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  text-align: center;
+  line-height: 1.5;
+}
+
 .scanner-wrap {
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
   background: #0f172a;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .scanner-video {
   width: 100%;
-  max-height: 360px;
+  max-height: 380px;
   display: block;
   object-fit: cover;
 }
 
 .scanner-help {
   margin: 0;
-  color: $text-muted;
-  font-size: 0.88rem;
+  color: #64748b;
+  font-size: 0.9375rem;
   text-align: center;
+  line-height: 1.5;
 }
 
 .scanner-error {
-  margin: 8px 0 0;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
   color: #b91c1c;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   text-align: center;
+  font-weight: 500;
+}
+
+.state-loading {
+  color: #64748b;
+  font-size: 0.9375rem;
+  font-weight: 500;
 }
 
 .qr-caption {
