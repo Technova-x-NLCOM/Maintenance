@@ -20,8 +20,11 @@ class AuthController extends Controller
      */
     public function checkPasswordSet(Request $request)
     {
-        $request->validate(['username' => 'required|string']);
-        $user = User::where('username', $request->username)->first();
+        $data = $request->validate(['identifier' => 'required|string']);
+        $identifier = trim($data['identifier']);
+        $user = User::where('username', $identifier)
+            ->orWhere('email', $identifier)
+            ->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User not found.'], 404);
@@ -40,7 +43,7 @@ class AuthController extends Controller
     {
         try {
             $data = $request->validate([
-                'username' => 'required|string',
+                'identifier' => 'required|string',
                 'password' => [
                     'required',
                     'string',
@@ -56,7 +59,10 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Validation failed.', 'errors' => $e->errors()], 422);
         }
 
-        $user = User::where('username', $data['username'])->first();
+        $identifier = trim($data['identifier']);
+        $user = User::where('username', $identifier)
+            ->orWhere('email', $identifier)
+            ->first();
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User not found.'], 404);
