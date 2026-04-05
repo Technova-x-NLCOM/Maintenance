@@ -137,7 +137,7 @@
 <!-- Inactive Users Modal -->
 <div class="modal-backdrop" *ngIf="showInactiveModal" (click)="closeInactiveModal()">
   <div class="modal-panel modal-wide" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <button type="button" class="modal-close" (click)="closeInactiveModal()" aria-label="Close">×</button>
+    <button type="button" class="modal-close app-modal-close" (click)="closeInactiveModal()" aria-label="Close">×</button>
     <div class="modal-head">
       <span class="modal-icon modal-icon-warn" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -262,7 +262,7 @@
 <!-- Add / Edit User Modal -->
 <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
   <div class="modal-panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <button type="button" class="modal-close" (click)="closeModal()" aria-label="Close">×</button>
+    <button type="button" class="modal-close app-modal-close" (click)="closeModal()" aria-label="Close">×</button>
     <div class="modal-head">
       <span class="modal-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
