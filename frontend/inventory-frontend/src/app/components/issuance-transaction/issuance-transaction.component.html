@@ -97,7 +97,7 @@
       <h2>Issuance List</h2>
       <div class="panel-header-actions">
         <span class="panel-count" *ngIf="cartLines.length > 0">{{ cartLines.length }} item(s)</span>
-        <button class="modal-close" type="button" (click)="toggleIssuanceModal()" [disabled]="saving">×</button>
+        <button class="modal-close app-modal-close" type="button" (click)="toggleIssuanceModal()" [disabled]="saving" aria-label="Close">×</button>
       </div>
     </div>
 
@@ -152,8 +152,9 @@
       <label>
         <span>Destination *</span>
         <input type="text" class="form-control" [(ngModel)]="destination"
-          placeholder="e.g. Ward A / Department" />
+          placeholder="e.g. Ward A / Department" required />
       </label>
+      <p class="empty-hint" *ngIf="attemptedSubmit && !destination.trim()">Destination is required.</p>
       <label>
         <span>Reason</span>
         <input type="text" class="form-control" [(ngModel)]="reason"
