@@ -111,7 +111,7 @@
       <h2>Receiving List</h2>
       <div class="panel-header-actions">
         <span class="panel-count" *ngIf="receivingLines.length > 0">{{ receivingLines.length }} item(s)</span>
-        <button class="modal-close-btn" type="button" (click)="toggleListDrawer()">×</button>
+        <button class="modal-close-btn app-modal-close" type="button" (click)="toggleListDrawer()" aria-label="Close">×</button>
       </div>
     </div>
 
@@ -156,6 +156,7 @@
       <label class="form-label">Batch Number For Whole List *</label>
       <input type="text" class="form-control" placeholder="e.g., BATCH-2026-001"
         [(ngModel)]="confirmBatchNumber" [disabled]="saving" />
+      <div class="hint" *ngIf="attemptedSubmitList && !confirmBatchNumber.trim()">Batch number is required before submitting the list.</div>
     </div>
 
     <div class="drawer-footer">
@@ -173,7 +174,7 @@
   <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Scan QR Code</h2>
-      <button class="modal-close" (click)="closeQrScanner()">×</button>
+      <button class="modal-close app-modal-close" (click)="closeQrScanner()" aria-label="Close">×</button>
     </div>
     <div class="modal-body">
       <div class="scanner-wrap">
@@ -190,7 +191,7 @@
   <div class="modal-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Receiving Details</h2>
-      <button class="modal-close" (click)="closeReceivingModal()" [disabled]="saving">×</button>
+      <button class="modal-close app-modal-close" (click)="closeReceivingModal()" [disabled]="saving" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body" *ngIf="selectedItem">
@@ -231,6 +232,7 @@
           <div class="form-group" *ngIf="transactionMode === 'receive'">
             <label class="form-label">Batch Number *</label>
             <input type="text" class="form-control" placeholder="e.g., BATCH-2026-001" [(ngModel)]="batchNumber" [disabled]="saving" />
+            <div class="hint" *ngIf="attemptedAddToList && !batchNumber.trim()">Batch number is required.</div>
           </div>
           <div class="form-group">
             <label class="form-label">Measurement Unit</label>
@@ -312,7 +314,7 @@
   <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ batchQrTitle }}</h2>
-      <button class="modal-close" (click)="closeBatchQrModal()">×</button>
+      <button class="modal-close app-modal-close" (click)="closeBatchQrModal()" aria-label="Close">×</button>
     </div>
     <div class="modal-body">
       <div class="qr-wrap">
