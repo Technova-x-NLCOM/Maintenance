@@ -21,12 +21,11 @@
     <div class="modal-content item-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
         <h2 class="panel-title">{{ selectedItemId ? 'Edit item' : 'Add new item' }}</h2>
-        <button class="btn-ghost btn-close-form" type="button" (click)="closeForm()" title="Close">
+        <button class="btn-ghost btn-close-form app-modal-close" type="button" (click)="closeForm()" title="Close" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-          Close
         </button>
       </div>
 
@@ -47,6 +46,16 @@
             <option [ngValue]="null">Select category</option>
             <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
               {{ category.category_name }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Item Type <em>*</em></span>
+          <select [(ngModel)]="formData.item_type_id">
+            <option [ngValue]="null">Select item type</option>
+            <option *ngFor="let itemType of options.item_types" [ngValue]="itemType.item_type_id">
+              {{ itemType.type_name }}
             </option>
           </select>
         </label>
@@ -311,7 +320,7 @@
   <div class="modal-box item-qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Scan Item QR</h2>
-      <button class="modal-close" type="button" (click)="closeItemQrScanner()" aria-label="Close">×</button>
+      <button class="modal-close app-modal-close" type="button" (click)="closeItemQrScanner()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">
@@ -328,7 +337,7 @@
   <div class="modal-box item-qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ qrModalTitle }}</h2>
-      <button class="modal-close" type="button" (click)="closeQrModal()" aria-label="Close">×</button>
+      <button class="modal-close app-modal-close" type="button" (click)="closeQrModal()" aria-label="Close">×</button>
     </div>
 
     <div class="modal-body">

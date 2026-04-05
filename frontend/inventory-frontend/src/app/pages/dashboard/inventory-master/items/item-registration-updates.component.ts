@@ -116,12 +116,17 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
     // No category selected -> keep item_type_id null so save validation forces category selection.
     if (!this.formData.category_id) {
-      // If editing an existing item, keep the backend value to avoid breaking updates.
-      if (this.selectedItemId) {
-        return;
-      }
       this.formData.item_type_id = null;
       return;
+    }
+
+    if (this.formData.item_type_id) {
+      const currentTypeExists = this.options.item_types.some(
+        (type) => type.item_type_id === this.formData.item_type_id,
+      );
+      if (currentTypeExists) {
+        return;
+      }
     }
 
     const catId = this.formData.category_id;
@@ -498,8 +503,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     // Always derive item_type_id from the selected category right before save.
     this.syncItemTypeIdFromCategory();
 
-    if (!this.formData.item_code.trim() || !this.formData.item_description.trim() || !this.formData.item_type_id) {
-      this.errorMessage = 'Please enter item code or SKU, name or description, and select a category.';
+    if (!this.formData.item_code.trim() || !this.formData.item_description.trim() || !this.formData.category_id || !this.formData.item_type_id) {
+      this.errorMessage = 'Please enter item code, item description, category, and item type.';
       return;
     }
 
