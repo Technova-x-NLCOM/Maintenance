@@ -229,15 +229,18 @@ form {
   padding: 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  z-index: 2;
+  color: $text-light;
 
   &:hover {
     opacity: 0.7;
   }
 
-  .eye-icon {
+  svg {
     width: 22px;
     height: 22px;
-    stroke: $text-light;
+    stroke: currentColor;
   }
 }
 
@@ -515,6 +518,20 @@ form {
     height: 22px;
     flex-shrink: 0;
     object-fit: contain;
+  }
+
+  &.toast-success {
+    background: rgba(232, 245, 233, 0.92);
+    color: #1b5e20;
+    border: 1px solid rgba(129, 199, 132, 0.7);
+    box-shadow: 0 8px 24px rgba(27, 94, 32, 0.18);
+  }
+
+  &.toast-error {
+    background: rgba(254, 226, 226, 0.85);
+    color: #7f1d1d;
+    border: 1px solid rgba(252, 165, 165, 0.6);
+    box-shadow: 0 8px 24px rgba(220, 38, 38, 0.15);
   }
 
   &.toast-show {

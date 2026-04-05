@@ -180,11 +180,11 @@ export class AuthService {
     return this.getToken() !== null;
   }
 
-  checkPasswordSet(username: string): Observable<{ password_set: boolean }> {
-    return this.http.post<{ password_set: boolean }>(`${this.API_URL}/check-password-set`, { username });
+  checkPasswordSet(identifier: string): Observable<{ password_set: boolean }> {
+    return this.http.post<{ password_set: boolean }>(`${this.API_URL}/check-password-set`, { identifier });
   }
 
-  setInitialPassword(username: string, password: string, password_confirmation: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.API_URL}/set-initial-password`, { username, password, password_confirmation });
+  setInitialPassword(identifier: string, password: string, password_confirmation: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API_URL}/set-initial-password`, { identifier, password, password_confirmation });
   }
 }
