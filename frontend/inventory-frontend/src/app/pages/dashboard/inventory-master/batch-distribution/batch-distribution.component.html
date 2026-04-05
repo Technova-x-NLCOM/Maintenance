@@ -150,7 +150,7 @@
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ isEditingTemplate ? 'Edit Template' : 'Create Template' }}</h2>
-        <button type="button" class="btn-close" (click)="cancelTemplateForm()">×</button>
+        <button type="button" class="btn-close app-modal-close" (click)="cancelTemplateForm()" aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
