@@ -239,7 +239,18 @@ export class StockAdjustmentComponent implements OnInit {
   }
 
   submitAdjustment(): void {
-    if (!this.selectedItem || !this.canSubmit()) {
+    if (!this.selectedItem) {
+      return;
+    }
+
+    if (!this.canSubmit()) {
+      if (!this.reason.trim()) {
+        this.errorMessage = 'Reason is required.';
+      } else if (this.adjustmentMode === 'increase' && this.selectedItem.shelf_life_days && !this.getEffectiveExpiryDate()) {
+        this.errorMessage = 'Expiry date is required for items with configured shelf life.';
+      } else {
+        this.errorMessage = 'Please complete all required fields before submitting.';
+      }
       return;
     }
 

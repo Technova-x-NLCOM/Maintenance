@@ -78,7 +78,7 @@
     <div class="modal-head">
       <h2>Set Your Password</h2>
       <p>This is your first login. Please set a password to continue.</p>
-      <button type="button" class="modal-close-btn" (click)="showSetPasswordModal = false">&#x2715;</button>
+      <button type="button" class="modal-close-btn app-modal-close" (click)="showSetPasswordModal = false" aria-label="Close">&#x2715;</button>
     </div>
     <div class="modal-alert" *ngIf="setPasswordError">{{ setPasswordError }}</div>
     <div class="form-group">

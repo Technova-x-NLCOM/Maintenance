@@ -82,6 +82,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   showScanModal = false;
   scanErrorMessage = '';
   receivingLines: ReceivingCartLine[] = [];
+  attemptedAddToList = false;
+  attemptedSubmitList = false;
   private scanner = new BrowserMultiFormatReader();
   private scannerControls?: IScannerControls;
 
@@ -89,6 +91,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.selectItem(item);
     this.transactionMode = 'receive';
     this.reason = 'Stock Received';
+    this.attemptedAddToList = false;
     this.showReceivingModal = true;
   }
 
@@ -96,6 +99,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     if (this.saving) {
       return;
     }
+    this.attemptedAddToList = false;
     this.showReceivingModal = false;
   }
 
@@ -500,6 +504,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   addToReceivingList(): void {
+    this.attemptedAddToList = true;
     if (!this.canAddToList() || !this.selectedItem) {
       return;
     }
@@ -541,6 +546,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.successMessage = `${line.item_description} added to receiving list.`;
     this.showReceivingModal = false;
     this.showListModal = true;
+    this.attemptedAddToList = false;
     this.resetForm();
     this.cdr.detectChanges();
   }
@@ -558,6 +564,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   submitReceivingList(): void {
+    this.attemptedSubmitList = true;
     if (!this.canSubmitList()) {
       return;
     }
@@ -617,6 +624,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
           this.receivingLines = [];
           this.confirmBatchNumber = '';
+          this.attemptedSubmitList = false;
           this.resetForm();
           this.showReceivingModal = false;
           this.showListModal = false;
@@ -684,6 +692,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.expiryDateOverride = false;
     this.computedExpiryDate = null;
     this.computedExpiryMessage = '';
+    this.attemptedAddToList = false;
   }
 
   showError(message: string): void {

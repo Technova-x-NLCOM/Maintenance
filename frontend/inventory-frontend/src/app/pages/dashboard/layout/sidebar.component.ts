@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService, User } from '../../../services/auth.service';
@@ -18,6 +18,7 @@ export class SidebarComponent implements OnInit {
   loadingRole = false;
   showLogoutModal = false;
   loggingOut = false;
+  isCollapsed = false;
 
   openGroups: Set<string> = new Set();
 
@@ -26,6 +27,7 @@ export class SidebarComponent implements OnInit {
     private rbacService: RbacService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private elementRef: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -49,10 +51,50 @@ export class SidebarComponent implements OnInit {
   }
 
   toggleGroup(group: string): void {
+    if (this.isCollapsed && this.canCollapseSidebar) {
+      if (this.openGroups.has(group)) {
+        this.openGroups.clear();
+      } else {
+        this.openGroups = new Set([group]);
+      }
+      return;
+    }
+
     if (this.openGroups.has(group)) {
       this.openGroups.delete(group);
     } else {
       this.openGroups.add(group);
+    }
+  }
+
+  toggleSidebarCollapse(): void {
+    if (!this.canCollapseSidebar) {
+      return;
+    }
+
+    this.isCollapsed = !this.isCollapsed;
+    this.openGroups.clear();
+  }
+
+  closeCollapsedFlyouts(): void {
+    if (this.isCollapsed && this.openGroups.size > 0) {
+      this.openGroups.clear();
+    }
+  }
+
+  get canCollapseSidebar(): boolean {
+    return this.user?.role === 'super_admin' || this.user?.role === 'inventory_manager';
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isCollapsed || !this.openGroups.size) {
+      return;
+    }
+
+    const target = event.target as Node | null;
+    if (target && !this.elementRef.nativeElement.contains(target)) {
+      this.openGroups.clear();
     }
   }
 

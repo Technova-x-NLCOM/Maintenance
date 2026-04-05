@@ -6,12 +6,11 @@
   <div class="modal-overlay" *ngIf="currentView === 'table-list' && showFormModal" (click)="closeFormModal()" role="dialog" aria-modal="true">
     <div class="modal-content maintenance-form-modal" (click)="$event.stopPropagation()">
       <div class="modal-form-header">
-        <button class="modal-close-btn" type="button" (click)="closeFormModal()" title="Close">
+        <button class="modal-close-btn app-modal-close" type="button" (click)="closeFormModal()" title="Close" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"/>
             <line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-          Close
         </button>
       </div>
       <app-table-form [parent]="this" [modalMode]="true"></app-table-form>

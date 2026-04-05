@@ -1,7 +1,20 @@
-<div class="sidebar">
+<div class="sidebar" [class.collapsed]="isCollapsed && canCollapseSidebar">
   <!-- Logo Section -->
   <div class="sidebar-header">
     <img src="assets/logo.png" alt="NLCOM IMS Logo" class="logo">
+    <button
+      *ngIf="canCollapseSidebar"
+      type="button"
+      class="sidebar-collapse-toggle"
+      (click)="toggleSidebarCollapse()"
+      [attr.aria-label]="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      [attr.title]="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path *ngIf="!isCollapsed" d="M15 18l-6-6 6-6" />
+        <path *ngIf="isCollapsed" d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
   </div>
 
   <div class="header-divider"></div>
@@ -10,7 +23,8 @@
   <nav class="sidebar-nav">
     <a routerLink="/dashboard" 
        [class.active]="isDashboardActive()"
-       class="nav-item">
+       class="nav-item"
+       (click)="closeCollapsedFlyouts()">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="3" width="7" height="7" rx="1"/>
         <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -22,7 +36,8 @@
 
     <a routerLink="/dashboard/profile" 
        routerLinkActive="active" 
-       class="nav-item">
+       class="nav-item"
+       (click)="closeCollapsedFlyouts()">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="7" r="4"/>
         <path d="M5.5 21a7.5 7.5 0 0 1 13 0"/>
@@ -31,7 +46,7 @@
     </a>
 
     <div class="nav-group" *ngIf="hasPermission('manage_inventory') || hasPermission('manage_categories')">
-      <button class="nav-group-toggle" (click)="toggleGroup('inventory-master-data')" [class.expanded]="isGroupOpen('inventory-master-data')">
+      <button class="nav-group-toggle" (click)="toggleGroup('inventory-master-data')" [class.expanded]="isGroupOpen('inventory-master-data')" [attr.aria-expanded]="isGroupOpen('inventory-master-data')" [attr.aria-haspopup]="isCollapsed ? 'menu' : null" aria-label="Inventory Master Data">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 4h16v4H4z"/>
           <path d="M4 10h16v10H4z"/>
@@ -42,11 +57,11 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('inventory-master-data')">
-        <a routerLink="/dashboard/inventory/categories" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/categories" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Category Management</span>
         </a>
-        <a routerLink="/dashboard/inventory/items" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/items" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Item Registration & Updates</span>
         </a>
@@ -54,7 +69,7 @@
     </div>
 
     <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
-      <button class="nav-group-toggle" (click)="toggleGroup('inventory-transactions')" [class.expanded]="isGroupOpen('inventory-transactions')">
+      <button class="nav-group-toggle" (click)="toggleGroup('inventory-transactions')" [class.expanded]="isGroupOpen('inventory-transactions')" [attr.aria-expanded]="isGroupOpen('inventory-transactions')" [attr.aria-haspopup]="isCollapsed ? 'menu' : null" aria-label="Inventory Transaction">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18"/>
           <path d="M3 12h18"/>
@@ -66,15 +81,15 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('inventory-transactions')">
-        <a routerLink="/dashboard/inventory/batch-distribution" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/batch-distribution" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Batch Distribution</span>
         </a>
-        <a routerLink="/dashboard/inventory/receiving" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/receiving" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Stock Receiving (IN)</span>
         </a>
-        <a routerLink="/dashboard/inventory/issuance" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item">
+        <a routerLink="/dashboard/inventory/issuance" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Stock Issuance (OUT)</span>
         </a>
@@ -83,7 +98,7 @@
 
     <!-- ═══════ MONITORING GROUP ═══════ -->
     <div class="nav-group" *ngIf="hasPermission('manage_inventory')">
-      <button class="nav-group-toggle" (click)="toggleGroup('monitoring')" [class.expanded]="isGroupOpen('monitoring')">
+      <button class="nav-group-toggle" (click)="toggleGroup('monitoring')" [class.expanded]="isGroupOpen('monitoring')" [attr.aria-expanded]="isGroupOpen('monitoring')" [attr.aria-haspopup]="isCollapsed ? 'menu' : null" aria-label="Monitoring">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
           <path d="M3 9h18M9 21V9"/>
@@ -94,11 +109,11 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('monitoring')">
-        <a routerLink="/dashboard/monitoring/stock-report" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/monitoring/stock-report" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Stock Report</span>
         </a>
-        <a routerLink="/dashboard/monitoring/transaction-history" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/monitoring/transaction-history" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Transaction History</span>
         </a>
@@ -107,7 +122,7 @@
 
     <!-- ═══════ USERS & ROLE ASSIGNMENT GROUP (Super Admin Only) ═══════ -->
     <div class="nav-group" *ngIf="hasPermission('manage_permissions') || hasPermission('manage_roles')">
-      <button class="nav-group-toggle" (click)="toggleGroup('users')" [class.expanded]="isGroupOpen('users')">
+      <button class="nav-group-toggle" (click)="toggleGroup('users')" [class.expanded]="isGroupOpen('users')" [attr.aria-expanded]="isGroupOpen('users')" [attr.aria-haspopup]="isCollapsed ? 'menu' : null" aria-label="Users and Role Assignment">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
@@ -120,11 +135,11 @@
         </svg>
       </button>
       <div class="nav-group-items" [class.open]="isGroupOpen('users')">
-        <a *ngIf="hasPermission('manage_roles')" routerLink="/dashboard/system-users" routerLinkActive="active" class="nav-sub-item">
+        <a *ngIf="hasPermission('manage_roles')" routerLink="/dashboard/system-users" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">System Users</span>
         </a>
-        <a routerLink="/dashboard/roles" routerLinkActive="active" class="nav-sub-item">
+        <a routerLink="/dashboard/roles" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Roles & Permissions</span>
         </a>
@@ -134,7 +149,8 @@
     <a *ngIf="hasPermission('manage_settings')"
        routerLink="/dashboard/settings"
        routerLinkActive="active"
-       class="nav-item">
+       class="nav-item"
+       (click)="closeCollapsedFlyouts()">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3"/>
         <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>

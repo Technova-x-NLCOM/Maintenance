@@ -167,7 +167,12 @@
     <div class="modal-content category-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
         <h2 class="panel-title">{{ selectedCategoryId ? 'Edit category' : 'Add new category' }}</h2>
-        <button class="btn-ghost btn-close-form" type="button" (click)="closeForm()">Close</button>
+        <button class="modal-close-btn app-modal-close" type="button" (click)="closeForm()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
 
       <div class="form-grid">
@@ -192,7 +197,7 @@
         </label>
       </div>
 
-      <div class="form-actions">
+      <div class="modal-footer">
         <button class="btn-primary" type="button" [disabled]="saving" (click)="save()">
           {{ saving ? 'Saving...' : (selectedCategoryId ? 'Save changes' : 'Add category') }}
         </button>

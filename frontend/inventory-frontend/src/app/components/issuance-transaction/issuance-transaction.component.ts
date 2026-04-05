@@ -55,6 +55,7 @@ export class IssuanceTransactionComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
   showCartDrawer = false;
+  attemptedSubmit = false;
 
   isInCart(itemId: number): boolean {
     return this.cartLines.some(l => l.item_id === itemId);
@@ -70,11 +71,13 @@ export class IssuanceTransactionComponent implements OnInit {
     if (!this.showCartDrawer) {
       this.showCartDrawer = true;
     }
+    this.attemptedSubmit = false;
   }
 
   closeCartModal(): void {
     if (this.saving) return;
     this.showCartDrawer = false;
+    this.attemptedSubmit = false;
   }
 
   openIssuanceModal(): void {
@@ -87,6 +90,9 @@ export class IssuanceTransactionComponent implements OnInit {
     }
 
     this.showCartDrawer = !this.showCartDrawer;
+    if (!this.showCartDrawer) {
+      this.attemptedSubmit = false;
+    }
   }
 
   constructor(
@@ -247,10 +253,12 @@ export class IssuanceTransactionComponent implements OnInit {
     }
 
     if (!this.canConfirmIssuance()) {
+      this.attemptedSubmit = true;
       this.errorMessage = 'Add items and destination before confirming issuance.';
       return;
     }
 
+    this.attemptedSubmit = false;
     this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';

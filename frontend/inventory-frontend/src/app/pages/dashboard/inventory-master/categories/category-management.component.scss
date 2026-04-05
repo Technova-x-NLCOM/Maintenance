@@ -168,6 +168,23 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 .category-form-modal {
   max-width: 680px;
   width: 100%;
+
+  .form-panel-header {
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .modal-close-btn {
+    flex-shrink: 0;
+  }
+
+  .modal-footer {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
 }
 
 .panel-title {
