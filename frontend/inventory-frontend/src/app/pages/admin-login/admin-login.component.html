@@ -39,7 +39,7 @@
             placeholder="Enter your password"
             class="form-control"
             autocomplete="current-password"
-            (click)="onPasswordClick()"
+            (focus)="checkFirstTimeUser()"
           />
           <button
             type="button"
@@ -86,7 +86,8 @@
       <div class="password-input-wrapper">
         <input [type]="showSetPwd ? 'text' : 'password'" id="sp-pwd" [formControl]="$any(setPasswordForm.get('password'))" class="form-control" placeholder="Min 8 chars, upper, lower, number, special" />
         <button type="button" class="password-toggle" (click)="showSetPwd = !showSetPwd">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg *ngIf="!showSetPwd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg *ngIf="showSetPwd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
       </div>
     </div>
@@ -95,7 +96,8 @@
       <div class="password-input-wrapper">
         <input [type]="showSetPwdConfirm ? 'text' : 'password'" id="sp-confirm" [formControl]="$any(setPasswordForm.get('password_confirmation'))" class="form-control" />
         <button type="button" class="password-toggle" (click)="showSetPwdConfirm = !showSetPwdConfirm">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg *ngIf="!showSetPwdConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg *ngIf="showSetPwdConfirm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
         </button>
       </div>
     </div>
@@ -121,8 +123,12 @@
 </div>
 
 <!-- Toast Notification -->
-<div class="toast" [class.toast-show]="toastVisible">
-  <img src="assets/warning.png" alt="Warning" class="toast-icon" />
+<div class="toast" [class.toast-show]="toastVisible" [class.toast-success]="toastType === 'success'" [class.toast-error]="toastType === 'error'">
+  <svg *ngIf="toastType === 'success'" class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <path d="M8 12l3 3 5-6"></path>
+  </svg>
+  <img *ngIf="toastType === 'error'" src="assets/warning.png" alt="Warning" class="toast-icon" />
   <span>{{ toastMessage }}</span>
 </div>
 
