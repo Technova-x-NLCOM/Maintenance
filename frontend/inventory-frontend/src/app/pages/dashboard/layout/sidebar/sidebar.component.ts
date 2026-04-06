@@ -1,8 +1,8 @@
 import { Component, Input, OnInit, ChangeDetectorRef, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
-import { AuthService, User } from '../../../services/auth.service';
-import { RbacService, Role } from '../../../rbac/services/rbac.service';
+import { AuthService, User } from '../../../../services/auth.service';
+import { RbacService, Role } from '../../../../rbac/services/rbac.service';
 import { filter } from 'rxjs/operators';
 
 @Component({
@@ -10,7 +10,7 @@ import { filter } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
+  styleUrls: ['./sidebar.component.scss'],
 })
 export class SidebarComponent implements OnInit {
   @Input() user: User | null = null;
