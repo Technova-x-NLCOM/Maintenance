@@ -13,7 +13,9 @@ import { finalize, timeout } from 'rxjs/operators';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
+  currentFormState: 'login' | 'forgotPassword' | 'success' = 'login';
   loginForm!: FormGroup;
+  forgotPasswordForm!: FormGroup;
   showPassword = false;
   isLoading = false;
   errorMessage = '';
@@ -67,10 +69,35 @@ export class LoginComponent implements OnInit {
       password: ['', [Validators.required]],
       rememberMe: [false]
     });
+
+    this.forgotPasswordForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]]
+    });
+
     this.setPasswordForm = this.fb.group({
       password: ['', [Validators.required, Validators.minLength(8)]],
       password_confirmation: ['', [Validators.required]],
     });
+  }
+
+  showForgotPasswordForm() {
+    this.currentFormState = 'forgotPassword';
+    this.forgotPasswordForm.reset();
+  }
+
+  backToLogin() {
+    this.currentFormState = 'login';
+    this.forgotPasswordForm.reset();
+  }
+
+  sendResetLink() {
+    if (this.forgotPasswordForm.invalid) {
+      this.forgotPasswordForm.markAllAsTouched();
+      return;
+    }
+
+    // Mock success state for frontend-only flow until backend integration is added.
+    this.currentFormState = 'success';
   }
 
   togglePasswordVisibility() {
