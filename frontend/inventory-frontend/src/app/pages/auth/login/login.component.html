@@ -23,11 +23,17 @@
   <div class="right-panel">
     <div class="login-card">
       <div class="login-header">
-        <h2>Inventory Manager - Login</h2>
-        <p>Log in to access the system</p>
+        <h2 *ngIf="currentFormState === 'login'">Inventory Manager - Login</h2>
+        <h2 *ngIf="currentFormState === 'forgotPassword'">Reset Password</h2>
+        <h2 *ngIf="currentFormState === 'success'">Check Your Email</h2>
+
+        <p *ngIf="currentFormState === 'login'">Log in to access the system</p>
+        <p *ngIf="currentFormState === 'forgotPassword'" class="reset-subtitle">
+          Enter your registered email address and we will send you a link to reset your password.
+        </p>
       </div>
 
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <form *ngIf="currentFormState === 'login'" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <div class="form-group">
           <label for="identifier">Username or Email:</label>
           <input type="text" id="identifier" formControlName="identifier" class="form-control" />
@@ -76,13 +82,44 @@
         </div>
 
         <div class="form-row">
-          <a href="#forgot-password" class="forgot-link">Forgot Password?</a>
+          <button type="button" class="forgot-link" (click)="showForgotPasswordForm()">Forgot Password?</button>
         </div>
 
         <button type="submit" class="btn-login" [disabled]="isLoading">
           {{ isLoading ? 'Signing in...' : 'Login' }}
         </button>
       </form>
+
+      <form
+        *ngIf="currentFormState === 'forgotPassword'"
+        [formGroup]="forgotPasswordForm"
+        (ngSubmit)="sendResetLink()"
+      >
+        <div class="form-group">
+          <label for="reset-email">Email Address</label>
+          <input
+            type="email"
+            id="reset-email"
+            formControlName="email"
+            class="form-control"
+            autocomplete="email"
+            inputmode="email"
+          />
+          <span class="field-error" *ngIf="forgotPasswordForm.get('email')?.touched && forgotPasswordForm.get('email')?.invalid">
+            Please enter a valid email address.
+          </span>
+        </div>
+
+        <button type="submit" class="btn-login">Send Reset Link</button>
+        <button type="button" class="back-to-login-link" (click)="backToLogin()">&larr; Back to Login</button>
+      </form>
+
+      <div *ngIf="currentFormState === 'success'" class="success-state">
+        <p class="success-message">
+          If an account exists for that email, we have sent password reset instructions.
+        </p>
+        <button type="button" class="btn-login" (click)="backToLogin()">Return to Login</button>
+      </div>
     </div>
   </div>
 
