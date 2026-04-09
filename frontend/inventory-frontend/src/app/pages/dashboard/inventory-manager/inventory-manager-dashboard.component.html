@@ -20,6 +20,10 @@
       <div class="stat-content">
         <span class="stat-value">{{ stats?.totalItems || 0 }}</span>
         <span class="stat-label">Inventory Items</span>
+        <span class="trend-chip" [ngClass]="getTrendClass(stockTrend.direction)">
+          <span class="trend-arrow" aria-hidden="true">{{ stockTrend.direction === 'down' ? '▼' : stockTrend.direction === 'steady' ? '•' : '▲' }}</span>
+          {{ stockTrend.description }}
+        </span>
         <span class="stat-sub warning" *ngIf="(stats?.lowStockItems || 0) > 0">{{ stats?.lowStockItems }} low stock needs review</span>
         <span class="stat-sub" *ngIf="(stats?.lowStockItems || 0) === 0">Stock levels are stable</span>
       </div>
@@ -34,6 +38,10 @@
       <div class="stat-content">
         <span class="stat-value">{{ stats?.totalTransactions || 0 }}</span>
         <span class="stat-label">Transactions</span>
+        <span class="trend-chip" [ngClass]="getTrendClass(transactionTrend.direction)">
+          <span class="trend-arrow" aria-hidden="true">{{ transactionTrend.direction === 'down' ? '▼' : transactionTrend.direction === 'steady' ? '•' : '▲' }}</span>
+          {{ transactionTrend.description }}
+        </span>
         <span class="stat-sub">{{ stats?.myTransactions || 0 }} handled by you this month</span>
       </div>
     </a>
@@ -48,6 +56,10 @@
       <div class="stat-content">
         <span class="stat-value">{{ stats?.activeBatches || 0 }}</span>
         <span class="stat-label">Active Batches</span>
+        <span class="trend-chip" [ngClass]="getTrendClass(batchTrend.direction)">
+          <span class="trend-arrow" aria-hidden="true">{{ batchTrend.direction === 'down' ? '▼' : batchTrend.direction === 'steady' ? '•' : '▲' }}</span>
+          {{ batchTrend.description }}
+        </span>
         <span class="stat-sub">{{ stats?.totalCategories || 0 }} categories involved</span>
       </div>
     </a>
@@ -63,6 +75,10 @@
       <div class="stat-content">
         <span class="stat-value">{{ stats?.pendingAlerts || 0 }}</span>
         <span class="stat-label">Pending Alerts</span>
+        <span class="trend-chip" [ngClass]="getTrendClass(alertsTrend.direction)">
+          <span class="trend-arrow" aria-hidden="true">{{ alertsTrend.direction === 'down' ? '▼' : alertsTrend.direction === 'steady' ? '•' : '▲' }}</span>
+          {{ alertsTrend.description }}
+        </span>
         <span class="stat-sub warning" *ngIf="(stats?.expiringItems || 0) > 0">{{ stats?.expiringItems }} items expiring soon</span>
         <span class="stat-sub" *ngIf="(stats?.expiringItems || 0) === 0">No expiring inventory risk</span>
       </div>
@@ -77,13 +93,16 @@
 
   <div class="content-grid" *ngIf="!loading; else loadingPanels">
     <div class="card system-alerts">
-      <h2 class="card-title">
-        Inventory Alerts
-        <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
-      </h2>
+      <div class="card-header">
+        <h2 class="card-title">
+          Inventory Alerts
+          <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
+        </h2>
+        <a class="view-all-link" [routerLink]="alertsViewAllRoute" aria-label="View all inventory alerts">View all</a>
+      </div>
       <p class="card-description">Jump to the right workflow directly from each inventory alert.</p>
       <div class="alerts-list" *ngIf="systemAlerts.length; else noAlerts">
-        <a class="alert-item" *ngFor="let alert of systemAlerts; trackBy: trackByAlert" [ngClass]="getAlertClass(alert.severity)" [routerLink]="getAlertRoute(alert)">
+        <a class="alert-item" *ngFor="let alert of visibleSystemAlerts; trackBy: trackByAlert" [ngClass]="getAlertClass(alert.severity)" [routerLink]="getAlertRoute(alert)">
           <div class="alert-icon">
             <svg *ngIf="alert.severity === 'critical'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
@@ -110,6 +129,10 @@
             <path d="m12 5 7 7-7 7"/>
           </svg>
         </a>
+        <p class="list-footer" *ngIf="hiddenSystemAlertsCount > 0">
+          {{ hiddenSystemAlertsCount }} more alert{{ hiddenSystemAlertsCount > 1 ? 's' : '' }} available.
+          <a [routerLink]="alertsViewAllRoute">See all alerts</a>
+        </p>
       </div>
       <ng-template #noAlerts>
         <div class="empty-state">
@@ -117,16 +140,20 @@
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          <span>No active alerts</span>
+          <span>You are all caught up!</span>
+          <p>There are no active inventory alerts right now.</p>
         </div>
       </ng-template>
     </div>
 
     <div class="card recent-activity">
-      <h2 class="card-title">Recent Activity</h2>
+      <div class="card-header">
+        <h2 class="card-title">Recent Activity</h2>
+        <a class="view-all-link" [routerLink]="activityViewAllRoute" aria-label="See all recent activity">See all activity</a>
+      </div>
       <p class="card-description">Latest inventory-related changes across records and transactions.</p>
       <div class="activity-list" *ngIf="recentActivity.length; else noActivity">
-        <div class="activity-item" *ngFor="let log of recentActivity; trackBy: trackByLog">
+        <div class="activity-item" *ngFor="let log of visibleRecentActivity; trackBy: trackByLog">
           <div class="activity-badge" [ngClass]="getActionClass(log.action)">
             {{ log.action }}
           </div>
@@ -136,6 +163,10 @@
           </div>
           <span class="activity-time">{{ getRelativeTime(log.created_at) }}</span>
         </div>
+        <p class="list-footer" *ngIf="hiddenRecentActivityCount > 0">
+          {{ hiddenRecentActivityCount }} more activit{{ hiddenRecentActivityCount > 1 ? 'ies' : 'y' }} recorded.
+          <a [routerLink]="activityViewAllRoute">See all activity</a>
+        </p>
       </div>
       <ng-template #noActivity>
         <div class="empty-state">
@@ -143,9 +174,36 @@
             <circle cx="12" cy="12" r="10"/>
             <polyline points="12 6 12 12 16 14"/>
           </svg>
-          <span>No recent activity</span>
+          <span>You are all caught up!</span>
+          <p>No recent activity to review yet.</p>
         </div>
       </ng-template>
+    </div>
+  </div>
+
+  <div class="visualizations-grid" *ngIf="!loading">
+    <div class="card chart-card restock-card">
+      <h2 class="card-title">Items Needing Restock</h2>
+      <p class="card-description">Compare what is currently on hand against minimum stock needed. Red means urgent, yellow means caution.</p>
+      <div class="chart-area chart-area-tall">
+        <canvas #restockChart></canvas>
+      </div>
+    </div>
+
+    <div class="card chart-card donut-card">
+      <h2 class="card-title">Inventory Distribution by Category</h2>
+      <p class="card-description">This shows how your total stock is split. Click a legend label to hide or show that category.</p>
+      <div class="chart-area">
+        <canvas #categoryChart></canvas>
+      </div>
+    </div>
+
+    <div class="card chart-card movement-card">
+      <h2 class="card-title">Stock Movement (Items In vs Items Out)</h2>
+      <p class="card-description">Daily movement over the last 30 days. Hover to see the exact number of incoming and outgoing items.</p>
+      <div class="chart-area chart-area-wide">
+        <canvas #movementChart></canvas>
+      </div>
     </div>
   </div>
 
