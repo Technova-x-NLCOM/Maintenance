@@ -123,25 +123,52 @@
             <td colspan="7" class="detail-cell">
               <div class="detail-content">
                 <div *ngIf="getExpandedLog() as log" class="detail-grid">
-                  <ng-container *ngIf="log.old_values || log.new_values; else noDetails">
-                    <div class="detail-section" *ngIf="log.old_values">
-                      <h4 class="detail-heading">Previous Values</h4>
-                      <div class="detail-values">
-                        <pre>{{ getDisplayValue(log.old_values) }}</pre>
+                  <div class="detail-summary">
+                    <div class="detail-summary-header">
+                      <h4 class="detail-heading">Change Summary</h4>
+                      <span class="detail-summary-text">{{ getChangeSummary(log) }}</span>
+                    </div>
+                    <div class="detail-meta-grid">
+                      <div class="detail-meta-item">
+                        <span class="detail-meta-label">Table</span>
+                        <span class="detail-meta-value">{{ log.table_name }}</span>
+                      </div>
+                      <div class="detail-meta-item">
+                        <span class="detail-meta-label">Record</span>
+                        <span class="detail-meta-value">#{{ log.record_id }}</span>
+                      </div>
+                      <div class="detail-meta-item">
+                        <span class="detail-meta-label">Action</span>
+                        <span class="detail-meta-value">{{ log.action }}</span>
+                      </div>
+                      <div class="detail-meta-item">
+                        <span class="detail-meta-label">Performer</span>
+                        <span class="detail-meta-value">{{ log.performed_by_name || 'Unknown user' }}</span>
                       </div>
                     </div>
-                    <div class="detail-section" *ngIf="log.new_values">
-                      <h4 class="detail-heading">New Values</h4>
-                      <div class="detail-values">
-                        <pre>{{ getDisplayValue(log.new_values) }}</pre>
+                  </div>
+
+                  <div class="detail-section detail-fields-section">
+                    <h4 class="detail-heading">Field Details</h4>
+                    <ng-container *ngIf="getDetailFields(log).length > 0; else noDetails">
+                      <div class="field-list">
+                        <div class="field-row field-row-head">
+                          <span>Field</span>
+                          <span>Value</span>
+                        </div>
+                        <div
+                          class="field-row"
+                          *ngFor="let field of getDetailFields(log)"
+                        >
+                          <span class="field-label">{{ field.label }}</span>
+                          <span class="field-value after">{{ field.afterValue }}</span>
+                        </div>
                       </div>
-                    </div>
-                  </ng-container>
-                  <ng-template #noDetails>
-                    <div class="detail-section">
-                      <p class="no-details">No additional details available</p>
-                    </div>
-                  </ng-template>
+                    </ng-container>
+                    <ng-template #noDetails>
+                      <p class="no-details">No field-level changes were recorded for this event.</p>
+                    </ng-template>
+                  </div>
                 </div>
               </div>
             </td>

@@ -16,6 +16,12 @@ export interface AuditLogEntry {
   created_at: string;
 }
 
+interface DetailField {
+  key: string;
+  label: string;
+  afterValue: string;
+}
+
 @Component({
   selector: 'app-audit-log',
   standalone: true,
@@ -148,6 +154,91 @@ export class AuditLogComponent implements OnInit {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
+  }
+
+  parseStoredValues(value: any): Record<string, any> {
+    if (!value) {
+      return {};
+    }
+
+    if (typeof value === 'object') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+
+    return {};
+  }
+
+  formatFieldLabel(key: string): string {
+    return key
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+
+  formatFieldValue(value: any): string {
+    if (value === null || value === undefined || value === '') {
+      return 'Not set';
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? 'Yes' : 'No';
+    }
+
+    if (typeof value === 'number') {
+      return value.toLocaleString();
+    }
+
+    if (typeof value === 'object') {
+      return JSON.stringify(value);
+    }
+
+    const text = String(value).trim();
+    if (text === '1') return 'Yes';
+    if (text === '0') return 'No';
+    return text;
+  }
+
+  getDetailFields(log: AuditLogEntry): DetailField[] {
+    const oldValues = this.parseStoredValues(log.old_values);
+    const newValues = this.parseStoredValues(log.new_values);
+    const keys = Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)])).sort();
+
+    return keys.map((key) => {
+      const afterValue = this.formatFieldValue(newValues[key]);
+      return {
+        key,
+        label: this.formatFieldLabel(key),
+        afterValue,
+      };
+    });
+  }
+
+  getChangeSummary(log: AuditLogEntry): string {
+    const oldValues = this.parseStoredValues(log.old_values);
+    const newValues = this.parseStoredValues(log.new_values);
+    const oldCount = Object.keys(oldValues).length;
+    const newCount = Object.keys(newValues).length;
+
+    if (log.action === 'INSERT') {
+      return `Created with ${newCount} field${newCount === 1 ? '' : 's'}`;
+    }
+
+    if (log.action === 'DELETE') {
+      return `Removed ${oldCount} field${oldCount === 1 ? '' : 's'} of data`;
+    }
+
+    const fieldCount = this.getDetailFields(log).length;
+    return fieldCount > 0
+      ? `Updated ${fieldCount} field${fieldCount === 1 ? '' : 's'}`
+      : 'No visible field changes';
   }
 
   get totalPages(): number {

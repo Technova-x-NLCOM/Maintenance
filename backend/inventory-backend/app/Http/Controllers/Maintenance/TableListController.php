@@ -171,10 +171,7 @@ class TableListController extends Controller
         $soft = (bool)($this->tables[$table]['soft_deletes'] ?? false);
         
         // Get old values for audit log
-        $oldValues = null;
-        if (!is_array($pk)) {
-            $oldValues = (array) DB::table($table)->where($pk, $id)->first();
-        }
+        $oldValues = $this->fetchOldValues($table, $pk, $id, $request);
         
         if (is_array($pk)) {
             // Handle composite primary key - expect keys as query parameters
@@ -222,10 +219,7 @@ class TableListController extends Controller
         }
         
         // Get old values for audit log
-        $oldValues = null;
-        if (!is_array($pk)) {
-            $oldValues = (array) DB::table($table)->where($pk, $id)->first();
-        }
+        $oldValues = $this->fetchOldValues($table, $pk, $id, $request);
         
         if (is_array($pk)) {
             // Handle composite primary key - expect keys as query parameters
@@ -276,8 +270,8 @@ class TableListController extends Controller
                 'table_name' => $table,
                 'record_id' => is_numeric($recordId) ? (int)$recordId : 0,
                 'action' => $action,
-                'old_values' => $oldValues ? json_encode($oldValues) : null,
-                'new_values' => $newValues ? json_encode($newValues) : null,
+                'old_values' => $oldValues !== null ? json_encode($oldValues, JSON_UNESCAPED_UNICODE) : null,
+                'new_values' => $newValues !== null ? json_encode($newValues, JSON_UNESCAPED_UNICODE) : null,
                 'performed_by' => $user ? $user->user_id : null,
                 'ip_address' => $request->ip(),
                 'created_at' => now(),
@@ -286,5 +280,31 @@ class TableListController extends Controller
             // Silently fail - don't break the main operation if audit logging fails
             \Log::error('Audit log failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Fetch the original row before delete/restore so audit logs can include old values.
+     */
+    private function fetchOldValues(string $table, mixed $pk, mixed $id, Request $request): ?array
+    {
+        if (!is_array($pk)) {
+            $row = DB::table($table)->where($pk, $id)->first();
+            return $row ? (array) $row : null;
+        }
+
+        $query = DB::table($table);
+        foreach ($pk as $key) {
+            $value = $request->query($key);
+            if ($value !== null) {
+                $query->where($key, $value);
+            }
+        }
+
+        if (!$request->query()) {
+            $query->where($pk[0], $id);
+        }
+
+        $row = $query->first();
+        return $row ? (array) $row : null;
     }
 }
