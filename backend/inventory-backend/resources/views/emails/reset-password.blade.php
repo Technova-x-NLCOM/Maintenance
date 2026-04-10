@@ -9,6 +9,8 @@
             line-height: 1.6;
             color: #333;
             background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
         }
         .container {
             max-width: 600px;
@@ -45,19 +47,26 @@
             text-align: center;
             margin: 30px 0;
         }
+        .cta-table {
+            margin: 16px auto 0;
+            border-collapse: separate;
+        }
         .cta-button {
+            background-color: #2563eb;
+            border-radius: 10px;
+        }
+        .cta-button a {
             display: inline-block;
-            background-color: #667eea;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 6px;
+            padding: 14px 28px;
+            color: #ffffff !important;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 15px;
-            transition: background-color 0.3s ease;
+            line-height: 1;
+            letter-spacing: 0.01em;
         }
         .cta-button:hover {
-            background-color: #5568d3;
+            background-color: #1d4ed8;
         }
         .reset-link-section {
             background-color: #f5f5f5;
@@ -118,7 +127,13 @@
             
             <div class="cta-section">
                 <p><strong>Click the button below to reset your password:</strong></p>
-                <a href="{{ $resetUrl }}" class="cta-button">Reset Password</a>
+                <table role="presentation" class="cta-table" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="cta-button" align="center">
+                            <a href="{{ $resetUrl }}" target="_blank" rel="noopener">Reset Password</a>
+                        </td>
+                    </tr>
+                </table>
             </div>
             
             <div class="reset-link-section">
