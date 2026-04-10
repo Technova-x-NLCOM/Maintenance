@@ -22,36 +22,37 @@ interface DetailField {
   afterValue: string;
 }
 
+const HIDDEN_DETAIL_FIELDS = new Set([
+  'batch_id',
+  'batch_value',
+  'manufactured_date',
+  'qr_payload',
+  'qr_label',
+  'supplier_info',
+]);
+
 @Component({
   selector: 'app-audit-log',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './audit-log.component.html',
-  styleUrls: ['./audit-log.component.scss']
+  styleUrls: ['./audit-log.component.scss'],
 })
 export class AuditLogComponent implements OnInit {
   logs: AuditLogEntry[] = [];
   loading = true;
   error = '';
-  
-  // Pagination & Filter
   currentPage = 1;
   perPage = 25;
   total = 0;
   search = '';
-  selectedTable = '';
-  selectedAction = '';
-  
-  // Display
   expandedLogId: number | null = null;
-  sortBy: 'date' | 'table' | 'action' = 'date';
-  sortDir: 'asc' | 'desc' = 'desc';
 
   private readonly API_URL = 'http://127.0.0.1:8000/api/maintenance/audit_log/rows';
 
   constructor(
     private http: HttpClient,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -61,8 +62,8 @@ export class AuditLogComponent implements OnInit {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('access_token');
     return new HttpHeaders({
-      'Authorization': token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json'
+      Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json',
     });
   }
 
@@ -73,26 +74,30 @@ export class AuditLogComponent implements OnInit {
     const params = new URLSearchParams();
     params.set('page', this.currentPage.toString());
     params.set('perPage', this.perPage.toString());
-    if (this.search) params.set('search', this.search);
+    if (this.search) {
+      params.set('search', this.search);
+    }
 
-    this.http.get<{ data: AuditLogEntry[]; page: number; perPage: number; total: number }>(
-      `${this.API_URL}?${params.toString()}`,
-      { headers: this.getAuthHeaders() }
-    ).subscribe({
-      next: (response) => {
-        this.logs = response.data;
-        this.currentPage = response.page;
-        this.perPage = response.perPage;
-        this.total = response.total;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.error = err?.error?.message || 'Failed to load audit logs. Please check your permissions.';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.http
+      .get<{ data: AuditLogEntry[]; page: number; perPage: number; total: number }>(
+        `${this.API_URL}?${params.toString()}`,
+        { headers: this.getAuthHeaders() },
+      )
+      .subscribe({
+        next: (response) => {
+          this.logs = response.data;
+          this.currentPage = response.page;
+          this.perPage = response.perPage;
+          this.total = response.total;
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.error = err?.error?.message || 'Failed to load audit logs. Please check your permissions.';
+          this.loading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   onSearch(): void {
@@ -138,22 +143,25 @@ export class AuditLogComponent implements OnInit {
     }
   }
 
+  getActionLabel(action: string): string {
+    switch (action) {
+      case 'INSERT':
+        return 'Created';
+      case 'UPDATE':
+        return 'Updated';
+      case 'DELETE':
+        return 'Deleted';
+      default:
+        return action;
+    }
+  }
+
   formatDate(dateStr: string): string {
     try {
       return new Date(dateStr).toLocaleString();
     } catch {
       return dateStr;
     }
-  }
-
-  getDisplayValue(value: any): string {
-    if (value === null || value === undefined) {
-      return '(empty)';
-    }
-    if (typeof value === 'object') {
-      return JSON.stringify(value, null, 2);
-    }
-    return String(value);
   }
 
   parseStoredValues(value: any): Record<string, any> {
@@ -209,35 +217,35 @@ export class AuditLogComponent implements OnInit {
   getDetailFields(log: AuditLogEntry): DetailField[] {
     const oldValues = this.parseStoredValues(log.old_values);
     const newValues = this.parseStoredValues(log.new_values);
-    const keys = Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)])).sort();
 
-    return keys.map((key) => {
-      const afterValue = this.formatFieldValue(newValues[key]);
-      return {
-        key,
-        label: this.formatFieldLabel(key),
-        afterValue,
-      };
-    });
+    const keys = Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)]))
+      .filter((key) => !HIDDEN_DETAIL_FIELDS.has(key))
+      .sort();
+
+    return keys.map((key) => ({
+      key,
+      label: this.formatFieldLabel(key),
+      afterValue: this.formatFieldValue(newValues[key]),
+    }));
   }
 
   getChangeSummary(log: AuditLogEntry): string {
     const oldValues = this.parseStoredValues(log.old_values);
     const newValues = this.parseStoredValues(log.new_values);
-    const oldCount = Object.keys(oldValues).length;
-    const newCount = Object.keys(newValues).length;
+    const oldCount = Object.keys(oldValues).filter((key) => !HIDDEN_DETAIL_FIELDS.has(key)).length;
+    const newCount = Object.keys(newValues).filter((key) => !HIDDEN_DETAIL_FIELDS.has(key)).length;
 
     if (log.action === 'INSERT') {
-      return `Created with ${newCount} field${newCount === 1 ? '' : 's'}`;
+      return `Created with ${newCount} visible field${newCount === 1 ? '' : 's'}`;
     }
 
     if (log.action === 'DELETE') {
-      return `Removed ${oldCount} field${oldCount === 1 ? '' : 's'} of data`;
+      return `Removed ${oldCount} visible field${oldCount === 1 ? '' : 's'} of data`;
     }
 
     const fieldCount = this.getDetailFields(log).length;
     return fieldCount > 0
-      ? `Updated ${fieldCount} field${fieldCount === 1 ? '' : 's'}`
+      ? `Updated ${fieldCount} visible field${fieldCount === 1 ? '' : 's'}`
       : 'No visible field changes';
   }
 
@@ -254,6 +262,6 @@ export class AuditLogComponent implements OnInit {
   }
 
   getExpandedLog(): AuditLogEntry | undefined {
-    return this.logs.find(l => l.log_id === this.expandedLogId);
+    return this.logs.find((log) => log.log_id === this.expandedLogId);
   }
 }

@@ -97,7 +97,7 @@
             </td>
             <td class="col-action">
               <span class="action-badge" [ngClass]="getActionBadgeClass(log.action)">
-                {{ log.action }}
+                {{ getActionLabel(log.action) }}
               </span>
             </td>
             <td class="col-user">
@@ -139,7 +139,7 @@
                       </div>
                       <div class="detail-meta-item">
                         <span class="detail-meta-label">Action</span>
-                        <span class="detail-meta-value">{{ log.action }}</span>
+                        <span class="detail-meta-value">{{ getActionLabel(log.action) }}</span>
                       </div>
                       <div class="detail-meta-item">
                         <span class="detail-meta-label">Performer</span>

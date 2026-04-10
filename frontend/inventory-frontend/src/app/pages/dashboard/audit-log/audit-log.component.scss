@@ -389,13 +389,13 @@
 
 // Detail Content
 .detail-content {
-  padding: 16px;
+  padding: 12px;
   background: #f0f9ff;
 
   .detail-grid {
     display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
+    grid-template-columns: minmax(240px, 280px) 1fr;
+    gap: 16px;
 
     @media (max-width: 1024px) {
       grid-template-columns: 1fr;
@@ -406,10 +406,10 @@
     background: white;
     border: 1px solid #bfdbfe;
     border-radius: 12px;
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
 
   .detail-summary-header {
@@ -427,11 +427,11 @@
   .detail-meta-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 8px;
   }
 
   .detail-meta-item {
-    padding: 10px 12px;
+    padding: 8px 10px;
     border-radius: 10px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -464,7 +464,7 @@
       background: white;
       border: 1px solid #bfdbfe;
       border-radius: 12px;
-      padding: 16px;
+      padding: 12px;
     }
 
     .detail-heading {
@@ -477,15 +477,15 @@
     .field-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .field-row {
       display: grid;
-      grid-template-columns: 1.1fr 1fr;
-      gap: 12px;
+      grid-template-columns: 1fr;
+      gap: 4px;
       align-items: start;
-      padding: 12px;
+      padding: 10px 12px;
       border: 1px solid #e5e7eb;
       border-radius: 10px;
       background: #ffffff;
@@ -493,7 +493,7 @@
       &.field-row-head {
         background: #eff6ff;
         border-style: dashed;
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -511,7 +511,7 @@
     .field-value {
       word-break: break-word;
       color: #374151;
-      line-height: 1.45;
+      line-height: 1.35;
 
       &.after {
         color: #166534;
@@ -641,7 +641,7 @@
 
   .field-row {
     grid-template-columns: 1fr !important;
-    gap: 6px !important;
+    gap: 4px !important;
   }
 
   .pagination-bar {
