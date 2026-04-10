@@ -104,6 +104,13 @@ class TableFormController extends Controller
         if (!array_key_exists($table, $this->tables)) {
             abort(404, 'Table not allowed');
         }
+
+        if ($table === 'audit_log') {
+            $user = auth('api')->user();
+            if (!$user || !$user->hasPermission('view_audit')) {
+                abort(403, 'Insufficient permission to access audit logs');
+            }
+        }
     }
 
     private function sanitizePayload(string $table, array $input): array

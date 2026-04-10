@@ -19,8 +19,13 @@ class MaintenanceHomeController extends Controller
      */
     public function listTables(): JsonResponse
     {
+        $user = auth('api')->user();
         $list = [];
         foreach ($this->tables as $name => $meta) {
+            if ($name === 'audit_log' && (!$user || !$user->hasPermission('view_audit'))) {
+                continue;
+            }
+
             $list[] = [
                 'name' => $name,
                 'primary_key' => $meta['primary_key'],

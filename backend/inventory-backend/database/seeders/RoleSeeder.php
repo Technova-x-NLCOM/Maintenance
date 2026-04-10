@@ -33,6 +33,7 @@ class RoleSeeder extends Seeder
             ['permission_name' => 'manage_users', 'display_name' => 'Manage Users', 'description' => 'Create, update, delete users', 'module' => 'system'],
             ['permission_name' => 'manage_roles', 'display_name' => 'Manage Roles', 'description' => 'Create and assign roles', 'module' => 'system'],
             ['permission_name' => 'manage_permissions', 'display_name' => 'Manage Permissions', 'description' => 'Create and assign permissions', 'module' => 'system'],
+            ['permission_name' => 'view_audit', 'display_name' => 'View Audit Logs', 'description' => 'Access audit log records and activity feeds', 'module' => 'system'],
             ['permission_name' => 'manage_backups', 'display_name' => 'Manage Backups', 'description' => 'Manage database backups and restores', 'module' => 'system'],
             ['permission_name' => 'manage_settings', 'display_name' => 'Manage Settings', 'description' => 'View and update system-wide configuration settings', 'module' => 'system'],
             ['permission_name' => 'manage_maintenance', 'display_name' => 'Manage Maintenance', 'description' => 'Access maintenance tools for tables and rows', 'module' => 'maintenance'],
