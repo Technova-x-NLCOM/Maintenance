@@ -25,6 +25,7 @@ export class LoginComponent implements OnInit {
   setPasswordForm!: FormGroup;
   setPasswordError = '';
   setPasswordLoading = false;
+  forgotPasswordLoading = false;
   showSetPwd = false;
   showSetPwdConfirm = false;
   passwordNeedsSet = false;
@@ -96,8 +97,33 @@ export class LoginComponent implements OnInit {
       return;
     }
 
-    // Mock success state for frontend-only flow until backend integration is added.
-    this.currentFormState = 'success';
+    const email = (this.forgotPasswordForm.get('email')?.value || '').trim();
+    if (!email) {
+      this.showToast('Please enter your email address.');
+      return;
+    }
+
+    this.forgotPasswordLoading = true;
+    this.authService.forgotPassword(email)
+      .pipe(
+        timeout(15000),
+        finalize(() => {
+          this.forgotPasswordLoading = false;
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.currentFormState = 'success';
+          this.showToast('Password reset instructions have been sent if the email exists.', 'success');
+        },
+        error: (err) => {
+          const message = err.name === 'TimeoutError'
+            ? 'Request timed out. Please check your connection and try again.'
+            : (err.error?.message || 'Failed to send reset link. Please try again.');
+          this.showToast(message);
+        },
+        complete: () => {}
+      });
   }
 
   togglePasswordVisibility() {

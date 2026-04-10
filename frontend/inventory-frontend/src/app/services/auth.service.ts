@@ -39,6 +39,23 @@ export interface RegisterRequest {
   role?: 'super_admin' | 'inventory_manager';
 }
 
+export interface ForgotPasswordResponse {
+  success?: boolean;
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface ResetPasswordResponse {
+  success?: boolean;
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -186,5 +203,13 @@ export class AuthService {
 
   setInitialPassword(identifier: string, password: string, password_confirmation: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.API_URL}/set-initial-password`, { identifier, password, password_confirmation });
+  }
+
+  forgotPassword(email: string): Observable<ForgotPasswordResponse> {
+    return this.http.post<ForgotPasswordResponse>(`${this.API_URL}/forgot-password`, { email });
+  }
+
+  resetPassword(payload: ResetPasswordRequest): Observable<ResetPasswordResponse> {
+    return this.http.post<ResetPasswordResponse>(`${this.API_URL}/reset-password`, payload);
   }
 }
