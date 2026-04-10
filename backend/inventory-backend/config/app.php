@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | This URL is used to generate password reset links for your frontend
+    | application. Set this to your frontend application's root URL.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
