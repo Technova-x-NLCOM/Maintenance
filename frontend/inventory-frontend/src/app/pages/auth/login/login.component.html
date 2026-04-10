@@ -31,6 +31,9 @@
         <p *ngIf="currentFormState === 'forgotPassword'" class="reset-subtitle">
           Enter your registered email address and we will send you a link to reset your password.
         </p>
+        <p *ngIf="currentFormState === 'success'" class="reset-subtitle">
+          If the email exists in our system, a password reset link has been sent.
+        </p>
       </div>
 
       <form *ngIf="currentFormState === 'login'" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
@@ -110,7 +113,9 @@
           </span>
         </div>
 
-        <button type="submit" class="btn-login">Send Reset Link</button>
+        <button type="submit" class="btn-login" [disabled]="forgotPasswordLoading">
+          {{ forgotPasswordLoading ? 'Sending...' : 'Send Reset Link' }}
+        </button>
         <button type="button" class="back-to-login-link" (click)="backToLogin()">&larr; Back to Login</button>
       </form>
 

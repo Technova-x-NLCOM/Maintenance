@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './pages/auth/login/login.component';
+import { ResetPasswordComponent } from './pages/auth/reset-password/reset-password.component';
 import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
 import { DashboardLayoutComponent } from './pages/dashboard/layout/dashboard-layout.component';
 import { DashboardRedirectComponent } from './pages/dashboard/home/home.component';
@@ -23,6 +24,7 @@ import { SystemUsersComponent } from './pages/dashboard/system-users/system-user
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'admin-login', component: AdminLoginComponent },
   {
     path: 'dashboard',
