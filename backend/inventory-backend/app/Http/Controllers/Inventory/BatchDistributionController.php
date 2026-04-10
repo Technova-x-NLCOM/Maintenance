@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -153,6 +154,17 @@ class BatchDistributionController extends Controller
                 return $newTemplateId;
             });
 
+            $newTemplate = DB::table('distribution_templates')->where('template_id', $templateId)->first();
+            AuditLogService::log(
+                'distribution_templates',
+                (int) $templateId,
+                'INSERT',
+                null,
+                $newTemplate ? (array) $newTemplate : null,
+                $request,
+                $createdBy
+            );
+
             return $this->showTemplate($templateId);
         } catch (\Throwable $e) {
             return response()->json([
@@ -176,6 +188,7 @@ class BatchDistributionController extends Controller
         $validated = $this->validateTemplatePayload($request, $templateId);
 
         try {
+            $oldTemplate = (array) $template;
             DB::transaction(function () use ($templateId, $validated) {
                 DB::table('distribution_templates')
                     ->where('template_id', $templateId)
@@ -194,6 +207,16 @@ class BatchDistributionController extends Controller
                 $lineRows = $this->normalizeTemplateItemsForInsert($templateId, $validated['items']);
                 DB::table('distribution_template_items')->insert($lineRows);
             });
+
+            $newTemplate = DB::table('distribution_templates')->where('template_id', $templateId)->first();
+            AuditLogService::log(
+                'distribution_templates',
+                $templateId,
+                'UPDATE',
+                $oldTemplate,
+                $newTemplate ? (array) $newTemplate : null,
+                $request
+            );
 
             return $this->showTemplate($templateId);
         } catch (\Throwable $e) {
@@ -329,6 +352,16 @@ class BatchDistributionController extends Controller
                     'issued_lines' => $issuedLines,
                 ];
             });
+
+            AuditLogService::log(
+                'inventory_transactions',
+                0,
+                'UPDATE',
+                null,
+                $summary,
+                $request,
+                $performedBy
+            );
 
             return response()->json([
                 'success' => true,

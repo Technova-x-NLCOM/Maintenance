@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -132,12 +133,33 @@ class CategoryController extends Controller
             ], 422);
         }
 
+        $oldItems = DB::table('items')
+            ->whereIn('item_id', $itemIds)
+            ->get()
+            ->keyBy('item_id');
+
         $affected = DB::table('items')
             ->whereIn('item_id', $itemIds)
             ->update([
                 'category_id' => $categoryId,
                 'updated_at' => now(),
             ]);
+
+        $newItems = DB::table('items')
+            ->whereIn('item_id', $itemIds)
+            ->get()
+            ->keyBy('item_id');
+
+        foreach ($itemIds as $itemId) {
+            AuditLogService::log(
+                'items',
+                (int) $itemId,
+                'UPDATE',
+                isset($oldItems[$itemId]) ? (array) $oldItems[$itemId] : null,
+                isset($newItems[$itemId]) ? (array) $newItems[$itemId] : null,
+                $request
+            );
+        }
 
         $message = count($itemIds) === 1
             ? 'Item assigned to category successfully.'
@@ -180,12 +202,24 @@ class CategoryController extends Controller
             ], 422);
         }
 
+        $oldItem = DB::table('items')->where('item_id', $itemId)->first();
+
         DB::table('items')
             ->where('item_id', $itemId)
             ->update([
                 'category_id' => null,
                 'updated_at' => now(),
             ]);
+
+        $newItem = DB::table('items')->where('item_id', $itemId)->first();
+        AuditLogService::log(
+            'items',
+            $itemId,
+            'UPDATE',
+            $oldItem ? (array) $oldItem : null,
+            $newItem ? (array) $newItem : null,
+            request()
+        );
 
         return response()->json([
             'success' => true,
@@ -297,6 +331,16 @@ class CategoryController extends Controller
                 'created_at' => now(),
             ]);
 
+            $newCategory = DB::table('categories')->where('category_id', $categoryId)->first();
+            AuditLogService::log(
+                'categories',
+                (int) $categoryId,
+                'INSERT',
+                null,
+                $newCategory ? (array) $newCategory : null,
+                $request
+            );
+
             return $this->show((int) $categoryId);
         } catch (\Throwable $e) {
             return $this->buildCategoryErrorResponse('create', $e);
@@ -351,6 +395,16 @@ class CategoryController extends Controller
         try {
             DB::table('categories')->where('category_id', $categoryId)->update($data);
 
+            $updatedCategory = DB::table('categories')->where('category_id', $categoryId)->first();
+            AuditLogService::log(
+                'categories',
+                $categoryId,
+                'UPDATE',
+                (array) $existingCategory,
+                $updatedCategory ? (array) $updatedCategory : null,
+                $request
+            );
+
             return $this->show($categoryId);
         } catch (\Throwable $e) {
             return $this->buildCategoryErrorResponse('update', $e);
@@ -386,7 +440,17 @@ class CategoryController extends Controller
         }
 
         try {
+            $oldValues = (array) $category;
             DB::table('categories')->where('category_id', $categoryId)->delete();
+
+            AuditLogService::log(
+                'categories',
+                $categoryId,
+                'DELETE',
+                $oldValues,
+                null,
+                request()
+            );
 
             return response()->json([
                 'success' => true,
