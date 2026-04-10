@@ -20,6 +20,7 @@ import { MonitoringComponent } from './pages/dashboard/monitoring/monitoring.com
 import { StockReportComponent } from './pages/dashboard/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transaction-history/transaction-history.component';
 import { SystemUsersComponent } from './pages/dashboard/system-users/system-users.component';
+import { AuditLogComponent } from './pages/dashboard/audit-log/audit-log.component';
 import { permissionGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -48,7 +49,7 @@ export const routes: Routes = [
       { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
       { path: 'monitoring/stock-report', component: StockReportComponent },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
-      { path: 'maintenance/audit_log', component: MaintenanceComponent, canActivate: [permissionGuard('view_audit')] },
+      { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
       { path: 'settings', component: SettingsComponent }

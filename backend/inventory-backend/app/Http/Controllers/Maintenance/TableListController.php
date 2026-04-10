@@ -102,6 +102,14 @@ class TableListController extends Controller
         $search = $request->query('search');
 
         $query = DB::table($table);
+        if ($table === 'audit_log') {
+            $query = DB::table('audit_log as al')
+                ->leftJoin('users as u', 'al.performed_by', '=', 'u.user_id')
+                ->select(
+                    'al.*',
+                    DB::raw("TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) as performed_by_name")
+                );
+        }
         if ($soft) {
             if (!$showDeleted) {
                 $query->whereNull('deleted_at');
@@ -112,16 +120,28 @@ class TableListController extends Controller
         if ($search && trim($search) !== '') {
             $columns = Schema::getColumnListing($table);
             $searchTerm = '%' . trim($search) . '%';
-            $query->where(function ($q) use ($columns, $searchTerm) {
-                foreach ($columns as $col) {
-                    $q->orWhere($col, 'LIKE', $searchTerm);
-                }
-            });
+            if ($table === 'audit_log') {
+                $query->where(function ($q) use ($columns, $searchTerm) {
+                    foreach ($columns as $col) {
+                        $q->orWhere('al.' . $col, 'LIKE', $searchTerm);
+                    }
+                    $q->orWhereRaw(
+                        "TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) LIKE ?",
+                        [$searchTerm]
+                    );
+                });
+            } else {
+                $query->where(function ($q) use ($columns, $searchTerm) {
+                    foreach ($columns as $col) {
+                        $q->orWhere($col, 'LIKE', $searchTerm);
+                    }
+                });
+            }
         }
 
         // Sort descending by primary key to show latest first
         if (is_string($pk)) {
-            $query->orderBy($pk, 'desc');
+            $query->orderBy($table === 'audit_log' ? 'al.' . $pk : $pk, 'desc');
         }
 
         // Basic pagination

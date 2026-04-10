@@ -1,0 +1,182 @@
+<div class="audit-container">
+  <!-- Header -->
+  <div class="audit-header">
+    <h1 class="audit-title">Audit Log</h1>
+    <p class="audit-subtitle">Track all system activity and changes</p>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading audit logs...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="error && !loading">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>{{ error }}</p>
+    <button class="retry-btn" (click)="loadLogs()">Try Again</button>
+  </div>
+
+  <!-- Content -->
+  <div class="audit-content" *ngIf="!loading && !error">
+    <!-- Search & Filters -->
+    <div class="search-bar">
+      <div class="search-input-group">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by table, user, or action..."
+          [(ngModel)]="search"
+          (keyup.enter)="onSearch()"
+          aria-label="Search audit logs"
+        />
+        <button *ngIf="search" class="clear-btn" (click)="clearSearch()" title="Clear search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <button class="search-btn" (click)="onSearch()">Search</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-label">Total Logs:</span>
+        <span class="stat-value">{{ total }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Showing:</span>
+        <span class="stat-value">{{ startRecord }} - {{ endRecord }} of {{ total }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Per Page:</span>
+        <select [(ngModel)]="perPage" (change)="currentPage = 1; loadLogs()" class="stat-select">
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="logs-table-wrap">
+      <table class="logs-table" role="grid" aria-label="Audit logs">
+        <thead>
+          <tr>
+            <th>Date/Time</th>
+            <th>Table</th>
+            <th>Record ID</th>
+            <th>Action</th>
+            <th>Performed By</th>
+            <th>IP Address</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs" class="log-row" [class.expanded]="expandedLogId === log.log_id">
+            <td class="col-date">
+              <span class="date-value">{{ formatDate(log.created_at) }}</span>
+            </td>
+            <td class="col-table">
+              <span class="table-badge">{{ log.table_name }}</span>
+            </td>
+            <td class="col-id">
+              <code>{{ log.record_id }}</code>
+            </td>
+            <td class="col-action">
+              <span class="action-badge" [ngClass]="getActionBadgeClass(log.action)">
+                {{ log.action }}
+              </span>
+            </td>
+            <td class="col-user">
+              <span class="user-name">{{ log.performed_by_name || 'Unknown' }}</span>
+            </td>
+            <td class="col-ip">
+              <code class="ip-code">{{ log.ip_address }}</code>
+            </td>
+            <td class="col-expand">
+              <button
+                class="expand-btn"
+                (click)="toggleExpanded(log.log_id)"
+                [attr.aria-expanded]="expandedLogId === log.log_id"
+                title="Show details"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="expandedLogId" class="detail-row">
+            <td colspan="7" class="detail-cell">
+              <div class="detail-content">
+                <div *ngIf="getExpandedLog() as log" class="detail-grid">
+                  <ng-container *ngIf="log.old_values || log.new_values; else noDetails">
+                    <div class="detail-section" *ngIf="log.old_values">
+                      <h4 class="detail-heading">Previous Values</h4>
+                      <div class="detail-values">
+                        <pre>{{ getDisplayValue(log.old_values) }}</pre>
+                      </div>
+                    </div>
+                    <div class="detail-section" *ngIf="log.new_values">
+                      <h4 class="detail-heading">New Values</h4>
+                      <div class="detail-values">
+                        <pre>{{ getDisplayValue(log.new_values) }}</pre>
+                      </div>
+                    </div>
+                  </ng-container>
+                  <ng-template #noDetails>
+                    <div class="detail-section">
+                      <p class="no-details">No additional details available</p>
+                    </div>
+                  </ng-template>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar">
+      <button
+        class="pagination-btn"
+        (click)="prevPage()"
+        [disabled]="currentPage === 1"
+        title="Previous page"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Previous
+      </button>
+      <span class="page-info">
+        Page {{ currentPage }} of {{ totalPages }}
+      </span>
+      <button
+        class="pagination-btn"
+        (click)="nextPage()"
+        [disabled]="currentPage >= totalPages"
+        title="Next page"
+      >
+        Next
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

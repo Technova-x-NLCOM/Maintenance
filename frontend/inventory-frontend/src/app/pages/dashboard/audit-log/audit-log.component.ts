@@ -1,0 +1,168 @@
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+export interface AuditLogEntry {
+  log_id: number;
+  table_name: string;
+  record_id: number;
+  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  old_values?: any;
+  new_values?: any;
+  performed_by: number;
+  performed_by_name?: string;
+  ip_address: string;
+  created_at: string;
+}
+
+@Component({
+  selector: 'app-audit-log',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './audit-log.component.html',
+  styleUrls: ['./audit-log.component.scss']
+})
+export class AuditLogComponent implements OnInit {
+  logs: AuditLogEntry[] = [];
+  loading = true;
+  error = '';
+  
+  // Pagination & Filter
+  currentPage = 1;
+  perPage = 25;
+  total = 0;
+  search = '';
+  selectedTable = '';
+  selectedAction = '';
+  
+  // Display
+  expandedLogId: number | null = null;
+  sortBy: 'date' | 'table' | 'action' = 'date';
+  sortDir: 'asc' | 'desc' = 'desc';
+
+  private readonly API_URL = 'http://127.0.0.1:8000/api/maintenance/audit_log/rows';
+
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    this.loadLogs();
+  }
+
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('access_token');
+    return new HttpHeaders({
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    });
+  }
+
+  loadLogs(): void {
+    this.loading = true;
+    this.error = '';
+
+    const params = new URLSearchParams();
+    params.set('page', this.currentPage.toString());
+    params.set('perPage', this.perPage.toString());
+    if (this.search) params.set('search', this.search);
+
+    this.http.get<{ data: AuditLogEntry[]; page: number; perPage: number; total: number }>(
+      `${this.API_URL}?${params.toString()}`,
+      { headers: this.getAuthHeaders() }
+    ).subscribe({
+      next: (response) => {
+        this.logs = response.data;
+        this.currentPage = response.page;
+        this.perPage = response.perPage;
+        this.total = response.total;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.error = err?.error?.message || 'Failed to load audit logs. Please check your permissions.';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onSearch(): void {
+    this.currentPage = 1;
+    this.loadLogs();
+  }
+
+  clearSearch(): void {
+    this.search = '';
+    this.currentPage = 1;
+    this.loadLogs();
+  }
+
+  nextPage(): void {
+    if (this.currentPage * this.perPage < this.total) {
+      this.currentPage++;
+      this.loadLogs();
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadLogs();
+    }
+  }
+
+  toggleExpanded(logId: number): void {
+    this.expandedLogId = this.expandedLogId === logId ? null : logId;
+    this.cdr.detectChanges();
+  }
+
+  getActionBadgeClass(action: string): string {
+    switch (action) {
+      case 'INSERT':
+        return 'badge-insert';
+      case 'UPDATE':
+        return 'badge-update';
+      case 'DELETE':
+        return 'badge-delete';
+      default:
+        return 'badge-default';
+    }
+  }
+
+  formatDate(dateStr: string): string {
+    try {
+      return new Date(dateStr).toLocaleString();
+    } catch {
+      return dateStr;
+    }
+  }
+
+  getDisplayValue(value: any): string {
+    if (value === null || value === undefined) {
+      return '(empty)';
+    }
+    if (typeof value === 'object') {
+      return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.total / this.perPage);
+  }
+
+  get startRecord(): number {
+    return (this.currentPage - 1) * this.perPage + 1;
+  }
+
+  get endRecord(): number {
+    return Math.min(this.currentPage * this.perPage, this.total);
+  }
+
+  getExpandedLog(): AuditLogEntry | undefined {
+    return this.logs.find(l => l.log_id === this.expandedLogId);
+  }
+}
