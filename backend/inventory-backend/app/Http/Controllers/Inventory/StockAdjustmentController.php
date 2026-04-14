@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -331,6 +332,16 @@ class StockAdjustmentController extends Controller
                     'purchase_date' => $resolvedPurchaseDate,
                 ];
             });
+
+            AuditLogService::log(
+                'inventory_transactions',
+                $itemId,
+                'UPDATE',
+                null,
+                $result,
+                $request,
+                $performedBy
+            );
 
             return response()->json([
                 'success' => true,

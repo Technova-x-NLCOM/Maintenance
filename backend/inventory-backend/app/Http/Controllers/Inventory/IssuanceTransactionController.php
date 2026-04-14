@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -224,6 +225,16 @@ class IssuanceTransactionController extends Controller
                     'total_issued_quantity' => $totalIssued,
                 ];
             });
+
+            AuditLogService::log(
+                'inventory_transactions',
+                0,
+                'UPDATE',
+                null,
+                $summary,
+                $request,
+                $performedBy
+            );
 
             return response()->json([
                 'success' => true,

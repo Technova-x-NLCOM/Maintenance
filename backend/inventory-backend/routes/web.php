@@ -95,7 +95,7 @@ Route::prefix('api/super-admin')
     ->group(function () {
         Route::middleware(['auth:api'])->group(function () {
             Route::get('stats', [\App\Http\Controllers\SuperAdminController::class, 'stats']);
-            Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity']);
+            Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity'])->middleware('permission:view_audit');
             Route::get('alerts', [\App\Http\Controllers\SuperAdminController::class, 'alerts']);
             Route::post('alerts/{alertId}/acknowledge', [\App\Http\Controllers\SuperAdminController::class, 'acknowledgeAlert']);
         });

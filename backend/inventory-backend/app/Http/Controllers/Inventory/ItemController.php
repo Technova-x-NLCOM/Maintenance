@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -176,6 +177,17 @@ class ItemController extends Controller
                 'updated_at' => now(),
             ]);
 
+            $newItem = DB::table('items')->where('item_id', $itemId)->first();
+            AuditLogService::log(
+                'items',
+                (int) $itemId,
+                'INSERT',
+                null,
+                $newItem ? (array) $newItem : null,
+                $request,
+                $user?->user_id
+            );
+
             DB::commit();
 
             return $this->show((int) $itemId);
@@ -193,7 +205,7 @@ class ItemController extends Controller
     public function update(Request $request, int $itemId)
     {
         $existingItem = DB::table('items')
-            ->select('item_id', 'image_url')
+            ->select('*')
             ->where('item_id', $itemId)
             ->first();
 
@@ -250,6 +262,17 @@ class ItemController extends Controller
             }
 
             DB::table('items')->where('item_id', $itemId)->update($data);
+            $updatedItem = DB::table('items')->where('item_id', $itemId)->first();
+
+            AuditLogService::log(
+                'items',
+                $itemId,
+                'UPDATE',
+                (array) $existingItem,
+                $updatedItem ? (array) $updatedItem : null,
+                $request
+            );
+
             DB::commit();
 
             if ($newImagePath && $oldImagePath && $oldImagePath !== $newImagePath) {
@@ -270,6 +293,14 @@ class ItemController extends Controller
 
     public function updateStatus(Request $request, int $itemId)
     {
+        $oldItem = DB::table('items')->where('item_id', $itemId)->first();
+        if (!$oldItem) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found or no changes applied.',
+            ], 404);
+        }
+
         $data = $request->validate([
             'is_active' => ['required', 'boolean'],
         ]);
@@ -287,6 +318,16 @@ class ItemController extends Controller
                 'message' => 'Item not found or no changes applied.',
             ], 404);
         }
+
+        $newItem = DB::table('items')->where('item_id', $itemId)->first();
+        AuditLogService::log(
+            'items',
+            $itemId,
+            'UPDATE',
+            (array) $oldItem,
+            $newItem ? (array) $newItem : null,
+            $request
+        );
 
         return $this->show($itemId);
     }
@@ -348,8 +389,8 @@ class ItemController extends Controller
 
     public function updateMinimumStock(Request $request, int $itemId)
     {
-        $exists = DB::table('items')->where('item_id', $itemId)->exists();
-        if (!$exists) {
+        $oldItem = DB::table('items')->where('item_id', $itemId)->first();
+        if (!$oldItem) {
             return response()->json([
                 'success' => false,
                 'message' => 'Item not found.',
@@ -366,6 +407,16 @@ class ItemController extends Controller
                 'reorder_level' => $data['reorder_level'],
                 'updated_at' => now(),
             ]);
+
+        $newItem = DB::table('items')->where('item_id', $itemId)->first();
+        AuditLogService::log(
+            'items',
+            $itemId,
+            'UPDATE',
+            (array) $oldItem,
+            $newItem ? (array) $newItem : null,
+            $request
+        );
 
         return response()->json([
             'success' => true,
@@ -384,12 +435,24 @@ class ItemController extends Controller
         DB::beginTransaction();
         try {
             foreach ($data['updates'] as $update) {
+                $oldItem = DB::table('items')->where('item_id', $update['item_id'])->first();
+
                 DB::table('items')
                     ->where('item_id', $update['item_id'])
                     ->update([
                         'reorder_level' => $update['reorder_level'],
                         'updated_at' => now(),
                     ]);
+
+                $newItem = DB::table('items')->where('item_id', $update['item_id'])->first();
+                AuditLogService::log(
+                    'items',
+                    (int) $update['item_id'],
+                    'UPDATE',
+                    $oldItem ? (array) $oldItem : null,
+                    $newItem ? (array) $newItem : null,
+                    $request
+                );
             }
             DB::commit();
 

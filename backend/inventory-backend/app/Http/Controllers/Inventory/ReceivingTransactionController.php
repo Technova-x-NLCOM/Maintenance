@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -115,16 +116,25 @@ class ReceivingTransactionController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes) {
+            $line = DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes) {
                 $data['location_id'] = $locationId;
-                $line = $this->createReceivingLine($data);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Stock received successfully.',
-                    'data' => $line,
-                ], 201);
+                return $this->createReceivingLine($data);
             });
+
+            AuditLogService::log(
+                'inventory_transactions',
+                (int) ($line['batch_id'] ?? 0),
+                'INSERT',
+                null,
+                $line,
+                $request
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Stock received successfully.',
+                'data' => $line,
+            ], 201);
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -195,6 +205,17 @@ class ReceivingTransactionController extends Controller
                     'received_lines' => $receivedLines,
                 ];
             });
+
+            foreach ($summary['received_lines'] as $line) {
+                AuditLogService::log(
+                    'inventory_transactions',
+                    (int) ($line['batch_id'] ?? 0),
+                    'INSERT',
+                    null,
+                    $line,
+                    $request
+                );
+            }
 
             return response()->json([
                 'success' => true,
