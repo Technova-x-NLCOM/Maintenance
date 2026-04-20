@@ -3,144 +3,244 @@
     <div class="header-text">
       <p class="eyebrow">Inventory Master Data</p>
       <h1 class="page-title">Item Registration & Updates</h1>
-      <p class="subtitle">Add or edit items here. Click <strong>Add new item</strong> to create one, or <strong>Edit</strong> on a row to update.</p>
+      <p class="subtitle">
+        Add or edit items here. Click <strong>Add new item</strong> to create one, or
+        <strong>Edit</strong> on a row to update.
+      </p>
     </div>
   </header>
 
   <div *ngIf="errorMessage" class="alert alert-error">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="15" y1="9" x2="9" y2="15" />
+      <line x1="9" y1="9" x2="15" y2="15" />
+    </svg>
     {{ errorMessage }}
   </div>
   <div *ngIf="successMessage" class="alert alert-success">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
     {{ successMessage }}
   </div>
 
   <!-- Item form modal: opens when user clicks "Add new item" or "Edit" -->
-  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true" [attr.aria-label]="selectedItemId ? 'Edit item' : 'Add new item'">
+  <div
+    class="modal-overlay"
+    *ngIf="showForm"
+    (click)="bounceModal('item-form-modal')"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="selectedItemId ? 'Edit item' : 'Add new item'"
+  >
     <div class="modal-content item-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
         <h2 class="panel-title">{{ selectedItemId ? 'Edit item' : 'Add new item' }}</h2>
-        <button class="btn-ghost btn-close-form app-modal-close" type="button" (click)="closeForm()" title="Close" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
       </div>
 
-      <div class="form-grid">
-        <label>
-          <span>Item code or SKU <em>*</em></span>
-          <input type="text" [(ngModel)]="formData.item_code" placeholder="e.g. SKU-001 or ITEM-001" />
-        </label>
-
-        <label>
-          <span>Item name or description <em>*</em></span>
-          <input type="text" [(ngModel)]="formData.item_description" placeholder="What is this item?" />
-        </label>
-
-        <label>
-          <span>Category <em>*</em></span>
-          <select [(ngModel)]="formData.category_id" (ngModelChange)="onCategoryChange()">
-            <option [ngValue]="null">Select category</option>
-            <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
-              {{ category.category_name }}
-            </option>
-          </select>
-        </label>
-
-        <label>
-          <span>Item Type <em>*</em></span>
-          <select [(ngModel)]="formData.item_type_id">
-            <option [ngValue]="null">Select item type</option>
-            <option *ngFor="let itemType of options.item_types" [ngValue]="itemType.item_type_id">
-              {{ itemType.type_name }}
-            </option>
-          </select>
-        </label>
-
-        <label>
-          <span>Unit of measure</span>
-          <input type="text" [(ngModel)]="formData.measurement_unit" placeholder="e.g. pieces, kg, box, liter" />
-        </label>
-
-        <label>
-          <span>Price or value per unit (optional)</span>
-          <input type="number" min="0" step="0.01" [(ngModel)]="formData.unit_value" placeholder="Leave blank if not used" />
-        </label>
-
-        <label>
-          <span>Alert when stock is below</span>
-          <input type="number" min="0" [(ngModel)]="formData.reorder_level" placeholder="e.g. 10 — get an alert when quantity falls below this" />
-        </label>
-
-        <label>
-          <span>Expected shelf life (days)</span>
-          <input
-            type="number"
-            min="1"
-            [(ngModel)]="formData.shelf_life_days"
-            placeholder="e.g. 730 for 2 years"
-          />
-        </label>
-
-        <label>
-          <span>Dosage in mg (for medicines only)</span>
-          <input type="number" min="0" step="0.01" [(ngModel)]="formData.mg_dosage" placeholder="e.g. 500" />
-        </label>
-
-        <div class="full-width image-upload-field">
+      <div class="modal-body-scroll">
+        <div class="form-grid">
           <label>
-            <span>Product image (optional)</span>
-            <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+            <span>Item code or SKU <em>*</em></span>
+            <input
+              type="text"
+              [(ngModel)]="formData.item_code"
+              placeholder="e.g. SKU-001 or ITEM-001"
+            />
           </label>
-          <p class="field-hint">Upload a JPG, PNG, WEBP, or GIF image up to 4 MB.</p>
-          <div class="image-preview" *ngIf="imagePreviewUrl">
-            <img [src]="imagePreviewUrl" alt="Selected item image preview" />
+
+          <label>
+            <span>Item name or description <em>*</em></span>
+            <input
+              type="text"
+              [(ngModel)]="formData.item_description"
+              placeholder="What is this item?"
+            />
+          </label>
+
+          <label>
+            <span>Category <em>*</em></span>
+            <select [(ngModel)]="formData.category_id" (ngModelChange)="onCategoryChange()">
+              <option [ngValue]="null">Select category</option>
+              <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
+                {{ category.category_name }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Item Type <em>*</em></span>
+            <select [(ngModel)]="formData.item_type_id">
+              <option [ngValue]="null">Select item type</option>
+              <option *ngFor="let itemType of options.item_types" [ngValue]="itemType.item_type_id">
+                {{ itemType.type_name }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Unit of measure</span>
+            <input
+              type="text"
+              [(ngModel)]="formData.measurement_unit"
+              placeholder="e.g. pieces, kg, box, liter"
+            />
+          </label>
+
+          <label>
+            <span>Price or value per unit (optional)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="formData.unit_value"
+              placeholder="Leave blank if not used"
+            />
+          </label>
+
+          <label>
+            <span>Alert when stock is below</span>
+            <input
+              type="number"
+              min="0"
+              [(ngModel)]="formData.reorder_level"
+              placeholder="e.g. 10 — get an alert when quantity falls below this"
+            />
+          </label>
+
+          <label>
+            <span>Expected shelf life (days)</span>
+            <input
+              type="number"
+              min="1"
+              [(ngModel)]="formData.shelf_life_days"
+              placeholder="e.g. 730 for 2 years"
+            />
+          </label>
+
+          <label>
+            <span>Dosage in mg (for medicines only)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="formData.mg_dosage"
+              placeholder="e.g. 500"
+            />
+          </label>
+
+          <div class="full-width image-upload-field">
+            <span class="field-label">Product image (optional)</span>
+            <input
+              type="file"
+              #itemImageInput
+              accept="image/*"
+              (change)="onImageSelected($event)"
+              style="display: none;"
+            />
+            <ng-container *ngIf="!imagePreviewUrl">
+              <div
+                class="file-upload-area"
+                (click)="itemImageInput.click()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave($event)"
+                (drop)="onDrop($event)"
+                [class.drag-over]="isDraggingOver"
+              >
+                <div class="upload-icon">
+                  <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                    <path d="M7 18C4.23858 18 2 15.7614 2 13C2 10.2386 4.23858 8 7 8C7.36064 8 7.71474 8.02951 8.05848 8.08582C8.02169 7.7308 8 7.36905 8 7C8 4.23858 10.2386 2 13 2C15.4193 2 17.4403 3.71825 17.9163 6C20.1608 6.18684 22 8.16229 22 10.5C22 12.9853 19.9853 15 17.5 15H16" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 12V21M12 12L9 15M12 12L15 15" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <p class="upload-text">Drag & drop your image here</p>
+                <p class="upload-or">OR</p>
+                <button type="button" class="browse-button" (click)="$event.stopPropagation(); itemImageInput.click()">Browse Files</button>
+                <p class="upload-hint">JPG, PNG, WEBP or GIF · max 4 MB</p>
+              </div>
+            </ng-container>
+            <ng-container *ngIf="imagePreviewUrl">
+              <div class="photo-preview">
+                <img [src]="imagePreviewUrl" alt="Selected item image preview" />
+                <button type="button" class="remove-photo-button" (click)="removePhoto()">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </ng-container>
           </div>
+
+          <label class="full-width">
+            <span>Additional details (optional)</span>
+            <textarea
+              rows="2"
+              [(ngModel)]="formData.particular"
+              placeholder="Any extra information about this item"
+            ></textarea>
+          </label>
+
+          <label class="full-width">
+            <span>Notes (optional)</span>
+            <textarea
+              rows="2"
+              [(ngModel)]="formData.remarks"
+              placeholder="Internal notes for your reference"
+            ></textarea>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="formData.is_active" />
+            <span>Show this item as available</span>
+          </label>
         </div>
-
-        <label class="full-width">
-          <span>Additional details (optional)</span>
-          <textarea rows="2" [(ngModel)]="formData.particular" placeholder="Any extra information about this item"></textarea>
-        </label>
-
-        <label class="full-width">
-          <span>Notes (optional)</span>
-          <textarea rows="2" [(ngModel)]="formData.remarks" placeholder="Internal notes for your reference"></textarea>
-        </label>
-
-        <label class="checkbox-row">
-          <input type="checkbox" [(ngModel)]="formData.is_active" />
-          <span>Show this item as available</span>
-        </label>
+        <!-- /.form-grid -->
       </div>
+      <!-- /.modal-body-scroll -->
 
       <div class="form-actions">
+        <button class="btn-cancel" type="button" (click)="closeForm()">Cancel</button>
         <button class="btn-primary" [disabled]="saving" (click)="save()" type="button">
-          {{ saving ? 'Saving...' : (selectedItemId ? 'Save changes' : 'Add item') }}
+          {{ saving ? 'Saving...' : selectedItemId ? 'Save changes' : 'Add item' }}
         </button>
-        <button class="btn-ghost" type="button" (click)="closeForm()">Cancel</button>
       </div>
     </div>
   </div>
 
   <section class="panel list-panel">
     <div class="list-toolbar">
-      <h2 class="panel-title">Registered Items <span class="count">({{ totalItems }})</span></h2>
+      <h2 class="panel-title">
+        Registered Items <span class="count">({{ totalItems }})</span>
+      </h2>
       <div class="toolbar-actions">
         <button class="btn-primary" (click)="startNew()" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Add new item
         </button>
         <button class="btn-scan" (click)="openItemQrScanner()" type="button">Scan QR</button>
         <div class="view-toggle" role="group" aria-label="Item view mode">
-          <button class="view-btn" type="button" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">Table</button>
-          <button class="view-btn" type="button" [class.active]="viewMode === 'cards'" (click)="viewMode = 'cards'">Cards</button>
+          <button
+            class="view-btn"
+            type="button"
+            [class.active]="viewMode === 'table'"
+            (click)="viewMode = 'table'"
+          >
+            Table
+          </button>
+          <button
+            class="view-btn"
+            type="button"
+            [class.active]="viewMode === 'cards'"
+            (click)="viewMode = 'cards'"
+          >
+            Cards
+          </button>
         </div>
         <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
           <button
@@ -153,7 +253,13 @@
           >
             <span class="trigger-label">Category:</span>
             <span class="trigger-value">{{ selectedFilterCategoryName }}</span>
-            <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg
+              class="trigger-caret"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
@@ -203,22 +309,44 @@
           </div>
         </div>
         <div class="search-row">
-        <div class="search-box">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            type="text"
-            [(ngModel)]="search"
-            (ngModelChange)="onItemsSearchInput()"
-            placeholder="Search by code, description, or category"
-            (keyup.enter)="onSearch()"
-          />
-          <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearItemsSearchBox()" aria-label="Clear search" title="Clear search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
+          <div class="search-box">
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (ngModelChange)="onItemsSearchInput()"
+              placeholder="Search by code, description, or category"
+              (keyup.enter)="onSearch()"
+            />
+            <button
+              *ngIf="search"
+              class="btn-clear-input"
+              type="button"
+              (click)="clearItemsSearchBox()"
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -239,7 +367,9 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of items">
-            <td><span class="cell-code">{{ item.item_code }}</span></td>
+            <td>
+              <span class="cell-code">{{ item.item_code }}</span>
+            </td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.category_name || '—' }}</td>
             <td>{{ item.reorder_level != null ? item.reorder_level : '—' }}</td>
@@ -265,6 +395,11 @@
 
     <div class="item-card-grid" *ngIf="!loading && viewMode === 'cards'">
       <article class="item-card" *ngFor="let item of items">
+        <div class="card-image">
+          <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+          <span *ngIf="!item.image_url">No Image</span>
+        </div>
+
         <div class="item-card-header">
           <div>
             <div class="cell-code">{{ item.item_code }}</div>
@@ -277,7 +412,10 @@
 
         <div class="item-card-body">
           <p><strong>Category:</strong> {{ item.category_name || '—' }}</p>
-          <p><strong>Reorder Level:</strong> {{ item.reorder_level != null ? item.reorder_level : '—' }}</p>
+          <p>
+            <strong>Reorder Level:</strong>
+            {{ item.reorder_level != null ? item.reorder_level : '—' }}
+          </p>
           <p><strong>Unit:</strong> {{ item.measurement_unit || '—' }}</p>
         </div>
 
@@ -294,11 +432,39 @@
 
     <div class="pagination" *ngIf="!loading">
       <div class="pagination-nav">
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">&laquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="firstPage()"
+          type="button"
+        >
+          &laquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="previousPage()"
+          type="button"
+        >
+          &lsaquo;
+        </button>
         <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">&rsaquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">&raquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="nextPage()"
+          type="button"
+        >
+          &rsaquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="lastPage()"
+          type="button"
+        >
+          &raquo;
+        </button>
       </div>
 
       <div class="page-size-wrap">
@@ -316,11 +482,25 @@
   </section>
 </div>
 
-<div class="modal-overlay" *ngIf="showScanModal" (click)="closeItemQrScanner()" role="dialog" aria-modal="true" aria-label="Scan item QR code">
+<div
+  class="modal-overlay"
+  *ngIf="showScanModal"
+  (click)="bounceModal('item-qr-modal')"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Scan item QR code"
+>
   <div class="modal-box item-qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Scan Item QR</h2>
-      <button class="modal-close app-modal-close" type="button" (click)="closeItemQrScanner()" aria-label="Close">×</button>
+      <button
+        class="modal-close app-modal-close"
+        type="button"
+        (click)="closeItemQrScanner()"
+        aria-label="Close"
+      >
+        ×
+      </button>
     </div>
 
     <div class="modal-body">
@@ -333,11 +513,25 @@
   </div>
 </div>
 
-<div class="modal-overlay" *ngIf="showQrModal" (click)="closeQrModal()" role="dialog" aria-modal="true" aria-label="Item QR code">
+<div
+  class="modal-overlay"
+  *ngIf="showQrModal"
+  (click)="bounceModal('item-qr-modal')"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Item QR code"
+>
   <div class="modal-box item-qr-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ qrModalTitle }}</h2>
-      <button class="modal-close app-modal-close" type="button" (click)="closeQrModal()" aria-label="Close">×</button>
+      <button
+        class="modal-close app-modal-close"
+        type="button"
+        (click)="closeQrModal()"
+        aria-label="Close"
+      >
+        ×
+      </button>
     </div>
 
     <div class="modal-body">
