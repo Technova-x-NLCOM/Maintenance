@@ -61,14 +61,21 @@ export class SystemUsersComponent implements OnInit {
     is_active: true,
   };
 
-  private readonly avatarPalette = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#db2777', '#0891b2'];
+  private readonly avatarPalette = [
+    '#2563eb',
+    '#7c3aed',
+    '#059669',
+    '#d97706',
+    '#db2777',
+    '#0891b2',
+  ];
 
   constructor(
     private api: UserManagementService,
     private rbac: RbacService,
     private auth: AuthService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -90,13 +97,22 @@ export class SystemUsersComponent implements OnInit {
   }
 
   private beginLoadForUser(u: User | null): void {
-    if (!u) { this.router.navigate(['/login']); return; }
+    if (!u) {
+      this.router.navigate(['/login']);
+      return;
+    }
     this.currentUser = u;
-    this.rbac.getCurrentRole().pipe(catchError(() => of(null))).subscribe((role) => {
-      this.currentRole = role;
-      if (!this.hasManageRoles()) { this.router.navigate(['/dashboard']); return; }
-      this.load();
-    });
+    this.rbac
+      .getCurrentRole()
+      .pipe(catchError(() => of(null)))
+      .subscribe((role) => {
+        this.currentRole = role;
+        if (!this.hasManageRoles()) {
+          this.router.navigate(['/dashboard']);
+          return;
+        }
+        this.load();
+      });
   }
 
   hasManageRoles(): boolean {
@@ -114,7 +130,7 @@ export class SystemUsersComponent implements OnInit {
       next: ({ users, roles }) => {
         this.users = users || [];
         this.roles = (roles || []).filter((r) =>
-          ['super_admin', 'inventory_manager'].includes(r.role_name)
+          ['super_admin', 'inventory_manager'].includes(r.role_name),
         );
         this.activePage = 1;
         this.inactivePage = 1;
@@ -214,7 +230,10 @@ export class SystemUsersComponent implements OnInit {
       username: u.username,
       email: u.email,
       contact_info: u.contact_info || '',
-      role: u.role_name === 'super_admin' || u.role_name === 'inventory_manager' ? u.role_name : 'inventory_manager',
+      role:
+        u.role_name === 'super_admin' || u.role_name === 'inventory_manager'
+          ? u.role_name
+          : 'inventory_manager',
       password: '',
       password_confirmation: '',
       is_active: u.is_active,
@@ -230,6 +249,21 @@ export class SystemUsersComponent implements OnInit {
     this.showModal = false;
     this.editingUser = null;
     this.resetPasswordVisibility();
+  }
+
+  bounceModal(selector: string): void {
+    const el = document.querySelector<HTMLElement>(`.${selector}`);
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.05)' },
+        { transform: 'scale(0.97)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 400, easing: 'ease' },
+    );
   }
 
   private resetPasswordVisibility(): void {
@@ -250,27 +284,39 @@ export class SystemUsersComponent implements OnInit {
     this.form.first_name = (this.form.first_name || '').trim();
     this.form.last_name = (this.form.last_name || '').trim();
 
-    if (!this.form.first_name) { this.modalError = 'First name is required.'; return; }
-    if (!this.form.last_name) { this.modalError = 'Last name is required.'; return; }
+    if (!this.form.first_name) {
+      this.modalError = 'First name is required.';
+      return;
+    }
+    if (!this.form.last_name) {
+      this.modalError = 'Last name is required.';
+      return;
+    }
 
     this.saving = true;
     const contact = this.form.contact_info?.trim() || null;
 
     if (!this.editingUser) {
-      this.api.create({
-        username: this.form.username,
-        email: this.form.email,
-        password: undefined as any,
-        password_confirmation: undefined as any,
-        first_name: this.form.first_name,
-        last_name: this.form.last_name,
-        contact_info: contact,
-        role: this.form.role,
-        is_active: this.form.is_active,
-      }).subscribe({
-        next: () => { this.saving = false; this.showModal = false; this.load(); },
-        error: (err: HttpErrorResponse) => this.handleSaveError(err),
-      });
+      this.api
+        .create({
+          username: this.form.username,
+          email: this.form.email,
+          password: undefined as any,
+          password_confirmation: undefined as any,
+          first_name: this.form.first_name,
+          last_name: this.form.last_name,
+          contact_info: contact,
+          role: this.form.role,
+          is_active: this.form.is_active,
+        })
+        .subscribe({
+          next: () => {
+            this.saving = false;
+            this.showModal = false;
+            this.load();
+          },
+          error: (err: HttpErrorResponse) => this.handleSaveError(err),
+        });
     } else {
       const payload: Record<string, unknown> = {
         first_name: this.form.first_name,
@@ -286,7 +332,11 @@ export class SystemUsersComponent implements OnInit {
         payload['password_confirmation'] = this.form.password_confirmation;
       }
       this.api.update(this.editingUser.user_id, payload as any).subscribe({
-        next: () => { this.saving = false; this.showModal = false; this.load(); },
+        next: () => {
+          this.saving = false;
+          this.showModal = false;
+          this.load();
+        },
         error: (err: HttpErrorResponse) => this.handleSaveError(err),
       });
     }
