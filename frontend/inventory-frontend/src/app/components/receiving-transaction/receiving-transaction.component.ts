@@ -139,6 +139,21 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.scanErrorMessage = '';
   }
 
+  bounceModal(selector: string): void {
+    const el = document.querySelector<HTMLElement>(`.${selector}`);
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.05)' },
+        { transform: 'scale(0.97)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 400, easing: 'ease' },
+    );
+  }
+
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
@@ -170,7 +185,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
       const cameraPermission = await this.requestCameraPermission();
       if (!cameraPermission) {
-        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
+        this.scanErrorMessage =
+          'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
         this.cdr.detectChanges();
         return;
       }
@@ -203,7 +219,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       );
     } catch (error) {
       if ((error as Error).name === 'NotAllowedError') {
-        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings.';
+        this.scanErrorMessage =
+          'Camera permission denied. Enable camera access in your browser settings.';
       } else if ((error as Error).name === 'NotFoundError') {
         this.scanErrorMessage = 'No camera device found on this device.';
       } else {
@@ -216,8 +233,10 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   private async requestCameraPermission(): Promise<boolean> {
     try {
       // Use the Permissions API to request camera access
-      const permissionResult = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      
+      const permissionResult = await navigator.permissions.query({
+        name: 'camera' as PermissionName,
+      });
+
       if (permissionResult.state === 'denied') {
         return false;
       }
@@ -228,11 +247,13 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
       // If 'prompt', user will be asked when trying to access the camera
       // Attempt accessing the camera directly, which will trigger the browser permission prompt
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+
       // Immediately stop the stream as we only needed to verify permission
-      mediaStream.getTracks().forEach(track => track.stop());
-      
+      mediaStream.getTracks().forEach((track) => track.stop());
+
       return true;
     } catch {
       // If Permissions API fails or getUserMedia fails, permission was denied
@@ -560,7 +581,9 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   canSubmitList(): boolean {
-    return this.receivingLines.length > 0 && !this.saving && this.confirmBatchNumber.trim().length > 0;
+    return (
+      this.receivingLines.length > 0 && !this.saving && this.confirmBatchNumber.trim().length > 0
+    );
   }
 
   submitReceivingList(): void {
@@ -599,7 +622,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
           this.showSuccessMessage = true;
           const lineCount = (response as any)?.data?.line_count ?? this.receivingLines.length;
           const reference = (response as any)?.data?.reference_number;
-          const batchNumber = (response as any)?.data?.batch_number ?? this.confirmBatchNumber.trim();
+          const batchNumber =
+            (response as any)?.data?.batch_number ?? this.confirmBatchNumber.trim();
           const qrPayload = (response as any)?.data?.qr_payload;
           this.successMessage = reference
             ? `Receiving list submitted successfully. Ref: ${reference}. Lines: ${lineCount}.`
@@ -672,7 +696,9 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
           this.saving = false;
         },
         error: (error: any) => {
-          this.showError(error.error?.message || 'Failed to record stock adjustment (+). Please try again.');
+          this.showError(
+            error.error?.message || 'Failed to record stock adjustment (+). Please try again.',
+          );
           this.saving = false;
         },
       });

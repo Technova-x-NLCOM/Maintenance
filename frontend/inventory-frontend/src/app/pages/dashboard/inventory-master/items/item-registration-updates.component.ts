@@ -8,7 +8,7 @@ import { NotFoundException } from '@zxing/library';
 import {
   InventoryItem,
   InventoryItemService,
-  ItemFormOptions
+  ItemFormOptions,
 } from '../../../../services/inventory-item.service';
 import { InventoryCategoryService } from '../../../../services/inventory-category.service';
 
@@ -17,7 +17,7 @@ import { InventoryCategoryService } from '../../../../services/inventory-categor
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './item-registration-updates.component.html',
-  styleUrls: ['./item-registration-updates.component.scss']
+  styleUrls: ['./item-registration-updates.component.scss'],
 })
 export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   viewMode: 'table' | 'cards' = 'table';
@@ -54,6 +54,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   successMessage = '';
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
+  isDraggingOver = false;
   showQrModal = false;
   qrModalTitle = '';
   qrLabel = '';
@@ -89,13 +90,13 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     remarks: '',
     unit_value: null,
     reorder_level: 0,
-    is_active: true
+    is_active: true,
   };
 
   constructor(
     private itemService: InventoryItemService,
     private categoryService: InventoryCategoryService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -130,7 +131,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     }
 
     const catId = this.formData.category_id;
-    const category = this.options.categories.find(c => c.category_id === catId);
+    const category = this.options.categories.find((c) => c.category_id === catId);
     const name = (category?.category_name || '').toLowerCase();
 
     let desiredTypeName: string | null = null;
@@ -142,12 +143,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     else if (name.includes('general')) desiredTypeName = 'general_item';
 
     const fallbackType =
-      this.options.item_types.find(t => t.type_name === 'general_item') ??
+      this.options.item_types.find((t) => t.type_name === 'general_item') ??
       this.options.item_types[0];
 
     const picked =
       (desiredTypeName
-        ? this.options.item_types.find(t => t.type_name === desiredTypeName)
+        ? this.options.item_types.find((t) => t.type_name === desiredTypeName)
         : null) ?? fallbackType;
 
     this.formData.item_type_id = picked?.item_type_id ?? null;
@@ -169,7 +170,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.errorMessage = err?.error?.message || 'Failed to load item form options.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -190,7 +191,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         page,
         per_page: this.perPage,
         search: this.search || undefined,
-        category_id: this.selectedFilterCategoryId || undefined
+        category_id: this.selectedFilterCategoryId || undefined,
       })
       .subscribe({
         next: (response) => {
@@ -205,7 +206,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
           this.loading = false;
           this.errorMessage = err?.error?.message || 'Failed to load items.';
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -245,7 +246,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         this.categoryFilterOptions = (response.data.categories || [])
           .map((category) => ({
             category_id: category.category_id,
-            category_name: category.category_name
+            category_name: category.category_name,
           }))
           .sort((a, b) => a.category_name.localeCompare(b.category_name));
 
@@ -253,7 +254,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
         if (this.selectedFilterCategoryId) {
           const selected = this.categoryFilterOptions.find(
-            (category) => category.category_id === this.selectedFilterCategoryId
+            (category) => category.category_id === this.selectedFilterCategoryId,
           );
           if (selected) {
             this.selectedFilterCategoryName = selected.category_name;
@@ -270,7 +271,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         this.categoryFilterOptions = [];
         this.filteredCategoryFilterOptions = [];
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -331,7 +332,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       event.preventDefault();
       this.activeCategoryOptionIndex = Math.min(
         this.activeCategoryOptionIndex + 1,
-        this.filteredCategoryFilterOptions.length - 1
+        this.filteredCategoryFilterOptions.length - 1,
       );
       return;
     }
@@ -345,7 +346,9 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     if (key === 'Enter') {
       event.preventDefault();
       if (this.activeCategoryOptionIndex >= 0) {
-        this.selectCategoryFilter(this.filteredCategoryFilterOptions[this.activeCategoryOptionIndex]);
+        this.selectCategoryFilter(
+          this.filteredCategoryFilterOptions[this.activeCategoryOptionIndex],
+        );
       }
     }
   }
@@ -369,7 +372,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     }
 
     const selectedIndex = this.filteredCategoryFilterOptions.findIndex(
-      (category) => category.category_id === this.selectedFilterCategoryId
+      (category) => category.category_id === this.selectedFilterCategoryId,
     );
     this.activeCategoryOptionIndex = selectedIndex >= 0 ? selectedIndex : 0;
   }
@@ -379,7 +382,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       return -1;
     }
     const selectedIndex = this.filteredCategoryFilterOptions.findIndex(
-      (category) => category.category_id === this.selectedFilterCategoryId
+      (category) => category.category_id === this.selectedFilterCategoryId,
     );
     return selectedIndex >= 0 ? selectedIndex : 0;
   }
@@ -419,7 +422,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       remarks: item.remarks || '',
       unit_value: item.unit_value,
       reorder_level: item.reorder_level,
-      is_active: item.is_active
+      is_active: item.is_active,
     };
     // Hide Type in UI; derive from category selection for consistency.
     this.syncItemTypeIdFromCategory();
@@ -448,7 +451,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       remarks: '',
       unit_value: null,
       reorder_level: 0,
-      is_active: true
+      is_active: true,
     };
     this.syncItemTypeIdFromCategory();
     this.resetSelectedImage();
@@ -473,26 +476,94 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       remarks: '',
       unit_value: null,
       reorder_level: 0,
-      is_active: true
+      is_active: true,
     };
     this.syncItemTypeIdFromCategory();
     this.resetSelectedImage();
     this.cdr.detectChanges();
   }
 
+  bounceModal(selector: string): void {
+    const el = document.querySelector<HTMLElement>(`.${selector}`);
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.05)' },
+        { transform: 'scale(0.97)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 400, easing: 'ease' },
+    );
+  }
+
   onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
-
     this.resetSelectedImage();
+    if (!file) { this.cdr.detectChanges(); return; }
+    this.compressImage(file);
+  }
 
-    if (!file) {
-      this.cdr.detectChanges();
-      return;
-    }
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver = true;
+  }
 
-    this.selectedImageFile = file;
-    this.imagePreviewUrl = URL.createObjectURL(file);
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver = false;
+    const file = event.dataTransfer?.files?.[0] ?? null;
+    if (!file || !file.type.startsWith('image/')) return;
+    this.resetSelectedImage();
+    this.compressImage(file);
+  }
+
+  compressImage(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 600;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+        } else {
+          if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        // Convert base64 back to File so the existing buildPayload() still works
+        const byteString = atob(compressed.split(',')[1]);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+        this.selectedImageFile = new File([ab], file.name, { type: 'image/jpeg' });
+        this.imagePreviewUrl = compressed;
+        this.cdr.detectChanges();
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removePhoto(): void {
+    this.resetSelectedImage();
     this.cdr.detectChanges();
   }
 
@@ -503,7 +574,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     // Always derive item_type_id from the selected category right before save.
     this.syncItemTypeIdFromCategory();
 
-    if (!this.formData.item_code.trim() || !this.formData.item_description.trim() || !this.formData.category_id || !this.formData.item_type_id) {
+    if (
+      !this.formData.item_code.trim() ||
+      !this.formData.item_description.trim() ||
+      !this.formData.category_id ||
+      !this.formData.item_type_id
+    ) {
       this.errorMessage = 'Please enter item code, item description, category, and item type.';
       return;
     }
@@ -524,7 +600,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
           this.saving = false;
           this.errorMessage = this.extractError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
       return;
     }
@@ -540,7 +616,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         this.saving = false;
         this.errorMessage = this.extractError(err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -556,7 +632,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.errorMessage = this.extractError(err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -576,12 +652,14 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     this.qrModalTitle = `Item QR: ${item.item_code}`;
     this.qrLabel = item.qr_label || `ITEM:${item.item_code}`;
-    this.qrPayload = item.qr_payload || JSON.stringify({
-      entity: 'item',
-      item_id: item.item_id,
-      item_code: item.item_code,
-      item_description: item.item_description,
-    });
+    this.qrPayload =
+      item.qr_payload ||
+      JSON.stringify({
+        entity: 'item',
+        item_id: item.item_id,
+        item_code: item.item_code,
+        item_description: item.item_description,
+      });
     this.showQrModal = true;
     this.qrImageDataUrl = null;
 
@@ -626,7 +704,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
       const cameraPermission = await this.requestCameraPermission();
       if (!cameraPermission) {
-        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
+        this.scanErrorMessage =
+          'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
         this.cdr.detectChanges();
         return;
       }
@@ -655,11 +734,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
             this.scanErrorMessage = 'Unable to read QR. Please hold it steady and try again.';
             this.cdr.detectChanges();
           }
-        }
+        },
       );
     } catch (error) {
       if ((error as Error).name === 'NotAllowedError') {
-        this.scanErrorMessage = 'Camera permission denied. Enable camera access in your browser settings.';
+        this.scanErrorMessage =
+          'Camera permission denied. Enable camera access in your browser settings.';
       } else if ((error as Error).name === 'NotFoundError') {
         this.scanErrorMessage = 'No camera device found on this device.';
       } else {
@@ -672,8 +752,10 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   private async requestCameraPermission(): Promise<boolean> {
     try {
       // Use the Permissions API to request camera access
-      const permissionResult = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      
+      const permissionResult = await navigator.permissions.query({
+        name: 'camera' as PermissionName,
+      });
+
       if (permissionResult.state === 'denied') {
         return false;
       }
@@ -684,11 +766,13 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
       // If 'prompt', user will be asked when trying to access the camera
       // Attempt accessing the camera directly, which will trigger the browser permission prompt
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+      });
+
       // Immediately stop the stream as we only needed to verify permission
-      mediaStream.getTracks().forEach(track => track.stop());
-      
+      mediaStream.getTracks().forEach((track) => track.stop());
+
       return true;
     } catch {
       // If Permissions API fails or getUserMedia fails, permission was denied
@@ -703,7 +787,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
   private handleScannedItemQr(rawText: string): void {
     const parsed = this.tryParseQrPayload(rawText);
-    const itemCode = parsed?.['item_code'] || this.extractCodeFromLabel(rawText, 'ITEM:') || rawText.trim();
+    const itemCode =
+      parsed?.['item_code'] || this.extractCodeFromLabel(rawText, 'ITEM:') || rawText.trim();
 
     if (!itemCode) {
       this.errorMessage = 'QR scanned, but no item code was found.';
@@ -771,19 +856,28 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     payload.append('item_code', this.formData.item_code.trim());
     payload.append('item_description', this.formData.item_description.trim());
     payload.append('item_type_id', String(this.formData.item_type_id));
-    payload.append('category_id', this.formData.category_id === null ? '' : String(this.formData.category_id));
+    payload.append(
+      'category_id',
+      this.formData.category_id === null ? '' : String(this.formData.category_id),
+    );
     payload.append('measurement_unit', this.nullIfEmpty(this.formData.measurement_unit) ?? '');
     payload.append('particular', this.nullIfEmpty(this.formData.particular) ?? '');
-    payload.append('mg_dosage', this.formData.mg_dosage === null ? '' : String(this.formData.mg_dosage));
+    payload.append(
+      'mg_dosage',
+      this.formData.mg_dosage === null ? '' : String(this.formData.mg_dosage),
+    );
     payload.append(
       'shelf_life_days',
-      this.formData.shelf_life_days === null ? '' : String(this.formData.shelf_life_days)
+      this.formData.shelf_life_days === null ? '' : String(this.formData.shelf_life_days),
     );
     payload.append('remarks', this.nullIfEmpty(this.formData.remarks) ?? '');
-    payload.append('unit_value', this.formData.unit_value === null ? '' : String(this.formData.unit_value));
+    payload.append(
+      'unit_value',
+      this.formData.unit_value === null ? '' : String(this.formData.unit_value),
+    );
     payload.append(
       'reorder_level',
-      String(Number.isFinite(this.formData.reorder_level) ? this.formData.reorder_level : 0)
+      String(Number.isFinite(this.formData.reorder_level) ? this.formData.reorder_level : 0),
     );
     payload.append('is_active', this.formData.is_active ? '1' : '0');
 

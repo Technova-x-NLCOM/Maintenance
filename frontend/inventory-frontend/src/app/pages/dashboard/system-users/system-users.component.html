@@ -4,10 +4,10 @@
       <div class="title-block">
         <span class="title-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
         </span>
         <div>
@@ -17,21 +17,35 @@
       </div>
       <div class="header-actions">
         <button type="button" class="btn-inactive" (click)="openInactiveModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="8.5" cy="7" r="4"/>
-            <line x1="18" y1="8" x2="23" y2="13"/>
-            <line x1="23" y1="8" x2="18" y2="13"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="8.5" cy="7" r="4" />
+            <line x1="18" y1="8" x2="23" y2="13" />
+            <line x1="23" y1="8" x2="18" y2="13" />
           </svg>
           Inactive Users
-          <span class="inactive-badge" *ngIf="inactiveUsers.length > 0">{{ inactiveUsers.length }}</span>
+          <span class="inactive-badge" *ngIf="inactiveUsers.length > 0">{{
+            inactiveUsers.length
+          }}</span>
         </button>
         <button type="button" class="btn-primary" (click)="openAdd()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-            <circle cx="8.5" cy="7" r="4"/>
-            <line x1="20" y1="8" x2="20" y2="14"/>
-            <line x1="23" y1="11" x2="17" y2="11"/>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="8.5" cy="7" r="4" />
+            <line x1="20" y1="8" x2="20" y2="14" />
+            <line x1="23" y1="11" x2="17" y2="11" />
           </svg>
           Add User
         </button>
@@ -43,8 +57,16 @@
 
     <div class="toolbar-search" *ngIf="!loading && !error">
       <div class="search-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        <svg
+          class="search-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input
           type="text"
@@ -52,9 +74,22 @@
           placeholder="Search by name, email, username, or role"
           autocomplete="off"
         />
-        <button *ngIf="userSearch" type="button" class="btn-clear-input" (click)="clearUserSearch()" aria-label="Clear search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        <button
+          *ngIf="userSearch"
+          type="button"
+          class="btn-clear-input"
+          (click)="clearUserSearch()"
+          aria-label="Clear search"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
@@ -90,10 +125,15 @@
               </td>
               <td class="col-actions">
                 <div class="action-btns">
-                  <button type="button" class="btn-icon btn-edit" (click)="openEdit(u)" title="Edit user">
+                  <button
+                    type="button"
+                    class="btn-icon btn-edit"
+                    (click)="openEdit(u)"
+                    title="Edit user"
+                  >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                   </button>
                   <button
@@ -104,10 +144,10 @@
                     title="Deactivate user"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="8.5" cy="7" r="4"/>
-                      <line x1="18" y1="8" x2="23" y2="13"/>
-                      <line x1="23" y1="8" x2="18" y2="13"/>
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="18" y1="8" x2="23" y2="13" />
+                      <line x1="23" y1="8" x2="18" y2="13" />
                     </svg>
                   </button>
                 </div>
@@ -118,16 +158,42 @@
       </div>
 
       <p class="empty" *ngIf="activeUsers.length === 0 && !userSearch">No active users found.</p>
-      <p class="empty" *ngIf="activeUsers.length === 0 && userSearch">No users match your search.</p>
+      <p class="empty" *ngIf="activeUsers.length === 0 && userSearch">
+        No users match your search.
+      </p>
 
       <!-- Pagination -->
       <div class="pagination">
         <div class="pagination-nav">
-          <button class="btn-ghost page-btn" (click)="goActivePage(1)" [disabled]="activePage === 1">&laquo;</button>
-          <button class="btn-ghost page-btn" (click)="goActivePage(activePage - 1)" [disabled]="activePage === 1">&lsaquo;</button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goActivePage(1)"
+            [disabled]="activePage === 1"
+          >
+            &laquo;
+          </button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goActivePage(activePage - 1)"
+            [disabled]="activePage === 1"
+          >
+            &lsaquo;
+          </button>
           <span class="page-info">Page {{ activePage }} of {{ activeTotalPages }}</span>
-          <button class="btn-ghost page-btn" (click)="goActivePage(activePage + 1)" [disabled]="activePage === activeTotalPages">&rsaquo;</button>
-          <button class="btn-ghost page-btn" (click)="goActivePage(activeTotalPages)" [disabled]="activePage === activeTotalPages">&raquo;</button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goActivePage(activePage + 1)"
+            [disabled]="activePage === activeTotalPages"
+          >
+            &rsaquo;
+          </button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goActivePage(activeTotalPages)"
+            [disabled]="activePage === activeTotalPages"
+          >
+            &raquo;
+          </button>
         </div>
       </div>
     </div>
@@ -135,98 +201,156 @@
 </div>
 
 <!-- Inactive Users Modal -->
-<div class="modal-backdrop" *ngIf="showInactiveModal" (click)="closeInactiveModal()">
-  <div class="modal-panel modal-wide" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <button type="button" class="modal-close app-modal-close" (click)="closeInactiveModal()" aria-label="Close">×</button>
+<div class="modal-backdrop" *ngIf="showInactiveModal" (click)="bounceModal('modal-wide')">
+  <div
+    class="modal-panel modal-wide"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+  >
     <div class="modal-head">
       <span class="modal-icon modal-icon-warn" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="8.5" cy="7" r="4"/>
-          <line x1="18" y1="8" x2="23" y2="13"/>
-          <line x1="23" y1="8" x2="18" y2="13"/>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="8.5" cy="7" r="4" />
+          <line x1="18" y1="8" x2="23" y2="13" />
+          <line x1="23" y1="8" x2="18" y2="13" />
         </svg>
       </span>
       <div>
         <h2>Inactive Users</h2>
-        <p class="modal-lead">{{ inactiveUsers.length }} user{{ inactiveUsers.length !== 1 ? 's' : '' }} currently inactive. Activate to restore access.</p>
+        <p class="modal-lead">
+          {{ inactiveUsers.length }} user{{ inactiveUsers.length !== 1 ? 's' : '' }} currently
+          inactive. Activate to restore access.
+        </p>
       </div>
     </div>
 
-    <div class="inactive-table-scroll">
-      <table class="users-table" *ngIf="inactiveUsers.length > 0">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th class="col-actions">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of pagedInactiveUsers">
-            <td>
-              <div class="user-cell">
-                <div class="user-text">
-                  <div class="name">{{ u.first_name }} {{ u.last_name }}</div>
+    <div class="modal-scroll-body">
+      <div class="inactive-table-scroll">
+        <table class="users-table" *ngIf="inactiveUsers.length > 0">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of pagedInactiveUsers">
+              <td>
+                <div class="user-cell">
+                  <div class="user-text">
+                    <div class="name">{{ u.first_name }} {{ u.last_name }}</div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td class="td-email">{{ u.email }}</td>
-            <td>
-              <span class="pill pill-role">{{ roleLabel(u) }}</span>
-            </td>
-            <td class="col-actions">
-              <button type="button" class="btn-icon btn-activate" (click)="activateUser(u)" title="Activate user">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="8.5" cy="7" r="4"/>
-                  <line x1="20" y1="8" x2="20" y2="14"/>
-                  <line x1="23" y1="11" x2="17" y2="11"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              </td>
+              <td class="td-email">{{ u.email }}</td>
+              <td>
+                <span class="pill pill-role">{{ roleLabel(u) }}</span>
+              </td>
+              <td class="col-actions">
+                <button
+                  type="button"
+                  class="btn-icon btn-activate"
+                  (click)="activateUser(u)"
+                  title="Activate user"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <p class="empty" *ngIf="inactiveUsers.length === 0">No inactive users.</p>
+      <p class="empty" *ngIf="inactiveUsers.length === 0">No inactive users.</p>
 
-    <!-- Inactive Pagination -->
-    <div class="pagination">
-      <div class="pagination-nav">
-        <button class="btn-ghost page-btn" (click)="goInactivePage(1)" [disabled]="inactivePage === 1">&laquo;</button>
-        <button class="btn-ghost page-btn" (click)="goInactivePage(inactivePage - 1)" [disabled]="inactivePage === 1">&lsaquo;</button>
-        <span class="page-info">Page {{ inactivePage }} of {{ inactiveTotalPages }}</span>
-        <button class="btn-ghost page-btn" (click)="goInactivePage(inactivePage + 1)" [disabled]="inactivePage === inactiveTotalPages">&rsaquo;</button>
-        <button class="btn-ghost page-btn" (click)="goInactivePage(inactiveTotalPages)" [disabled]="inactivePage === inactiveTotalPages">&raquo;</button>
+      <!-- Inactive Pagination -->
+      <div class="pagination">
+        <div class="pagination-nav">
+          <button
+            class="btn-ghost page-btn"
+            (click)="goInactivePage(1)"
+            [disabled]="inactivePage === 1"
+          >
+            &laquo;
+          </button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goInactivePage(inactivePage - 1)"
+            [disabled]="inactivePage === 1"
+          >
+            &lsaquo;
+          </button>
+          <span class="page-info">Page {{ inactivePage }} of {{ inactiveTotalPages }}</span>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goInactivePage(inactivePage + 1)"
+            [disabled]="inactivePage === inactiveTotalPages"
+          >
+            &rsaquo;
+          </button>
+          <button
+            class="btn-ghost page-btn"
+            (click)="goInactivePage(inactiveTotalPages)"
+            [disabled]="inactivePage === inactiveTotalPages"
+          >
+            &raquo;
+          </button>
+        </div>
       </div>
     </div>
 
     <footer class="modal-footer">
-      <button type="button" class="btn-ghost" (click)="closeInactiveModal()">Close</button>
+      <button type="button" class="btn-cancel" (click)="closeInactiveModal()">Close</button>
     </footer>
   </div>
 </div>
 
 <!-- Confirmation Modal (Deactivate / Activate) -->
 <div class="modal-backdrop" *ngIf="showConfirmModal" (click)="cancelConfirm()">
-  <div class="modal-panel modal-confirm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-
-    <div class="confirm-icon-wrap" [class.confirm-icon-danger]="confirmAction === 'deactivate'" [class.confirm-icon-success]="confirmAction === 'activate'">
+  <div
+    class="modal-panel modal-confirm"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div
+      class="confirm-icon-wrap"
+      [class.confirm-icon-danger]="confirmAction === 'deactivate'"
+      [class.confirm-icon-success]="confirmAction === 'activate'"
+    >
       <!-- Deactivate icon -->
-      <svg *ngIf="confirmAction === 'deactivate'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="8.5" cy="7" r="4"/>
-        <line x1="18" y1="8" x2="23" y2="13"/>
-        <line x1="23" y1="8" x2="18" y2="13"/>
+      <svg
+        *ngIf="confirmAction === 'deactivate'"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <line x1="18" y1="8" x2="23" y2="13" />
+        <line x1="23" y1="8" x2="18" y2="13" />
       </svg>
       <!-- Activate icon -->
-      <svg *ngIf="confirmAction === 'activate'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-        <circle cx="8.5" cy="7" r="4"/>
-        <polyline points="17 11 19 13 23 9"/>
+      <svg
+        *ngIf="confirmAction === 'activate'"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <polyline points="17 11 19 13 23 9" />
       </svg>
     </div>
 
@@ -235,17 +359,21 @@
     </h2>
     <p class="confirm-body" *ngIf="confirmTargetUser">
       <ng-container *ngIf="confirmAction === 'deactivate'">
-        Are you sure you want to deactivate <strong>{{ confirmTargetUser.first_name }} {{ confirmTargetUser.last_name }}</strong>?
-        They will lose access to the system immediately.
+        Are you sure you want to deactivate
+        <strong>{{ confirmTargetUser.first_name }} {{ confirmTargetUser.last_name }}</strong
+        >? They will lose access to the system immediately.
       </ng-container>
       <ng-container *ngIf="confirmAction === 'activate'">
-        Activate <strong>{{ confirmTargetUser.first_name }} {{ confirmTargetUser.last_name }}</strong>?
-        They will regain access to the system.
+        Activate
+        <strong>{{ confirmTargetUser.first_name }} {{ confirmTargetUser.last_name }}</strong
+        >? They will regain access to the system.
       </ng-container>
     </p>
 
     <footer class="confirm-footer">
-      <button type="button" class="btn-ghost" (click)="cancelConfirm()" [disabled]="confirmLoading">Cancel</button>
+      <button type="button" class="btn-ghost" (click)="cancelConfirm()" [disabled]="confirmLoading">
+        Cancel
+      </button>
       <button
         type="button"
         [class.btn-danger]="confirmAction === 'deactivate'"
@@ -253,23 +381,28 @@
         (click)="confirmStatusChange()"
         [disabled]="confirmLoading"
       >
-        {{ confirmLoading ? 'Please wait…' : (confirmAction === 'deactivate' ? 'Yes, Deactivate' : 'Yes, Activate') }}
+        {{
+          confirmLoading
+            ? 'Please wait…'
+            : confirmAction === 'deactivate'
+              ? 'Yes, Deactivate'
+              : 'Yes, Activate'
+        }}
       </button>
     </footer>
   </div>
 </div>
 
 <!-- Add / Edit User Modal -->
-<div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
+<div class="modal-backdrop" *ngIf="showModal" (click)="bounceModal('modal-panel')">
   <div class="modal-panel" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
-    <button type="button" class="modal-close app-modal-close" (click)="closeModal()" aria-label="Close">×</button>
     <div class="modal-head">
       <span class="modal-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="8.5" cy="7" r="4"/>
-          <line x1="20" y1="8" x2="20" y2="14"/>
-          <line x1="23" y1="11" x2="17" y2="11"/>
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="8.5" cy="7" r="4" />
+          <line x1="20" y1="8" x2="20" y2="14" />
+          <line x1="23" y1="11" x2="17" y2="11" />
         </svg>
       </span>
       <div>
@@ -278,50 +411,85 @@
       </div>
     </div>
 
-    <div class="modal-alert" *ngIf="modalError">{{ modalError }}</div>
+    <div class="modal-scroll-body">
+      <div class="modal-alert" *ngIf="modalError">{{ modalError }}</div>
 
-    <div class="form-grid">
-      <div class="field">
-        <label for="su-first-name">First Name</label>
-        <input id="su-first-name" type="text" [(ngModel)]="form.first_name" placeholder="First name" autocomplete="given-name" />
-        <span class="field-err" *ngIf="fieldError('first_name')">{{ fieldError('first_name') }}</span>
+      <div class="form-grid">
+        <div class="field">
+          <label for="su-first-name">First Name</label>
+          <input
+            id="su-first-name"
+            type="text"
+            [(ngModel)]="form.first_name"
+            placeholder="First name"
+            autocomplete="given-name"
+          />
+          <span class="field-err" *ngIf="fieldError('first_name')">{{
+            fieldError('first_name')
+          }}</span>
+        </div>
+        <div class="field">
+          <label for="su-last-name">Last Name</label>
+          <input
+            id="su-last-name"
+            type="text"
+            [(ngModel)]="form.last_name"
+            placeholder="Last name"
+            autocomplete="family-name"
+          />
+          <span class="field-err" *ngIf="fieldError('last_name')">{{
+            fieldError('last_name')
+          }}</span>
+        </div>
+        <div class="field">
+          <label for="su-user">Username</label>
+          <input
+            id="su-user"
+            type="text"
+            [(ngModel)]="form.username"
+            (blur)="normalizeUsername()"
+            placeholder="username"
+            autocomplete="username"
+          />
+          <span class="field-err" *ngIf="fieldError('username')">{{ fieldError('username') }}</span>
+        </div>
+        <div class="field">
+          <label for="su-email">Email</label>
+          <input
+            id="su-email"
+            type="email"
+            [(ngModel)]="form.email"
+            placeholder="user@nlcom.org.ph"
+            autocomplete="email"
+          />
+          <span class="field-err" *ngIf="fieldError('email')">{{ fieldError('email') }}</span>
+        </div>
+        <div class="field">
+          <label for="su-role">Role</label>
+          <select id="su-role" [(ngModel)]="form.role">
+            <option *ngFor="let r of roles" [ngValue]="r.role_name">
+              {{ r.display_name || r.role_name }}
+            </option>
+            <ng-container *ngIf="roles.length === 0">
+              <option [ngValue]="'inventory_manager'">Inventory Manager</option>
+              <option [ngValue]="'super_admin'">Super Administrator</option>
+            </ng-container>
+          </select>
+          <span class="field-err" *ngIf="fieldError('role')">{{ fieldError('role') }}</span>
+        </div>
       </div>
-      <div class="field">
-        <label for="su-last-name">Last Name</label>
-        <input id="su-last-name" type="text" [(ngModel)]="form.last_name" placeholder="Last name" autocomplete="family-name" />
-        <span class="field-err" *ngIf="fieldError('last_name')">{{ fieldError('last_name') }}</span>
-      </div>
-      <div class="field">
-        <label for="su-user">Username</label>
-        <input id="su-user" type="text" [(ngModel)]="form.username" (blur)="normalizeUsername()" placeholder="username" autocomplete="username" />
-        <span class="field-err" *ngIf="fieldError('username')">{{ fieldError('username') }}</span>
-      </div>
-      <div class="field">
-        <label for="su-email">Email</label>
-        <input id="su-email" type="email" [(ngModel)]="form.email" placeholder="user@nlcom.org.ph" autocomplete="email" />
-        <span class="field-err" *ngIf="fieldError('email')">{{ fieldError('email') }}</span>
-      </div>
-      <div class="field">
-        <label for="su-role">Role</label>
-        <select id="su-role" [(ngModel)]="form.role">
-          <option *ngFor="let r of roles" [ngValue]="r.role_name">{{ r.display_name || r.role_name }}</option>
-          <ng-container *ngIf="roles.length === 0">
-            <option [ngValue]="'inventory_manager'">Inventory Manager</option>
-            <option [ngValue]="'super_admin'">Super Administrator</option>
-          </ng-container>
-        </select>
-        <span class="field-err" *ngIf="fieldError('role')">{{ fieldError('role') }}</span>
-      </div>
+
+      <label class="toggle-row">
+        <input type="checkbox" [(ngModel)]="form.is_active" />
+        <span class="toggle-ui" aria-hidden="true"></span>
+        <span>Account active</span>
+      </label>
     </div>
 
-    <label class="toggle-row">
-      <input type="checkbox" [(ngModel)]="form.is_active" />
-      <span class="toggle-ui" aria-hidden="true"></span>
-      <span>Account active</span>
-    </label>
-
     <footer class="modal-footer">
-      <button type="button" class="btn-ghost" (click)="closeModal()" [disabled]="saving">Cancel</button>
+      <button type="button" class="btn-cancel" (click)="closeModal()" [disabled]="saving">
+        Cancel
+      </button>
       <button type="button" class="btn-primary" (click)="save()" [disabled]="saving">
         {{ saving ? 'Saving…' : 'Save User' }}
       </button>

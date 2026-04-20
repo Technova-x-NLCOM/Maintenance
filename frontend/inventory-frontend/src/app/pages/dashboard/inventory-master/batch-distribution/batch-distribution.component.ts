@@ -8,7 +8,7 @@ import {
   BatchDistributionService,
   BatchDistributionTemplatePayload,
   BatchDistributionTemplateSummary,
-  DistributionType
+  DistributionType,
 } from '../../../../services/batch-distribution.service';
 
 interface EditableTemplateLine {
@@ -22,7 +22,7 @@ interface EditableTemplateLine {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './batch-distribution.component.html',
-  styleUrls: ['./batch-distribution.component.scss']
+  styleUrls: ['./batch-distribution.component.scss'],
 })
 export class BatchDistributionComponent implements OnInit {
   loadingTemplates = false;
@@ -52,7 +52,7 @@ export class BatchDistributionComponent implements OnInit {
     template_name: '',
     distribution_type: 'feeding_program',
     base_unit_count: 100,
-    notes: ''
+    notes: '',
   };
 
   lineDraftItemId: number | null = null;
@@ -83,7 +83,7 @@ export class BatchDistributionComponent implements OnInit {
 
   constructor(
     private batchService: BatchDistributionService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -102,31 +102,35 @@ export class BatchDistributionComponent implements OnInit {
     this.cancelTemplateSearchDebounce();
     this.loadingTemplates = true;
     this.loadTemplatesSub?.unsubscribe();
-    this.loadTemplatesSub = this.batchService.listTemplates(this.searchTemplate || undefined).subscribe({
-      next: (response) => {
-        this.templates = response.data;
-        if (!this.searchTemplate.trim()) {
-          this.templatesBaseline = response.data.slice();
-        }
-        this.loadingTemplates = false;
-
-        if (this.selectedTemplateId) {
-          const stillExists = this.templates.some(t => t.template_id === this.selectedTemplateId);
-          if (!stillExists) {
-            this.selectedTemplateId = null;
-            this.selectedTemplateName = '';
-            this.calculation = null;
+    this.loadTemplatesSub = this.batchService
+      .listTemplates(this.searchTemplate || undefined)
+      .subscribe({
+        next: (response) => {
+          this.templates = response.data;
+          if (!this.searchTemplate.trim()) {
+            this.templatesBaseline = response.data.slice();
           }
-        }
+          this.loadingTemplates = false;
 
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.loadingTemplates = false;
-        this.errorMessage = err?.error?.message || 'Failed to load templates.';
-        this.cdr.detectChanges();
-      }
-    });
+          if (this.selectedTemplateId) {
+            const stillExists = this.templates.some(
+              (t) => t.template_id === this.selectedTemplateId,
+            );
+            if (!stillExists) {
+              this.selectedTemplateId = null;
+              this.selectedTemplateName = '';
+              this.calculation = null;
+            }
+          }
+
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.loadingTemplates = false;
+          this.errorMessage = err?.error?.message || 'Failed to load templates.';
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   onTemplateSearchInput(): void {
@@ -162,7 +166,7 @@ export class BatchDistributionComponent implements OnInit {
     if (this.templatesBaseline) {
       this.templates = this.templatesBaseline.slice();
       if (this.selectedTemplateId) {
-        const stillExists = this.templates.some(t => t.template_id === this.selectedTemplateId);
+        const stillExists = this.templates.some((t) => t.template_id === this.selectedTemplateId);
         if (!stillExists) {
           this.selectedTemplateId = null;
           this.selectedTemplateName = '';
@@ -179,21 +183,23 @@ export class BatchDistributionComponent implements OnInit {
     this.cancelItemOptionsSearchDebounce();
     this.loadingItemOptions = true;
     this.loadItemOptionsSub?.unsubscribe();
-    this.loadItemOptionsSub = this.batchService.listItemOptions(this.searchItem || undefined).subscribe({
-      next: (response) => {
-        this.itemOptions = response.data;
-        if (!this.searchItem.trim()) {
-          this.itemOptionsBaseline = response.data.slice();
-        }
-        this.loadingItemOptions = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.loadingItemOptions = false;
-        this.errorMessage = err?.error?.message || 'Failed to load item options.';
-        this.cdr.detectChanges();
-      }
-    });
+    this.loadItemOptionsSub = this.batchService
+      .listItemOptions(this.searchItem || undefined)
+      .subscribe({
+        next: (response) => {
+          this.itemOptions = response.data;
+          if (!this.searchItem.trim()) {
+            this.itemOptionsBaseline = response.data.slice();
+          }
+          this.loadingItemOptions = false;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.loadingItemOptions = false;
+          this.errorMessage = err?.error?.message || 'Failed to load item options.';
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   onItemOptionsSearchInput(): void {
@@ -259,7 +265,7 @@ export class BatchDistributionComponent implements OnInit {
       template_name: '',
       distribution_type: 'feeding_program',
       base_unit_count: 100,
-      notes: ''
+      notes: '',
     };
     this.templateLines = [];
     this.lineDraftItemId = null;
@@ -286,13 +292,13 @@ export class BatchDistributionComponent implements OnInit {
           template_name: details.template.template_name,
           distribution_type: details.template.distribution_type,
           base_unit_count: details.template.base_unit_count,
-          notes: details.template.notes ?? ''
+          notes: details.template.notes ?? '',
         };
 
         this.templateLines = details.items.map((item) => ({
           item_id: item.item_id,
           quantity_per_base: item.quantity_per_base,
-          notes: ''
+          notes: '',
         }));
 
         this.targetUnitCount = details.template.base_unit_count;
@@ -305,7 +311,7 @@ export class BatchDistributionComponent implements OnInit {
       error: (err) => {
         this.errorMessage = err?.error?.message || 'Failed to load template details.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -317,6 +323,21 @@ export class BatchDistributionComponent implements OnInit {
     this.lineDraftQuantityPerBase = 1;
     this.lineDraftNotes = '';
     this.cdr.detectChanges();
+  }
+
+  bounceModal(selector: string): void {
+    const el = document.querySelector<HTMLElement>(`.${selector}`);
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.05)' },
+        { transform: 'scale(0.97)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 400, easing: 'ease' },
+    );
   }
 
   addLine(): void {
@@ -331,7 +352,7 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    const existing = this.templateLines.find(line => line.item_id === this.lineDraftItemId);
+    const existing = this.templateLines.find((line) => line.item_id === this.lineDraftItemId);
     if (existing) {
       existing.quantity_per_base = normalizedQty;
       existing.notes = this.lineDraftNotes.trim();
@@ -339,7 +360,7 @@ export class BatchDistributionComponent implements OnInit {
       this.templateLines.push({
         item_id: this.lineDraftItemId,
         quantity_per_base: normalizedQty,
-        notes: this.lineDraftNotes.trim()
+        notes: this.lineDraftNotes.trim(),
       });
     }
 
@@ -386,7 +407,10 @@ export class BatchDistributionComponent implements OnInit {
 
     if (key === 'ArrowDown') {
       event.preventDefault();
-      this.activeItemOptionIndex = Math.min(this.activeItemOptionIndex + 1, this.itemOptions.length - 1);
+      this.activeItemOptionIndex = Math.min(
+        this.activeItemOptionIndex + 1,
+        this.itemOptions.length - 1,
+      );
       return;
     }
 
@@ -433,11 +457,11 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   removeLine(itemId: number): void {
-    this.templateLines = this.templateLines.filter(line => line.item_id !== itemId);
+    this.templateLines = this.templateLines.filter((line) => line.item_id !== itemId);
   }
 
   getItemLabel(itemId: number): string {
-    const found = this.itemOptions.find(item => item.item_id === itemId);
+    const found = this.itemOptions.find((item) => item.item_id === itemId);
     if (!found) {
       return `Item #${itemId}`;
     }
@@ -454,7 +478,10 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    if (!Number.isFinite(this.templateForm.base_unit_count) || this.templateForm.base_unit_count <= 0) {
+    if (
+      !Number.isFinite(this.templateForm.base_unit_count) ||
+      this.templateForm.base_unit_count <= 0
+    ) {
       this.errorMessage = 'Base count must be greater than zero.';
       return;
     }
@@ -469,18 +496,19 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: this.templateForm.distribution_type,
       base_unit_count: Math.floor(this.templateForm.base_unit_count),
       notes: this.templateForm.notes.trim(),
-      items: this.templateLines.map(line => ({
+      items: this.templateLines.map((line) => ({
         item_id: line.item_id,
         quantity_per_base: Number(line.quantity_per_base),
-        notes: line.notes.trim() || null
-      }))
+        notes: line.notes.trim() || null,
+      })),
     };
 
     this.savingTemplate = true;
 
-    const request$ = this.isEditingTemplate && this.selectedTemplateId
-      ? this.batchService.updateTemplate(this.selectedTemplateId, payload)
-      : this.batchService.createTemplate(payload);
+    const request$ =
+      this.isEditingTemplate && this.selectedTemplateId
+        ? this.batchService.updateTemplate(this.selectedTemplateId, payload)
+        : this.batchService.createTemplate(payload);
 
     request$.subscribe({
       next: (response) => {
@@ -497,13 +525,13 @@ export class BatchDistributionComponent implements OnInit {
           template_name: template.template_name,
           distribution_type: template.distribution_type,
           base_unit_count: template.base_unit_count,
-          notes: template.notes ?? ''
+          notes: template.notes ?? '',
         };
 
         this.templateLines = response.data.items.map((item) => ({
           item_id: item.item_id,
           quantity_per_base: item.quantity_per_base,
-          notes: ''
+          notes: '',
         }));
 
         this.successMessage = 'Template saved successfully.';
@@ -514,7 +542,7 @@ export class BatchDistributionComponent implements OnInit {
         this.savingTemplate = false;
         this.errorMessage = err?.error?.message || 'Failed to save template.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -554,7 +582,7 @@ export class BatchDistributionComponent implements OnInit {
         this.calculating = false;
         this.errorMessage = err?.error?.message || 'Failed to calculate distribution.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -591,7 +619,7 @@ export class BatchDistributionComponent implements OnInit {
         normalizedTarget,
         this.destination.trim(),
         this.reason.trim() || 'Batch Distribution',
-        this.issueNotes.trim() || undefined
+        this.issueNotes.trim() || undefined,
       )
       .subscribe({
         next: (response) => {
@@ -603,7 +631,7 @@ export class BatchDistributionComponent implements OnInit {
           this.issuing = false;
           this.errorMessage = err?.error?.message || 'Failed to issue batch distribution.';
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 }

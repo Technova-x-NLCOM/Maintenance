@@ -1,7 +1,9 @@
 <div class="receiving-transaction-page">
   <div class="page-header">
     <h1>Stock Receiving (IN)</h1>
-    <p class="subtitle">Choose items, add them to a receiving list, then submit all lines in one action.</p>
+    <p class="subtitle">
+      Choose items, add them to a receiving list, then submit all lines in one action.
+    </p>
   </div>
 
   <!-- Alert Messages -->
@@ -24,24 +26,41 @@
   <section class="catalog-panel">
     <div class="catalog-toolbar">
       <div class="search-wrap">
-        <input type="text" class="form-control" placeholder="Search by item code or description"
-          [(ngModel)]="searchQuery" (ngModelChange)="onSearch()" />
-        <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by item code or description"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+        />
+        <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">
+          ×
+        </button>
       </div>
-      <select class="form-control category-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+      <select
+        class="form-control category-select"
+        [(ngModel)]="selectedCategoryId"
+        (change)="onCategoryChange()"
+      >
         <option [ngValue]="null">All Categories</option>
         <option *ngFor="let category of categories" [ngValue]="category.category_id">
           {{ category.category_name }}
         </option>
       </select>
-      <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+      <button class="btn btn-register" type="button" (click)="goToItemRegistration()">
+        Register New Item
+      </button>
       <button class="btn btn-secondary" type="button" (click)="openQrScanner()">Scan QR</button>
     </div>
 
     <div class="catalog-grid" *ngIf="!loading">
-      <button type="button" class="item-card" *ngFor="let item of receivingItems"
+      <button
+        type="button"
+        class="item-card"
+        *ngFor="let item of receivingItems"
         [class.selected]="selectedItem?.item_id === item.item_id"
-        (click)="openReceivingModal(item)">
+        (click)="openReceivingModal(item)"
+      >
         <div class="card-image">
           <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
           <span *ngIf="!item.image_url">No Image</span>
@@ -49,16 +68,22 @@
         <div class="card-content">
           <p class="code">{{ item.item_code }}</p>
           <p class="desc">{{ item.item_description }}</p>
-          <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+          <p class="meta">
+            {{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}
+          </p>
           <div class="stats-row">
             <span class="pill">Stock: {{ item.current_stock }}</span>
-            <span class="pill" *ngIf="item.shelf_life_days">Shelf life: {{ item.shelf_life_days }}d</span>
+            <span class="pill" *ngIf="item.shelf_life_days"
+              >Shelf life: {{ item.shelf_life_days }}d</span
+            >
           </div>
         </div>
       </button>
       <div class="empty-state" *ngIf="receivingItems.length === 0">
         <p>No matching items found.</p>
-        <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
+        <button class="btn btn-register" type="button" (click)="goToItemRegistration()">
+          Register New Item
+        </button>
       </div>
     </div>
 
@@ -66,11 +91,39 @@
 
     <div class="pagination" *ngIf="!loading">
       <div class="pagination-nav">
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="currentPage = 1; loadReceivingItems(1)" type="button">&laquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="currentPage = 1; loadReceivingItems(1)"
+          type="button"
+        >
+          &laquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="previousPage()"
+          type="button"
+        >
+          &lsaquo;
+        </button>
         <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">&rsaquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="currentPage = lastPage; loadReceivingItems(lastPage)" type="button">&raquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= lastPage"
+          (click)="nextPage()"
+          type="button"
+        >
+          &rsaquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= lastPage"
+          (click)="currentPage = lastPage; loadReceivingItems(lastPage)"
+          type="button"
+        >
+          &raquo;
+        </button>
       </div>
 
       <div class="page-size-wrap">
@@ -93,15 +146,18 @@
 
 <!-- ── Receiving List Slide-in Drawer ─────────────────────────────── -->
 <div class="receiving-drawer" [class.drawer-open]="showListModal">
-
   <!-- Tab toggle button on the left edge -->
-  <button class="drawer-tab" type="button" (click)="toggleListDrawer()"
-    [attr.aria-label]="showListModal ? 'Hide receiving list' : 'Show receiving list'">
+  <button
+    class="drawer-tab"
+    type="button"
+    (click)="toggleListDrawer()"
+    [attr.aria-label]="showListModal ? 'Hide receiving list' : 'Show receiving list'"
+  >
     <span class="drawer-tab-label">Receiving List</span>
     <span class="cart-badge" *ngIf="receivingLines.length > 0">{{ receivingLines.length }}</span>
     <svg class="tab-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-      <polyline *ngIf="!showListModal" points="15 18 9 12 15 6"/>
-      <polyline *ngIf="showListModal"  points="9 18 15 12 9 6"/>
+      <polyline *ngIf="!showListModal" points="15 18 9 12 15 6" />
+      <polyline *ngIf="showListModal" points="9 18 15 12 9 6" />
     </svg>
   </button>
 
@@ -110,8 +166,17 @@
     <div class="panel-header">
       <h2>Receiving List</h2>
       <div class="panel-header-actions">
-        <span class="panel-count" *ngIf="receivingLines.length > 0">{{ receivingLines.length }} item(s)</span>
-        <button class="modal-close-btn app-modal-close" type="button" (click)="toggleListDrawer()" aria-label="Close">×</button>
+        <span class="panel-count" *ngIf="receivingLines.length > 0"
+          >{{ receivingLines.length }} item(s)</span
+        >
+        <button
+          class="modal-close-btn app-modal-close"
+          type="button"
+          (click)="toggleListDrawer()"
+          aria-label="Close"
+        >
+          ×
+        </button>
       </div>
     </div>
 
@@ -121,7 +186,7 @@
     </div>
 
     <div class="empty-state" *ngIf="receivingLines.length === 0">
-      <p>No items in the receiving list yet.<br/>Click a catalog item to add it.</p>
+      <p>No items in the receiving list yet.<br />Click a catalog item to add it.</p>
     </div>
 
     <div class="list-table-wrap" *ngIf="receivingLines.length > 0">
@@ -145,7 +210,14 @@
             <td>{{ line.purchase_date }}</td>
             <td>{{ line.expiry_date || 'N/A' }}</td>
             <td>
-              <button type="button" class="btn btn-remove btn-sm" (click)="removeLine(i)" [disabled]="saving">✕</button>
+              <button
+                type="button"
+                class="btn btn-remove btn-sm"
+                (click)="removeLine(i)"
+                [disabled]="saving"
+              >
+                ✕
+              </button>
             </td>
           </tr>
         </tbody>
@@ -154,15 +226,33 @@
 
     <div class="form-group" *ngIf="receivingLines.length > 0">
       <label class="form-label">Batch Number For Whole List *</label>
-      <input type="text" class="form-control" placeholder="e.g., BATCH-2026-001"
-        [(ngModel)]="confirmBatchNumber" [disabled]="saving" />
-      <div class="hint" *ngIf="attemptedSubmitList && !confirmBatchNumber.trim()">Batch number is required before submitting the list.</div>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="e.g., BATCH-2026-001"
+        [(ngModel)]="confirmBatchNumber"
+        [disabled]="saving"
+      />
+      <div class="hint" *ngIf="attemptedSubmitList && !confirmBatchNumber.trim()">
+        Batch number is required before submitting the list.
+      </div>
     </div>
 
     <div class="drawer-footer">
-      <button type="button" class="btn btn-secondary btn-sm" [disabled]="saving || receivingLines.length === 0"
-        (click)="receivingLines = []">Clear List</button>
-      <button type="button" class="btn btn-primary" [disabled]="!canSubmitList()" (click)="submitReceivingList()">
+      <button
+        type="button"
+        class="btn btn-secondary btn-sm"
+        [disabled]="saving || receivingLines.length === 0"
+        (click)="receivingLines = []"
+      >
+        Clear List
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!canSubmitList()"
+        (click)="submitReceivingList()"
+      >
         {{ saving ? 'Submitting...' : 'Confirm & Submit' }}
       </button>
     </div>
@@ -170,11 +260,13 @@
 </div>
 
 <!-- QR Scanner Modal -->
-<div class="modal-overlay" *ngIf="showScanModal" (click)="closeQrScanner()">
+<div class="modal-overlay" *ngIf="showScanModal" (click)="bounceModal('modal-qr-box')">
   <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Scan QR Code</h2>
-      <button class="modal-close app-modal-close" (click)="closeQrScanner()" aria-label="Close">×</button>
+      <button class="modal-close app-modal-close" (click)="closeQrScanner()" aria-label="Close">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <div class="scanner-wrap">
@@ -187,16 +279,28 @@
 </div>
 
 <!-- Receiving Details Modal -->
-<div class="modal-overlay" *ngIf="showReceivingModal" (click)="!saving && closeReceivingModal()">
+<div class="modal-overlay" *ngIf="showReceivingModal" (click)="bounceModal('modal-box')">
   <div class="modal-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Receiving Details</h2>
-      <button class="modal-close app-modal-close" (click)="closeReceivingModal()" [disabled]="saving" aria-label="Close">×</button>
+      <button
+        class="modal-close app-modal-close"
+        (click)="closeReceivingModal()"
+        [disabled]="saving"
+        aria-label="Close"
+      >
+        ×
+      </button>
     </div>
 
     <div class="modal-body" *ngIf="selectedItem">
       <div class="selected-item-box">
-        <img *ngIf="selectedItem.image_url" [src]="selectedItem.image_url" alt="selected" class="selected-item-image" />
+        <img
+          *ngIf="selectedItem.image_url"
+          [src]="selectedItem.image_url"
+          alt="selected"
+          class="selected-item-image"
+        />
         <span *ngIf="!selectedItem.image_url" class="selected-no-image">No Image</span>
         <div class="selected-item-info">
           <div class="selected-code">{{ selectedItem.item_code }}</div>
@@ -223,30 +327,70 @@
       </div>
 
       <div class="form-section">
-        <h3 class="section-title">{{ transactionMode === 'receive' ? 'Quantity & Batch Information' : 'Quantity Information' }}</h3>
+        <h3 class="section-title">
+          {{
+            transactionMode === 'receive' ? 'Quantity & Batch Information' : 'Quantity Information'
+          }}
+        </h3>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">{{ transactionMode === 'receive' ? 'Quantity Received *' : 'Adjustment Quantity *' }}</label>
-            <input type="number" class="form-control" placeholder="Enter quantity" min="1" [(ngModel)]="quantity" [disabled]="saving" />
+            <label class="form-label">{{
+              transactionMode === 'receive' ? 'Quantity Received *' : 'Adjustment Quantity *'
+            }}</label>
+            <input
+              type="number"
+              class="form-control"
+              placeholder="Enter quantity"
+              min="1"
+              [(ngModel)]="quantity"
+              [disabled]="saving"
+            />
           </div>
           <div class="form-group" *ngIf="transactionMode === 'receive'">
             <label class="form-label">Batch Number *</label>
-            <input type="text" class="form-control" placeholder="e.g., BATCH-2026-001" [(ngModel)]="batchNumber" [disabled]="saving" />
-            <div class="hint" *ngIf="attemptedAddToList && !batchNumber.trim()">Batch number is required.</div>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="e.g., BATCH-2026-001"
+              [(ngModel)]="batchNumber"
+              [disabled]="saving"
+            />
+            <div class="hint" *ngIf="attemptedAddToList && !batchNumber.trim()">
+              Batch number is required.
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Measurement Unit</label>
-            <input type="text" class="form-control" [value]="selectedItem.measurement_unit || 'N/A'" disabled />
+            <input
+              type="text"
+              class="form-control"
+              [value]="selectedItem.measurement_unit || 'N/A'"
+              disabled
+            />
           </div>
         </div>
         <div class="form-row" *ngIf="transactionMode === 'receive'">
           <div class="form-group">
             <label class="form-label">Supplier Information</label>
-            <input type="text" class="form-control" placeholder="Supplier name or code" [(ngModel)]="supplierInfo" [disabled]="saving" />
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Supplier name or code"
+              [(ngModel)]="supplierInfo"
+              [disabled]="saving"
+            />
           </div>
           <div class="form-group">
             <label class="form-label">Batch Value</label>
-            <input type="number" class="form-control" placeholder="Total value of batch" min="0" step="0.01" [(ngModel)]="batchValue" [disabled]="saving" />
+            <input
+              type="number"
+              class="form-control"
+              placeholder="Total value of batch"
+              min="0"
+              step="0.01"
+              [(ngModel)]="batchValue"
+              [disabled]="saving"
+            />
           </div>
         </div>
       </div>
@@ -256,11 +400,22 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Purchase Date *</label>
-            <input type="date" class="form-control" [(ngModel)]="purchaseDate" (change)="onPurchaseDateChange()" [disabled]="saving" />
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="purchaseDate"
+              (change)="onPurchaseDateChange()"
+              [disabled]="saving"
+            />
           </div>
           <div class="form-group">
             <label class="form-label">Manufactured Date</label>
-            <input type="date" class="form-control" [(ngModel)]="manufacturedDate" [disabled]="saving" />
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="manufacturedDate"
+              [disabled]="saving"
+            />
           </div>
         </div>
         <div class="expiry-section">
@@ -269,15 +424,28 @@
             <div class="expiry-display">
               <label class="expiry-label">Auto-Calculated Expiry Date</label>
               <div class="expiry-value">{{ computedExpiryDate }}</div>
-              <div class="expiry-calculation">Purchase Date ({{ purchaseDate }}) + {{ selectedItem.shelf_life_days }} days</div>
+              <div class="expiry-calculation">
+                Purchase Date ({{ purchaseDate }}) + {{ selectedItem.shelf_life_days }} days
+              </div>
             </div>
           </div>
           <div class="override-section">
             <label class="override-checkbox">
-              <input type="checkbox" [(ngModel)]="expiryDateOverride" (change)="toggleExpiryDateOverride()" [disabled]="saving" />
+              <input
+                type="checkbox"
+                [(ngModel)]="expiryDateOverride"
+                (change)="toggleExpiryDateOverride()"
+                [disabled]="saving"
+              />
               <span class="override-label">Override expiry date (use manual date instead)</span>
             </label>
-            <input type="date" class="form-control" [(ngModel)]="expiryDate" *ngIf="expiryDateOverride" [disabled]="saving" />
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="expiryDate"
+              *ngIf="expiryDateOverride"
+              [disabled]="saving"
+            />
           </div>
           <div class="effective-expiry" *ngIf="getEffectiveExpiryDate()">
             <strong>Effective Expiry Date:</strong> {{ getEffectiveExpiryDate() }}
@@ -289,20 +457,46 @@
         <h3 class="section-title">Additional Information</h3>
         <div class="form-group">
           <label class="form-label">Reason/Reference *</label>
-          <input type="text" class="form-control"
-            [placeholder]="transactionMode === 'receive' ? 'e.g., Purchase, Donation, Return' : 'e.g., Physical count correction'"
-            [(ngModel)]="reason" [disabled]="saving" />
+          <input
+            type="text"
+            class="form-control"
+            [placeholder]="
+              transactionMode === 'receive'
+                ? 'e.g., Purchase, Donation, Return'
+                : 'e.g., Physical count correction'
+            "
+            [(ngModel)]="reason"
+            [disabled]="saving"
+          />
         </div>
         <div class="form-group">
           <label class="form-label">Notes</label>
-          <textarea class="form-control textarea" placeholder="Any additional notes..." [(ngModel)]="notes" [disabled]="saving" rows="3"></textarea>
+          <textarea
+            class="form-control textarea"
+            placeholder="Any additional notes..."
+            [(ngModel)]="notes"
+            [disabled]="saving"
+            rows="3"
+          ></textarea>
         </div>
       </div>
     </div>
 
     <div class="modal-footer">
-      <button class="btn btn-secondary" type="button" (click)="closeReceivingModal()" [disabled]="saving">Cancel</button>
-      <button class="btn btn-primary" type="button" [disabled]="!canAddToList() || saving" (click)="addToReceivingList()">
+      <button
+        class="btn btn-secondary"
+        type="button"
+        (click)="closeReceivingModal()"
+        [disabled]="saving"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        [disabled]="!canAddToList() || saving"
+        (click)="addToReceivingList()"
+      >
         {{ transactionMode === 'receive' ? 'Add To List' : 'Add Adjustment' }}
       </button>
     </div>
@@ -310,15 +504,21 @@
 </div>
 
 <!-- Batch QR Modal -->
-<div class="modal-overlay" *ngIf="showBatchQrModal" (click)="closeBatchQrModal()">
+<div class="modal-overlay" *ngIf="showBatchQrModal" (click)="bounceModal('modal-qr-box')">
   <div class="modal-box modal-qr-box" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>{{ batchQrTitle }}</h2>
-      <button class="modal-close app-modal-close" (click)="closeBatchQrModal()" aria-label="Close">×</button>
+      <button class="modal-close app-modal-close" (click)="closeBatchQrModal()" aria-label="Close">
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <div class="qr-wrap">
-        <img *ngIf="batchQrImageDataUrl" [src]="batchQrImageDataUrl" alt="Batch transaction QR code" />
+        <img
+          *ngIf="batchQrImageDataUrl"
+          [src]="batchQrImageDataUrl"
+          alt="Batch transaction QR code"
+        />
         <div *ngIf="!batchQrImageDataUrl" class="state-loading">Generating QR...</div>
       </div>
       <p class="qr-label" *ngIf="batchQrLabel">{{ batchQrLabel }}</p>

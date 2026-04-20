@@ -1,7 +1,10 @@
 <div class="batch-distribution-page">
   <div class="page-header">
     <h1>Batch Distribution</h1>
-    <p class="subtitle">Scale recipe or relief templates from a base count to your target count, then issue stock in one step.</p>
+    <p class="subtitle">
+      Scale recipe or relief templates from a base count to your target count, then issue stock in
+      one step.
+    </p>
   </div>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
@@ -11,7 +14,9 @@
     <section class="panel templates-panel">
       <div class="panel-header">
         <h2>Templates</h2>
-        <button class="btn btn-primary" type="button" (click)="startCreateTemplate()">New Template</button>
+        <button class="btn btn-primary" type="button" (click)="startCreateTemplate()">
+          New Template
+        </button>
       </div>
 
       <div class="search-row">
@@ -24,12 +29,30 @@
             placeholder="Search template name"
             (keyup.enter)="searchTemplates()"
           />
-          <button *ngIf="searchTemplate" class="btn-clear-input" type="button" (click)="clearTemplateSearchBox()" aria-label="Clear search" title="Clear search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <button
+            *ngIf="searchTemplate"
+            class="btn-clear-input"
+            type="button"
+            (click)="clearTemplateSearchBox()"
+            aria-label="Clear search"
+            title="Clear search"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
         <button class="btn btn-secondary" type="button" (click)="searchTemplates()">Search</button>
-        <button class="btn btn-secondary" type="button" (click)="clearTemplateSearch()">Reset</button>
+        <button class="btn btn-secondary" type="button" (click)="clearTemplateSearch()">
+          Reset
+        </button>
       </div>
 
       <div class="list-wrap" *ngIf="!loadingTemplates">
@@ -50,7 +73,13 @@
             Items: {{ template.item_count }}
           </div>
           <div class="template-actions">
-            <button class="btn btn-mini" type="button" (click)="$event.stopPropagation(); editTemplate(template)">Edit</button>
+            <button
+              class="btn btn-mini"
+              type="button"
+              (click)="$event.stopPropagation(); editTemplate(template)"
+            >
+              Edit
+            </button>
           </div>
         </button>
 
@@ -75,7 +104,12 @@
           <input type="number" min="1" class="form-control" [(ngModel)]="targetUnitCount" />
         </label>
         <div class="calc-actions">
-          <button class="btn btn-primary" type="button" (click)="calculate()" [disabled]="calculating">
+          <button
+            class="btn btn-primary"
+            type="button"
+            (click)="calculate()"
+            [disabled]="calculating"
+          >
             {{ calculating ? 'Calculating...' : 'Calculate Requirements' }}
           </button>
         </div>
@@ -85,7 +119,10 @@
         <div class="summary-strip">
           <span><strong>Multiplier:</strong> {{ calculation.multiplier }}</span>
           <span><strong>Lines:</strong> {{ calculation.summary.line_count }}</span>
-          <span><strong>Total Qty:</strong> {{ calculation.summary.total_required_quantity_for_issuance }}</span>
+          <span
+            ><strong>Total Qty:</strong>
+            {{ calculation.summary.total_required_quantity_for_issuance }}</span
+          >
           <span [class.bad]="!calculation.summary.can_issue">
             <strong>Shortages:</strong> {{ calculation.summary.insufficient_items_count }}
           </span>
@@ -119,15 +156,30 @@
           <div class="issue-grid">
             <label>
               <span>Destination *</span>
-              <input type="text" class="form-control" [(ngModel)]="destination" placeholder="e.g. Saturday Feeding Site A" />
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="destination"
+                placeholder="e.g. Saturday Feeding Site A"
+              />
             </label>
             <label>
               <span>Reason</span>
-              <input type="text" class="form-control" [(ngModel)]="reason" placeholder="Batch Distribution" />
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="reason"
+                placeholder="Batch Distribution"
+              />
             </label>
             <label class="full">
               <span>Notes</span>
-              <textarea class="form-control" rows="2" [(ngModel)]="issueNotes" placeholder="Optional notes"></textarea>
+              <textarea
+                class="form-control"
+                rows="2"
+                [(ngModel)]="issueNotes"
+                placeholder="Optional notes"
+              ></textarea>
             </label>
           </div>
 
@@ -146,11 +198,18 @@
     </section>
   </div>
 
-  <div class="modal-overlay" *ngIf="showTemplateForm" (click)="cancelTemplateForm()">
+  <div class="modal-overlay" *ngIf="showTemplateForm" (click)="bounceModal('modal-card')">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2>{{ isEditingTemplate ? 'Edit Template' : 'Create Template' }}</h2>
-        <button type="button" class="btn-close app-modal-close" (click)="cancelTemplateForm()" aria-label="Close">×</button>
+        <button
+          type="button"
+          class="btn-close app-modal-close"
+          (click)="cancelTemplateForm()"
+          aria-label="Close"
+        >
+          ×
+        </button>
       </div>
 
       <div class="modal-body">
@@ -170,7 +229,12 @@
 
           <label>
             <span>Base Count *</span>
-            <input type="number" min="1" class="form-control" [(ngModel)]="templateForm.base_unit_count" />
+            <input
+              type="number"
+              min="1"
+              class="form-control"
+              [(ngModel)]="templateForm.base_unit_count"
+            />
           </label>
 
           <label class="full">
@@ -195,8 +259,24 @@
                 aria-haspopup="listbox"
                 aria-label="Template item combobox"
               />
-              <button *ngIf="searchItem" class="btn-clear-input" type="button" (click)="clearItemSearchBox(); openItemCombobox()" aria-label="Clear search" title="Clear search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <button
+                *ngIf="searchItem"
+                class="btn-clear-input"
+                type="button"
+                (click)="clearItemSearchBox(); openItemCombobox()"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
 
               <div class="combobox-dropdown" *ngIf="itemComboboxOpen">
@@ -208,16 +288,15 @@
                   (mouseenter)="onItemOptionHover(i)"
                   (click)="selectItemOption(item)"
                 >
-                  {{ item.item_code }} - {{ item.item_description }} (Stock: {{ item.current_stock }})
+                  {{ item.item_code }} - {{ item.item_description }} (Stock:
+                  {{ item.current_stock }})
                 </button>
 
                 <div *ngIf="itemOptions.length === 0 && !loadingItemOptions" class="combobox-empty">
                   No matching items.
                 </div>
 
-                <div *ngIf="loadingItemOptions" class="combobox-empty">
-                  Loading item options...
-                </div>
+                <div *ngIf="loadingItemOptions" class="combobox-empty">Loading item options...</div>
               </div>
             </div>
             <input
@@ -253,7 +332,9 @@
                     />
                   </td>
                   <td>
-                    <button class="btn btn-mini" type="button" (click)="removeLine(line.item_id)">Remove</button>
+                    <button class="btn btn-mini" type="button" (click)="removeLine(line.item_id)">
+                      Remove
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -266,8 +347,13 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancelTemplateForm()">Cancel</button>
-        <button class="btn btn-primary" type="button" [disabled]="savingTemplate" (click)="saveTemplate()">
+        <button class="btn btn-cancel" type="button" (click)="cancelTemplateForm()">Cancel</button>
+        <button
+          class="btn btn-primary"
+          type="button"
+          [disabled]="savingTemplate"
+          (click)="saveTemplate()"
+        >
           {{ savingTemplate ? 'Saving...' : 'Save Template' }}
         </button>
       </div>

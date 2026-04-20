@@ -67,33 +67,145 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 24px;
+  animation: overlayIn 0.18s ease;
 }
 
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+// ── Shared modal shell ──────────────────────────────────────
 .category-form-modal,
+.items-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.22),
+    0 4px 16px rgba(2, 6, 23, 0.08);
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.22s ease;
+  overflow: hidden; // clip the header gradient
+
+  // Sticky header
+  .form-panel-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px 16px;
+    background: linear-gradient(135deg, #2f4c88 0%, #1d4ed8 60%, #2563eb 100%);
+    border-bottom: none;
+    margin-bottom: 0;
+
+    .panel-title {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-close-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      padding: 0;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.28);
+      }
+    }
+  }
+
+  // Scrollable body
+  .modal-body-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+    min-height: 0;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+  }
+
+  // Sticky footer
+  .modal-footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 22px;
+    border-top: 1px solid $border;
+    background: #f8fafc;
+    margin-top: 0;
+  }
+}
+
+.category-form-modal {
+  max-width: 680px;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+}
+
+.items-modal {
+  max-width: 980px;
+  width: 100%;
+  max-height: calc(100vh - 48px);
+}
+
+// Non-modal panel (page inline)
 .panel {
   background: white;
   border: 1px solid $border;
   border-radius: $radius;
   padding: 16px 18px;
   box-shadow: $shadow-card;
-}
-
-.items-modal {
-  max-width: 980px;
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid $border;
-  border-radius: $radius;
-  padding: 16px 18px;
-  box-shadow: 0 20px 44px rgba(2, 6, 23, 0.24);
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
 }
 
 .modal-alert {
@@ -273,6 +385,32 @@ textarea {
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+.btn-cancel {
+  padding: 10px 20px;
+  border: 1.5px solid #d1d5db;
+  border-radius: $radius-sm;
+  background: #fff;
+  color: #374151;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: #9ca3af;
+    background: #f9fafb;
+    color: #111827;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 }
 
 .btn-primary,
