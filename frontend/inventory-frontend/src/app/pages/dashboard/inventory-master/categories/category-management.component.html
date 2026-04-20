@@ -10,219 +10,330 @@
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
-  <div class="modal-overlay" *ngIf="showItemsModal" (click)="closeItemsModal()" role="dialog" aria-modal="true">
+  <div
+    class="modal-overlay"
+    *ngIf="showItemsModal"
+    (click)="closeItemsModal()"
+    role="dialog"
+    aria-modal="true"
+  >
     <div class="modal-content items-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
         <h2 class="panel-title">Manage Items: {{ selectedCategoryForItems?.category_name }}</h2>
-        <button class="btn-ghost btn-close-form" type="button" (click)="closeItemsModal()">Close</button>
       </div>
 
-      <div *ngIf="modalErrorMessage" class="alert alert-error modal-alert">{{ modalErrorMessage }}</div>
-      <div *ngIf="modalSuccessMessage" class="alert alert-success modal-alert">{{ modalSuccessMessage }}</div>
-
-      <div class="assign-section">
-        <h3>Assign Registered Items To This Category</h3>
-        <div class="assign-controls">
-          <div class="search-wrap">
-            <input
-              type="text"
-              [(ngModel)]="assignSearch"
-              (ngModelChange)="onAssignSearchInput()"
-              placeholder="Search items by code or name"
-              (keyup.enter)="loadAssignableItems()"
-            />
-            <button *ngIf="assignSearch" class="btn-clear-input" type="button" (click)="clearAssignSearchBox()" aria-label="Clear search" title="Clear search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <button class="btn-ghost" type="button" (click)="loadAssignableItems()">Search</button>
-          <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(true)">Select all</button>
-          <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(false)">Clear</button>
+      <div class="modal-body-scroll">
+        <div *ngIf="modalErrorMessage" class="alert alert-error modal-alert">
+          {{ modalErrorMessage }}
+        </div>
+        <div *ngIf="modalSuccessMessage" class="alert alert-success modal-alert">
+          {{ modalSuccessMessage }}
         </div>
 
-        <div class="assign-summary">
-          Selected: <strong>{{ selectedAssignableItemIds.length }}</strong> item(s)
-        </div>
-
-        <div class="table-wrap assignable-table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th class="check-col">
-                  <input
-                    type="checkbox"
-                    [checked]="areAllAssignableSelected()"
-                    (change)="onSelectAllAssignableChange($event)"
-                  />
-                </th>
-                <th>Image</th>
-                <th>Code</th>
-                <th>Description</th>
-                <th>Current Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of assignableItems">
-                <td class="check-col">
-                  <input
-                    type="checkbox"
-                    [checked]="isAssignableItemSelected(item.item_id)"
-                    (change)="onAssignableItemChange(item.item_id, $event)"
-                  />
-                </td>
-                <td>
-                  <div class="item-image-preview" *ngIf="item.image_url; else noAssignableImage">
-                    <img [src]="item.image_url" [alt]="item.item_description" />
-                  </div>
-                  <ng-template #noAssignableImage>
-                    <span class="item-image-empty">No image</span>
-                  </ng-template>
-                </td>
-                <td>{{ item.item_code }}</td>
-                <td>{{ item.item_description }}</td>
-                <td>{{ item.category_name || 'No category' }}</td>
-              </tr>
-              <tr *ngIf="assignableItems.length === 0">
-                <td colspan="5" class="empty">No assignable items found.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="assign-actions">
-          <button class="btn-primary" type="button" [disabled]="assigningItem || selectedAssignableItemIds.length === 0" (click)="assignSelectedItem()">
-            {{ assigningItem ? 'Assigning...' : 'Assign Selected Items' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="assigned-section">
-        <div class="section-header">
-          <h3>Items in this category ({{ categoryItems.length }})</h3>
+        <div class="assign-section">
+          <h3>Assign Registered Items To This Category</h3>
           <div class="assign-controls">
             <div class="search-wrap">
               <input
                 type="text"
-                [(ngModel)]="itemSearch"
-                (ngModelChange)="onCategoryItemsSearchInput()"
-                placeholder="Search items in this category"
-                (keyup.enter)="loadCategoryItems()"
+                [(ngModel)]="assignSearch"
+                (ngModelChange)="onAssignSearchInput()"
+                placeholder="Search items by code or name"
+                (keyup.enter)="loadAssignableItems()"
               />
-              <button *ngIf="itemSearch" class="btn-clear-input" type="button" (click)="clearCategoryItemsSearchBox()" aria-label="Clear search" title="Clear search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <button
+                *ngIf="assignSearch"
+                class="btn-clear-input"
+                type="button"
+                (click)="clearAssignSearchBox()"
+                aria-label="Clear search"
+                title="Clear search"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
-            <button class="btn-ghost" type="button" (click)="loadCategoryItems()">Search</button>
+            <button class="btn-ghost" type="button" (click)="loadAssignableItems()">Search</button>
+            <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(true)">
+              Select all
+            </button>
+            <button class="btn-ghost" type="button" (click)="toggleSelectAllAssignable(false)">
+              Clear
+            </button>
+          </div>
+
+          <div class="assign-summary">
+            Selected: <strong>{{ selectedAssignableItemIds.length }}</strong> item(s)
+          </div>
+
+          <div class="table-wrap assignable-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th class="check-col">
+                    <input
+                      type="checkbox"
+                      [checked]="areAllAssignableSelected()"
+                      (change)="onSelectAllAssignableChange($event)"
+                    />
+                  </th>
+                  <th>Image</th>
+                  <th>Code</th>
+                  <th>Description</th>
+                  <th>Current Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of assignableItems">
+                  <td class="check-col">
+                    <input
+                      type="checkbox"
+                      [checked]="isAssignableItemSelected(item.item_id)"
+                      (change)="onAssignableItemChange(item.item_id, $event)"
+                    />
+                  </td>
+                  <td>
+                    <div class="item-image-preview" *ngIf="item.image_url; else noAssignableImage">
+                      <img [src]="item.image_url" [alt]="item.item_description" />
+                    </div>
+                    <ng-template #noAssignableImage>
+                      <span class="item-image-empty">No image</span>
+                    </ng-template>
+                  </td>
+                  <td>{{ item.item_code }}</td>
+                  <td>{{ item.item_description }}</td>
+                  <td>{{ item.category_name || 'No category' }}</td>
+                </tr>
+                <tr *ngIf="assignableItems.length === 0">
+                  <td colspan="5" class="empty">No assignable items found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="assign-actions">
+            <button
+              class="btn-primary"
+              type="button"
+              [disabled]="assigningItem || selectedAssignableItemIds.length === 0"
+              (click)="assignSelectedItem()"
+            >
+              {{ assigningItem ? 'Assigning...' : 'Assign Selected Items' }}
+            </button>
           </div>
         </div>
 
-        <div *ngIf="managingItems" class="state-loading">Loading category items...</div>
-
-        <div class="table-wrap" *ngIf="!managingItems">
-          <table>
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Image</th>
-                <th>Description</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of categoryItems">
-                <td>{{ item.item_code }}</td>
-                <td>
-                  <div class="item-image-preview" *ngIf="item.image_url; else noItemImage">
-                    <img [src]="item.image_url" [alt]="item.item_description" />
-                  </div>
-                  <ng-template #noItemImage>
-                    <span class="item-image-empty">No image</span>
-                  </ng-template>
-                </td>
-                <td>{{ item.item_description }}</td>
-                <td>{{ item.is_active ? 'Active' : 'Inactive' }}</td>
-                <td>
-                  <button
-                    class="btn-sm btn-delete"
-                    type="button"
-                    [disabled]="removingItemId === item.item_id"
-                    (click)="removeItemFromCategory(item)"
+        <div class="assigned-section">
+          <div class="section-header">
+            <h3>Items in this category ({{ categoryItems.length }})</h3>
+            <div class="assign-controls">
+              <div class="search-wrap">
+                <input
+                  type="text"
+                  [(ngModel)]="itemSearch"
+                  (ngModelChange)="onCategoryItemsSearchInput()"
+                  placeholder="Search items in this category"
+                  (keyup.enter)="loadCategoryItems()"
+                />
+                <button
+                  *ngIf="itemSearch"
+                  class="btn-clear-input"
+                  type="button"
+                  (click)="clearCategoryItemsSearchBox()"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
                   >
-                    {{ removingItemId === item.item_id ? 'Removing...' : 'Remove from Category' }}
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="categoryItems.length === 0">
-                <td colspan="5" class="empty">No items assigned to this category.</td>
-              </tr>
-            </tbody>
-          </table>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <button class="btn-ghost" type="button" (click)="loadCategoryItems()">Search</button>
+            </div>
+          </div>
+
+          <div *ngIf="managingItems" class="state-loading">Loading category items...</div>
+
+          <div class="table-wrap" *ngIf="!managingItems">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Image</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of categoryItems">
+                  <td>{{ item.item_code }}</td>
+                  <td>
+                    <div class="item-image-preview" *ngIf="item.image_url; else noItemImage">
+                      <img [src]="item.image_url" [alt]="item.item_description" />
+                    </div>
+                    <ng-template #noItemImage>
+                      <span class="item-image-empty">No image</span>
+                    </ng-template>
+                  </td>
+                  <td>{{ item.item_description }}</td>
+                  <td>{{ item.is_active ? 'Active' : 'Inactive' }}</td>
+                  <td>
+                    <button
+                      class="btn-sm btn-delete"
+                      type="button"
+                      [disabled]="removingItemId === item.item_id"
+                      (click)="removeItemFromCategory(item)"
+                    >
+                      {{ removingItemId === item.item_id ? 'Removing...' : 'Remove from Category' }}
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="categoryItems.length === 0">
+                  <td colspan="5" class="empty">No items assigned to this category.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()" role="dialog" aria-modal="true">
+  <div
+    class="modal-overlay"
+    *ngIf="showForm"
+    (click)="bounceModal('category-form-modal')"
+    role="dialog"
+    aria-modal="true"
+  >
     <div class="modal-content category-form-modal" (click)="$event.stopPropagation()">
       <div class="form-panel-header">
         <h2 class="panel-title">{{ selectedCategoryId ? 'Edit category' : 'Add new category' }}</h2>
-        <button class="modal-close-btn app-modal-close" type="button" (click)="closeForm()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
       </div>
 
-      <div class="form-grid">
-        <label>
-          <span>Category name <em>*</em></span>
-          <input type="text" [(ngModel)]="formData.category_name" placeholder="e.g. Medical Supplies" />
-        </label>
+      <div class="modal-body-scroll">
+        <div class="form-grid">
+          <label>
+            <span>Category name <em>*</em></span>
+            <input
+              type="text"
+              [(ngModel)]="formData.category_name"
+              placeholder="e.g. Medical Supplies"
+            />
+          </label>
 
-        <label>
-          <span>Parent category</span>
-          <select [(ngModel)]="formData.parent_category_id">
-            <option [ngValue]="null">No parent category</option>
-            <option *ngFor="let category of getAvailableParentOptions()" [ngValue]="category.category_id">
-              {{ category.category_name }}
-            </option>
-          </select>
-        </label>
+          <label>
+            <span>Parent category</span>
+            <select [(ngModel)]="formData.parent_category_id">
+              <option [ngValue]="null">No parent category</option>
+              <option
+                *ngFor="let category of getAvailableParentOptions()"
+                [ngValue]="category.category_id"
+              >
+                {{ category.category_name }}
+              </option>
+            </select>
+          </label>
 
-        <label class="full-width">
-          <span>Description</span>
-          <textarea rows="3" [(ngModel)]="formData.description" placeholder="Describe this category"></textarea>
-        </label>
+          <label class="full-width">
+            <span>Description</span>
+            <textarea
+              rows="3"
+              [(ngModel)]="formData.description"
+              placeholder="Describe this category"
+            ></textarea>
+          </label>
+        </div>
       </div>
 
       <div class="modal-footer">
+        <button class="btn-cancel" type="button" (click)="closeForm()">Cancel</button>
         <button class="btn-primary" type="button" [disabled]="saving" (click)="save()">
-          {{ saving ? 'Saving...' : (selectedCategoryId ? 'Save changes' : 'Add category') }}
+          {{ saving ? 'Saving...' : selectedCategoryId ? 'Save changes' : 'Add category' }}
         </button>
-        <button class="btn-ghost" type="button" (click)="closeForm()">Cancel</button>
       </div>
     </div>
   </div>
 
   <section class="panel list-panel">
     <div class="list-toolbar">
-      <h2 class="panel-title">Categories <span class="count">({{ categories.length }})</span></h2>
+      <h2 class="panel-title">
+        Categories <span class="count">({{ categories.length }})</span>
+      </h2>
       <div class="toolbar-actions">
         <button class="btn-primary" (click)="startNew()" type="button">Add new category</button>
         <div class="view-toggle" role="group" aria-label="Category view mode">
-          <button class="view-btn" type="button" [class.active]="viewMode === 'table'" (click)="viewMode = 'table'">Table</button>
-          <button class="view-btn" type="button" [class.active]="viewMode === 'cards'" (click)="viewMode = 'cards'">Cards</button>
+          <button
+            class="view-btn"
+            type="button"
+            [class.active]="viewMode === 'table'"
+            (click)="viewMode = 'table'"
+          >
+            Table
+          </button>
+          <button
+            class="view-btn"
+            type="button"
+            [class.active]="viewMode === 'cards'"
+            (click)="viewMode = 'cards'"
+          >
+            Cards
+          </button>
         </div>
         <div class="search-row">
           <div class="search-wrap main-search">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" [(ngModel)]="search" (ngModelChange)="onCategoriesSearchInput()" placeholder="Search by name, parent, or description" (keyup.enter)="onSearch()" />
-            <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearCategoriesSearchBox()" aria-label="Clear search" title="Clear search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (ngModelChange)="onCategoriesSearchInput()"
+              placeholder="Search by name, parent, or description"
+              (keyup.enter)="onSearch()"
+            />
+            <button
+              *ngIf="search"
+              class="btn-clear-input"
+              type="button"
+              (click)="clearCategoriesSearchBox()"
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
         </div>
@@ -245,15 +356,26 @@
         </thead>
         <tbody>
           <tr *ngFor="let category of pagedCategories">
-            <td><span class="cell-name">{{ category.category_name }}</span></td>
+            <td>
+              <span class="cell-name">{{ category.category_name }}</span>
+            </td>
             <td>{{ category.parent_category_name || 'Top-level' }}</td>
             <td>{{ category.description || '—' }}</td>
             <td>{{ category.child_count ?? 0 }}</td>
             <td>{{ category.item_count ?? 0 }}</td>
             <td class="actions">
-              <button class="btn-sm" type="button" (click)="openManageItems(category)">Manage Items</button>
-              <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">Edit</button>
-              <button class="btn-sm btn-delete" type="button" [disabled]="deletingCategoryId === category.category_id" (click)="deleteCategory(category)">
+              <button class="btn-sm" type="button" (click)="openManageItems(category)">
+                Manage Items
+              </button>
+              <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">
+                Edit
+              </button>
+              <button
+                class="btn-sm btn-delete"
+                type="button"
+                [disabled]="deletingCategoryId === category.category_id"
+                (click)="deleteCategory(category)"
+              >
                 {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
               </button>
             </td>
@@ -273,13 +395,26 @@
         </div>
         <p class="card-desc">{{ category.description || 'No description provided.' }}</p>
         <div class="card-stats">
-          <span>Child Categories: <strong>{{ category.child_count ?? 0 }}</strong></span>
-          <span>Assigned Items: <strong>{{ category.item_count ?? 0 }}</strong></span>
+          <span
+            >Child Categories: <strong>{{ category.child_count ?? 0 }}</strong></span
+          >
+          <span
+            >Assigned Items: <strong>{{ category.item_count ?? 0 }}</strong></span
+          >
         </div>
         <div class="card-actions">
-          <button class="btn-sm" type="button" (click)="openManageItems(category)">Manage Items</button>
-          <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">Edit</button>
-          <button class="btn-sm btn-delete" type="button" [disabled]="deletingCategoryId === category.category_id" (click)="deleteCategory(category)">
+          <button class="btn-sm" type="button" (click)="openManageItems(category)">
+            Manage Items
+          </button>
+          <button class="btn-sm btn-edit" type="button" (click)="editCategory(category)">
+            Edit
+          </button>
+          <button
+            class="btn-sm btn-delete"
+            type="button"
+            [disabled]="deletingCategoryId === category.category_id"
+            (click)="deleteCategory(category)"
+          >
             {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
           </button>
         </div>
@@ -290,11 +425,39 @@
 
     <div class="pagination" *ngIf="!loading">
       <div class="pagination-nav">
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="firstPage()" type="button">&laquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1" (click)="previousPage()" type="button">&lsaquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="firstPage()"
+          type="button"
+        >
+          &laquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="previousPage()"
+          type="button"
+        >
+          &lsaquo;
+        </button>
         <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()" type="button">&rsaquo;</button>
-        <button class="btn-ghost page-btn" [disabled]="currentPage >= totalPages" (click)="lastPage()" type="button">&raquo;</button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="nextPage()"
+          type="button"
+        >
+          &rsaquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="lastPage()"
+          type="button"
+        >
+          &raquo;
+        </button>
       </div>
 
       <div class="page-size-wrap">

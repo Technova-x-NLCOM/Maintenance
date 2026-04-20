@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 import {
   CategoryItem,
   InventoryCategory,
-  InventoryCategoryService
+  InventoryCategoryService,
 } from '../../../../services/inventory-category.service';
 
 @Component({
@@ -13,7 +13,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './category-management.component.html',
-  styleUrls: ['./category-management.component.scss']
+  styleUrls: ['./category-management.component.scss'],
 })
 export class CategoryManagementComponent implements OnInit, OnDestroy {
   viewMode: 'table' | 'cards' = 'table';
@@ -65,12 +65,12 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   } = {
     category_name: '',
     parent_category_id: null,
-    description: ''
+    description: '',
   };
 
   constructor(
     private categoryService: InventoryCategoryService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -107,7 +107,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
         this.loading = false;
         this.errorMessage = err?.error?.message || 'Failed to load categories.';
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -223,7 +223,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.formData = {
       category_name: '',
       parent_category_id: null,
-      description: ''
+      description: '',
     };
     this.cdr.detectChanges();
   }
@@ -236,7 +236,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.formData = {
       category_name: category.category_name,
       parent_category_id: category.parent_category_id,
-      description: category.description || ''
+      description: category.description || '',
     };
     this.cdr.detectChanges();
   }
@@ -248,9 +248,24 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.formData = {
       category_name: '',
       parent_category_id: null,
-      description: ''
+      description: '',
     };
     this.cdr.detectChanges();
+  }
+
+  bounceModal(selector: string): void {
+    const el = document.querySelector<HTMLElement>(`.${selector}`);
+    if (!el) return;
+    el.animate(
+      [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.05)' },
+        { transform: 'scale(0.97)' },
+        { transform: 'scale(1.02)' },
+        { transform: 'scale(1)' },
+      ],
+      { duration: 400, easing: 'ease' },
+    );
   }
 
   save(): void {
@@ -267,7 +282,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     const payload = {
       category_name: this.formData.category_name.trim(),
       parent_category_id: this.formData.parent_category_id,
-      description: this.nullIfEmpty(this.formData.description)
+      description: this.nullIfEmpty(this.formData.description),
     };
 
     if (this.selectedCategoryId) {
@@ -282,7 +297,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
           this.saving = false;
           this.errorMessage = this.extractError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
       return;
     }
@@ -298,7 +313,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
         this.saving = false;
         this.errorMessage = this.extractError(err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -322,7 +337,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
         this.deletingCategoryId = null;
         this.errorMessage = this.extractError(err);
         this.cdr.detectChanges();
-      }
+      },
     });
   }
 
@@ -377,7 +392,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
           this.managingItems = false;
           this.modalErrorMessage = this.extractError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -423,23 +438,26 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.cancelAssignSearchDebounce();
     this.loadAssignableSub?.unsubscribe();
     this.loadAssignableSub = this.categoryService
-      .listAssignableItems(this.assignSearch || undefined, this.selectedCategoryForItems?.category_id)
+      .listAssignableItems(
+        this.assignSearch || undefined,
+        this.selectedCategoryForItems?.category_id,
+      )
       .subscribe({
-      next: (response) => {
-        this.assignableItems = response.data;
-        if (!this.assignSearch.trim()) {
-          this.assignableItemsBaseline = response.data.slice();
-        }
-        this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
-          this.assignableItems.some((item) => item.item_id === id)
-        );
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.modalErrorMessage = this.extractError(err);
-        this.cdr.detectChanges();
-      }
-    });
+        next: (response) => {
+          this.assignableItems = response.data;
+          if (!this.assignSearch.trim()) {
+            this.assignableItemsBaseline = response.data.slice();
+          }
+          this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
+            this.assignableItems.some((item) => item.item_id === id),
+          );
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.modalErrorMessage = this.extractError(err);
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   onAssignSearchInput(): void {
@@ -473,7 +491,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     if (this.assignableItemsBaseline) {
       this.assignableItems = this.assignableItemsBaseline.slice();
       this.selectedAssignableItemIds = this.selectedAssignableItemIds.filter((id) =>
-        this.assignableItems.some((item) => item.item_id === id)
+        this.assignableItems.some((item) => item.item_id === id),
       );
       this.cdr.detectChanges();
       return;
@@ -506,7 +524,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
           this.assigningItem = false;
           this.modalErrorMessage = this.extractError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -535,7 +553,10 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   }
 
   areAllAssignableSelected(): boolean {
-    return this.assignableItems.length > 0 && this.selectedAssignableItemIds.length === this.assignableItems.length;
+    return (
+      this.assignableItems.length > 0 &&
+      this.selectedAssignableItemIds.length === this.assignableItems.length
+    );
   }
 
   onSelectAllAssignableChange(event: Event): void {
@@ -571,7 +592,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
           this.removingItemId = null;
           this.modalErrorMessage = this.extractError(err);
           this.cdr.detectChanges();
-        }
+        },
       });
   }
 
@@ -580,7 +601,9 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
       return this.parentOptions;
     }
 
-    return this.parentOptions.filter((category) => category.category_id !== this.selectedCategoryId);
+    return this.parentOptions.filter(
+      (category) => category.category_id !== this.selectedCategoryId,
+    );
   }
 
   private nullIfEmpty(value: string): string | null {
