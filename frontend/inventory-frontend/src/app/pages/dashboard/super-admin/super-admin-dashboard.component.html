@@ -11,26 +11,6 @@
   </div>
 
   <div class="stats-grid" *ngIf="!loading; else loadingStats">
-    <a class="stat-card users" routerLink="/dashboard/system-users" aria-label="Go to system users">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalUsers || 0 }}</span>
-        <span class="stat-label">Total Users</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(usersTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ usersTrend.direction === 'down' ? '▼' : usersTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ usersTrend.description }}
-        </span>
-        <span class="stat-sub">{{ stats?.activeUsers || 0 }} active accounts</span>
-      </div>
-    </a>
-
     <a class="stat-card inventory" routerLink="/dashboard/inventory/items" aria-label="Go to inventory items">
       <div class="stat-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -87,25 +67,6 @@
       </div>
     </a>
 
-    <a class="stat-card alerts" routerLink="/dashboard/settings" aria-label="Go to alert settings">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.pendingAlerts || 0 }}</span>
-        <span class="stat-label">Pending Alerts</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(alertsTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ alertsTrend.direction === 'down' ? '▼' : alertsTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ alertsTrend.description }}
-        </span>
-        <span class="stat-sub warning" *ngIf="(stats?.expiringItems || 0) > 0">{{ stats?.expiringItems }} items expiring soon</span>
-        <span class="stat-sub" *ngIf="(stats?.expiringItems || 0) === 0">No expiring inventory risk</span>
-      </div>
-    </a>
   </div>
 
   <ng-template #loadingStats>
