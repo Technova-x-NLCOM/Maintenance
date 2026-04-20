@@ -10,7 +10,7 @@
   <div *ngIf="loading" class="state state-loading">Loading roles...</div>
   <div *ngIf="error" class="state state-error">{{ error }}</div>
 
-  <div *ngIf="!loading && !error">
+  <div *ngIf="!loading && !error" style="display: contents">
     <div class="legend">
       <span class="legend-item"><span class="dot create"></span>C · Create</span>
       <span class="legend-item"><span class="dot read"></span>R · Read</span>
@@ -28,9 +28,11 @@
         <div class="role-header">
           <div>
             <p class="eyebrow">Role</p>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
               <h3>{{ role.display_name || role.role_name }}</h3>
-              <span *ngIf="role.role_name === 'super_admin'" class="badge protected">Protected</span>
+              <span *ngIf="role.role_name === 'super_admin'" class="badge protected"
+                >Protected</span
+              >
               <span *ngIf="editingRoleId === role.role_id" class="badge live">Editing</span>
             </div>
           </div>
@@ -45,7 +47,11 @@
             </button>
             <div *ngIf="editingRoleId === role.role_id" class="edit-actions">
               <button class="ghost" (click)="cancelEdit()">Cancel</button>
-              <button class="primary" (click)="saveRolePermissions(role)" [disabled]="savingRoles[role.role_id]">
+              <button
+                class="primary"
+                (click)="saveRolePermissions(role)"
+                [disabled]="savingRoles[role.role_id]"
+              >
                 {{ savingRoles[role.role_id] ? 'Saving...' : 'Save changes' }}
               </button>
             </div>
@@ -66,7 +72,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let perm of (permissions || [])">
+              <tr *ngFor="let perm of permissions || []">
                 <td class="perm-name">
                   <div class="perm-name-text">{{ perm.display_name || perm.permission_name }}</div>
                 </td>
@@ -82,7 +88,10 @@
                     </label>
                   </ng-container>
                   <ng-template #viewCreate>
-                    <span class="flag-chip" [class.on]="pivotFor(role, perm.permission_id)?.can_create">
+                    <span
+                      class="flag-chip"
+                      [class.on]="pivotFor(role, perm.permission_id)?.can_create"
+                    >
                       {{ pivotFor(role, perm.permission_id)?.can_create ? 'On' : 'Off' }}
                     </span>
                   </ng-template>
@@ -99,7 +108,10 @@
                     </label>
                   </ng-container>
                   <ng-template #viewRead>
-                    <span class="flag-chip" [class.on]="pivotFor(role, perm.permission_id)?.can_read">
+                    <span
+                      class="flag-chip"
+                      [class.on]="pivotFor(role, perm.permission_id)?.can_read"
+                    >
                       {{ pivotFor(role, perm.permission_id)?.can_read ? 'On' : 'Off' }}
                     </span>
                   </ng-template>
@@ -116,7 +128,10 @@
                     </label>
                   </ng-container>
                   <ng-template #viewUpdate>
-                    <span class="flag-chip" [class.on]="pivotFor(role, perm.permission_id)?.can_update">
+                    <span
+                      class="flag-chip"
+                      [class.on]="pivotFor(role, perm.permission_id)?.can_update"
+                    >
                       {{ pivotFor(role, perm.permission_id)?.can_update ? 'On' : 'Off' }}
                     </span>
                   </ng-template>
@@ -133,7 +148,10 @@
                     </label>
                   </ng-container>
                   <ng-template #viewDelete>
-                    <span class="flag-chip" [class.on]="pivotFor(role, perm.permission_id)?.can_delete">
+                    <span
+                      class="flag-chip"
+                      [class.on]="pivotFor(role, perm.permission_id)?.can_delete"
+                    >
                       {{ pivotFor(role, perm.permission_id)?.can_delete ? 'On' : 'Off' }}
                     </span>
                   </ng-template>

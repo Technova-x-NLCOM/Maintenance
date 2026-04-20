@@ -131,22 +131,31 @@ button.ghost {
   display: inline-block;
 }
 
-.dot.create { background: #16a34a; }
-.dot.read { background: #0284c7; }
-.dot.update { background: #d97706; }
-.dot.delete { background: #dc2626; }
+.dot.create {
+  background: #16a34a;
+}
+.dot.read {
+  background: #0284c7;
+}
+.dot.update {
+  background: #d97706;
+}
+.dot.delete {
+  background: #dc2626;
+}
 
-// MAXIMIZED GRID - 2 columns taking full width
+// Grid - no scroll, just lays out cards
 .roles-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  
+
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
   }
 }
 
+// Each card is capped in height and scrolls its table internally
 .role-card {
   background: #fff;
   border: 2px solid #e5e7eb;
@@ -156,6 +165,8 @@ button.ghost {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 520px;
+  overflow: hidden;
 }
 
 .role-card.editing {
@@ -172,6 +183,7 @@ button.ghost {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .role-header h3 {
@@ -241,36 +253,35 @@ button.ghost {
   margin: 0;
   color: $text-medium;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
-// TABLE WITH INTERNAL SCROLLING
+// Table wrapper scrolls inside the card
 .table-wrapper {
   border: 2px solid #e5e7eb;
   border-radius: 10px;
-  overflow: hidden;
-  max-height: 500px;
   overflow-y: auto;
-  
-  // Custom scrollbar styling
+  flex: 1;
+  min-height: 0;
+
   &::-webkit-scrollbar {
     width: 10px;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #f3f4f6;
     border-radius: 5px;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #9ca3af;
     border-radius: 5px;
-    
+
     &:hover {
       background: #6b7280;
     }
   }
-  
-  // Firefox scrollbar
+
   scrollbar-width: thin;
   scrollbar-color: #9ca3af #f3f4f6;
 }
@@ -279,7 +290,7 @@ button.ghost {
   width: 100%;
   border-collapse: collapse;
   font-size: 1rem;
-  
+
   thead {
     position: sticky;
     top: 0;
@@ -353,7 +364,7 @@ button.ghost {
 
 .slider:before {
   position: absolute;
-  content: "";
+  content: '';
   height: 20px;
   width: 20px;
   left: 3px;
@@ -410,9 +421,5 @@ button.ghost {
   .role-header {
     flex-direction: column;
     align-items: flex-start;
-  }
-  
-  .table-wrapper {
-    max-height: 400px;
   }
 }
