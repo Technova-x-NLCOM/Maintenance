@@ -156,19 +156,21 @@
   </div>
 
   <div class="visualizations-grid" *ngIf="!loading">
-    <div class="card chart-card restock-card">
-      <h2 class="card-title">Items Needing Restock</h2>
-      <p class="card-description">Compare what is currently on hand against minimum stock needed. Red means urgent, yellow means caution.</p>
-      <div class="chart-area chart-area-tall">
-        <canvas #restockChart></canvas>
+    <div class="paired-charts-grid">
+      <div class="card chart-card restock-card">
+        <h2 class="card-title">Items Needing Restock</h2>
+        <p class="card-description">Compare what is currently on hand against minimum stock needed. Red means urgent, yellow means caution.</p>
+        <div class="chart-area chart-area-tall">
+          <canvas #restockChart></canvas>
+        </div>
       </div>
-    </div>
 
-    <div class="card chart-card movement-card">
-      <h2 class="card-title">Stock Movement (Items In vs Items Out)</h2>
-      <p class="card-description">Daily movement over the last 30 days. Hover to see the exact number of incoming and outgoing items.</p>
-      <div class="chart-area chart-area-wide">
-        <canvas #movementChart></canvas>
+      <div class="card chart-card movement-card">
+        <h2 class="card-title">Stock Movement (Items In vs Items Out)</h2>
+        <p class="card-description">Daily movement over the last 30 days. Hover to see the exact number of incoming and outgoing items.</p>
+        <div class="chart-area chart-area-wide">
+          <canvas #movementChart></canvas>
+        </div>
       </div>
     </div>
   </div>
