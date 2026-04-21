@@ -130,38 +130,12 @@
       </ng-template>
     </div>
 
-    <div class="card recent-activity">
-      <div class="card-header">
-        <h2 class="card-title">Recent Activity</h2>
-        <a class="view-all-link" [routerLink]="activityViewAllRoute" aria-label="See all recent activity">See all activity</a>
+    <div class="card chart-card donut-card">
+      <h2 class="card-title">Inventory Distribution by Category</h2>
+      <p class="card-description">This shows how your total inventory is split. Click a legend label to hide or show that category.</p>
+      <div class="chart-area">
+        <canvas #categoryChart></canvas>
       </div>
-      <p class="card-description">Latest system mutations for auditing and troubleshooting.</p>
-      <div class="activity-list" *ngIf="recentActivity.length; else noActivity">
-        <div class="activity-item" *ngFor="let log of visibleRecentActivity; trackBy: trackByLog">
-          <div class="activity-badge" [ngClass]="getActionClass(log.action)">
-            {{ log.action }}
-          </div>
-          <div class="activity-content">
-            <span class="activity-table">{{ log.table_name }}</span>
-            <span class="activity-user">by {{ log.performed_by_name || 'System' }}</span>
-          </div>
-          <span class="activity-time">{{ getRelativeTime(log.created_at) }}</span>
-        </div>
-        <p class="list-footer" *ngIf="hiddenRecentActivityCount > 0">
-          {{ hiddenRecentActivityCount }} more activit{{ hiddenRecentActivityCount > 1 ? 'ies' : 'y' }} recorded.
-          <a [routerLink]="activityViewAllRoute">See all activity</a>
-        </p>
-      </div>
-      <ng-template #noActivity>
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <span>You are all caught up!</span>
-          <p>No recent activity to review yet.</p>
-        </div>
-      </ng-template>
     </div>
   </div>
 
@@ -171,14 +145,6 @@
       <p class="card-description">Compare what is currently on hand against minimum stock needed. Red means urgent, yellow means caution.</p>
       <div class="chart-area chart-area-tall">
         <canvas #restockChart></canvas>
-      </div>
-    </div>
-
-    <div class="card chart-card donut-card">
-      <h2 class="card-title">Inventory Distribution by Category</h2>
-      <p class="card-description">This shows how your total inventory is split. Click a legend label to hide or show that category.</p>
-      <div class="chart-area">
-        <canvas #categoryChart></canvas>
       </div>
     </div>
 
