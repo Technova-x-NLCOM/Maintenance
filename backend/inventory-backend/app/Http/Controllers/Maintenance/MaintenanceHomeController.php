@@ -22,7 +22,7 @@ class MaintenanceHomeController extends Controller
         $user = auth('api')->user();
         $list = [];
         foreach ($this->tables as $name => $meta) {
-            if ($name === 'audit_log' && (!$user || !$user->hasPermission('view_audit'))) {
+            if ($name === 'audit_log' && (!$user || (!$user->hasRole('super_admin') && !$user->hasPermission('view_audit')))) {
                 continue;
             }
 
