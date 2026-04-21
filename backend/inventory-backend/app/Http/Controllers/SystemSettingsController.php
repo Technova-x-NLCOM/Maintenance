@@ -38,6 +38,13 @@ class SystemSettingsController extends Controller
                 'updated_by' => null,
                 'updated_at' => $now,
             ],
+            [
+                'setting_key' => 'expiry_email_recipients',
+                'setting_value' => '',
+                'description' => 'Comma-separated recipient emails for near-expiry notification messages',
+                'updated_by' => null,
+                'updated_at' => $now,
+            ],
         ];
     }
 

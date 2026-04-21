@@ -38,6 +38,14 @@ class SystemSettingsSeeder extends Seeder
                 'updated_by' => null,
                 'updated_at' => '2025-11-18 04:42:48',
             ],
+            [
+                'setting_id' => 4,
+                'setting_key' => 'expiry_email_recipients',
+                'setting_value' => '',
+                'description' => 'Comma-separated recipient emails for near-expiry notification messages',
+                'updated_by' => null,
+                'updated_at' => '2025-11-18 04:42:48',
+            ],
         ];
 
         DB::table('system_settings')->insertOrIgnore($settings);
