@@ -41,6 +41,11 @@ export const permissionGuard = (permission: string): CanActivateFn => {
       return router.parseUrl('/login');
     }
 
+    const currentUser = authService.getCurrentUser();
+    if (currentUser?.role === 'super_admin') {
+      return true;
+    }
+
     return rbacService.getCurrentRole().pipe(
       map((role) => {
         if (rbacService.roleHasPermission(role, permission)) {
