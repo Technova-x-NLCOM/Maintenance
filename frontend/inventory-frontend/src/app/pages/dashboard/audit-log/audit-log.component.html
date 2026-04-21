@@ -1,67 +1,95 @@
 <div class="audit-container">
-  <!-- Header -->
   <div class="audit-header">
-    <h1 class="audit-title">Audit Log</h1>
-    <p class="audit-subtitle">Track all system activity and changes</p>
+    <h1 class="audit-title">Activity Timeline</h1>
+    <p class="audit-subtitle">Clear, easy-to-read history of important system changes.</p>
   </div>
 
-  <!-- Loading State -->
   <div class="loading-state" *ngIf="loading">
     <div class="spinner"></div>
-    <p>Loading audit logs...</p>
+    <p>Loading recent activity...</p>
   </div>
 
-  <!-- Error State -->
   <div class="error-state" *ngIf="error && !loading">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="12" y1="8" x2="12" y2="12"/>
-      <line x1="12" y1="16" x2="12.01" y2="16"/>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
     <p>{{ error }}</p>
     <button class="retry-btn" (click)="loadLogs()">Try Again</button>
   </div>
 
-  <!-- Content -->
   <div class="audit-content" *ngIf="!loading && !error">
-    <!-- Search & Filters -->
     <div class="search-bar">
       <div class="search-input-group">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="m21 21-4.35-4.35"/>
+        <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
         </svg>
         <input
           type="text"
           class="search-input"
-          placeholder="Search by table, user, or action..."
+          placeholder="Search by person, activity, or item"
           [(ngModel)]="search"
           (keyup.enter)="onSearch()"
-          aria-label="Search audit logs"
+          aria-label="Search activity timeline"
         />
         <button *ngIf="search" class="clear-btn" (click)="clearSearch()" title="Clear search">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
       <button class="search-btn" (click)="onSearch()">Search</button>
     </div>
 
-    <!-- Summary Stats -->
+    <div class="filter-row">
+      <div class="filter-field">
+        <label for="filter-start">Start date</label>
+        <input id="filter-start" type="date" [(ngModel)]="filterStartDate" />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-end">End date</label>
+        <input id="filter-end" type="date" [(ngModel)]="filterEndDate" />
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-action">Action Type</label>
+        <select id="filter-action" [(ngModel)]="filterActionType">
+          <option value="ALL">All Actions</option>
+          <option value="ADD">Add</option>
+          <option value="UPDATE">Update</option>
+          <option value="DELETE">Delete</option>
+        </select>
+      </div>
+
+      <div class="filter-field">
+        <label for="filter-module">Module</label>
+        <select id="filter-module" [(ngModel)]="filterModule">
+          <option value="ALL">All Modules</option>
+          <option value="Category">Category</option>
+          <option value="Inventory">Inventory</option>
+          <option value="Users">Users</option>
+        </select>
+      </div>
+
+      <button class="clear-filters-btn" (click)="clearAdvancedFilters()" type="button">Clear filters</button>
+    </div>
+
     <div class="stats-bar">
       <div class="stat">
-        <span class="stat-label">Total Logs:</span>
+        <span class="stat-label">Total activity entries</span>
         <span class="stat-value">{{ total }}</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Showing:</span>
-        <span class="stat-value">{{ startRecord }} - {{ endRecord }} of {{ total }}</span>
+        <span class="stat-label">Matching on this page</span>
+        <span class="stat-value">{{ filteredLogs.length }}</span>
       </div>
       <div class="stat">
-        <span class="stat-label">Per Page:</span>
-        <select [(ngModel)]="perPage" (change)="currentPage = 1; loadLogs()" class="stat-select">
+        <label class="stat-label" for="per-page">Entries per page</label>
+        <select id="per-page" [(ngModel)]="perPage" (change)="currentPage = 1; loadLogs()" class="stat-select">
           <option [value]="10">10</option>
           <option [value]="25">25</option>
           <option [value]="50">50</option>
@@ -70,139 +98,119 @@
       </div>
     </div>
 
-    <!-- Logs Table -->
-    <div class="logs-table-wrap">
-      <table class="logs-table" role="grid" aria-label="Audit logs">
-        <thead>
-          <tr>
-            <th>Date/Time</th>
-            <th>Table</th>
-            <th>Record ID</th>
-            <th>Action</th>
-            <th>Performed By</th>
-            <th>IP Address</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let log of logs" class="log-row" [class.expanded]="expandedLogId === log.log_id">
-            <td class="col-date">
-              <span class="date-value">{{ formatDate(log.created_at) }}</span>
-            </td>
-            <td class="col-table">
-              <span class="table-badge">{{ log.table_name }}</span>
-            </td>
-            <td class="col-id">
-              <code>{{ log.record_id }}</code>
-            </td>
-            <td class="col-action">
-              <span class="action-badge" [ngClass]="getActionBadgeClass(log.action)">
+    <div class="empty-state" *ngIf="!hasAnyLogs">
+      <h3>No activity found</h3>
+      <p>There are no activity records that match your search and filters.</p>
+    </div>
+
+    <div class="activity-feed" *ngIf="hasAnyLogs">
+      <article class="activity-card card shadow-sm border-0 mb-3" *ngFor="let log of filteredLogs" [class.expanded]="expandedLogId === log.log_id" [attr.aria-label]="getActivitySentence(log)">
+          <div class="timeline-icon" aria-hidden="true">
+            <ng-container [ngSwitch]="getModuleIcon(log)">
+              <svg *ngSwitchCase="'folder'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              </svg>
+              <svg *ngSwitchCase="'box'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m21 8-9-5-9 5 9 5 9-5Z" />
+                <path d="m3 8 9 5 9-5" />
+                <path d="M12 13v8" />
+              </svg>
+              <svg *ngSwitchCase="'users'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <svg *ngSwitchDefault width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </ng-container>
+          </div>
+          <div class="activity-main">
+            <p class="activity-headline">
+              <span class="actor-name fw-bold">{{ getActorName(log) }}</span>
+              <span class="action-badge badge" [ngClass]="getActionBadgeClass(log)">
                 {{ getActionLabel(log.action) }}
               </span>
-            </td>
-            <td class="col-user">
-              <span class="user-name">{{ log.performed_by_name || 'Unknown' }}</span>
-            </td>
-            <td class="col-ip">
-              <code class="ip-code">{{ log.ip_address }}</code>
-            </td>
-            <td class="col-expand">
-              <button
-                class="expand-btn"
-                (click)="toggleExpanded(log.log_id)"
-                [attr.aria-expanded]="expandedLogId === log.log_id"
-                title="Show details"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="expandedLogId" class="detail-row">
-            <td colspan="7" class="detail-cell">
-              <div class="detail-content">
-                <div *ngIf="getExpandedLog() as log" class="detail-grid">
-                  <div class="detail-summary">
-                    <div class="detail-summary-header">
-                      <h4 class="detail-heading">Change Summary</h4>
-                      <span class="detail-summary-text">{{ getChangeSummary(log) }}</span>
-                    </div>
-                    <div class="detail-meta-grid">
-                      <div class="detail-meta-item">
-                        <span class="detail-meta-label">Table</span>
-                        <span class="detail-meta-value">{{ log.table_name }}</span>
-                      </div>
-                      <div class="detail-meta-item">
-                        <span class="detail-meta-label">Record</span>
-                        <span class="detail-meta-value">#{{ log.record_id }}</span>
-                      </div>
-                      <div class="detail-meta-item">
-                        <span class="detail-meta-label">Action</span>
-                        <span class="detail-meta-value">{{ getActionLabel(log.action) }}</span>
-                      </div>
-                      <div class="detail-meta-item">
-                        <span class="detail-meta-label">Performer</span>
-                        <span class="detail-meta-value">{{ log.performed_by_name || 'Unknown user' }}</span>
-                      </div>
-                    </div>
-                  </div>
+              <span class="activity-object">{{ getFriendlyTableName(log.table_name) }}</span>
+            </p>
+            <p class="activity-meta">
+              <span>{{ formatDate(log.created_at) }}</span>
+              <span class="meta-separator" aria-hidden="true">•</span>
+              <span class="ip-meta">IP {{ log.ip_address || 'Unknown location' }}</span>
+            </p>
+            <p class="activity-summary">{{ getChangeSummary(log) }}</p>
 
-                  <div class="detail-section detail-fields-section">
-                    <h4 class="detail-heading">Field Details</h4>
-                    <ng-container *ngIf="getDetailFields(log).length > 0; else noDetails">
-                      <div class="field-list">
-                        <div class="field-row field-row-head">
-                          <span>Field</span>
-                          <span>Value</span>
-                        </div>
-                        <div
-                          class="field-row"
-                          *ngFor="let field of getDetailFields(log)"
-                        >
-                          <span class="field-label">{{ field.label }}</span>
-                          <span class="field-value after">{{ field.afterValue }}</span>
-                        </div>
-                      </div>
-                    </ng-container>
-                    <ng-template #noDetails>
-                      <p class="no-details">No field-level changes were recorded for this event.</p>
-                    </ng-template>
+            <button
+              class="details-toggle btn btn-link"
+              (click)="toggleExpanded(log.log_id)"
+              [attr.aria-expanded]="expandedLogId === log.log_id"
+              [attr.aria-controls]="'detail-' + log.log_id"
+              type="button"
+            >
+              <span>{{ expandedLogId === log.log_id ? 'Hide details' : 'View details' }}</span>
+              <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            <section *ngIf="expandedLogId === log.log_id" [id]="'detail-' + log.log_id" class="detail-panel">
+              <h3 class="detail-title">{{ getDetailHeading(log) }}</h3>
+
+              <div class="update-list" *ngIf="log.action === 'UPDATE' && getUpdateFields(log).length > 0; else genericDetails">
+                <div class="update-diff-card" *ngFor="let field of getUpdateFields(log)">
+                  <h4 class="field-name">{{ field.label }}</h4>
+                  <div class="update-diff-grid">
+                    <div class="diff-col old-col">
+                      <p class="diff-label">Old Value</p>
+                      <p class="diff-value">{{ field.beforeValue }}</p>
+                    </div>
+                    <div class="diff-col new-col">
+                      <p class="diff-label">New Value</p>
+                      <p class="diff-value">{{ field.afterValue }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+              <ng-template #genericDetails>
+                <div class="detail-grid" *ngIf="getDetailFields(log).length > 0; else noDetails">
+                  <div class="detail-card" *ngFor="let field of getDetailFields(log)">
+                    <span class="field-name">{{ field.label }}</span>
+                    <span class="field-value">{{ field.value }}</span>
+                  </div>
+                </div>
+              </ng-template>
+
+              <ng-template #noDetails>
+                <p class="no-details">No additional details are available for this activity.</p>
+              </ng-template>
+            </section>
+          </div>
+        </article>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination-bar">
+    <div class="pagination-bar" *ngIf="hasAnyLogs">
       <button
         class="pagination-btn"
         (click)="prevPage()"
         [disabled]="currentPage === 1"
         title="Previous page"
+        type="button"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
         Previous
       </button>
-      <span class="page-info">
-        Page {{ currentPage }} of {{ totalPages }}
-      </span>
+
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+
       <button
         class="pagination-btn"
         (click)="nextPage()"
         [disabled]="currentPage >= totalPages"
         title="Next page"
+        type="button"
       >
         Next
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
       </button>
     </div>
   </div>

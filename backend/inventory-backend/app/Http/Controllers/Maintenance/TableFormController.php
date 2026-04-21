@@ -104,7 +104,7 @@ class TableFormController extends Controller
 
         if ($table === 'audit_log') {
             $user = auth('api')->user();
-            if (!$user || !$user->hasPermission('view_audit')) {
+            if (!$user || (!$user->hasRole('super_admin') && !$user->hasPermission('view_audit'))) {
                 abort(403, 'Insufficient permission to access audit logs');
             }
         }

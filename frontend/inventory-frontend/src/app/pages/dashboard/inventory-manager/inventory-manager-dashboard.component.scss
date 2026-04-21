@@ -209,11 +209,15 @@ $info-blue: #1d4ed8;
 }
 
 .visualizations-grid {
+  display: block;
+}
+
+.paired-charts-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 
-  @media (max-width: 1200px) {
+  @media (max-width: 1060px) {
     grid-template-columns: 1fr;
   }
 }
@@ -223,11 +227,7 @@ $info-blue: #1d4ed8;
 }
 
 .movement-card {
-  grid-column: 1 / -1;
-
-  @media (max-width: 1200px) {
-    grid-column: auto;
-  }
+  grid-column: auto;
 }
 
 .chart-area {
