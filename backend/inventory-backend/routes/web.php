@@ -7,6 +7,7 @@ use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\DistributionPlanController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
 use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\TransactionMonitorController;
@@ -201,6 +202,14 @@ Route::prefix('api/inventory/batch-distribution')
             Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
             Route::post('calculate', [BatchDistributionController::class, 'calculate']);
             Route::post('issue', [BatchDistributionController::class, 'issue']);
+
+            // Scheduled weekly feeding/distribution plans
+            Route::get('program-plans', [DistributionPlanController::class, 'index']);
+            Route::post('program-plans', [DistributionPlanController::class, 'store']);
+            Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
+            Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);
+            Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
+            Route::post('program-plans/{planId}/complete', [DistributionPlanController::class, 'complete']);
         });
     });
 
