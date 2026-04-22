@@ -168,13 +168,23 @@ export class AdminLoginComponent implements OnInit {
     if (!password) { this.showToast('Please enter your password.'); return; }
 
     this.isLoading = true;
-    this.authService.login(identifier, password, 'super_admin').subscribe({
+    this.authService.login(identifier, password, 'super_admin')
+      .pipe(
+        timeout(15000),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe({
       next: () => {
-        this.isLoading = false;
         this.router.navigate(['/dashboard']);
       },
       error: (error) => {
-        this.isLoading = false;
+        if (error?.name === 'TimeoutError') {
+          this.showToast('Login request timed out. Please ensure the backend server is running and try again.');
+          return;
+        }
+
         const errType = error.error?.error_type;
         if (errType === 'account_inactive') {
           this.showInactiveAccountModal = true;
