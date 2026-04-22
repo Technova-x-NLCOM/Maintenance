@@ -196,6 +196,140 @@
 
       <p class="empty" *ngIf="!calculation">Select a template and calculate requirements.</p>
     </section>
+    <section class="panel plans-panel">
+      <div class="panel-header">
+        <h2>Scheduled Program Plans</h2>
+      </div>
+
+      <div class="plans-create-grid compact">
+        <label>
+          <span>Feeding Template *</span>
+          <select class="form-control" [(ngModel)]="planForm.template_id">
+            <option [ngValue]="null">Select template</option>
+            <option
+              *ngFor="let t of templates"
+              [ngValue]="t.template_id"
+              [disabled]="t.distribution_type !== 'feeding_program'"
+            >
+              {{ t.template_name }}
+            </option>
+          </select>
+        </label>
+        <label>
+          <span>Week Label *</span>
+          <input class="form-control" [(ngModel)]="planForm.week_label" placeholder="Week 1" />
+        </label>
+        <label>
+          <span>Planned Date *</span>
+          <input type="date" class="form-control" [(ngModel)]="planForm.planned_date" />
+        </label>
+        <label>
+          <span>Target Count *</span>
+          <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
+        </label>
+        <label class="full">
+          <span>Notes</span>
+          <input class="form-control" [(ngModel)]="planForm.notes" placeholder="Optional planning notes" />
+        </label>
+        <div>
+          <button class="btn btn-primary" type="button" (click)="createPlan()" [disabled]="savingPlan">
+            {{ savingPlan ? 'Saving...' : 'Create Plan' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="plans-list-wrap">
+        <h3>Plan List</h3>
+        <p class="empty" *ngIf="loadingPlans">Loading plans...</p>
+        <div class="list-wrap" *ngIf="!loadingPlans">
+          <button
+            type="button"
+            class="template-card"
+            *ngFor="let plan of plans"
+            [class.active]="selectedPlanId === plan.plan_id"
+            (click)="selectPlan(plan)"
+          >
+            <div class="template-card-top">
+              <strong>{{ plan.week_label }}</strong>
+              <span class="tag" [ngClass]="getPlanStatusClass(plan.status)">{{ plan.status }}</span>
+            </div>
+            <div class="template-meta">
+              {{ plan.template_name }}
+              <span>•</span>
+              {{ plan.planned_date }}
+            </div>
+          </button>
+          <p class="empty" *ngIf="plans.length === 0">No scheduled plans yet.</p>
+        </div>
+      </div>
+
+      <div class="plans-details-wrap" *ngIf="selectedPlanDetails as details">
+        <h3>
+          {{ details.plan.week_label }}
+          <span class="tag" [ngClass]="getPlanStatusClass(details.plan.status)">{{ details.plan.status }}</span>
+        </h3>
+
+        <div class="summary-strip compact-summary">
+          <span><strong>Template:</strong> {{ details.plan.template_name }}</span>
+          <span><strong>Target:</strong> {{ details.plan.target_unit_count }}</span>
+          <span [class.bad]="!details.inventory_check.summary.can_proceed">
+            <strong>Shortages:</strong> {{ details.inventory_check.summary.insufficient_items_count }}
+          </span>
+        </div>
+
+        <div class="plan-actions compact-actions">
+          <button class="btn btn-secondary" type="button" (click)="runPlanPrecheck()" [disabled]="runningPlanAction">
+            Precheck
+          </button>
+          <button class="btn btn-secondary" type="button" (click)="runPlanFinalCheck()" [disabled]="runningPlanAction">
+            Final Check
+          </button>
+        </div>
+
+        <div class="issue-grid compact-issue-grid">
+          <label>
+            <span>Issue Destination *</span>
+            <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" />
+          </label>
+          <label>
+            <span>Issue Reason</span>
+            <input class="form-control" [(ngModel)]="planIssueReason" placeholder="Morning issuance" />
+          </label>
+        </div>
+
+        <button class="btn btn-primary" type="button" (click)="issuePlanOnly()" [disabled]="runningPlanAction">
+          {{ runningPlanAction ? 'Processing...' : 'Issue Only' }}
+        </button>
+
+        <div class="table-wrap compact-table" *ngIf="planRemainingLines.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Remaining</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let line of planRemainingLines">
+                <td>{{ line.item_code }}</td>
+                <td>
+                  <input type="number" min="0" step="0.0001" class="form-control" [(ngModel)]="line.remaining_quantity" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="runningPlanAction">
+          {{ runningPlanAction ? 'Completing...' : 'Complete Plan' }}
+        </button>
+      </div>
+
+      <div class="summary-strip" *ngIf="planIssueSummary as issueSummary">
+        <span><strong>Issued Ref:</strong> {{ issueSummary.reference_number }}</span>
+        <span><strong>Total Issued:</strong> {{ issueSummary.total_issued_quantity }}</span>
+      </div>
+    </section>
   </div>
 
   <div class="modal-overlay" *ngIf="showTemplateForm" (click)="bounceModal('modal-card')">

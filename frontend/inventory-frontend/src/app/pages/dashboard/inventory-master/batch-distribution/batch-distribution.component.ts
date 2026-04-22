@@ -9,11 +9,22 @@ import {
   BatchDistributionTemplatePayload,
   BatchDistributionTemplateSummary,
   DistributionType,
+  ProgramPlanDetailsResponse,
+  ProgramPlanStatus,
+  ProgramPlanSummary,
 } from '../../../../services/batch-distribution.service';
 
 interface EditableTemplateLine {
   item_id: number;
   quantity_per_base: number;
+  notes: string;
+}
+
+interface EditableRemainingLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  remaining_quantity: number;
   notes: string;
 }
 
@@ -30,9 +41,14 @@ export class BatchDistributionComponent implements OnInit {
   savingTemplate = false;
   calculating = false;
   issuing = false;
+  loadingPlans = false;
+  savingPlan = false;
+  loadingPlanDetails = false;
+  runningPlanAction = false;
 
   templates: BatchDistributionTemplateSummary[] = [];
   itemOptions: BatchDistributionItemOption[] = [];
+  plans: ProgramPlanSummary[] = [];
 
   selectedTemplateId: number | null = null;
   selectedTemplateName = '';
@@ -68,6 +84,28 @@ export class BatchDistributionComponent implements OnInit {
   issueNotes = '';
 
   calculation: BatchDistributionCalculation | null = null;
+  selectedPlanId: number | null = null;
+  selectedPlanDetails: ProgramPlanDetailsResponse | null = null;
+
+  planForm: {
+    template_id: number | null;
+    week_label: string;
+    planned_date: string;
+    target_unit_count: number;
+    notes: string;
+  } = {
+    template_id: null,
+    week_label: '',
+    planned_date: '',
+    target_unit_count: 100,
+    notes: '',
+  };
+
+  planIssueDestination = '';
+  planIssueReason = 'Scheduled Feeding Program Issuance';
+  planIssueNotes = '';
+  planRemainingLines: EditableRemainingLine[] = [];
+  planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
 
   errorMessage = '';
   successMessage = '';
@@ -89,6 +127,7 @@ export class BatchDistributionComponent implements OnInit {
   ngOnInit(): void {
     this.loadTemplates();
     this.loadItemOptions();
+    this.loadPlans();
   }
 
   ngOnDestroy(): void {
@@ -633,5 +672,260 @@ export class BatchDistributionComponent implements OnInit {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  loadPlans(): void {
+    this.loadingPlans = true;
+    this.batchService.listProgramPlans().subscribe({
+      next: (response) => {
+        this.plans = response.data;
+        this.loadingPlans = false;
+        if (this.selectedPlanId) {
+          const exists = this.plans.some((p) => p.plan_id === this.selectedPlanId);
+          if (!exists) {
+            this.selectedPlanId = null;
+            this.selectedPlanDetails = null;
+            this.planIssueSummary = null;
+          }
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingPlans = false;
+        this.errorMessage = err?.error?.message || 'Failed to load scheduled plans.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  createPlan(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.planForm.template_id) {
+      this.errorMessage = 'Select a feeding template for the plan.';
+      return;
+    }
+
+    if (!this.planForm.week_label.trim()) {
+      this.errorMessage = 'Week label is required.';
+      return;
+    }
+
+    if (!this.planForm.planned_date) {
+      this.errorMessage = 'Planned date is required.';
+      return;
+    }
+
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    if (!Number.isFinite(targetCount) || targetCount <= 0) {
+      this.errorMessage = 'Target count must be greater than zero.';
+      return;
+    }
+
+    this.savingPlan = true;
+    this.batchService
+      .createProgramPlan({
+        template_id: this.planForm.template_id,
+        week_label: this.planForm.week_label.trim(),
+        planned_date: this.planForm.planned_date,
+        target_unit_count: targetCount,
+        notes: this.planForm.notes.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.savingPlan = false;
+          this.successMessage = response.message || 'Program plan created successfully.';
+          this.selectedPlanId = response.data.plan.plan_id;
+          this.selectedPlanDetails = response.data;
+          this.planIssueSummary = response.data.issuance ?? null;
+          this.seedRemainingLinesFromCurrentDetails();
+          this.loadPlans();
+        },
+        error: (err) => {
+          this.savingPlan = false;
+          this.errorMessage = err?.error?.message || 'Failed to create program plan.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  selectPlan(plan: ProgramPlanSummary): void {
+    this.selectedPlanId = plan.plan_id;
+    this.loadPlanDetails(plan.plan_id);
+  }
+
+  loadPlanDetails(planId: number): void {
+    this.loadingPlanDetails = true;
+    this.batchService.getProgramPlan(planId).subscribe({
+      next: (response) => {
+        this.loadingPlanDetails = false;
+        this.selectedPlanDetails = response.data;
+        this.planIssueSummary = response.data.issuance ?? null;
+        this.seedRemainingLinesFromCurrentDetails();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingPlanDetails = false;
+        this.errorMessage = err?.error?.message || 'Failed to load selected plan details.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  runPlanPrecheck(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+    this.runningPlanAction = true;
+    this.batchService.runProgramPrecheck(this.selectedPlanId).subscribe({
+      next: (response) => {
+        this.runningPlanAction = false;
+        this.successMessage = response.message || 'Precheck completed.';
+        this.loadPlanDetails(this.selectedPlanId!);
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.runningPlanAction = false;
+        this.errorMessage = err?.error?.message || 'Failed to run precheck.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  runPlanFinalCheck(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+    this.runningPlanAction = true;
+    this.batchService.runProgramFinalCheck(this.selectedPlanId).subscribe({
+      next: (response) => {
+        this.runningPlanAction = false;
+        this.successMessage = response.message || 'Final check completed.';
+        this.loadPlanDetails(this.selectedPlanId!);
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.runningPlanAction = false;
+        this.errorMessage = err?.error?.message || 'Failed to run final check.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  issuePlanOnly(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+
+    if (!this.planIssueDestination.trim()) {
+      this.errorMessage = 'Issue destination is required.';
+      return;
+    }
+
+    this.runningPlanAction = true;
+    this.batchService
+      .issueProgramPlanOnly(this.selectedPlanId, {
+        issue_destination: this.planIssueDestination.trim(),
+        issue_reason: this.planIssueReason.trim() || undefined,
+        issue_notes: this.planIssueNotes.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.runningPlanAction = false;
+          this.selectedPlanDetails = response.data;
+          this.planIssueSummary = response.data.issuance ?? null;
+          this.successMessage = response.message || 'Inventory issued successfully.';
+          this.loadPlans();
+          this.seedRemainingLinesFromCurrentDetails();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.runningPlanAction = false;
+          this.errorMessage = err?.error?.message || 'Failed to issue plan inventory.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  completePlan(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+
+    const remaining_items = this.planRemainingLines
+      .filter((line) => Number.isFinite(line.remaining_quantity) && line.remaining_quantity >= 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        remaining_quantity: Number(line.remaining_quantity),
+        notes: line.notes.trim() || undefined,
+      }));
+
+    this.runningPlanAction = true;
+    this.batchService
+      .completeProgramPlan(this.selectedPlanId, {
+        status: 'completed',
+        remaining_items,
+      })
+      .subscribe({
+        next: (response) => {
+          this.runningPlanAction = false;
+          this.selectedPlanDetails = response.data;
+          this.planIssueSummary = response.data.issuance ?? this.planIssueSummary;
+          this.successMessage = response.message || 'Plan completed successfully.';
+          this.loadPlans();
+          this.seedRemainingLinesFromCurrentDetails();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.runningPlanAction = false;
+          this.errorMessage = err?.error?.message || 'Failed to complete plan.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  getPlanStatusClass(status: ProgramPlanStatus | string): string {
+    switch (status) {
+      case 'planned':
+        return 'tag-planned';
+      case 'checked_pre':
+        return 'tag-checked';
+      case 'ready':
+        return 'tag-ready';
+      case 'completed':
+        return 'tag-completed';
+      case 'cancelled':
+        return 'tag-cancelled';
+      default:
+        return '';
+    }
+  }
+
+  private seedRemainingLinesFromCurrentDetails(): void {
+    const details = this.selectedPlanDetails;
+    if (!details) {
+      this.planRemainingLines = [];
+      return;
+    }
+
+    if (details.remaining_items && details.remaining_items.length > 0) {
+      this.planRemainingLines = details.remaining_items.map((line) => ({
+        item_id: line.item_id,
+        item_code: line.item_code,
+        item_description: line.item_description,
+        remaining_quantity: Number(line.remaining_quantity) || 0,
+        notes: line.notes || '',
+      }));
+      return;
+    }
+
+    this.planRemainingLines = details.inventory_check.items.map((line) => ({
+      item_id: line.item_id,
+      item_code: line.item_code,
+      item_description: line.item_description,
+      remaining_quantity: 0,
+      notes: '',
+    }));
   }
 }
