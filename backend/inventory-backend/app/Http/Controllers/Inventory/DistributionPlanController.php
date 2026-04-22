@@ -210,7 +210,7 @@ class DistributionPlanController extends Controller
 
     public function complete(Request $request, int $planId)
     {
-        $plan = DB::table('distribution_plan_schedules')->where('plan_id', $planId)->first();
+        $plan = $this->getPlanWithTemplate($planId);
         if (!$plan) {
             return response()->json([
                 'success' => false,
@@ -219,19 +219,75 @@ class DistributionPlanController extends Controller
         }
 
         $validated = $request->validate([
-            'remaining_items' => ['required', 'array', 'min:1'],
-            'remaining_items.*.item_id' => ['required', 'integer', 'distinct', 'exists:items,item_id'],
-            'remaining_items.*.remaining_quantity' => ['required', 'numeric', 'min:0'],
+            'remaining_items' => ['nullable', 'array'],
+            'remaining_items.*.item_id' => ['required_with:remaining_items', 'integer', 'distinct', 'exists:items,item_id'],
+            'remaining_items.*.remaining_quantity' => ['required_with:remaining_items', 'numeric', 'min:0'],
             'remaining_items.*.notes' => ['nullable', 'string'],
             'status' => ['nullable', Rule::in(['completed', 'cancelled'])],
+            'issue_now' => ['nullable', 'boolean'],
+            'issue_destination' => ['nullable', 'string', 'max:255'],
+            'issue_reason' => ['nullable', 'string', 'max:255'],
+            'issue_notes' => ['nullable', 'string'],
         ]);
 
         $user = auth('api')->user();
         $recordedBy = $user?->user_id ?? auth()->id();
         $nextStatus = $validated['status'] ?? 'completed';
+        $issueNow = (bool) ($validated['issue_now'] ?? false);
 
-        DB::transaction(function () use ($planId, $validated, $recordedBy, $nextStatus) {
-            foreach ($validated['remaining_items'] as $line) {
+        if ($issueNow && $nextStatus === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot issue inventory while marking plan as cancelled.',
+            ], 422);
+        }
+
+        if ($issueNow && empty($validated['issue_destination'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Issue destination is required when issue_now is true.',
+            ], 422);
+        }
+
+        $checkData = $this->buildInventoryCheckData($plan);
+
+        if ($issueNow && !$checkData['summary']['can_proceed']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot auto-issue because some items are below required stock.',
+                'error_type' => 'insufficient_stock',
+                'data' => [
+                    'check_result' => $checkData,
+                ],
+            ], 422);
+        }
+
+        $issuanceSummary = null;
+        $remainingItems = $validated['remaining_items'] ?? [];
+
+        DB::transaction(function () use (
+            $planId,
+            $remainingItems,
+            $recordedBy,
+            $nextStatus,
+            $issueNow,
+            $validated,
+            $checkData,
+            $plan,
+            &$issuanceSummary
+        ) {
+            if ($issueNow) {
+                $issuanceSummary = $this->issuePlanItems(
+                    $plan,
+                    $checkData,
+                    (int) $recordedBy,
+                    trim((string) $validated['issue_destination']),
+                    $validated['issue_reason'] ?? null,
+                    $validated['issue_notes'] ?? null
+                );
+            }
+
+            foreach ($remainingItems as $line) {
                 DB::table('distribution_plan_remaining_items')->updateOrInsert(
                     [
                         'plan_id' => $planId,
@@ -256,7 +312,191 @@ class DistributionPlanController extends Controller
                 ]);
         });
 
-        return $this->show($planId);
+        $response = $this->show($planId);
+        $payload = $response->getData(true);
+
+        if ($issuanceSummary !== null) {
+            $payload['data']['issuance'] = $issuanceSummary;
+            $payload['message'] = 'Scheduled plan completed and inventory issued successfully.';
+        } else {
+            $payload['message'] = 'Scheduled plan completed successfully.';
+        }
+
+        return response()->json($payload, $response->status());
+    }
+
+    public function issueOnly(Request $request, int $planId)
+    {
+        $plan = $this->getPlanWithTemplate($planId);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        if ($plan->status === 'completed' || $plan->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot issue inventory for a completed or cancelled plan.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'issue_destination' => ['required', 'string', 'max:255'],
+            'issue_reason' => ['nullable', 'string', 'max:255'],
+            'issue_notes' => ['nullable', 'string'],
+        ]);
+
+        $checkData = $this->buildInventoryCheckData($plan);
+        if (!$checkData['summary']['can_proceed']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot issue because some items are below required stock.',
+                'error_type' => 'insufficient_stock',
+                'data' => [
+                    'check_result' => $checkData,
+                ],
+            ], 422);
+        }
+
+        $user = auth('api')->user();
+        $performedBy = $user?->user_id ?? auth()->id();
+        $issuanceSummary = null;
+
+        DB::transaction(function () use ($planId, $plan, $checkData, $performedBy, $validated, &$issuanceSummary) {
+            $issuanceSummary = $this->issuePlanItems(
+                $plan,
+                $checkData,
+                (int) $performedBy,
+                trim((string) $validated['issue_destination']),
+                $validated['issue_reason'] ?? null,
+                $validated['issue_notes'] ?? null
+            );
+
+            DB::table('distribution_plan_schedules')
+                ->where('plan_id', $planId)
+                ->update([
+                    'status' => 'ready',
+                    'final_check_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $response = $this->show($planId);
+        $payload = $response->getData(true);
+        $payload['data']['issuance'] = $issuanceSummary;
+        $payload['message'] = 'Inventory issued successfully. Plan remains open for post-event completion.';
+
+        return response()->json($payload, $response->status());
+    }
+
+    private function issuePlanItems(
+        object $plan,
+        array $checkData,
+        int $performedBy,
+        string $destination,
+        ?string $reason,
+        ?string $notes
+    ): array {
+        $reference = 'PLAN-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
+        $issuedLines = [];
+        $totalIssued = 0;
+
+        foreach ($checkData['items'] as $line) {
+            $itemId = (int) $line['item_id'];
+            $required = (int) $line['required_quantity_for_issuance'];
+            $remaining = $required;
+
+            $batches = DB::table('inventory_batches')
+                ->select('batch_id', 'quantity', 'expiry_date')
+                ->where('item_id', $itemId)
+                ->where('status', 'active')
+                ->where('quantity', '>', 0)
+                ->orderByRaw('expiry_date IS NULL, expiry_date ASC')
+                ->orderBy('created_at')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($batches as $batch) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $deduct = min($remaining, (int) $batch->quantity);
+                if ($deduct <= 0) {
+                    continue;
+                }
+
+                $newQty = ((int) $batch->quantity) - $deduct;
+
+                DB::table('inventory_batches')
+                    ->where('batch_id', $batch->batch_id)
+                    ->update([
+                        'quantity' => $newQty,
+                        'status' => $newQty <= 0 ? 'depleted' : 'active',
+                        'updated_at' => now(),
+                    ]);
+
+                DB::table('inventory_transactions')->insert([
+                    'item_id' => $itemId,
+                    'batch_id' => $batch->batch_id,
+                    'transaction_type' => 'OUT',
+                    'quantity' => $deduct,
+                    'reference_number' => $reference,
+                    'transaction_date' => now(),
+                    'reason' => $reason ?: 'Scheduled Feeding Program Issuance',
+                    'notes' => $this->buildIssuanceNotes($plan, $notes),
+                    'destination' => $destination,
+                    'performed_by' => $performedBy,
+                    'created_at' => now(),
+                ]);
+
+                $remaining -= $deduct;
+                $totalIssued += $deduct;
+            }
+
+            if ($remaining > 0) {
+                throw new \RuntimeException('Insufficient stock detected during issuance. Transaction cancelled.');
+            }
+
+            $issuedLines[] = [
+                'item_id' => $itemId,
+                'item_code' => $line['item_code'],
+                'item_description' => $line['item_description'],
+                'required_quantity_for_issuance' => $required,
+                'issued_quantity' => $required,
+            ];
+        }
+
+        return [
+            'reference_number' => $reference,
+            'plan_id' => (int) $plan->plan_id,
+            'week_label' => (string) $plan->week_label,
+            'template_id' => (int) $plan->template_id,
+            'template_name' => (string) $plan->template_name,
+            'target_unit_count' => (int) $plan->target_unit_count,
+            'destination' => $destination,
+            'total_issued_quantity' => $totalIssued,
+            'issued_lines' => $issuedLines,
+        ];
+    }
+
+    private function buildIssuanceNotes(object $plan, ?string $userNotes): string
+    {
+        $parts = [
+            'Scheduled Plan: ' . $plan->week_label,
+            'Template: ' . $plan->template_name,
+            'Planned Date: ' . $plan->planned_date,
+            'Target Units: ' . $plan->target_unit_count,
+        ];
+
+        $userNotes = $this->nullIfEmpty($userNotes);
+        if ($userNotes) {
+            $parts[] = 'Notes: ' . $userNotes;
+        }
+
+        return implode(' | ', $parts);
     }
 
     private function getPlanWithTemplate(int $planId): ?object
