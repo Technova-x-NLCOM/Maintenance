@@ -209,7 +209,7 @@ Route::prefix('api/inventory/batch-distribution')
             Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
             Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);
             Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
-            Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'issueOnly']);
+            Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'update']);
             Route::post('program-plans/{planId}/complete', [DistributionPlanController::class, 'complete']);
         });
     });

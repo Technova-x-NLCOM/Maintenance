@@ -195,10 +195,18 @@ export interface ProgramPlanCreatePayload {
   notes?: string;
 }
 
-export interface ProgramPlanIssueOnlyPayload {
+export interface ProgramPlanUpdatePayload {
   issue_destination: string;
   issue_reason?: string;
   issue_notes?: string;
+}
+
+export interface ProgramPlanFinalCheckPayload {
+  procured_items?: Array<{
+    item_id: number;
+    quantity_brought: number;
+    notes?: string;
+  }>;
 }
 
 export interface ProgramPlanCompletePayload {
@@ -353,15 +361,15 @@ export class BatchDistributionService {
     );
   }
 
-  runProgramFinalCheck(planId: number): Observable<{ success: boolean; message: string; data: any }> {
+  runProgramFinalCheck(planId: number, payload?: ProgramPlanFinalCheckPayload): Observable<{ success: boolean; message: string; data: any }> {
     return this.http.post<{ success: boolean; message: string; data: any }>(
       `${this.baseUrl}/program-plans/${planId}/final-check`,
-      {},
+      payload ?? {},
       { headers: this.getHeaders() }
     );
   }
 
-  issueProgramPlanOnly(planId: number, payload: ProgramPlanIssueOnlyPayload): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
+  updateProgramPlan(planId: number, payload: ProgramPlanUpdatePayload): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
     return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
       `${this.baseUrl}/program-plans/${planId}/issue-only`,
       payload,

@@ -28,6 +28,15 @@ interface EditableRemainingLine {
   notes: string;
 }
 
+interface EditableProcuredLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  shortage_quantity: number;
+  quantity_brought: number;
+  notes: string;
+}
+
 @Component({
   selector: 'app-batch-distribution',
   standalone: true,
@@ -105,6 +114,7 @@ export class BatchDistributionComponent implements OnInit {
   planIssueReason = 'Scheduled Feeding Program Issuance';
   planIssueNotes = '';
   planRemainingLines: EditableRemainingLine[] = [];
+  planProcuredLines: EditableProcuredLine[] = [];
   planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
 
   errorMessage = '';
@@ -686,6 +696,7 @@ export class BatchDistributionComponent implements OnInit {
             this.selectedPlanId = null;
             this.selectedPlanDetails = null;
             this.planIssueSummary = null;
+            this.planProcuredLines = [];
           }
         }
         this.cdr.detectChanges();
@@ -740,6 +751,7 @@ export class BatchDistributionComponent implements OnInit {
           this.selectedPlanDetails = response.data;
           this.planIssueSummary = response.data.issuance ?? null;
           this.seedRemainingLinesFromCurrentDetails();
+          this.seedProcuredLinesFromCurrentDetails();
           this.loadPlans();
         },
         error: (err) => {
@@ -763,6 +775,7 @@ export class BatchDistributionComponent implements OnInit {
         this.selectedPlanDetails = response.data;
         this.planIssueSummary = response.data.issuance ?? null;
         this.seedRemainingLinesFromCurrentDetails();
+        this.seedProcuredLinesFromCurrentDetails();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -797,8 +810,17 @@ export class BatchDistributionComponent implements OnInit {
     if (!this.selectedPlanId) {
       return;
     }
+
+    const procured_items = this.planProcuredLines
+      .filter((line) => Number.isFinite(line.quantity_brought) && line.quantity_brought > 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        quantity_brought: Math.floor(Number(line.quantity_brought)),
+        notes: line.notes.trim() || undefined,
+      }));
+
     this.runningPlanAction = true;
-    this.batchService.runProgramFinalCheck(this.selectedPlanId).subscribe({
+    this.batchService.runProgramFinalCheck(this.selectedPlanId, { procured_items }).subscribe({
       next: (response) => {
         this.runningPlanAction = false;
         this.successMessage = response.message || 'Final check completed.';
@@ -813,7 +835,7 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
-  issuePlanOnly(): void {
+  updatePlan(): void {
     if (!this.selectedPlanId) {
       return;
     }
@@ -825,7 +847,7 @@ export class BatchDistributionComponent implements OnInit {
 
     this.runningPlanAction = true;
     this.batchService
-      .issueProgramPlanOnly(this.selectedPlanId, {
+      .updateProgramPlan(this.selectedPlanId, {
         issue_destination: this.planIssueDestination.trim(),
         issue_reason: this.planIssueReason.trim() || undefined,
         issue_notes: this.planIssueNotes.trim() || undefined,
@@ -838,6 +860,7 @@ export class BatchDistributionComponent implements OnInit {
           this.successMessage = response.message || 'Inventory issued successfully.';
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
+          this.seedProcuredLinesFromCurrentDetails();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -875,6 +898,7 @@ export class BatchDistributionComponent implements OnInit {
           this.successMessage = response.message || 'Plan completed successfully.';
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
+          this.seedProcuredLinesFromCurrentDetails();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -927,5 +951,24 @@ export class BatchDistributionComponent implements OnInit {
       remaining_quantity: 0,
       notes: '',
     }));
+  }
+
+  private seedProcuredLinesFromCurrentDetails(): void {
+    const details = this.selectedPlanDetails;
+    if (!details) {
+      this.planProcuredLines = [];
+      return;
+    }
+
+    this.planProcuredLines = details.inventory_check.items
+      .filter((line) => line.shortage_quantity > 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        item_code: line.item_code,
+        item_description: line.item_description,
+        shortage_quantity: Number(line.shortage_quantity) || 0,
+        quantity_brought: 0,
+        notes: '',
+      }));
   }
 }

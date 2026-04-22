@@ -277,6 +277,30 @@
           </span>
         </div>
 
+        <div class="table-wrap compact-table" *ngIf="details.inventory_check.items.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Ingredient</th>
+                <th>Required</th>
+                <th>Current Stock</th>
+                <th>Shortage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let row of details.inventory_check.items"
+                [class.has-shortage]="row.has_shortage"
+              >
+                <td>{{ row.item_code }} - {{ row.item_description }}</td>
+                <td>{{ row.required_quantity_for_issuance }}</td>
+                <td>{{ row.current_stock }}</td>
+                <td>{{ row.shortage_quantity }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="plan-actions compact-actions">
           <button class="btn btn-secondary" type="button" (click)="runPlanPrecheck()" [disabled]="runningPlanAction">
             Precheck
@@ -284,6 +308,34 @@
           <button class="btn btn-secondary" type="button" (click)="runPlanFinalCheck()" [disabled]="runningPlanAction">
             Final Check
           </button>
+        </div>
+
+        <div class="table-wrap compact-table" *ngIf="planProcuredLines.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Ingredient To Buy</th>
+                <th>Shortage</th>
+                <th>Brought Qty (Final Check)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let line of planProcuredLines">
+                <td>{{ line.item_code }} - {{ line.item_description }}</td>
+                <td>{{ line.shortage_quantity }}</td>
+                <td>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    class="form-control"
+                    [(ngModel)]="line.quantity_brought"
+                    placeholder="Qty bought"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <div class="issue-grid compact-issue-grid">
@@ -297,8 +349,8 @@
           </label>
         </div>
 
-        <button class="btn btn-primary" type="button" (click)="issuePlanOnly()" [disabled]="runningPlanAction">
-          {{ runningPlanAction ? 'Processing...' : 'Issue Only' }}
+        <button class="btn btn-primary" type="button" (click)="updatePlan()" [disabled]="runningPlanAction">
+          {{ runningPlanAction ? 'Updating...' : 'Update Plan' }}
         </button>
 
         <div class="table-wrap compact-table" *ngIf="planRemainingLines.length > 0">

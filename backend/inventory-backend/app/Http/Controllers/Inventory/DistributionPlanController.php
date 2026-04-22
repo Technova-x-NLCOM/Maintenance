@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class DistributionPlanController extends Controller
@@ -166,6 +167,7 @@ class DistributionPlanController extends Controller
                 'plan_id' => $planId,
                 'check_type' => 'pre',
                 'check_result' => $checkData,
+                'ingredients' => $checkData['items'],
                 'procurement_list' => collect($checkData['items'])
                     ->filter(fn ($line) => $line['shortage_quantity'] > 0)
                     ->values(),
@@ -181,6 +183,41 @@ class DistributionPlanController extends Controller
                 'success' => false,
                 'message' => 'Scheduled plan not found.',
             ], 404);
+        }
+
+        $validated = $request->validate([
+            'procured_items' => ['nullable', 'array'],
+            'procured_items.*.item_id' => ['required_with:procured_items', 'integer', 'distinct', 'exists:items,item_id'],
+            'procured_items.*.quantity_brought' => ['required_with:procured_items', 'integer', 'min:1'],
+            'procured_items.*.notes' => ['nullable', 'string'],
+        ]);
+
+        $preCheckData = $this->buildInventoryCheckData($plan);
+        $allowedItemIds = collect($preCheckData['items'])
+            ->pluck('item_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $procuredItems = $validated['procured_items'] ?? [];
+        foreach ($procuredItems as $line) {
+            if (!in_array((int) $line['item_id'], $allowedItemIds, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Procured item is not part of the selected plan ingredients.',
+                    'data' => [
+                        'invalid_item_id' => (int) $line['item_id'],
+                    ],
+                ], 422);
+            }
+        }
+
+        $performedBy = auth('api')->user()?->user_id ?? auth()->id() ?? 1;
+        $procurementSummary = null;
+
+        if (!empty($procuredItems)) {
+            DB::transaction(function () use ($plan, $procuredItems, $performedBy, &$procurementSummary) {
+                $procurementSummary = $this->recordProcuredIngredients($plan, $procuredItems, (int) $performedBy);
+            });
         }
 
         $checkData = $this->buildInventoryCheckData($plan);
@@ -204,8 +241,147 @@ class DistributionPlanController extends Controller
                 'check_type' => 'final',
                 'status' => $nextStatus,
                 'check_result' => $checkData,
+                'ingredients' => $checkData['items'],
+                'procurement_list' => collect($checkData['items'])
+                    ->filter(fn ($line) => $line['shortage_quantity'] > 0)
+                    ->values(),
+                'procured_summary' => $procurementSummary,
             ],
         ]);
+    }
+
+    private function recordProcuredIngredients(object $plan, array $procuredItems, int $performedBy): array
+    {
+        $locationId = $this->resolveInventoryLocationId();
+        if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
+            throw new \RuntimeException('No valid inventory location configured for procured ingredients.');
+        }
+
+        $reference = 'PROC-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
+        $lines = [];
+        $totalQty = 0;
+
+        foreach ($procuredItems as $line) {
+            $itemId = (int) $line['item_id'];
+            $qty = (int) $line['quantity_brought'];
+            if ($qty <= 0) {
+                continue;
+            }
+
+            $item = DB::table('items')
+                ->select('item_id', 'item_code', 'item_description')
+                ->where('item_id', $itemId)
+                ->first();
+
+            if (!$item) {
+                continue;
+            }
+
+            $batchInsert = [
+                'item_id' => $itemId,
+                'batch_number' => sprintf(
+                    'PLAN-%d-%d-%s',
+                    (int) $plan->plan_id,
+                    $itemId,
+                    now()->format('His')
+                ),
+                'quantity' => $qty,
+                'expiry_date' => null,
+                'manufactured_date' => null,
+                'supplier_info' => 'Procured for scheduled plan',
+                'batch_value' => null,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId !== null) {
+                $batchInsert['location_id'] = $locationId;
+            }
+
+            $batchId = DB::table('inventory_batches')->insertGetId($batchInsert);
+
+            $transactionInsert = [
+                'item_id' => $itemId,
+                'batch_id' => $batchId,
+                'transaction_type' => 'IN',
+                'quantity' => $qty,
+                'reference_number' => $reference,
+                'transaction_date' => now(),
+                'reason' => 'Final Check Procurement',
+                'notes' => $this->buildProcurementNotes($plan, $line['notes'] ?? null),
+                'performed_by' => $performedBy,
+                'created_at' => now(),
+            ];
+
+            if (Schema::hasColumn('inventory_transactions', 'from_location_id') && $locationId !== null) {
+                $transactionInsert['from_location_id'] = $locationId;
+            }
+            if (Schema::hasColumn('inventory_transactions', 'to_location_id') && $locationId !== null) {
+                $transactionInsert['to_location_id'] = $locationId;
+            }
+
+            DB::table('inventory_transactions')->insert($transactionInsert);
+
+            $lines[] = [
+                'item_id' => (int) $item->item_id,
+                'item_code' => (string) $item->item_code,
+                'item_description' => (string) $item->item_description,
+                'quantity_brought' => $qty,
+            ];
+            $totalQty += $qty;
+        }
+
+        return [
+            'reference_number' => $reference,
+            'line_count' => count($lines),
+            'total_quantity_brought' => $totalQty,
+            'procured_lines' => $lines,
+        ];
+    }
+
+    private function buildProcurementNotes(object $plan, ?string $notes): string
+    {
+        $parts = [
+            'Scheduled Plan Procurement',
+            'Plan: ' . $plan->week_label,
+            'Template: ' . $plan->template_name,
+            'Planned Date: ' . $plan->planned_date,
+        ];
+
+        $notes = $this->nullIfEmpty($notes);
+        if ($notes) {
+            $parts[] = 'Notes: ' . $notes;
+        }
+
+        return implode(' | ', $parts);
+    }
+
+    private function resolveInventoryLocationId(): ?int
+    {
+        $candidates = [
+            ['table' => 'locations', 'column' => 'location_id'],
+            ['table' => 'inventory_locations', 'column' => 'location_id'],
+            ['table' => 'stock_locations', 'column' => 'location_id'],
+            ['table' => 'warehouses', 'column' => 'warehouse_id'],
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!Schema::hasTable($candidate['table']) || !Schema::hasColumn($candidate['table'], $candidate['column'])) {
+                continue;
+            }
+
+            $id = DB::table($candidate['table'])
+                ->whereNotNull($candidate['column'])
+                ->orderBy($candidate['column'])
+                ->value($candidate['column']);
+
+            if ($id !== null) {
+                return (int) $id;
+            }
+        }
+
+        return null;
     }
 
     public function complete(Request $request, int $planId)
@@ -325,7 +501,7 @@ class DistributionPlanController extends Controller
         return response()->json($payload, $response->status());
     }
 
-    public function issueOnly(Request $request, int $planId)
+    public function update(Request $request, int $planId)
     {
         $plan = $this->getPlanWithTemplate($planId);
         if (!$plan) {
@@ -386,7 +562,7 @@ class DistributionPlanController extends Controller
         $response = $this->show($planId);
         $payload = $response->getData(true);
         $payload['data']['issuance'] = $issuanceSummary;
-        $payload['message'] = 'Inventory issued successfully. Plan remains open for post-event completion.';
+        $payload['message'] = 'Plan updated successfully. Inventory has been issued and the plan remains open for completion.';
 
         return response()->json($payload, $response->status());
     }
