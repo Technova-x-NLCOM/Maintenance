@@ -41,6 +41,28 @@ $fetchNearExpiryItems = function (int $days) {
         ->get();
 };
 
+$fetchExpiredItems = function () {
+    $today = now()->startOfDay();
+
+    return DB::table('inventory_batches as ib')
+        ->join('items as i', 'ib.item_id', '=', 'i.item_id')
+        ->where('ib.status', 'active')
+        ->where('i.is_active', true)
+        ->where('ib.quantity', '>', 0)
+        ->whereNotNull('ib.expiry_date')
+        ->where('ib.expiry_date', '<', $today)
+        ->orderBy('ib.expiry_date', 'asc')
+        ->orderBy('i.item_description', 'asc')
+        ->select(
+            'ib.batch_id',
+            'i.item_description',
+            'ib.batch_number',
+            'ib.expiry_date',
+            DB::raw('DATEDIFF(ib.expiry_date, CURDATE()) as days_until_expiry')
+        )
+        ->get();
+};
+
 $resolveExpiryEmailRecipients = function ($cliRecipients = []) {
     $recipients = collect($cliRecipients ?? [])
         ->map(fn ($email) => trim((string) $email))
@@ -73,9 +95,10 @@ $resolveExpiryEmailRecipients = function ($cliRecipients = []) {
     return $recipients;
 };
 
-Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}', function () use ($resolveExpiryAlertDays, $fetchNearExpiryItems, $resolveExpiryEmailRecipients) {
+Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}', function () use ($resolveExpiryAlertDays, $fetchNearExpiryItems, $fetchExpiredItems, $resolveExpiryEmailRecipients) {
     $days = $resolveExpiryAlertDays($this->option('days'));
     $nearExpiryItems = $fetchNearExpiryItems($days);
+    $expiredItems = $fetchExpiredItems();
     $nearBatchIds = $nearExpiryItems->pluck('batch_id')->values();
 
     $pendingQuery = DB::table('expiry_alerts')->where('status', 'pending');
@@ -127,6 +150,7 @@ Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}'
     if ($this->option('dry-run')) {
         $this->info('Dry run complete. No database writes or emails sent.');
         $this->line('Near-expiry items found: ' . $nearExpiryItems->count());
+        $this->line('Expired items found: ' . $expiredItems->count());
         $this->line('Would resolve alerts: ' . $resolvedCount);
         $this->line('Would insert alerts: ' . $insertedCount);
         return self::SUCCESS;
@@ -134,10 +158,11 @@ Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}'
 
     $this->info('Expiry checker completed.');
     $this->line('Near-expiry items found: ' . $nearExpiryItems->count());
+    $this->line('Expired items found: ' . $expiredItems->count());
     $this->line('Resolved alerts: ' . $resolvedCount);
     $this->line('Inserted alerts: ' . $insertedCount);
 
-    if ($this->option('notify') && $nearExpiryItems->isNotEmpty()) {
+    if ($this->option('notify') && ($nearExpiryItems->isNotEmpty() || $expiredItems->isNotEmpty())) {
         $recipients = $resolveExpiryEmailRecipients($this->option('to') ?? []);
         if ($recipients->isEmpty()) {
             $this->error('Checker ran, but no recipients were found for email notification.');
@@ -146,6 +171,7 @@ Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}'
 
         Mail::to($recipients->all())->send(new \App\Mail\NearExpiryItemsMail(
             $nearExpiryItems,
+            $expiredItems,
             $days,
             now()->format('Y-m-d H:i:s')
         ));
@@ -158,12 +184,13 @@ Artisan::command('alerts:check-expiry {--days=} {--notify} {--to=*} {--dry-run}'
     ->purpose('Automated expiry checker that updates expiry_alerts and optionally notifies users')
     ->dailyAt('08:00');
 
-Artisan::command('alerts:send-expiry-email {--days=} {--to=*} {--dry-run}', function () use ($resolveExpiryAlertDays, $fetchNearExpiryItems, $resolveExpiryEmailRecipients) {
+Artisan::command('alerts:send-expiry-email {--days=} {--to=*} {--dry-run}', function () use ($resolveExpiryAlertDays, $fetchNearExpiryItems, $fetchExpiredItems, $resolveExpiryEmailRecipients) {
     $days = $resolveExpiryAlertDays($this->option('days'));
     $nearExpiryItems = $fetchNearExpiryItems($days);
+    $expiredItems = $fetchExpiredItems();
 
-    if ($nearExpiryItems->isEmpty()) {
-        $this->info('No near-expiry items found. No email sent.');
+    if ($nearExpiryItems->isEmpty() && $expiredItems->isEmpty()) {
+        $this->info('No near-expiry or expired items found. No email sent.');
         return self::SUCCESS;
     }
 
@@ -177,19 +204,22 @@ Artisan::command('alerts:send-expiry-email {--days=} {--to=*} {--dry-run}', func
     if ($this->option('dry-run')) {
         $this->info('Dry run complete. Email not sent.');
         $this->line('Recipients: ' . $recipients->implode(', '));
-        $this->line('Items found: ' . $nearExpiryItems->count());
+        $this->line('Near-expiry items found: ' . $nearExpiryItems->count());
+        $this->line('Expired items found: ' . $expiredItems->count());
         return self::SUCCESS;
     }
 
     Mail::to($recipients->all())->send(new \App\Mail\NearExpiryItemsMail(
         $nearExpiryItems,
+        $expiredItems,
         $days,
         now()->format('Y-m-d H:i:s')
     ));
 
     $this->info('Near-expiry email sent successfully.');
     $this->line('Recipients: ' . $recipients->implode(', '));
-    $this->line('Items included: ' . $nearExpiryItems->count());
+    $this->line('Near-expiry items included: ' . $nearExpiryItems->count());
+    $this->line('Expired items included: ' . $expiredItems->count());
 
     return self::SUCCESS;
 })

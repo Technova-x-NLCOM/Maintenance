@@ -38,10 +38,19 @@
             color: #4b5563;
             margin-bottom: 16px;
         }
+        .section-title {
+            margin: 20px 0 10px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .section-title.expired {
+            color: #b91c1c;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 14px;
+            margin-bottom: 18px;
         }
         th,
         td {
@@ -69,11 +78,14 @@
         </div>
 
         <div class="content">
-            <p>The following active inventory batches are nearing expiry within the next {{ $alertDays }} days.</p>
+            <p>This report includes active inventory batches that are near expiry and already expired.</p>
 
             <div class="meta">
                 Generated at: {{ $generatedAt }}
             </div>
+
+            @if ($items->isNotEmpty())
+            <div class="section-title">Near Expiry (within {{ $alertDays }} days)</div>
 
             <table>
                 <thead>
@@ -95,6 +107,32 @@
                     @endforeach
                 </tbody>
             </table>
+            @endif
+
+            @if ($expiredItems->isNotEmpty())
+            <div class="section-title expired">Expired Items</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Batch</th>
+                        <th>Expiry Date</th>
+                        <th>Days Overdue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($expiredItems as $item)
+                        <tr>
+                            <td>{{ $item->item_description }}</td>
+                            <td>{{ $item->batch_number ?? 'N/A' }}</td>
+                            <td>{{ \Carbon\Carbon::parse($item->expiry_date)->format('Y-m-d') }}</td>
+                            <td>{{ abs((int) $item->days_until_expiry) }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @endif
         </div>
 
         <div class="footer">
