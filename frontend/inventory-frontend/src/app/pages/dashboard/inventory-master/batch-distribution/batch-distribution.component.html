@@ -10,17 +10,56 @@
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
-  <div class="layout-grid">
-    <section class="panel templates-panel">
+  <div class="layout-grid split-pane-row">
+    <section class="panel templates-panel pane-card">
       <div class="panel-header">
         <h2>Templates</h2>
-        <button class="btn btn-primary" type="button" (click)="startCreateTemplate()">
-          New Template
-        </button>
+        <div class="header-actions title-controls">
+          <button class="btn btn-primary" type="button" (click)="startCreateTemplate()">
+            New Template
+          </button>
+          <div class="view-toggle" role="group" aria-label="Template view mode">
+            <button
+              type="button"
+              class="icon-toggle"
+              [class.active]="templateViewMode === 'card'"
+              (click)="setTemplateViewMode('card')"
+              aria-label="Card view"
+              title="Card view"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="8" height="8" rx="1"></rect>
+                <rect x="13" y="3" width="8" height="8" rx="1"></rect>
+                <rect x="3" y="13" width="8" height="8" rx="1"></rect>
+                <rect x="13" y="13" width="8" height="8" rx="1"></rect>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="icon-toggle"
+              [class.active]="templateViewMode === 'list'"
+              (click)="setTemplateViewMode('list')"
+              aria-label="List view"
+              title="List view"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="4" y1="6" x2="20" y2="6"></line>
+                <line x1="4" y1="12" x2="20" y2="12"></line>
+                <line x1="4" y1="18" x2="20" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="search-row">
-        <div class="search-wrap">
+        <div class="search-wrap search-input-wrap">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="16.65" y1="16.65" x2="21" y2="21"></line>
+            </svg>
+          </span>
           <input
             type="text"
             class="form-control"
@@ -49,47 +88,127 @@
             </svg>
           </button>
         </div>
-        <button class="btn btn-secondary" type="button" (click)="searchTemplates()">Search</button>
+
+        <select
+          class="form-control filter-select"
+          [(ngModel)]="templateTypeFilter"
+          (ngModelChange)="onTemplateFilterChange()"
+          aria-label="Filter by distribution type"
+        >
+          <option value="all">All Types</option>
+          <option value="feeding_program">Feeding Program</option>
+          <option value="relief_goods">Relief Goods</option>
+        </select>
+
         <button class="btn btn-secondary" type="button" (click)="clearTemplateSearch()">
           Reset
         </button>
       </div>
 
-      <div class="list-wrap" *ngIf="!loadingTemplates">
-        <button
-          type="button"
-          class="template-card"
-          *ngFor="let template of templates"
-          [class.active]="selectedTemplateId === template.template_id"
-          (click)="selectTemplate(template)"
-        >
-          <div class="template-card-top">
-            <strong>{{ template.template_name }}</strong>
-            <span class="tag">{{ template.distribution_type_label }}</span>
-          </div>
-          <div class="template-meta">
-            Base: {{ template.base_unit_count }}
-            <span>•</span>
-            Items: {{ template.item_count }}
-          </div>
-          <div class="template-actions">
+      <div class="templates-list-region" *ngIf="!loadingTemplates">
+        <div class="list-wrap">
+        <ng-container *ngIf="templateViewMode === 'card'">
+          <button
+            type="button"
+            class="template-card"
+            *ngFor="let template of paginatedTemplates"
+            [class.active]="selectedTemplateId === template.template_id"
+            (click)="selectTemplate(template)"
+          >
+            <div class="template-card-top">
+              <strong>{{ template.template_name }}</strong>
+              <span class="tag">{{ template.distribution_type_label }}</span>
+            </div>
+            <div class="template-meta">
+              Base: {{ template.base_unit_count }}
+              <span>•</span>
+              Items: {{ template.item_count }}
+            </div>
+            <div class="template-actions">
+              <button
+                class="btn btn-mini"
+                type="button"
+                (click)="$event.stopPropagation(); editTemplate(template)"
+              >
+                Edit
+              </button>
+            </div>
+          </button>
+        </ng-container>
+
+        <div class="template-list-table" *ngIf="templateViewMode === 'list' && templates.length > 0">
+          <table>
+            <thead>
+              <tr>
+                <th>Template</th>
+                <th>Type</th>
+                <th>Base</th>
+                <th>Items</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let template of paginatedTemplates"
+                class="template-row"
+                [class.active]="selectedTemplateId === template.template_id"
+                (click)="selectTemplate(template)"
+              >
+                <td>{{ template.template_name }}</td>
+                <td>{{ template.distribution_type_label }}</td>
+                <td>{{ template.base_unit_count }}</td>
+                <td>{{ template.item_count }}</td>
+                <td>
+                  <button
+                    class="btn btn-mini"
+                    type="button"
+                    (click)="$event.stopPropagation(); editTemplate(template)"
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-row" *ngIf="templates.length > 0">
+          <span class="pagination-info">
+            Showing {{ templatePageStart }}-{{ templatePageEnd }} of {{ templates.length }}
+          </span>
+          <div class="pagination-controls">
             <button
-              class="btn btn-mini"
               type="button"
-              (click)="$event.stopPropagation(); editTemplate(template)"
+              class="btn btn-secondary"
+              (click)="goToPreviousTemplatePage()"
+              [disabled]="!canGoToPreviousTemplatePage"
             >
-              Edit
+              Prev
+            </button>
+            <button type="button" class="btn btn-page" (click)="goToTemplatePage(templatePage)">
+              {{ templatePage }} / {{ totalTemplatePages }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="goToNextTemplatePage()"
+              [disabled]="!canGoToNextTemplatePage"
+            >
+              Next
             </button>
           </div>
-        </button>
+        </div>
 
         <p class="empty" *ngIf="templates.length === 0">No templates found.</p>
+        </div>
       </div>
 
-      <p class="empty" *ngIf="loadingTemplates">Loading templates...</p>
+      <div class="templates-list-region" *ngIf="loadingTemplates">
+        <p class="empty">Loading templates...</p>
+      </div>
     </section>
 
-    <section class="panel calculator-panel">
+    <section class="panel calculator-panel pane-card">
       <div class="panel-header">
         <h2>Calculator And Issuance</h2>
       </div>
@@ -100,12 +219,12 @@
           <input class="form-control" [value]="selectedTemplateName || 'None selected'" readonly />
         </label>
         <label>
-          <span>Target Count</span>
+          <span>{{ targetCountLabel }}</span>
           <input type="number" min="1" class="form-control" [(ngModel)]="targetUnitCount" />
         </label>
         <div class="calc-actions">
           <button
-            class="btn btn-primary"
+            class="btn btn-outline"
             type="button"
             (click)="calculate()"
             [disabled]="calculating"
@@ -116,36 +235,48 @@
       </div>
 
       <div class="results-wrap" *ngIf="calculation">
-        <div class="summary-strip">
-          <span><strong>Multiplier:</strong> {{ calculation.multiplier }}</span>
-          <span><strong>Lines:</strong> {{ calculation.summary.line_count }}</span>
-          <span
-            ><strong>Total Qty:</strong>
-            {{ calculation.summary.total_required_quantity_for_issuance }}</span
-          >
-          <span [class.bad]="!calculation.summary.can_issue">
-            <strong>Shortages:</strong> {{ calculation.summary.insufficient_items_count }}
-          </span>
+        <div class="summary-pills">
+          <div class="summary-pill">
+            <span class="pill-label">Multiplier</span>
+            <strong>{{ calculation.multiplier | number: '1.2-2' }}</strong>
+          </div>
+          <div class="summary-pill">
+            <span class="pill-label">Limits</span>
+            <strong>{{ calculation.summary.can_issue ? 'Within stock' : 'Over stock' }}</strong>
+          </div>
+          <div class="summary-pill">
+            <span class="pill-label">Total Qty</span>
+            <strong>{{ totalRequiredQuantity }}</strong>
+          </div>
+          <div class="summary-pill" [class.shortage-pill]="hasTotalShortage">
+            <span class="pill-label">Shortages</span>
+            <strong>{{ shortageLineCount }} lines ({{ totalShortageQuantity }} qty)</strong>
+          </div>
         </div>
+
+        <p class="issuance-summary-text">
+          Issuing {{ totalRequiredQuantity }} items for {{ normalizedTargetUnitCount }}
+          {{ targetUnitNounPlural }}.
+        </p>
 
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Item</th>
-                <th>Per Base</th>
+                <th>{{ perUnitLabel }}</th>
                 <th>Required</th>
                 <th>Stock</th>
                 <th>Shortage</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of calculation.items" [class.has-shortage]="row.has_shortage">
+              <tr *ngFor="let row of calculation.items" [class.has-shortage]="rowHasShortage(row)">
                 <td>{{ row.item_code }} - {{ row.item_description }}</td>
                 <td>{{ row.quantity_per_base }}</td>
-                <td>{{ row.required_quantity_for_issuance }}</td>
+                <td>{{ getRowRequiredQuantity(row) }}</td>
                 <td>{{ row.current_stock }}</td>
-                <td>{{ row.shortage_quantity }}</td>
+                <td>{{ getRowShortageQuantity(row) }}</td>
               </tr>
             </tbody>
           </table>
@@ -187,7 +318,7 @@
             class="btn btn-primary"
             type="button"
             (click)="issueDistribution()"
-            [disabled]="issuing || !calculation.summary.can_issue"
+            [disabled]="issuing || hasTotalShortage"
           >
             {{ issuing ? 'Issuing...' : 'Issue From Inventory' }}
           </button>
@@ -228,7 +359,15 @@
           </label>
 
           <label>
-            <span>Base Count *</span>
+            <span>
+              Standard Batch Size *
+              <span class="help-tooltip" tabindex="0">
+                ?
+                <span class="tooltip-content">
+                  How many packs this template is designed for by default.
+                </span>
+              </span>
+            </span>
             <input
               type="number"
               min="1"
@@ -305,7 +444,7 @@
               step="0.0001"
               class="form-control"
               [(ngModel)]="lineDraftQuantityPerBase"
-              placeholder="Qty per base"
+              [placeholder]="perUnitLabel"
             />
             <button class="btn btn-primary" type="button" (click)="addLine()">Add</button>
           </div>
@@ -315,13 +454,15 @@
               <thead>
                 <tr>
                   <th>Item</th>
-                  <th>Qty/Base</th>
+                  <th>Current Stock</th>
+                  <th>{{ perUnitLabel }}</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let line of templateLines">
                   <td>{{ getItemLabel(line.item_id) }}</td>
+                  <td>{{ getItemCurrentStock(line.item_id) }}</td>
                   <td>
                     <input
                       type="number"
@@ -359,4 +500,17 @@
       </div>
     </div>
   </div>
+</div>
+
+<div
+  class="toast-notification"
+  [class.toast-visible]="!!toastMessage"
+  [class.toast-error]="toastType === 'error'"
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+    <polyline *ngIf="toastType === 'success'" points="20 6 9 17 4 12"></polyline>
+    <line *ngIf="toastType === 'error'" x1="18" y1="6" x2="6" y2="18"></line>
+    <line *ngIf="toastType === 'error'" x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+  {{ toastMessage }}
 </div>

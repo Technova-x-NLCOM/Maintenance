@@ -261,7 +261,7 @@ class BatchDistributionController extends Controller
 
         $calc = $calcResponse['data'];
 
-        if ($calc['summary']['insufficient_items_count'] > 0) {
+        if ((float) $calc['summary']['total_shortage_quantity'] > 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to issue batch distribution because some items are below required stock.',
@@ -431,8 +431,9 @@ class BatchDistributionController extends Controller
         $multiplier = $targetUnitCount / $template->base_unit_count;
         $insufficientCount = 0;
         $totalRequiredForIssuance = 0;
+        $totalShortageQuantity = 0;
 
-        $calculatedItems = array_map(function ($line) use ($multiplier, &$insufficientCount, &$totalRequiredForIssuance) {
+        $calculatedItems = array_map(function ($line) use ($multiplier, &$insufficientCount, &$totalRequiredForIssuance, &$totalShortageQuantity) {
             $requiredExact = round(((float) $line['quantity_per_base']) * $multiplier, 4);
             $requiredForIssuance = (int) ceil($requiredExact);
             $available = (int) $line['current_stock'];
@@ -443,6 +444,7 @@ class BatchDistributionController extends Controller
             }
 
             $totalRequiredForIssuance += $requiredForIssuance;
+            $totalShortageQuantity += $shortage;
 
             return [
                 'item_id' => (int) $line['item_id'],
@@ -453,10 +455,12 @@ class BatchDistributionController extends Controller
                 'required_quantity_exact' => $requiredExact,
                 'required_quantity_for_issuance' => $requiredForIssuance,
                 'current_stock' => $available,
-                'shortage_quantity' => $shortage,
+                'shortage_quantity' => round($shortage, 4),
                 'has_shortage' => $shortage > 0,
             ];
         }, $items);
+
+        $totalShortageQuantity = (int) $totalShortageQuantity;
 
         return [
             'success' => true,
@@ -475,8 +479,9 @@ class BatchDistributionController extends Controller
                 'summary' => [
                     'line_count' => count($calculatedItems),
                     'total_required_quantity_for_issuance' => $totalRequiredForIssuance,
+                    'total_shortage_quantity' => $totalShortageQuantity,
                     'insufficient_items_count' => $insufficientCount,
-                    'can_issue' => $insufficientCount === 0,
+                    'can_issue' => $totalShortageQuantity <= 0,
                 ],
             ],
         ];
