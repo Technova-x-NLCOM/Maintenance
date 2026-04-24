@@ -1,0 +1,125 @@
+<div class="scheduled-batches-page">
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">Inventory Monitoring</p>
+      <h1>Scheduled Batches</h1>
+      <p class="subtitle">Track weekly program plans, inventory readiness, and completion status.</p>
+    </div>
+    <a routerLink="/dashboard/inventory/batch-distribution" class="btn-ghost">Open Batch Distribution Manager</a>
+  </div>
+
+  <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <section class="panel filter-panel">
+    <div class="filters-grid">
+      <label>
+        <span>Status</span>
+        <select class="form-control" [(ngModel)]="statusFilter">
+          <option value="">All</option>
+          <option value="planned">Planned</option>
+          <option value="checked_pre">Prechecked</option>
+          <option value="ready">Ready</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </label>
+      <label>
+        <span>From Date</span>
+        <input type="date" class="form-control" [(ngModel)]="fromDate" />
+      </label>
+      <label>
+        <span>To Date</span>
+        <input type="date" class="form-control" [(ngModel)]="toDate" />
+      </label>
+      <div class="filter-actions">
+        <button class="btn-primary" type="button" (click)="applyFilters()">Apply</button>
+        <button class="btn-ghost" type="button" (click)="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="content-grid">
+    <section class="panel list-panel">
+      <div class="panel-head">
+        <h2>Plans</h2>
+        <button class="btn-ghost" type="button" (click)="loadPlans()" [disabled]="loadingPlans">Refresh</button>
+      </div>
+
+      <div *ngIf="loadingPlans" class="state-text">Loading scheduled batches...</div>
+
+      <div class="plan-list" *ngIf="!loadingPlans">
+        <button
+          type="button"
+          class="plan-card"
+          *ngFor="let plan of plans"
+          (click)="selectPlan(plan)"
+          [class.active]="selectedPlan?.plan?.plan_id === plan.plan_id"
+        >
+          <div class="plan-card-top">
+            <strong>{{ plan.week_label }}</strong>
+            <span class="tag" [ngClass]="getStatusClass(plan.status)">{{ plan.status }}</span>
+          </div>
+          <div class="plan-meta">
+            <span>{{ plan.template_name }}</span>
+            <span>Target: {{ plan.target_unit_count }}</span>
+            <span>{{ plan.planned_date }}</span>
+          </div>
+        </button>
+
+        <div class="empty" *ngIf="plans.length === 0">No scheduled batches found for current filters.</div>
+      </div>
+    </section>
+
+    <section class="panel details-panel">
+      <h2>Plan Details</h2>
+
+      <div *ngIf="loadingPlanDetails" class="state-text">Loading selected plan details...</div>
+
+      <ng-container *ngIf="!loadingPlanDetails && selectedPlan as details">
+        <div class="summary-strip">
+          <span><strong>Week:</strong> {{ details.plan.week_label }}</span>
+          <span><strong>Date:</strong> {{ details.plan.planned_date }}</span>
+          <span><strong>Template:</strong> {{ details.plan.template_name }}</span>
+          <span><strong>Target:</strong> {{ details.plan.target_unit_count }}</span>
+          <span>
+            <strong>Status:</strong>
+            <span class="tag" [ngClass]="getStatusClass(details.plan.status)">{{ details.plan.status }}</span>
+          </span>
+        </div>
+
+        <div class="summary-strip">
+          <span><strong>Items:</strong> {{ details.inventory_check.summary.line_count }}</span>
+          <span><strong>Shortages:</strong> {{ details.inventory_check.summary.insufficient_items_count }}</span>
+          <span><strong>Can Proceed:</strong> {{ details.inventory_check.summary.can_proceed ? 'Yes' : 'No' }}</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Required</th>
+                <th>Stock</th>
+                <th>Shortage</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of details.inventory_check.items" [class.has-shortage]="row.has_shortage">
+                <td>{{ row.item_code }} - {{ row.item_description }}</td>
+                <td>{{ row.required_quantity_for_issuance }}</td>
+                <td>{{ row.current_stock }}</td>
+                <td>{{ row.shortage_quantity }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="summary-strip" *ngIf="details.remaining_items.length > 0">
+          <span><strong>Remaining Item Rows:</strong> {{ details.remaining_items.length }}</span>
+        </div>
+      </ng-container>
+
+      <div class="empty" *ngIf="!loadingPlanDetails && !selectedPlan">Select a scheduled batch to view details.</div>
+    </section>
+  </div>
+</div>

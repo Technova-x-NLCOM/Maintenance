@@ -9,6 +9,9 @@ import {
   BatchDistributionTemplatePayload,
   BatchDistributionTemplateSummary,
   DistributionType,
+  ProgramPlanDetailsResponse,
+  ProgramPlanStatus,
+  ProgramPlanSummary,
 } from '../../../../services/batch-distribution.service';
 
 interface EditableTemplateLine {
@@ -16,6 +19,23 @@ interface EditableTemplateLine {
   quantity_per_base: number;
   notes: string;
   current_stock?: number;
+}
+
+interface EditableRemainingLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  remaining_quantity: number;
+  notes: string;
+}
+
+interface EditableProcuredLine {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  shortage_quantity: number;
+  quantity_brought: number;
+  notes: string;
 }
 
 @Component({
@@ -31,9 +51,14 @@ export class BatchDistributionComponent implements OnInit {
   savingTemplate = false;
   calculating = false;
   issuing = false;
+  loadingPlans = false;
+  savingPlan = false;
+  loadingPlanDetails = false;
+  runningPlanAction = false;
 
   templates: BatchDistributionTemplateSummary[] = [];
   itemOptions: BatchDistributionItemOption[] = [];
+  plans: ProgramPlanSummary[] = [];
 
   selectedTemplateId: number | null = null;
   selectedTemplateName = '';
@@ -68,11 +93,35 @@ export class BatchDistributionComponent implements OnInit {
   activeItemOptionIndex = -1;
 
   targetUnitCount = 100;
+  batchDate = this.getTodayDateString();
   destination = '';
   reason = 'Batch Distribution';
   issueNotes = '';
 
   calculation: BatchDistributionCalculation | null = null;
+  selectedPlanId: number | null = null;
+  selectedPlanDetails: ProgramPlanDetailsResponse | null = null;
+
+  planForm: {
+    template_id: number | null;
+    week_label: string;
+    planned_date: string;
+    target_unit_count: number;
+    notes: string;
+  } = {
+    template_id: null,
+    week_label: '',
+    planned_date: '',
+    target_unit_count: 100,
+    notes: '',
+  };
+
+  planIssueDestination = '';
+  planIssueReason = 'For Week 3';
+  planIssueNotes = '';
+  planRemainingLines: EditableRemainingLine[] = [];
+  planProcuredLines: EditableProcuredLine[] = [];
+  planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
 
   errorMessage = '';
   successMessage = '';
@@ -97,6 +146,7 @@ export class BatchDistributionComponent implements OnInit {
   ngOnInit(): void {
     this.loadTemplates();
     this.loadItemOptions();
+    this.loadPlans();
   }
 
   ngOnDestroy(): void {
@@ -860,6 +910,7 @@ export class BatchDistributionComponent implements OnInit {
   issueDistribution(): void {
     this.errorMessage = '';
     this.successMessage = '';
+    const isScheduled = this.isFutureBatchDate();
 
     if (!this.selectedTemplateId) {
       this.errorMessage = 'Select a template first.';
@@ -876,13 +927,61 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    if (!this.destination.trim()) {
+    if (!isScheduled && !this.destination.trim()) {
       this.errorMessage = 'Destination is required for issuing.';
+      return;
+    }
+
+    if (!this.batchDate) {
+      this.errorMessage = 'Batch date is required.';
       return;
     }
 
     this.issuing = true;
     const normalizedTarget = Math.floor(Number(this.targetUnitCount));
+
+    if (isScheduled) {
+      const selectedTemplate = this.templates.find((t) => t.template_id === this.selectedTemplateId);
+      if (selectedTemplate && selectedTemplate.distribution_type !== 'feeding_program') {
+        this.issuing = false;
+        this.errorMessage = 'Scheduled batches are only allowed for feeding program templates.';
+        return;
+      }
+
+      const notesParts: string[] = [];
+      if (this.destination.trim()) {
+        notesParts.push(`Destination: ${this.destination.trim()}`);
+      }
+      if (this.issueNotes.trim()) {
+        notesParts.push(this.issueNotes.trim());
+      }
+
+      this.batchService
+        .createProgramPlan({
+          template_id: this.selectedTemplateId,
+          week_label: this.buildScheduledWeekLabel(),
+          planned_date: this.batchDate,
+          target_unit_count: normalizedTarget,
+          notes: notesParts.length > 0 ? notesParts.join(' | ') : undefined,
+        })
+        .subscribe({
+          next: (response) => {
+            this.issuing = false;
+            this.successMessage = response.message || 'Scheduled batch created successfully.';
+            this.selectedPlanId = response.data.plan.plan_id;
+            this.selectedPlanDetails = response.data;
+            this.loadPlans();
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.issuing = false;
+            this.errorMessage = err?.error?.message || 'Failed to create scheduled batch.';
+            this.cdr.detectChanges();
+          },
+        });
+
+      return;
+    }
 
     this.batchService
       .issue(
@@ -909,5 +1008,291 @@ export class BatchDistributionComponent implements OnInit {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  isFutureBatchDate(): boolean {
+    if (!this.batchDate) {
+      return false;
+    }
+
+    return this.batchDate > this.getTodayDateString();
+  }
+
+  private buildScheduledWeekLabel(): string {
+    if (this.reason.trim()) {
+      return this.reason.trim();
+    }
+
+    return `For ${this.batchDate}`;
+  }
+
+  private getTodayDateString(): string {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  loadPlans(): void {
+    this.loadingPlans = true;
+    this.batchService.listProgramPlans().subscribe({
+      next: (response) => {
+        this.plans = response.data;
+        this.loadingPlans = false;
+        if (this.selectedPlanId) {
+          const exists = this.plans.some((p) => p.plan_id === this.selectedPlanId);
+          if (!exists) {
+            this.selectedPlanId = null;
+            this.selectedPlanDetails = null;
+            this.planIssueSummary = null;
+            this.planProcuredLines = [];
+          }
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingPlans = false;
+        this.errorMessage = err?.error?.message || 'Failed to load scheduled plans.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  createPlan(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    if (!this.planForm.template_id) {
+      this.errorMessage = 'Select a feeding template for the plan.';
+      return;
+    }
+
+    if (!this.planForm.week_label.trim()) {
+      this.errorMessage = 'Week label is required.';
+      return;
+    }
+
+    if (!this.planForm.planned_date) {
+      this.errorMessage = 'Planned date is required.';
+      return;
+    }
+
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    if (!Number.isFinite(targetCount) || targetCount <= 0) {
+      this.errorMessage = 'Target count must be greater than zero.';
+      return;
+    }
+
+    this.savingPlan = true;
+    this.batchService
+      .createProgramPlan({
+        template_id: this.planForm.template_id,
+        week_label: this.planForm.week_label.trim(),
+        planned_date: this.planForm.planned_date,
+        target_unit_count: targetCount,
+        notes: this.planForm.notes.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.savingPlan = false;
+          this.successMessage = response.message || 'Program plan created successfully.';
+          this.selectedPlanId = response.data.plan.plan_id;
+          this.selectedPlanDetails = response.data;
+          this.planIssueSummary = response.data.issuance ?? null;
+          this.seedRemainingLinesFromCurrentDetails();
+          this.seedProcuredLinesFromCurrentDetails();
+          this.loadPlans();
+        },
+        error: (err) => {
+          this.savingPlan = false;
+          this.errorMessage = err?.error?.message || 'Failed to create program plan.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  selectPlan(plan: ProgramPlanSummary): void {
+    this.selectedPlanId = plan.plan_id;
+    this.loadPlanDetails(plan.plan_id);
+  }
+
+  loadPlanDetails(planId: number): void {
+    this.loadingPlanDetails = true;
+    this.batchService.getProgramPlan(planId).subscribe({
+      next: (response) => {
+        this.loadingPlanDetails = false;
+        this.selectedPlanDetails = response.data;
+        this.planIssueSummary = response.data.issuance ?? null;
+        this.seedRemainingLinesFromCurrentDetails();
+        this.seedProcuredLinesFromCurrentDetails();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingPlanDetails = false;
+        this.errorMessage = err?.error?.message || 'Failed to load selected plan details.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  runPlanPrecheck(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+    this.runningPlanAction = true;
+    this.batchService.runProgramPrecheck(this.selectedPlanId).subscribe({
+      next: (response) => {
+        this.runningPlanAction = false;
+        this.successMessage = response.message || 'Precheck completed.';
+        this.loadPlanDetails(this.selectedPlanId!);
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.runningPlanAction = false;
+        this.errorMessage = err?.error?.message || 'Failed to run precheck.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  runPlanFinalCheck(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+
+    if (!this.planIssueDestination.trim()) {
+      this.errorMessage = 'Issue destination is required before running Final Check.';
+      return;
+    }
+
+    const procured_items = this.planProcuredLines
+      .filter((line) => Number.isFinite(line.quantity_brought) && line.quantity_brought > 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        quantity_brought: Math.floor(Number(line.quantity_brought)),
+        notes: line.notes.trim() || undefined,
+      }));
+
+    this.runningPlanAction = true;
+    this.batchService.runProgramFinalCheck(this.selectedPlanId, {
+      procured_items,
+      issue_destination: this.planIssueDestination.trim(),
+      issue_reason: this.planIssueReason.trim() || undefined,
+      issue_notes: this.planIssueNotes.trim() || undefined,
+    }).subscribe({
+      next: (response) => {
+        this.runningPlanAction = false;
+        this.successMessage = response.message || 'Final check completed with receiving and issuance.';
+        this.loadPlanDetails(this.selectedPlanId!);
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.runningPlanAction = false;
+        this.errorMessage = err?.error?.message || 'Failed to run final check.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  completePlan(): void {
+    if (!this.selectedPlanId) {
+      return;
+    }
+
+    const remaining_items = this.planRemainingLines
+      .filter((line) => Number.isFinite(line.remaining_quantity) && line.remaining_quantity >= 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        remaining_quantity: Number(line.remaining_quantity),
+        notes: line.notes.trim() || undefined,
+      }));
+
+    this.runningPlanAction = true;
+    this.batchService
+      .completeProgramPlan(this.selectedPlanId, {
+        status: 'completed',
+        remaining_items,
+      })
+      .subscribe({
+        next: (response) => {
+          this.runningPlanAction = false;
+          this.selectedPlanDetails = response.data;
+          this.planIssueSummary = response.data.issuance ?? this.planIssueSummary;
+          this.successMessage = response.message || 'Remainder stored back to inventory successfully.';
+          this.loadPlans();
+          this.seedRemainingLinesFromCurrentDetails();
+          this.seedProcuredLinesFromCurrentDetails();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.runningPlanAction = false;
+          this.errorMessage = err?.error?.message || 'Failed to complete plan.';
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  getPlanStatusClass(status: ProgramPlanStatus | string): string {
+    switch (status) {
+      case 'planned':
+        return 'tag-planned';
+      case 'checked_pre':
+        return 'tag-checked';
+      case 'ready':
+        return 'tag-ready';
+      case 'completed':
+        return 'tag-completed';
+      case 'cancelled':
+        return 'tag-cancelled';
+      default:
+        return '';
+    }
+  }
+
+  private seedRemainingLinesFromCurrentDetails(): void {
+    const details = this.selectedPlanDetails;
+    if (!details) {
+      this.planRemainingLines = [];
+      return;
+    }
+
+    if (details.remaining_items && details.remaining_items.length > 0) {
+      this.planRemainingLines = details.remaining_items.map((line) => ({
+        item_id: line.item_id,
+        item_code: line.item_code,
+        item_description: line.item_description,
+        remaining_quantity: Number(line.remaining_quantity) || 0,
+        notes: line.notes || '',
+      }));
+      return;
+    }
+
+    this.planRemainingLines = details.inventory_check.items.map((line) => ({
+      item_id: line.item_id,
+      item_code: line.item_code,
+      item_description: line.item_description,
+      remaining_quantity: 0,
+      notes: '',
+    }));
+  }
+
+  private seedProcuredLinesFromCurrentDetails(): void {
+    const details = this.selectedPlanDetails;
+    if (!details) {
+      this.planProcuredLines = [];
+      return;
+    }
+
+    this.planProcuredLines = details.inventory_check.items
+      .filter((line) => line.shortage_quantity > 0)
+      .map((line) => ({
+        item_id: line.item_id,
+        item_code: line.item_code,
+        item_description: line.item_description,
+        shortage_quantity: Number(line.shortage_quantity) || 0,
+        quantity_brought: 0,
+        notes: '',
+      }));
   }
 }

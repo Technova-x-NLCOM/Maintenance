@@ -19,6 +19,7 @@ import { IssuanceTransactionComponent } from './components/issuance-transaction/
 import { MonitoringComponent } from './pages/dashboard/monitoring/monitoring.component';
 import { StockReportComponent } from './pages/dashboard/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './pages/dashboard/monitoring/transaction-history/transaction-history.component';
+import { ScheduledBatchesComponent } from './pages/dashboard/monitoring/scheduled-batches/scheduled-batches.component';
 import { SystemUsersComponent } from './pages/dashboard/system-users/system-users.component';
 import { AuditLogComponent } from './pages/dashboard/audit-log/audit-log.component';
 import { permissionGuard } from './guards/auth.guard';
@@ -49,6 +50,7 @@ export const routes: Routes = [
       { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
       { path: 'monitoring/stock-report', component: StockReportComponent },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
+      { path: 'monitoring/scheduled-batches', component: ScheduledBatchesComponent },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },

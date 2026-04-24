@@ -14,15 +14,17 @@ class NearExpiryItemsMail extends Mailable
     use Queueable, SerializesModels;
 
     public Collection $items;
+    public Collection $expiredItems;
     public int $alertDays;
     public string $generatedAt;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Collection $items, int $alertDays, string $generatedAt)
+    public function __construct(Collection $items, Collection $expiredItems, int $alertDays, string $generatedAt)
     {
         $this->items = $items;
+        $this->expiredItems = $expiredItems;
         $this->alertDays = $alertDays;
         $this->generatedAt = $generatedAt;
     }
@@ -46,6 +48,7 @@ class NearExpiryItemsMail extends Mailable
             view: 'emails.near-expiry-items',
             with: [
                 'items' => $this->items,
+                'expiredItems' => $this->expiredItems,
                 'alertDays' => $this->alertDays,
                 'generatedAt' => $this->generatedAt,
             ],
