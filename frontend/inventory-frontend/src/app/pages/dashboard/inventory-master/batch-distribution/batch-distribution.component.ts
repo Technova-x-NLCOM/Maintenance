@@ -88,6 +88,7 @@ export class BatchDistributionComponent implements OnInit {
   activeItemOptionIndex = -1;
 
   targetUnitCount = 100;
+  batchDate = this.getTodayDateString();
   destination = '';
   reason = 'Batch Distribution';
   issueNotes = '';
@@ -111,7 +112,7 @@ export class BatchDistributionComponent implements OnInit {
   };
 
   planIssueDestination = '';
-  planIssueReason = 'Scheduled Feeding Program Issuance';
+  planIssueReason = 'For Week 3';
   planIssueNotes = '';
   planRemainingLines: EditableRemainingLine[] = [];
   planProcuredLines: EditableProcuredLine[] = [];
@@ -649,18 +650,68 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    if (!this.calculation.summary.can_issue) {
+    const isScheduled = this.isFutureBatchDate();
+
+    if (!isScheduled && !this.calculation.summary.can_issue) {
       this.errorMessage = 'Cannot issue because one or more items have shortages.';
       return;
     }
 
-    if (!this.destination.trim()) {
+    if (!isScheduled && !this.destination.trim()) {
       this.errorMessage = 'Destination is required for issuing.';
+      return;
+    }
+
+    if (!this.batchDate) {
+      this.errorMessage = 'Batch date is required.';
       return;
     }
 
     this.issuing = true;
     const normalizedTarget = Math.floor(Number(this.targetUnitCount));
+
+    if (isScheduled) {
+      const selectedTemplate = this.templates.find((t) => t.template_id === this.selectedTemplateId);
+      if (selectedTemplate && selectedTemplate.distribution_type !== 'feeding_program') {
+        this.issuing = false;
+        this.errorMessage = 'Scheduled batches are only allowed for feeding program templates.';
+        return;
+      }
+
+      const notesParts: string[] = [];
+      if (this.destination.trim()) {
+        notesParts.push(`Destination: ${this.destination.trim()}`);
+      }
+      if (this.issueNotes.trim()) {
+        notesParts.push(this.issueNotes.trim());
+      }
+
+      this.batchService
+        .createProgramPlan({
+          template_id: this.selectedTemplateId,
+          week_label: this.buildScheduledWeekLabel(),
+          planned_date: this.batchDate,
+          target_unit_count: normalizedTarget,
+          notes: notesParts.length > 0 ? notesParts.join(' | ') : undefined,
+        })
+        .subscribe({
+          next: (response) => {
+            this.issuing = false;
+            this.successMessage = response.message || 'Scheduled batch created successfully.';
+            this.selectedPlanId = response.data.plan.plan_id;
+            this.selectedPlanDetails = response.data;
+            this.loadPlans();
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            this.issuing = false;
+            this.errorMessage = err?.error?.message || 'Failed to create scheduled batch.';
+            this.cdr.detectChanges();
+          },
+        });
+
+      return;
+    }
 
     this.batchService
       .issue(
@@ -682,6 +733,30 @@ export class BatchDistributionComponent implements OnInit {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  isFutureBatchDate(): boolean {
+    if (!this.batchDate) {
+      return false;
+    }
+
+    return this.batchDate > this.getTodayDateString();
+  }
+
+  private buildScheduledWeekLabel(): string {
+    if (this.reason.trim()) {
+      return this.reason.trim();
+    }
+
+    return `For ${this.batchDate}`;
+  }
+
+  private getTodayDateString(): string {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   loadPlans(): void {
@@ -811,6 +886,11 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    if (!this.planIssueDestination.trim()) {
+      this.errorMessage = 'Issue destination is required before running Final Check.';
+      return;
+    }
+
     const procured_items = this.planProcuredLines
       .filter((line) => Number.isFinite(line.quantity_brought) && line.quantity_brought > 0)
       .map((line) => ({
@@ -820,10 +900,15 @@ export class BatchDistributionComponent implements OnInit {
       }));
 
     this.runningPlanAction = true;
-    this.batchService.runProgramFinalCheck(this.selectedPlanId, { procured_items }).subscribe({
+    this.batchService.runProgramFinalCheck(this.selectedPlanId, {
+      procured_items,
+      issue_destination: this.planIssueDestination.trim(),
+      issue_reason: this.planIssueReason.trim() || undefined,
+      issue_notes: this.planIssueNotes.trim() || undefined,
+    }).subscribe({
       next: (response) => {
         this.runningPlanAction = false;
-        this.successMessage = response.message || 'Final check completed.';
+        this.successMessage = response.message || 'Final check completed with receiving and issuance.';
         this.loadPlanDetails(this.selectedPlanId!);
         this.loadPlans();
       },
@@ -833,42 +918,6 @@ export class BatchDistributionComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  updatePlan(): void {
-    if (!this.selectedPlanId) {
-      return;
-    }
-
-    if (!this.planIssueDestination.trim()) {
-      this.errorMessage = 'Issue destination is required.';
-      return;
-    }
-
-    this.runningPlanAction = true;
-    this.batchService
-      .updateProgramPlan(this.selectedPlanId, {
-        issue_destination: this.planIssueDestination.trim(),
-        issue_reason: this.planIssueReason.trim() || undefined,
-        issue_notes: this.planIssueNotes.trim() || undefined,
-      })
-      .subscribe({
-        next: (response) => {
-          this.runningPlanAction = false;
-          this.selectedPlanDetails = response.data;
-          this.planIssueSummary = response.data.issuance ?? null;
-          this.successMessage = response.message || 'Inventory issued successfully.';
-          this.loadPlans();
-          this.seedRemainingLinesFromCurrentDetails();
-          this.seedProcuredLinesFromCurrentDetails();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          this.runningPlanAction = false;
-          this.errorMessage = err?.error?.message || 'Failed to issue plan inventory.';
-          this.cdr.detectChanges();
-        },
-      });
   }
 
   completePlan(): void {
@@ -895,7 +944,7 @@ export class BatchDistributionComponent implements OnInit {
           this.runningPlanAction = false;
           this.selectedPlanDetails = response.data;
           this.planIssueSummary = response.data.issuance ?? this.planIssueSummary;
-          this.successMessage = response.message || 'Plan completed successfully.';
+          this.successMessage = response.message || 'Remainder stored back to inventory successfully.';
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();

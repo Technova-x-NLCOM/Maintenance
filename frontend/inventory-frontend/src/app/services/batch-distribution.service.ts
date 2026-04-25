@@ -207,6 +207,9 @@ export interface ProgramPlanFinalCheckPayload {
     quantity_brought: number;
     notes?: string;
   }>;
+  issue_destination: string;
+  issue_reason?: string;
+  issue_notes?: string;
 }
 
 export interface ProgramPlanCompletePayload {

@@ -100,6 +100,10 @@
           <input class="form-control" [value]="selectedTemplateName || 'None selected'" readonly />
         </label>
         <label>
+          <span>Batch Date</span>
+          <input type="date" class="form-control" [(ngModel)]="batchDate" />
+        </label>
+        <label>
           <span>Target Count</span>
           <input type="number" min="1" class="form-control" [(ngModel)]="targetUnitCount" />
         </label>
@@ -187,9 +191,9 @@
             class="btn btn-primary"
             type="button"
             (click)="issueDistribution()"
-            [disabled]="issuing || !calculation.summary.can_issue"
+            [disabled]="issuing || (!isFutureBatchDate() && !calculation.summary.can_issue)"
           >
-            {{ issuing ? 'Issuing...' : 'Issue From Inventory' }}
+            {{ issuing ? 'Submitting...' : (isFutureBatchDate() ? 'Create Scheduled Batch' : 'Issue From Inventory') }}
           </button>
         </div>
       </div>
@@ -198,7 +202,7 @@
     </section>
     <section class="panel plans-panel">
       <div class="panel-header">
-        <h2>Scheduled Program Plans</h2>
+        <h2>Scheduled Program Plans (4 Stages)</h2>
       </div>
 
       <div class="plans-create-grid compact">
@@ -303,10 +307,10 @@
 
         <div class="plan-actions compact-actions">
           <button class="btn btn-secondary" type="button" (click)="runPlanPrecheck()" [disabled]="runningPlanAction">
-            Precheck
+            Stage 2: Pre Check
           </button>
           <button class="btn btn-secondary" type="button" (click)="runPlanFinalCheck()" [disabled]="runningPlanAction">
-            Final Check
+            Stage 3: Final Check (Receive + Issue)
           </button>
         </div>
 
@@ -316,7 +320,7 @@
               <tr>
                 <th>Ingredient To Buy</th>
                 <th>Shortage</th>
-                <th>Brought Qty (Final Check)</th>
+                <th>Brought Qty (Receiving Input)</th>
               </tr>
             </thead>
             <tbody>
@@ -340,25 +344,21 @@
 
         <div class="issue-grid compact-issue-grid">
           <label>
-            <span>Issue Destination *</span>
+            <span>Issue Destination For Final Check *</span>
             <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" />
           </label>
           <label>
             <span>Issue Reason</span>
-            <input class="form-control" [(ngModel)]="planIssueReason" placeholder="Morning issuance" />
+            <input class="form-control" [(ngModel)]="planIssueReason" placeholder="For Week 3" />
           </label>
         </div>
-
-        <button class="btn btn-primary" type="button" (click)="updatePlan()" [disabled]="runningPlanAction">
-          {{ runningPlanAction ? 'Updating...' : 'Update Plan' }}
-        </button>
 
         <div class="table-wrap compact-table" *ngIf="planRemainingLines.length > 0">
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Remaining</th>
+                <th>Leftover Ingredient</th>
+                <th>Quantity To Store Back</th>
               </tr>
             </thead>
             <tbody>
@@ -373,7 +373,7 @@
         </div>
 
         <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="runningPlanAction">
-          {{ runningPlanAction ? 'Completing...' : 'Complete Plan' }}
+          {{ runningPlanAction ? 'Saving Remainder...' : 'Stage 4: Save Remainder To Inventory' }}
         </button>
       </div>
 
