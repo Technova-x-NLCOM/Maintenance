@@ -18,6 +18,7 @@ interface EditableTemplateLine {
   item_id: number;
   quantity_per_base: number;
   notes: string;
+  current_stock?: number;
 }
 
 interface EditableRemainingLine {
@@ -63,6 +64,10 @@ export class BatchDistributionComponent implements OnInit {
   selectedTemplateName = '';
 
   searchTemplate = '';
+  templateTypeFilter: 'all' | DistributionType = 'all';
+  templateViewMode: 'card' | 'list' = 'card';
+  templatePage = 1;
+  readonly templatePageSize = 10;
   searchItem = '';
 
   showTemplateForm = false;
@@ -120,11 +125,14 @@ export class BatchDistributionComponent implements OnInit {
 
   errorMessage = '';
   successMessage = '';
+  toastMessage = '';
+  toastType: 'success' | 'error' = 'success';
 
   private readonly SEARCH_DEBOUNCE_MS = 300;
   private loadTemplatesSub?: Subscription;
   private templateSearchDebounce?: ReturnType<typeof setTimeout>;
   private templatesBaseline: BatchDistributionTemplateSummary[] | null = null;
+  private toastTimeout?: ReturnType<typeof setTimeout>;
 
   private loadItemOptionsSub?: Subscription;
   private itemOptionsSearchDebounce?: ReturnType<typeof setTimeout>;
@@ -144,8 +152,196 @@ export class BatchDistributionComponent implements OnInit {
   ngOnDestroy(): void {
     this.cancelTemplateSearchDebounce();
     this.cancelItemOptionsSearchDebounce();
+    this.clearToastTimeout();
     this.loadTemplatesSub?.unsubscribe();
     this.loadItemOptionsSub?.unsubscribe();
+  }
+
+  get selectedDistributionType(): DistributionType {
+    if (this.calculation?.template?.distribution_type) {
+      return this.calculation.template.distribution_type;
+    }
+
+    if (this.selectedTemplateId) {
+      const selected = this.templates.find((t) => t.template_id === this.selectedTemplateId);
+      if (selected) {
+        return selected.distribution_type;
+      }
+    }
+
+    return this.templateForm.distribution_type;
+  }
+
+  get targetCountLabel(): string {
+    return this.selectedDistributionType === 'relief_goods'
+      ? 'Number of Relief Packs'
+      : 'Target Attendees';
+  }
+
+  get perUnitLabel(): string {
+    return this.selectedDistributionType === 'relief_goods' ? 'Items per Pack' : 'Amount per Serving';
+  }
+
+  get targetUnitNounPlural(): string {
+    return this.selectedDistributionType === 'relief_goods' ? 'Packs' : 'Attendees';
+  }
+
+  get normalizedTargetUnitCount(): number {
+    const normalizedTarget = Math.floor(Number(this.targetUnitCount));
+    return Number.isFinite(normalizedTarget) && normalizedTarget > 0 ? normalizedTarget : 0;
+  }
+
+  get normalizedBaseUnitCount(): number {
+    const baseFromCalculation = Number(this.calculation?.template?.base_unit_count ?? 0);
+    if (Number.isFinite(baseFromCalculation) && baseFromCalculation > 0) {
+      return Math.floor(baseFromCalculation);
+    }
+
+    if (this.selectedTemplateId) {
+      const selected = this.templates.find((t) => t.template_id === this.selectedTemplateId);
+      if (selected && Number.isFinite(selected.base_unit_count) && selected.base_unit_count > 0) {
+        return Math.floor(selected.base_unit_count);
+      }
+    }
+
+    const baseFromForm = Number(this.templateForm.base_unit_count);
+    return Number.isFinite(baseFromForm) && baseFromForm > 0 ? Math.floor(baseFromForm) : 1;
+  }
+
+  get calculatedMultiplier(): number {
+    const target = this.normalizedTargetUnitCount;
+    const base = this.normalizedBaseUnitCount;
+    if (base <= 0) {
+      return 0;
+    }
+
+    return target / base;
+  }
+
+  calculateRequiredQuantity(amountPerServingOrPack: number): number {
+    const perUnit = Number(amountPerServingOrPack);
+    if (!Number.isFinite(perUnit) || perUnit <= 0) {
+      return 0;
+    }
+
+    return perUnit * this.calculatedMultiplier;
+  }
+
+  getRowRequiredQuantity(row: {
+    quantity_per_base: number;
+    required_quantity_for_issuance?: number;
+  }): number {
+    if (Number.isFinite(Number(row.required_quantity_for_issuance))) {
+      return Number(row.required_quantity_for_issuance);
+    }
+
+    return this.calculateRequiredQuantity(row.quantity_per_base);
+  }
+
+  getRowShortageQuantity(row: {
+    quantity_per_base: number;
+    current_stock: number;
+    shortage_quantity?: number;
+  }): number {
+    if (Number.isFinite(Number(row.shortage_quantity))) {
+      return Number(row.shortage_quantity);
+    }
+
+    return Math.max(0, this.getRowRequiredQuantity(row) - Number(row.current_stock || 0));
+  }
+
+  rowHasShortage(row: { quantity_per_base: number; current_stock: number }): boolean {
+    return this.getRowShortageQuantity(row) > 0;
+  }
+
+  get totalRequiredQuantity(): number {
+    if (!this.calculation) {
+      return 0;
+    }
+
+    if (Number.isFinite(Number(this.calculation.summary.total_required_quantity_for_issuance))) {
+      return Number(this.calculation.summary.total_required_quantity_for_issuance);
+    }
+
+    return this.calculation.items.reduce((sum, row) => sum + this.getRowRequiredQuantity(row), 0);
+  }
+
+  get totalShortageQuantity(): number {
+    if (!this.calculation) {
+      return 0;
+    }
+
+    const summaryWithTotal = this.calculation.summary as { total_shortage_quantity?: number };
+    if (Number.isFinite(Number(summaryWithTotal.total_shortage_quantity))) {
+      return Number(summaryWithTotal.total_shortage_quantity);
+    }
+
+    return this.calculation.items.reduce((sum, row) => sum + this.getRowShortageQuantity(row), 0);
+  }
+
+  get hasTotalShortage(): boolean {
+    return this.totalShortageQuantity > 0;
+  }
+
+  get shortageLineCount(): number {
+    if (!this.calculation) {
+      return 0;
+    }
+
+    if (Number.isFinite(Number(this.calculation.summary.insufficient_items_count))) {
+      return Number(this.calculation.summary.insufficient_items_count);
+    }
+
+    return this.calculation.items.filter((row) => this.rowHasShortage(row)).length;
+  }
+
+  get totalTemplatePages(): number {
+    return Math.max(1, Math.ceil(this.templates.length / this.templatePageSize));
+  }
+
+  get paginatedTemplates(): BatchDistributionTemplateSummary[] {
+    const start = (this.templatePage - 1) * this.templatePageSize;
+    return this.templates.slice(start, start + this.templatePageSize);
+  }
+
+  get templatePageStart(): number {
+    if (this.templates.length === 0) {
+      return 0;
+    }
+
+    return (this.templatePage - 1) * this.templatePageSize + 1;
+  }
+
+  get templatePageEnd(): number {
+    return Math.min(this.templatePage * this.templatePageSize, this.templates.length);
+  }
+
+  get canGoToPreviousTemplatePage(): boolean {
+    return this.templatePage > 1;
+  }
+
+  get canGoToNextTemplatePage(): boolean {
+    return this.templatePage < this.totalTemplatePages;
+  }
+
+  private clearToastTimeout(): void {
+    if (this.toastTimeout !== undefined) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = undefined;
+    }
+  }
+
+  showToast(type: 'success' | 'error', message: string): void {
+    this.clearToastTimeout();
+    this.toastType = type;
+    this.toastMessage = message;
+    this.cdr.detectChanges();
+
+    this.toastTimeout = setTimeout(() => {
+      this.toastMessage = '';
+      this.toastTimeout = undefined;
+      this.cdr.detectChanges();
+    }, 3500);
   }
 
   loadTemplates(): void {
@@ -153,14 +349,18 @@ export class BatchDistributionComponent implements OnInit {
     this.loadingTemplates = true;
     this.loadTemplatesSub?.unsubscribe();
     this.loadTemplatesSub = this.batchService
-      .listTemplates(this.searchTemplate || undefined)
+      .listTemplates(
+        this.searchTemplate || undefined,
+        this.templateTypeFilter === 'all' ? undefined : this.templateTypeFilter,
+      )
       .subscribe({
         next: (response) => {
           this.templates = response.data;
-          if (!this.searchTemplate.trim()) {
+          if (!this.searchTemplate.trim() && this.templateTypeFilter === 'all') {
             this.templatesBaseline = response.data.slice();
           }
           this.loadingTemplates = false;
+          this.ensureTemplatePageInRange();
 
           if (this.selectedTemplateId) {
             const stillExists = this.templates.some(
@@ -188,11 +388,13 @@ export class BatchDistributionComponent implements OnInit {
     if (!this.searchTemplate.trim()) {
       this.loadTemplatesSub?.unsubscribe();
       this.loadingTemplates = false;
-      this.restoreTemplatesBaseline();
+      this.resetTemplatePagination();
+      this.loadTemplates();
       return;
     }
     this.templateSearchDebounce = setTimeout(() => {
       this.templateSearchDebounce = undefined;
+      this.resetTemplatePagination();
       this.loadTemplates();
     }, this.SEARCH_DEBOUNCE_MS);
   }
@@ -202,7 +404,8 @@ export class BatchDistributionComponent implements OnInit {
     this.cancelTemplateSearchDebounce();
     this.loadTemplatesSub?.unsubscribe();
     this.loadingTemplates = false;
-    this.restoreTemplatesBaseline();
+    this.resetTemplatePagination();
+    this.loadTemplates();
   }
 
   private cancelTemplateSearchDebounce(): void {
@@ -213,8 +416,14 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   private restoreTemplatesBaseline(): void {
+    if (this.templateTypeFilter !== 'all') {
+      this.loadTemplates();
+      return;
+    }
+
     if (this.templatesBaseline) {
       this.templates = this.templatesBaseline.slice();
+      this.ensureTemplatePageInRange();
       if (this.selectedTemplateId) {
         const stillExists = this.templates.some((t) => t.template_id === this.selectedTemplateId);
         if (!stillExists) {
@@ -292,11 +501,52 @@ export class BatchDistributionComponent implements OnInit {
 
   searchTemplates(): void {
     this.cancelTemplateSearchDebounce();
+    this.resetTemplatePagination();
     this.loadTemplates();
   }
 
   clearTemplateSearch(): void {
     this.clearTemplateSearchBox();
+  }
+
+  onTemplateFilterChange(): void {
+    this.resetTemplatePagination();
+    this.loadTemplates();
+  }
+
+  setTemplateViewMode(mode: 'card' | 'list'): void {
+    this.templateViewMode = mode;
+  }
+
+  goToTemplatePage(page: number): void {
+    const safePage = Math.min(Math.max(Math.floor(Number(page)) || 1, 1), this.totalTemplatePages);
+    this.templatePage = safePage;
+  }
+
+  goToNextTemplatePage(): void {
+    if (this.canGoToNextTemplatePage) {
+      this.templatePage += 1;
+    }
+  }
+
+  goToPreviousTemplatePage(): void {
+    if (this.canGoToPreviousTemplatePage) {
+      this.templatePage -= 1;
+    }
+  }
+
+  private resetTemplatePagination(): void {
+    this.templatePage = 1;
+  }
+
+  private ensureTemplatePageInRange(): void {
+    if (this.templatePage > this.totalTemplatePages) {
+      this.templatePage = this.totalTemplatePages;
+    }
+
+    if (this.templatePage < 1) {
+      this.templatePage = 1;
+    }
   }
 
   searchItems(): void {
@@ -349,6 +599,7 @@ export class BatchDistributionComponent implements OnInit {
           item_id: item.item_id,
           quantity_per_base: item.quantity_per_base,
           notes: '',
+          current_stock: item.current_stock,
         }));
 
         this.targetUnitCount = details.template.base_unit_count;
@@ -403,14 +654,19 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     const existing = this.templateLines.find((line) => line.item_id === this.lineDraftItemId);
+    const selectedOption = this.itemOptions.find((item) => item.item_id === this.lineDraftItemId);
     if (existing) {
       existing.quantity_per_base = normalizedQty;
       existing.notes = this.lineDraftNotes.trim();
+      if (Number.isFinite(Number(selectedOption?.current_stock))) {
+        existing.current_stock = Number(selectedOption?.current_stock);
+      }
     } else {
       this.templateLines.push({
         item_id: this.lineDraftItemId,
         quantity_per_base: normalizedQty,
         notes: this.lineDraftNotes.trim(),
+        current_stock: Number(selectedOption?.current_stock ?? 0),
       });
     }
 
@@ -519,6 +775,20 @@ export class BatchDistributionComponent implements OnInit {
     return `${found.item_code} - ${found.item_description}`;
   }
 
+  getItemCurrentStock(itemId: number): number | string {
+    const line = this.templateLines.find((entry) => entry.item_id === itemId);
+    if (line && Number.isFinite(Number(line.current_stock))) {
+      return Number(line.current_stock);
+    }
+
+    const found = this.itemOptions.find((item) => item.item_id === itemId);
+    if (found && Number.isFinite(Number(found.current_stock))) {
+      return Number(found.current_stock);
+    }
+
+    return '-';
+  }
+
   saveTemplate(): void {
     this.errorMessage = '';
     this.successMessage = '';
@@ -529,10 +799,10 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (
-      !Number.isFinite(this.templateForm.base_unit_count) ||
-      this.templateForm.base_unit_count <= 0
+      !Number.isFinite(Number(this.templateForm.base_unit_count)) ||
+      Number(this.templateForm.base_unit_count) <= 0
     ) {
-      this.errorMessage = 'Base count must be greater than zero.';
+      this.errorMessage = 'Standard batch size must be greater than zero.';
       return;
     }
 
@@ -544,7 +814,7 @@ export class BatchDistributionComponent implements OnInit {
     const payload: BatchDistributionTemplatePayload = {
       template_name: this.templateForm.template_name.trim(),
       distribution_type: this.templateForm.distribution_type,
-      base_unit_count: Math.floor(this.templateForm.base_unit_count),
+      base_unit_count: Math.floor(Number(this.templateForm.base_unit_count)),
       notes: this.templateForm.notes.trim(),
       items: this.templateLines.map((line) => ({
         item_id: line.item_id,
@@ -604,6 +874,7 @@ export class BatchDistributionComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
     this.cdr.detectChanges();
+    this.calculate();
   }
 
   calculate(): void {
@@ -650,9 +921,7 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    const isScheduled = this.isFutureBatchDate();
-
-    if (!isScheduled && !this.calculation.summary.can_issue) {
+    if (this.hasTotalShortage) {
       this.errorMessage = 'Cannot issue because one or more items have shortages.';
       return;
     }
@@ -722,14 +991,19 @@ export class BatchDistributionComponent implements OnInit {
         this.issueNotes.trim() || undefined,
       )
       .subscribe({
-        next: (response) => {
+        next: () => {
           this.issuing = false;
-          this.successMessage = `Batch issued successfully. Reference: ${response.data.reference_number}`;
-          this.calculate();
+          this.showToast('success', 'Distribution recorded successfully');
+          this.destination = '';
+          this.issueNotes = '';
+          this.reason = 'Batch Distribution';
+          this.calculation = null;
+          this.loadItemOptions();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.issuing = false;
-          this.errorMessage = err?.error?.message || 'Failed to issue batch distribution.';
+          this.showToast('error', err?.error?.message || 'Failed to issue batch distribution.');
           this.cdr.detectChanges();
         },
       });
