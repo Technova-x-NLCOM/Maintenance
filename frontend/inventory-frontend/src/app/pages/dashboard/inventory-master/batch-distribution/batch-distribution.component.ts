@@ -910,6 +910,7 @@ export class BatchDistributionComponent implements OnInit {
   issueDistribution(): void {
     this.errorMessage = '';
     this.successMessage = '';
+    const isScheduled = this.isFutureBatchDate();
 
     if (!this.selectedTemplateId) {
       this.errorMessage = 'Select a template first.';
