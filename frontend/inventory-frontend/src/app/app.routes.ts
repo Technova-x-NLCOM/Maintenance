@@ -3,24 +3,24 @@ import { LoginComponent } from './pages/auth/login/login.component';
 import { ResetPasswordComponent } from './pages/auth/reset-password/reset-password.component';
 import { AdminLoginComponent } from './pages/admin-login/admin-login.component';
 import { DashboardLayoutComponent } from './layout/dashboard-layout/dashboard-layout.component';
-import { DashboardRedirectComponent } from './components/dashboard/home/home.component';
-import { SuperAdminDashboardComponent } from './components/dashboard/super-admin/super-admin-dashboard.component';
-import { InventoryManagerDashboardComponent } from './components/dashboard/inventory-manager/inventory-manager-dashboard.component';
-import { ProfileComponent } from './components/dashboard/profile/profile.component';
+import { DashboardRedirectComponent } from './components/dashboard/dashboard-redirect.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { InventoryManagerDashboardComponent } from './components/inventory-manager/inventory-manager-dashboard.component';
+import { ProfileComponent } from './components/profile/profile.component';
 import { authGuard } from './guards/auth.guard';
-import { RolesComponent } from './components/dashboard/roles/roles.component';
-import { MaintenanceComponent } from './components/dashboard/maintenance/maintenance.component';
-import { SettingsComponent } from './components/dashboard/settings/settings.component';
-import { CategoryManagementComponent } from './components/dashboard/inventory-master/categories/category-management.component';
-import { ItemRegistrationUpdatesComponent } from './components/dashboard/inventory-master/items/item-registration-updates.component';
-import { BatchDistributionComponent } from './components/dashboard/inventory-master/batch-distribution/batch-distribution.component';
+import { RolesComponent } from './components/roles/roles.component';
+import { MaintenanceComponent } from './components/maintenance/maintenance.component';
+import { SettingsComponent } from './components/settings/settings.component';
+import { CategoryManagementComponent } from './components/inventory-master/categories/category-management.component';
+import { ItemRegistrationUpdatesComponent } from './components/inventory-master/items/item-registration-updates.component';
+import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
-import { StockReportComponent } from './components/dashboard/monitoring/stock-report/stock-report.component';
-import { TransactionHistoryComponent } from './components/dashboard/monitoring/transaction-history/transaction-history.component';
-import { ScheduledBatchesComponent } from './components/dashboard/monitoring/scheduled-batches/scheduled-batches.component';
-import { SystemUsersComponent } from './components/dashboard/system-users/system-users.component';
-import { AuditLogComponent } from './components/dashboard/audit-log/audit-log.component';
+import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
+import { TransactionHistoryComponent } from './components/monitoring/transaction-history/transaction-history.component';
+import { ScheduledBatchesComponent } from './components/monitoring/scheduled-batches/scheduled-batches.component';
+import { SystemUsersComponent } from './components/system-users/system-users.component';
+import { AuditLogComponent } from './components/audit-log/audit-log.component';
 import { permissionGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -34,7 +34,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: '', component: DashboardRedirectComponent },
-      { path: 'super-admin', component: SuperAdminDashboardComponent },
+      { path: 'dashboard', component: DashboardComponent },
       { path: 'inventory-manager', component: InventoryManagerDashboardComponent },
       { path: 'profile', component: ProfileComponent },
       { path: 'roles', component: RolesComponent },
