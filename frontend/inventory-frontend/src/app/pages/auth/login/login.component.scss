@@ -433,8 +433,8 @@ $border-radius: 8px;
 
 // ── Responsive Breakpoints ───────────────────────────────
 
-/* ── Mobile S (≤320px) ── */
-@media (max-width: 320px) {
+/* ── Mobile and Tablet (≤768px) - Single column layout for all mobile and tablet devices ── */
+@media (max-width: 768px) {
   .login-wrapper {
     flex-direction: column !important;
   }
@@ -450,23 +450,25 @@ $border-radius: 8px;
 
   .left-overlay {
     padding: 14px 16px;
-    flex-direction: row;
-    justify-content: flex-start;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     gap: 10px;
   }
 
   .brand {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
+    width: 100%;
   }
 
   .brand-logo {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
-    padding-left: 100px;
 
     .logo-img {
       width: 200px;
@@ -481,14 +483,131 @@ $border-radius: 8px;
     height: 58px;
   }
 
+  // Adjust for slightly larger mobile devices (376px+)
+  @media (min-width: 376px) {
+    .left-panel {
+      height: 150px !important;
+    }
+
+    .brand-logo .logo-img {
+      width: 90px;
+      height: 65px;
+    }
+
+    .brand-ims {
+      font-size: 1.4rem;
+    }
+  }
+
+  // Adjust for Mobile L and small tablets (426px+)
+  @media (min-width: 426px) {
+    .left-panel {
+      height: 160px !important;
+    }
+
+    .left-overlay {
+      padding: 16px 24px;
+    }
+
+    .brand-logo .logo-img {
+      width: 120px;
+      height: 70px;
+    }
+
+    .brand-name {
+      font-size: 1.1rem;
+    }
+    .brand-sub {
+      font-size: 0.5rem;
+    }
+    .brand-ims {
+      font-size: 1.6rem;
+    }
+
+    .right-panel {
+      width: 100% !important;
+      max-width: 500px !important;
+      padding: 28px 32px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+      margin: 0 auto;
+    }
+
+    .login-card {
+      padding: 28px 24px;
+      max-width: 450px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .login-header {
+      margin-bottom: 18px;
+      h2 {
+        font-size: 1.5rem;
+      }
+      p {
+        font-size: 0.9375rem;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      label {
+        font-size: 1rem;
+      }
+    }
+
+    .form-control {
+      padding: 11px 14px;
+      font-size: 1rem;
+    }
+
+    .password-input-wrapper .form-control {
+      padding-right: 48px;
+    }
+
+    .form-row {
+      flex-direction: row;
+      margin-bottom: 18px;
+    }
+
+    .btn-login,
+    .btn-register {
+      font-size: 1.0625rem;
+      min-height: 48px;
+      padding: 12px 14px;
+    }
+
+    .register-section {
+      margin-top: 26px;
+      padding-top: 18px;
+      p {
+        font-size: 1rem;
+      }
+    }
+
+    .loading-card {
+      max-width: 420px;
+    }
+
+    .modal-panel {
+      max-width: 460px;
+    }
+  }
+
   .brand-name {
     font-size: 0.95rem;
+    text-align: center;
   }
   .brand-sub {
     font-size: 0.45rem;
+    text-align: center;
   }
   .brand-ims {
     font-size: 1.2rem;
+    text-align: center;
   }
 
   // Hide the hero text — no room on 320px
@@ -581,111 +700,6 @@ $border-radius: 8px;
 
   .modal-panel {
     padding: 18px 12px;
-  }
-}
-
-/* ── Tablet (426px–768px) ── */
-@media (min-width: 426px) and (max-width: 768px) {
-  .login-wrapper {
-    flex-direction: column !important;
-  }
-
-  .left-panel {
-    flex: none !important;
-    width: 100% !important;
-    min-height: 200px;
-    height: 200px;
-  }
-
-  .left-overlay {
-    padding: 20px 28px;
-    justify-content: flex-start;
-    gap: 12px;
-  }
-
-  .brand {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-  }
-
-  .brand-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    .logo-img {
-      width: 200px;
-      height: 100px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-  }
-
-  .brand-logo .logo-img {
-    width: 145px;
-    height: 80px;
-  }
-
-  .brand-name {
-    font-size: 1.2rem;
-  }
-  .brand-ims {
-    font-size: 2.5rem;
-  }
-  .left-content {
-    display: none;
-  }
-
-  .right-panel {
-    width: 100% !important;
-    flex-shrink: unset;
-    padding: 28px 32px 36px;
-    justify-content: center;
-    background: white;
-  }
-
-  .login-card {
-    padding: 28px 24px;
-    max-width: 460px;
-  }
-
-  .login-header {
-    margin-bottom: 18px;
-    h2 {
-      font-size: 1.45rem;
-    }
-  }
-
-  .form-control {
-    font-size: 1rem;
-  }
-  .form-row {
-    margin-bottom: 18px;
-  }
-
-  .btn-login,
-  .btn-register {
-    font-size: 1.0625rem;
-    min-height: 48px;
-  }
-
-  .register-section {
-    margin-top: 26px;
-  }
-
-  .toast {
-    top: 16px;
-    right: 16px;
-    left: 16px;
-    max-width: 100%;
-  }
-
-  .loading-card {
-    max-width: 380px;
-  }
-  .modal-panel {
-    max-width: 440px;
   }
 }
 
