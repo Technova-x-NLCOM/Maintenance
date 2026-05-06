@@ -29,7 +29,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('system-api', function ($request) {
             $key = $request->user()?->user_id ?? $request->ip();
 
-            return Limit::perMinute(120)->by($key);
+            return Limit::perMinute(60)->by($key);
         });
 
         RateLimiter::for('auth-public', function ($request) {
