@@ -37,16 +37,66 @@
           ×
         </button>
       </div>
-      <select
-        class="form-control category-select"
-        [(ngModel)]="selectedCategoryId"
-        (change)="onCategoryChange()"
-      >
-        <option [ngValue]="null">All Categories</option>
-        <option *ngFor="let category of categories" [ngValue]="category.category_id">
-          {{ category.category_name }}
-        </option>
-      </select>
+      <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
+        <button
+          type="button"
+          class="category-filter-trigger"
+          (click)="toggleCategoryDropdown()"
+          [attr.aria-expanded]="categoryDropdownOpen"
+          aria-haspopup="listbox"
+          aria-label="Filter by category"
+        >
+          <span class="trigger-label">Category:</span>
+          <span class="trigger-value">{{ selectedCategoryLabel }}</span>
+          <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <button
+          *ngIf="selectedCategoryId !== null"
+          class="clear-category-filter"
+          type="button"
+          (click)="clearCategoryFilter($event)"
+          aria-label="Clear category filter"
+          title="Clear category filter"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="category-filter-dropdown" *ngIf="categoryDropdownOpen">
+          <div class="category-filter-search">
+            <input
+              type="text"
+              [(ngModel)]="categorySearchQuery"
+              (ngModelChange)="onCategorySearchChange()"
+              placeholder="Search categories"
+              aria-label="Search categories"
+            />
+          </div>
+
+          <div class="category-filter-options" role="listbox" aria-label="Category options">
+            <button
+              *ngFor="let category of filteredCategories; let i = index"
+              type="button"
+              class="category-option"
+              [class.active]="i === activeCategoryIndex"
+              [class.selected]="category.category_id === selectedCategoryId"
+              (mouseenter)="onCategoryOptionHover(i)"
+              (click)="selectCategory(category)"
+            >
+              {{ category.category_name }}
+            </button>
+
+            <div *ngIf="filteredCategories.length === 0" class="category-filter-empty">
+              No matching categories
+            </div>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-register" type="button" (click)="goToItemRegistration()">
         Register New Item
       </button>
@@ -232,6 +282,7 @@
         placeholder="e.g., BATCH-2026-001"
         [(ngModel)]="confirmBatchNumber"
         [disabled]="saving"
+        maxlength="50"
       />
       <div class="hint" *ngIf="attemptedSubmitList && !confirmBatchNumber.trim()">
         Batch number is required before submitting the list.
@@ -354,6 +405,7 @@
               placeholder="e.g., BATCH-2026-001"
               [(ngModel)]="batchNumber"
               [disabled]="saving"
+              maxlength="50"
             />
             <div class="hint" *ngIf="attemptedAddToList && !batchNumber.trim()">
               Batch number is required.
@@ -366,6 +418,7 @@
               class="form-control"
               [value]="selectedItem.measurement_unit || 'N/A'"
               disabled
+              maxlength="30"
             />
           </div>
         </div>
@@ -378,6 +431,7 @@
               placeholder="Supplier name or code"
               [(ngModel)]="supplierInfo"
               [disabled]="saving"
+              maxlength="150"
             />
           </div>
           <div class="form-group">
@@ -467,6 +521,7 @@
             "
             [(ngModel)]="reason"
             [disabled]="saving"
+            maxlength="250"
           />
         </div>
         <div class="form-group">
@@ -477,7 +532,11 @@
             [(ngModel)]="notes"
             [disabled]="saving"
             rows="3"
+            maxlength="500"
           ></textarea>
+          <div class="character-counter">
+            {{ (notes || '').length }} / 500
+          </div>
         </div>
       </div>
     </div>
