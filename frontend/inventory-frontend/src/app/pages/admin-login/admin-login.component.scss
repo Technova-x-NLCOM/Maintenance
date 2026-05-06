@@ -462,9 +462,18 @@ form {
     border-radius: 50%;
     animation: dot-bounce 1.2s ease-in-out infinite;
 
-    &:nth-child(1) { animation-delay: 0s;   background: #ffffff; }
-    &:nth-child(2) { animation-delay: 0.2s; background: #f59e0b; }
-    &:nth-child(3) { animation-delay: 0.4s; background: #ffffff; }
+    &:nth-child(1) {
+      animation-delay: 0s;
+      background: #ffffff;
+    }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+      background: #f59e0b;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+      background: #ffffff;
+    }
   }
 }
 
@@ -577,4 +586,344 @@ form {
   font-size: 0.9375rem;
   color: #475569;
   line-height: 1.55;
+}
+
+/* Mobile S   */
+@media (max-width: 320px) {
+  .admin-login-container {
+    padding: 8px;
+    min-height: 100vh;
+  }
+
+  .back-home-btn {
+    top: 12px;
+    left: 10px;
+    font-size: 0.85rem;
+    padding: 7px 10px;
+    gap: 4px;
+    border-radius: 6px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .admin-login-card {
+    padding: 16px 8px;
+    max-width: 90vw;
+    border-radius: 8px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.32);
+  }
+
+  .admin-login-logo {
+    margin-bottom: 14px;
+    img {
+      width: 88px !important;
+      height: auto;
+    }
+    .brand-name {
+      font-size: 1.04rem;
+    }
+    .brand-ims {
+      font-size: 1.6rem;
+    }
+  }
+
+  .admin-login-card h2,
+  .login-header h2 {
+    font-size: 1.11rem;
+  }
+
+  .form-group {
+    margin-bottom: 11px;
+  }
+
+  .form-control {
+    font-size: 0.88rem;
+    padding: 10px 8px;
+  }
+
+  .btn-admin-login {
+    font-size: 0.92rem;
+    min-height: 42px;
+  }
+
+  .forgot-link {
+    font-size: 0.92rem;
+  }
+
+  .register-section {
+    margin-top: 16px;
+    font-size: 0.92rem;
+  }
+
+  .toast {
+    left: 7px;
+    right: 7px;
+    font-size: 0.9rem;
+    padding: 9px 10px;
+    border-radius: 7px;
+    max-width: 98vw;
+  }
+
+  .loading-card,
+  .inactive-account-modal {
+    max-width: 98vw;
+    padding: 16px 8px;
+  }
+
+  .inactive-icon-wrap {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 12px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .inactive-title {
+    font-size: 1rem;
+    margin-bottom: 7px;
+  }
+  .inactive-body {
+    font-size: 0.86rem;
+    margin-bottom: 16px;
+  }
+}
+
+/* Mobile M  */
+@media (min-width: 321px) and (max-width: 375px) {
+  .admin-login-container {
+    padding: 8px;
+  }
+
+  .admin-login-card {
+    padding: 15px 6px;
+    max-width: 98vw;
+    border-radius: 9px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+  }
+
+  .back-home-btn {
+    top: 10px;
+    left: 8px;
+    font-size: 0.86rem;
+    padding: 7px 10px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .login-header {
+    margin-bottom: 10px;
+    h2 {
+      font-size: 1.17rem;
+    }
+  }
+
+  .form-control {
+    font-size: 0.95rem;
+    padding: 9px 8px;
+  }
+
+  .form-row {
+    margin-bottom: 11px;
+  }
+
+  .btn-admin-login {
+    font-size: 0.84rem;
+    min-height: 38px;
+  }
+
+  .forgot-link,
+  .register-section {
+    font-size: 0.85rem;
+  }
+
+  .register-section {
+    margin-top: 11px;
+  }
+
+  .toast {
+    left: 2px;
+    right: 2px;
+    font-size: 0.86rem;
+    padding: 8px 7px;
+    border-radius: 5px;
+    max-width: 99vw;
+  }
+
+  .loading-card,
+  .inactive-account-modal {
+    max-width: 99vw;
+    padding: 12px 3px;
+  }
+
+  .inactive-icon-wrap {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 8px;
+
+    svg {
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  .inactive-title {
+    font-size: 0.93rem;
+    margin-bottom: 5px;
+  }
+  .inactive-body {
+    font-size: 0.78rem;
+    margin-bottom: 11px;
+  }
+}
+
+/* Mobile L */
+@media (min-width: 376px) and (max-width: 425px) {
+  .admin-login-card {
+    max-width: 97vw;
+    padding: 18px 7px;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.36);
+  }
+
+  .admin-login-header {
+    margin-bottom: 13px;
+    h2 {
+      font-size: 1.13rem;
+    }
+  }
+
+  .form-control {
+    font-size: 0.97rem;
+    padding: 8px 11px;
+  }
+
+  .form-row {
+    margin-bottom: 12px;
+  }
+
+  .btn-admin-login {
+    font-size: 0.98rem;
+    min-height: 36px;
+  }
+
+  .register-section {
+    margin-top: 9px;
+  }
+
+  .toast {
+    left: 5px;
+    right: 5px;
+    font-size: 0.83rem;
+    padding: 8px 5px;
+    border-radius: 5px;
+    max-width: 100vw;
+  }
+
+  .loading-card,
+  .inactive-account-modal {
+    max-width: 98vw;
+    padding: 8px 2px;
+  }
+
+  .inactive-title {
+    font-size: 0.89rem;
+  }
+  .inactive-body {
+    font-size: 0.75rem;
+  }
+
+  .back-home-btn {
+    top: 11px;
+    left: 6px;
+    font-size: 0.84rem;
+    padding: 6px 11px;
+    border-radius: 7px;
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+/* Tablet */
+@media (min-width: 426px) and (max-width: 768px) {
+  .admin-login-container {
+    padding: 20px 8px;
+  }
+
+  .admin-login-card {
+    padding: 22px 10px;
+    max-width: 410px;
+  }
+
+  .admin-login-header {
+    margin-bottom: 14px;
+    h2 {
+      font-size: 1.18rem;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .form-control {
+    padding: 8px 10px;
+    font-size: 0.93rem;
+  }
+
+  .form-row {
+    margin-bottom: 12px;
+  }
+
+  .btn-admin-login {
+    font-size: 0.94rem;
+    min-height: 32px;
+  }
+
+  .register-section {
+    margin-top: 12px;
+  }
+
+  .toast {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    font-size: 0.87rem;
+    max-width: 100%;
+  }
+
+  .loading-card,
+  .inactive-account-modal {
+    max-width: 340px;
+    padding: 8px 0px;
+  }
+
+  .inactive-title {
+    font-size: 0.83rem;
+  }
+  .inactive-body {
+    font-size: 0.7rem;
+  }
+
+  .back-home-btn {
+    top: 10px;
+    left: 10px;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
 }
