@@ -2,15 +2,23 @@
   <div class="page-header">
     <h1>Batch Distribution</h1>
     <p class="subtitle">
-      Scale recipe or relief templates from a base count to your target count, then issue stock in
-      one step.
+      Manage template-based batch issuance and scheduled distribution plans in separate tabs.
     </p>
+  </div>
+
+  <div class="tabs">
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'distribution'" (click)="setTab('distribution')">
+      Batch Distribution
+    </button>
+    <button type="button" class="tab-btn" [class.active]="activeTab === 'scheduled'" (click)="setTab('scheduled')">
+      Scheduled Distribution
+    </button>
   </div>
 
   <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
   <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
-  <div class="layout-grid split-pane-row">
+  <div class="layout-grid split-pane-row" *ngIf="activeTab === 'distribution'">
     <section class="panel templates-panel pane-card">
       <div class="panel-header">
         <h2>Templates</h2>
@@ -219,10 +227,6 @@
           <input class="form-control" [value]="selectedTemplateName || 'None selected'" readonly />
         </label>
         <label>
-          <span>Batch Date</span>
-          <input type="date" class="form-control" [(ngModel)]="batchDate" />
-        </label>
-        <label>
           <span>{{ targetCountLabel }}</span>
           <input type="number" min="1" class="form-control" [(ngModel)]="targetUnitCount" />
         </label>
@@ -322,19 +326,26 @@
             class="btn btn-primary"
             type="button"
             (click)="issueDistribution()"
-            [disabled]="issuing || (!isFutureBatchDate() && !calculation.summary.can_issue)"
+            [disabled]="issuing || !calculation.summary.can_issue"
           >
-            {{ issuing ? 'Submitting...' : (isFutureBatchDate() ? 'Create Scheduled Batch' : 'Issue From Inventory') }}
+            {{ issuing ? 'Submitting...' : 'Issue From Inventory' }}
           </button>
         </div>
       </div>
 
       <p class="empty" *ngIf="!calculation">Select a template and calculate requirements.</p>
     </section>
+  </div>
+
+  <div *ngIf="activeTab === 'scheduled'" class="scheduled-tab-layout">
     <section class="panel plans-panel">
       <div class="panel-header">
-        <h2>Scheduled Program Plans (4 Stages)</h2>
+        <h2>Scheduled Distribution</h2>
       </div>
+
+      <p class="tab-help">
+        Create a planned distribution, then work through pre-check, final check, and remainder storage.
+      </p>
 
       <div class="plans-create-grid compact">
         <label>

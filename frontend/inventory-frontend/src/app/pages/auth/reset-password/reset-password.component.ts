@@ -103,7 +103,7 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
         }, 1800);
       },
       error: (err) => {
-        const backendMessage = err.error?.message || 'Unable to reset password. Please try again.';
+        const backendMessage = this.authService.getFriendlyErrorMessage(err, 'Unable to reset password. Please try again.');
         this.errorMessage = err.name === 'TimeoutError'
           ? 'Request timed out. Please check your connection and try again.'
           : backendMessage;
