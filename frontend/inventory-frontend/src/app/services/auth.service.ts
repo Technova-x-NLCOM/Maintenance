@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError } from 'rxjs';
 
 export interface User {
@@ -66,6 +66,24 @@ export class AuthService {
 
   constructor(private http: HttpClient) {
     this.loadCurrentUser();
+  }
+
+  getFriendlyErrorMessage(error: unknown, fallback: string): string {
+    const httpError = error as HttpErrorResponse;
+
+    if (httpError?.status === 429) {
+      return 'Too many requests. Please wait a moment before trying again.';
+    }
+
+    if (httpError?.error?.message) {
+      return httpError.error.message;
+    }
+
+    if (httpError?.message) {
+      return httpError.message;
+    }
+
+    return fallback;
   }
 
     private getAuthHeaders(): HttpHeaders {

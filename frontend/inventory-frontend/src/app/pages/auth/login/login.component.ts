@@ -119,7 +119,7 @@ export class LoginComponent implements OnInit {
         error: (err) => {
           const message = err.name === 'TimeoutError'
             ? 'Request timed out. Please check your connection and try again.'
-            : (err.error?.message || 'Failed to send reset link. Please try again.');
+            : this.authService.getFriendlyErrorMessage(err, 'Failed to send reset link. Please try again.');
           this.showToast(message);
         },
         complete: () => {}
@@ -157,8 +157,9 @@ export class LoginComponent implements OnInit {
             this.cdr.detectChanges();
           }
         },
-        error: () => {
+        error: (err) => {
           this.passwordNeedsSet = false;
+          this.showToast(this.authService.getFriendlyErrorMessage(err, 'Unable to verify whether the password is set. Please try again.'));
         },
         complete: () => {}
       });
@@ -208,7 +209,7 @@ export class LoginComponent implements OnInit {
         error: (err) => {
           this.setPasswordError = err.name === 'TimeoutError'
             ? 'Request timed out. Please check your connection and try again.'
-            : (err.error?.message || 'Failed to set password. Please try again.');
+            : this.authService.getFriendlyErrorMessage(err, 'Failed to set password. Please try again.');
         },
         complete: () => {}
       });
@@ -249,8 +250,10 @@ export class LoginComponent implements OnInit {
           this.showToast('Incorrect password. Please try again.');
         } else if (errType === 'user_not_found') {
           this.showToast('No account found with that username or email.');
+        } else if (error?.status === 429) {
+          this.showToast(this.authService.getFriendlyErrorMessage(error, 'Too many requests. Please wait and try again.'));
         } else {
-          this.showToast(error.error?.message || 'Login failed. Please try again.');
+          this.showToast(this.authService.getFriendlyErrorMessage(error, 'Login failed. Please try again.'));
         }
       }
     });
