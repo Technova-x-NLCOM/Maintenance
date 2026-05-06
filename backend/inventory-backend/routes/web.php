@@ -16,30 +16,31 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::prefix('api/auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    Route::post('login', [AuthController::class, 'login'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    Route::post('check-password-set', [AuthController::class, 'checkPasswordSet'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    Route::post('set-initial-password', [AuthController::class, 'setInitialPassword'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    Route::post('reset-password', [AuthController::class, 'resetPassword'])
-        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+Route::middleware('throttle:system-api')->group(function () {
+    Route::prefix('api/auth')->middleware('throttle:auth-public')->group(function () {
+        Route::post('register', [AuthController::class, 'register'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('login', [AuthController::class, 'login'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('check-password-set', [AuthController::class, 'checkPasswordSet'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('set-initial-password', [AuthController::class, 'setInitialPassword'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('reset-password', [AuthController::class, 'resetPassword'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     
-        // Protected routes with JWT middleware
-        Route::middleware(['auth:api'])->group(function () {
-            Route::get('me', [AuthController::class, 'me'])
-                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('logout', [AuthController::class, 'logout'])
-                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-            Route::post('refresh', [AuthController::class, 'refresh'])
-                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-        });
-});
+            // Protected routes with JWT middleware
+            Route::middleware(['auth:api'])->group(function () {
+                Route::get('me', [AuthController::class, 'me'])
+                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+                Route::post('logout', [AuthController::class, 'logout'])
+                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+                Route::post('refresh', [AuthController::class, 'refresh'])
+                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+            });
+    });
 
     Route::prefix('api/rbac')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
@@ -56,190 +57,191 @@ Route::prefix('api/auth')->group(function () {
             });
         });
 
-// System user accounts (admin UI)
-Route::prefix('api/users')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_roles'])->group(function () {
-            Route::get('/', [UserManagementController::class, 'index']);
-            Route::post('/', [UserManagementController::class, 'store']);
-            Route::put('{userId}', [UserManagementController::class, 'update']);
-        });
-    });
-
-Route::prefix('api/backup')
+    // System user accounts (admin UI)
+    Route::prefix('api/users')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
         ->group(function () {
-            Route::middleware(['auth:api'])->group(function () {
-                Route::post('create', [\App\Http\Controllers\BackupController::class, 'backup'])->middleware('permission:manage_backups');
-                Route::get('list', [\App\Http\Controllers\BackupController::class, 'listBackups'])->middleware('permission:manage_backups');
-                Route::post('restore', [\App\Http\Controllers\BackupController::class, 'restore'])->middleware('permission:manage_backups');
-                Route::post('restore-upload', [\App\Http\Controllers\BackupController::class, 'restoreFromUpload'])->middleware('permission:manage_backups');
-                Route::post('download', [\App\Http\Controllers\BackupController::class, 'downloadBackup'])->middleware('permission:manage_backups');
-                Route::post('delete', [\App\Http\Controllers\BackupController::class, 'deleteBackup'])->middleware('permission:manage_backups');
+            Route::middleware(['auth:api', 'permission:manage_roles'])->group(function () {
+                Route::get('/', [UserManagementController::class, 'index']);
+                Route::post('/', [UserManagementController::class, 'store']);
+                Route::put('{userId}', [UserManagementController::class, 'update']);
             });
         });
 
-// Profile API routes
-Route::prefix('api/profile')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api'])->group(function () {
-            Route::put('update', [\App\Http\Controllers\ProfileController::class, 'update']);
-            Route::put('password', [\App\Http\Controllers\ProfileController::class, 'changePassword']);
+    Route::prefix('api/backup')
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+            ->group(function () {
+                Route::middleware(['auth:api'])->group(function () {
+                    Route::post('create', [\App\Http\Controllers\BackupController::class, 'backup'])->middleware('permission:manage_backups');
+                    Route::get('list', [\App\Http\Controllers\BackupController::class, 'listBackups'])->middleware('permission:manage_backups');
+                    Route::post('restore', [\App\Http\Controllers\BackupController::class, 'restore'])->middleware('permission:manage_backups');
+                    Route::post('restore-upload', [\App\Http\Controllers\BackupController::class, 'restoreFromUpload'])->middleware('permission:manage_backups');
+                    Route::post('download', [\App\Http\Controllers\BackupController::class, 'downloadBackup'])->middleware('permission:manage_backups');
+                    Route::post('delete', [\App\Http\Controllers\BackupController::class, 'deleteBackup'])->middleware('permission:manage_backups');
+                });
+            });
+
+    // Profile API routes
+    Route::prefix('api/profile')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::put('update', [\App\Http\Controllers\ProfileController::class, 'update']);
+                Route::put('password', [\App\Http\Controllers\ProfileController::class, 'changePassword']);
+            });
         });
-    });
 
-// Super Admin Dashboard API routes
-Route::prefix('api/super-admin')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api'])->group(function () {
-            Route::get('stats', [\App\Http\Controllers\SuperAdminController::class, 'stats']);
-            Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity'])->middleware('permission:view_audit');
-            Route::get('alerts', [\App\Http\Controllers\SuperAdminController::class, 'alerts']);
-            Route::post('alerts/{alertId}/acknowledge', [\App\Http\Controllers\SuperAdminController::class, 'acknowledgeAlert']);
+    // Super Admin Dashboard API routes
+    Route::prefix('api/super-admin')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::get('stats', [\App\Http\Controllers\SuperAdminController::class, 'stats']);
+                Route::get('activity', [\App\Http\Controllers\SuperAdminController::class, 'activity'])->middleware('permission:view_audit');
+                Route::get('alerts', [\App\Http\Controllers\SuperAdminController::class, 'alerts']);
+                Route::post('alerts/{alertId}/acknowledge', [\App\Http\Controllers\SuperAdminController::class, 'acknowledgeAlert']);
+            });
         });
-    });
 
 
-// Inventory Manager Dashboard API routes
-Route::prefix('api/inventory-manager')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api'])->group(function () {
-            Route::get('stats', [\App\Http\Controllers\InventoryManagerController::class, 'stats']);
-            Route::get('activity', [\App\Http\Controllers\InventoryManagerController::class, 'activity']);
-            Route::get('alerts', [\App\Http\Controllers\InventoryManagerController::class, 'alerts']);
+    // Inventory Manager Dashboard API routes
+    Route::prefix('api/inventory-manager')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::get('stats', [\App\Http\Controllers\InventoryManagerController::class, 'stats']);
+                Route::get('activity', [\App\Http\Controllers\InventoryManagerController::class, 'activity']);
+                Route::get('alerts', [\App\Http\Controllers\InventoryManagerController::class, 'alerts']);
+            });
         });
-    });
 
-// Inventory Master Data - Item Registration and Updates
-Route::prefix('api/inventory/items')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('options', [ItemController::class, 'options']);
-            Route::get('minimum-stock', [ItemController::class, 'minimumStockList']);
-            Route::patch('minimum-stock/bulk', [ItemController::class, 'bulkUpdateMinimumStock']);
-            Route::patch('{itemId}/minimum-stock', [ItemController::class, 'updateMinimumStock']);
-            Route::post('{itemId}/expected-expiry', [ItemController::class, 'expectedExpiry']);
-            Route::get('/', [ItemController::class, 'index']);
-            Route::get('{itemId}', [ItemController::class, 'show']);
-            Route::post('/', [ItemController::class, 'store']);
-            Route::put('{itemId}', [ItemController::class, 'update']);
-            Route::patch('{itemId}/status', [ItemController::class, 'updateStatus']);
+    // Inventory Master Data - Item Registration and Updates
+    Route::prefix('api/inventory/items')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('options', [ItemController::class, 'options']);
+                Route::get('minimum-stock', [ItemController::class, 'minimumStockList']);
+                Route::patch('minimum-stock/bulk', [ItemController::class, 'bulkUpdateMinimumStock']);
+                Route::patch('{itemId}/minimum-stock', [ItemController::class, 'updateMinimumStock']);
+                Route::post('{itemId}/expected-expiry', [ItemController::class, 'expectedExpiry']);
+                Route::get('/', [ItemController::class, 'index']);
+                Route::get('{itemId}', [ItemController::class, 'show']);
+                Route::post('/', [ItemController::class, 'store']);
+                Route::put('{itemId}', [ItemController::class, 'update']);
+                Route::patch('{itemId}/status', [ItemController::class, 'updateStatus']);
+            });
         });
-    });
 
-// Inventory Master Data - Category Management
-Route::prefix('api/inventory/categories')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_categories'])->group(function () {
-            Route::get('items/available', [CategoryController::class, 'listAssignableItems']);
-            Route::get('{categoryId}/items', [CategoryController::class, 'listCategoryItems']);
-            Route::post('{categoryId}/items', [CategoryController::class, 'assignItem']);
-            Route::delete('{categoryId}/items/{itemId}', [CategoryController::class, 'removeItem']);
-            Route::get('options', [CategoryController::class, 'options']);
-            Route::get('/', [CategoryController::class, 'index']);
-            Route::get('{categoryId}', [CategoryController::class, 'show']);
-            Route::post('/', [CategoryController::class, 'store']);
-            Route::put('{categoryId}', [CategoryController::class, 'update']);
-            Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+    // Inventory Master Data - Category Management
+    Route::prefix('api/inventory/categories')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_categories'])->group(function () {
+                Route::get('items/available', [CategoryController::class, 'listAssignableItems']);
+                Route::get('{categoryId}/items', [CategoryController::class, 'listCategoryItems']);
+                Route::post('{categoryId}/items', [CategoryController::class, 'assignItem']);
+                Route::delete('{categoryId}/items/{itemId}', [CategoryController::class, 'removeItem']);
+                Route::get('options', [CategoryController::class, 'options']);
+                Route::get('/', [CategoryController::class, 'index']);
+                Route::get('{categoryId}', [CategoryController::class, 'show']);
+                Route::post('/', [CategoryController::class, 'store']);
+                Route::put('{categoryId}', [CategoryController::class, 'update']);
+                Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+            });
         });
-    });
 
-// Inventory Transactions - Monitor (IN/OUT history)
-Route::prefix('api/inventory/transactions')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('/', [TransactionMonitorController::class, 'index']);
-            Route::get('/stock-report', [TransactionMonitorController::class, 'stockReport']);
+    // Inventory Transactions - Monitor (IN/OUT history)
+    Route::prefix('api/inventory/transactions')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('/', [TransactionMonitorController::class, 'index']);
+                Route::get('/stock-report', [TransactionMonitorController::class, 'stockReport']);
+            });
         });
-    });
 
-// Inventory Transactions - Receiving (IN)
-Route::prefix('api/inventory/receiving')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('items', [ReceivingTransactionController::class, 'getReceivingItems']);
-            Route::post('create', [ReceivingTransactionController::class, 'createReceiving']);
+    // Inventory Transactions - Receiving (IN)
+    Route::prefix('api/inventory/receiving')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items', [ReceivingTransactionController::class, 'getReceivingItems']);
+                Route::post('create', [ReceivingTransactionController::class, 'createReceiving']);
+            });
         });
-    });
 
-// Inventory Transactions - Issuance (OUT)
-Route::prefix('api/inventory/issuance')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
-            Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
+    // Inventory Transactions - Issuance (OUT)
+    Route::prefix('api/inventory/issuance')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
+                Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
+            });
         });
-    });
 
-// Inventory Transactions - Stock Adjustment
-Route::prefix('api/inventory/adjustment')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('items', [StockAdjustmentController::class, 'getAdjustableItems']);
-            Route::post('create', [StockAdjustmentController::class, 'createAdjustment']);
+    // Inventory Transactions - Stock Adjustment
+    Route::prefix('api/inventory/adjustment')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items', [StockAdjustmentController::class, 'getAdjustableItems']);
+                Route::post('create', [StockAdjustmentController::class, 'createAdjustment']);
+            });
         });
-    });
 
-// Inventory Transactions - Batch Distribution (Template-based scaling and issuance)
-Route::prefix('api/inventory/batch-distribution')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
-            Route::get('items/options', [BatchDistributionController::class, 'itemOptions']);
-            Route::get('templates', [BatchDistributionController::class, 'listTemplates']);
-            Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
-            Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
-            Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
-            Route::post('calculate', [BatchDistributionController::class, 'calculate']);
-            Route::post('issue', [BatchDistributionController::class, 'issue']);
+    // Inventory Transactions - Batch Distribution (Template-based scaling and issuance)
+    Route::prefix('api/inventory/batch-distribution')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items/options', [BatchDistributionController::class, 'itemOptions']);
+                Route::get('templates', [BatchDistributionController::class, 'listTemplates']);
+                Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
+                Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
+                Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
+                Route::post('calculate', [BatchDistributionController::class, 'calculate']);
+                Route::post('issue', [BatchDistributionController::class, 'issue']);
 
-            // Scheduled weekly feeding/distribution plans
-            Route::get('program-plans', [DistributionPlanController::class, 'index']);
-            Route::post('program-plans', [DistributionPlanController::class, 'store']);
-            Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
-            Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);
-            Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
-            Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'update']);
-            Route::post('program-plans/{planId}/complete', [DistributionPlanController::class, 'complete']);
+                // Scheduled weekly feeding/distribution plans
+                Route::get('program-plans', [DistributionPlanController::class, 'index']);
+                Route::post('program-plans', [DistributionPlanController::class, 'store']);
+                Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
+                Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);
+                Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
+                Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'update']);
+                Route::post('program-plans/{planId}/complete', [DistributionPlanController::class, 'complete']);
+            });
         });
-    });
 
-// Maintenance API routes
-Route::prefix('api/maintenance')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_maintenance'])->group(function () {
-            // Home - List all tables
-            Route::get('tables', [\App\Http\Controllers\Maintenance\MaintenanceHomeController::class, 'listTables']);
-            
-            // Table List - View and manage rows
-            Route::get('{table}/schema', [\App\Http\Controllers\Maintenance\TableListController::class, 'schema']);
-            Route::get('{table}/rows', [\App\Http\Controllers\Maintenance\TableListController::class, 'listRows']);
-            Route::delete('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableListController::class, 'delete']);
-            Route::post('{table}/rows/{id}/restore', [\App\Http\Controllers\Maintenance\TableListController::class, 'restore']);
-            
-            // Table Form - Create and update
-            Route::post('{table}/rows', [\App\Http\Controllers\Maintenance\TableFormController::class, 'create']);
-            Route::put('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableFormController::class, 'update']);
+    // Maintenance API routes
+    Route::prefix('api/maintenance')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_maintenance'])->group(function () {
+                // Home - List all tables
+                Route::get('tables', [\App\Http\Controllers\Maintenance\MaintenanceHomeController::class, 'listTables']);
+                
+                // Table List - View and manage rows
+                Route::get('{table}/schema', [\App\Http\Controllers\Maintenance\TableListController::class, 'schema']);
+                Route::get('{table}/rows', [\App\Http\Controllers\Maintenance\TableListController::class, 'listRows']);
+                Route::delete('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableListController::class, 'delete']);
+                Route::post('{table}/rows/{id}/restore', [\App\Http\Controllers\Maintenance\TableListController::class, 'restore']);
+                
+                // Table Form - Create and update
+                Route::post('{table}/rows', [\App\Http\Controllers\Maintenance\TableFormController::class, 'create']);
+                Route::put('{table}/rows/{id}', [\App\Http\Controllers\Maintenance\TableFormController::class, 'update']);
+            });
         });
-    });
 
-// System Settings API routes (super admin only)
-Route::prefix('api/settings')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
-    ->group(function () {
-        Route::middleware(['auth:api', 'permission:manage_settings'])->group(function () {
-            Route::get('/', [\App\Http\Controllers\SystemSettingsController::class, 'index']);
-            Route::put('{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
+    // System Settings API routes (super admin only)
+    Route::prefix('api/settings')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_settings'])->group(function () {
+                Route::get('/', [\App\Http\Controllers\SystemSettingsController::class, 'index']);
+                Route::put('{key}', [\App\Http\Controllers\SystemSettingsController::class, 'update']);
+            });
         });
-    });
+});
