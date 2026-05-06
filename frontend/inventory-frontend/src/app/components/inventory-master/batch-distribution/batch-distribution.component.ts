@@ -804,11 +804,21 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    if (this.templateForm.template_name.length > 100) {
+      this.errorMessage = 'Template name must be 100 characters or less.';
+      return;
+    }
+
     if (
       !Number.isFinite(Number(this.templateForm.base_unit_count)) ||
       Number(this.templateForm.base_unit_count) <= 0
     ) {
       this.errorMessage = 'Standard batch size must be greater than zero.';
+      return;
+    }
+
+    if (this.templateForm.notes && this.templateForm.notes.length > 500) {
+      this.errorMessage = 'Notes must be 500 characters or less.';
       return;
     }
 
@@ -934,6 +944,21 @@ export class BatchDistributionComponent implements OnInit {
 
     if (!this.destination.trim()) {
       this.errorMessage = 'Destination is required for issuing.';
+      return;
+    }
+
+    if (this.destination.length > 150) {
+      this.errorMessage = 'Destination must be 150 characters or less.';
+      return;
+    }
+
+    if (this.reason && this.reason.length > 250) {
+      this.errorMessage = 'Reason must be 250 characters or less.';
+      return;
+    }
+
+    if (this.issueNotes && this.issueNotes.length > 500) {
+      this.errorMessage = 'Notes must be 500 characters or less.';
       return;
     }
 

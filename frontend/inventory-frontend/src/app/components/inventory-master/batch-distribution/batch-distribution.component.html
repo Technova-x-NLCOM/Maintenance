@@ -300,6 +300,7 @@
                 class="form-control"
                 [(ngModel)]="destination"
                 placeholder="e.g. Saturday Feeding Site A"
+                maxlength="150"
               />
             </label>
             <label>
@@ -309,6 +310,7 @@
                 class="form-control"
                 [(ngModel)]="reason"
                 placeholder="Batch Distribution"
+                maxlength="250"
               />
             </label>
             <label class="full">
@@ -318,7 +320,11 @@
                 rows="2"
                 [(ngModel)]="issueNotes"
                 placeholder="Optional notes"
+                maxlength="500"
               ></textarea>
+              <div class="character-counter">
+                {{ (issueNotes || '').length }} / 500
+              </div>
             </label>
           </div>
 
@@ -375,7 +381,7 @@
         </label>
         <label class="full">
           <span>Notes</span>
-          <input class="form-control" [(ngModel)]="planForm.notes" placeholder="Optional planning notes" />
+          <input class="form-control" [(ngModel)]="planForm.notes" placeholder="Optional planning notes" maxlength="500" />
         </label>
         <div>
           <button class="btn btn-primary" type="button" (click)="createPlan()" [disabled]="savingPlan">
@@ -487,11 +493,11 @@
         <div class="issue-grid compact-issue-grid">
           <label>
             <span>Issue Destination For Final Check *</span>
-            <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" />
+            <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" maxlength="150" />
           </label>
           <label>
             <span>Issue Reason</span>
-            <input class="form-control" [(ngModel)]="planIssueReason" placeholder="For Week 3" />
+            <input class="form-control" [(ngModel)]="planIssueReason" placeholder="For Week 3" maxlength="250" />
           </label>
         </div>
 
@@ -544,7 +550,7 @@
         <div class="form-grid">
           <label>
             <span>Template Name *</span>
-            <input type="text" class="form-control" [(ngModel)]="templateForm.template_name" />
+            <input type="text" class="form-control" [(ngModel)]="templateForm.template_name" maxlength="100" />
           </label>
 
           <label>
@@ -575,7 +581,10 @@
 
           <label class="full">
             <span>Notes</span>
-            <textarea rows="2" class="form-control" [(ngModel)]="templateForm.notes"></textarea>
+            <textarea rows="2" class="form-control" [(ngModel)]="templateForm.notes" maxlength="500"></textarea>
+            <div class="character-counter">
+              {{ (templateForm.notes || '').length }} / 500
+            </div>
           </label>
         </div>
 

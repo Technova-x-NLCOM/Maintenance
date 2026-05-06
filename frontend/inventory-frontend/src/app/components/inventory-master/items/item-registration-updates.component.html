@@ -48,6 +48,7 @@
               type="text"
               [(ngModel)]="formData.item_code"
               placeholder="e.g. SKU-001 or ITEM-001"
+              maxlength="50"
             />
           </label>
 
@@ -57,6 +58,7 @@
               type="text"
               [(ngModel)]="formData.item_description"
               placeholder="What is this item?"
+              maxlength="100"
             />
           </label>
 
@@ -86,6 +88,7 @@
               type="text"
               [(ngModel)]="formData.measurement_unit"
               placeholder="e.g. pieces, kg, box, liter"
+              maxlength="30"
             />
           </label>
 
@@ -117,6 +120,7 @@
               min="1"
               [(ngModel)]="formData.shelf_life_days"
               placeholder="e.g. 730 for 2 years"
+              maxlength="50"
             />
           </label>
 
@@ -128,6 +132,7 @@
               step="0.01"
               [(ngModel)]="formData.mg_dosage"
               placeholder="e.g. 500"
+              maxlength="50"
             />
           </label>
 
@@ -180,7 +185,11 @@
               rows="2"
               [(ngModel)]="formData.particular"
               placeholder="Any extra information about this item"
+              maxlength="500"
             ></textarea>
+            <div class="character-counter">
+              {{ (formData.particular || '').length }} / 500
+            </div>
           </label>
 
           <label class="full-width">
@@ -189,7 +198,11 @@
               rows="2"
               [(ngModel)]="formData.remarks"
               placeholder="Internal notes for your reference"
+              maxlength="500"
             ></textarea>
+            <div class="character-counter">
+              {{ (formData.remarks || '').length }} / 500
+            </div>
           </label>
 
           <label class="checkbox-row">

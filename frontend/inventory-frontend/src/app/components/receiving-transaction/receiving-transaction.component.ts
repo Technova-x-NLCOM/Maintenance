@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -45,6 +45,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   perPage = 10;
   searchQuery = '';
   selectedCategoryId: number | null = null;
+  selectedCategoryLabel = 'All Categories';
+  categoryDropdownOpen = false;
+  categorySearchQuery = '';
+  activeCategoryIndex = -1;
+  filteredCategories: Array<{ category_id: number; category_name: string }> = [];
   loading = false;
 
   // Form state
@@ -315,11 +320,15 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   loadCategoryOptions(): void {
     this.itemService.getOptions().subscribe({
       next: (options) => {
-        this.categories = options.data.categories;
+        this.categories = options.data.categories.slice().sort((a, b) =>
+          a.category_name.localeCompare(b.category_name)
+        );
+        this.applyCategorySearchFilter();
         this.cdr.detectChanges();
       },
       error: () => {
         this.categories = [];
+        this.filteredCategories = [];
         this.cdr.detectChanges();
       },
     });
@@ -486,6 +495,14 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
         return false;
       }
 
+      if (this.reason.length > 250) {
+        return false;
+      }
+
+      if (this.notes && this.notes.length > 500) {
+        return false;
+      }
+
       if (this.selectedItem.shelf_life_days && !this.getEffectiveExpiryDate()) {
         return false;
       }
@@ -502,7 +519,19 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     if (!this.batchNumber.trim()) {
       return false;
     }
+    if (this.batchNumber.length > 50) {
+      return false;
+    }
     if (!this.purchaseDate) {
+      return false;
+    }
+    if (this.supplierInfo && this.supplierInfo.length > 150) {
+      return false;
+    }
+    if (this.reason && this.reason.length > 250) {
+      return false;
+    }
+    if (this.notes && this.notes.length > 500) {
       return false;
     }
     return true;
@@ -581,9 +610,15 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   canSubmitList(): boolean {
-    return (
-      this.receivingLines.length > 0 && !this.saving && this.confirmBatchNumber.trim().length > 0
-    );
+    if (this.receivingLines.length === 0 || this.saving) {
+      return false;
+    }
+    
+    if (!this.confirmBatchNumber.trim() || this.confirmBatchNumber.length > 50) {
+      return false;
+    }
+    
+    return true;
   }
 
   submitReceivingList(): void {
@@ -732,5 +767,131 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   dismissMessages(): void {
     this.showSuccessMessage = false;
     this.showErrorMessage = false;
+  }
+
+  // Category Combobox Methods
+  toggleCategoryDropdown(): void {
+    this.categoryDropdownOpen = !this.categoryDropdownOpen;
+    if (this.categoryDropdownOpen) {
+      this.categorySearchQuery = '';
+      this.applyCategorySearchFilter();
+      this.activeCategoryIndex = this.getActiveCategoryIndexFromSelection();
+      this.cdr.detectChanges();
+    }
+  }
+
+  onCategorySearchChange(): void {
+    this.applyCategorySearchFilter();
+  }
+
+  selectCategory(category: { category_id: number; category_name: string } | null): void {
+    this.selectedCategoryId = category?.category_id ?? null;
+    this.selectedCategoryLabel = category?.category_name ?? 'All Categories';
+    this.categoryDropdownOpen = false;
+    this.categorySearchQuery = '';
+    this.activeCategoryIndex = -1;
+    this.onCategoryChange();
+  }
+
+  clearCategoryFilter(event?: Event): void {
+    event?.stopPropagation();
+    if (this.selectedCategoryId === null) {
+      return;
+    }
+    this.selectCategory(null);
+  }
+
+  onCategoryComboboxKeydown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    if (!this.categoryDropdownOpen) {
+      if (key === 'ArrowDown' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        this.toggleCategoryDropdown();
+      }
+      return;
+    }
+
+    if (key === 'Escape') {
+      event.preventDefault();
+      this.categoryDropdownOpen = false;
+      this.activeCategoryIndex = -1;
+      return;
+    }
+
+    if (!this.filteredCategories.length) {
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeCategoryIndex = Math.min(
+        this.activeCategoryIndex + 1,
+        this.filteredCategories.length - 1,
+      );
+      return;
+    }
+
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeCategoryIndex = Math.max(this.activeCategoryIndex - 1, 0);
+      return;
+    }
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (this.activeCategoryIndex >= 0) {
+        this.selectCategory(this.filteredCategories[this.activeCategoryIndex]);
+      }
+    }
+  }
+
+  onCategoryOptionHover(index: number): void {
+    this.activeCategoryIndex = index;
+  }
+
+  private applyCategorySearchFilter(): void {
+    const query = this.categorySearchQuery.trim().toLowerCase();
+    this.filteredCategories = this.categories.filter((category) => {
+      if (!query) {
+        return true;
+      }
+      return category.category_name.toLowerCase().includes(query);
+    });
+
+    if (!this.filteredCategories.length) {
+      this.activeCategoryIndex = -1;
+      return;
+    }
+
+    this.activeCategoryIndex = this.getActiveCategoryIndexFromSelection();
+  }
+
+  private getActiveCategoryIndexFromSelection(): number {
+    if (!this.filteredCategories.length) {
+      return -1;
+    }
+
+    const selectedIndex = this.filteredCategories.findIndex(
+      (category) => category.category_id === this.selectedCategoryId,
+    );
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.categoryDropdownOpen) {
+      return;
+    }
+
+    const target = event.target as Element | null;
+    if (!target) {
+      return;
+    }
+
+    if (!target.closest('.category-filter-combobox')) {
+      this.categoryDropdownOpen = false;
+      this.activeCategoryIndex = -1;
+    }
   }
 }

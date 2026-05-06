@@ -206,6 +206,13 @@ $info-blue: #1d4ed8;
   @media (max-width: 1060px) {
     grid-template-columns: 1fr;
   }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: 450px; // Constrain middle row cards
+  }
 }
 
 .visualizations-grid {
@@ -235,6 +242,17 @@ $info-blue: #1d4ed8;
   min-height: 240px;
 }
 
+.chart-area-container {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+}
+
 .chart-area-tall {
   min-height: 290px;
 }
@@ -249,12 +267,16 @@ $info-blue: #1d4ed8;
   border-radius: 14px;
   padding: 18px;
   box-shadow: 0 8px 18px rgba(16, 33, 63, 0.05);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 
   .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-shrink: 0;
   }
 
   .card-title {
@@ -307,6 +329,7 @@ $info-blue: #1d4ed8;
     color: $text-light;
     font-size: 0.85rem;
     line-height: 1.45;
+    flex-shrink: 0;
   }
 }
 
@@ -315,15 +338,18 @@ $info-blue: #1d4ed8;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
   max-height: 350px;
   overflow-y: auto;
   padding-right: 2px;
+  min-height: 0;
 
   .list-footer {
     margin: 0;
     padding: 2px 1px 0;
     color: $text-light;
     font-size: 0.76rem;
+    flex-shrink: 0;
 
     a {
       margin-left: 4px;
@@ -342,6 +368,7 @@ $info-blue: #1d4ed8;
 .activity-item {
   border-radius: 10px;
   border: 1px solid #e7eef7;
+  flex-shrink: 0;
 }
 
 .alert-item {
@@ -559,5 +586,84 @@ $info-blue: #1d4ed8;
     .activity-time {
       justify-self: start;
     }
+  }
+
+  .alerts-list,
+  .activity-list {
+    max-height: 320px;
+  }
+
+  .content-grid .card {
+    max-height: 420px;
+  }
+}
+
+/* Mobile S */
+@media (max-width: 320px) {
+  .dashboard-wrapper {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .hero-panel {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .alerts-list,
+  .activity-list {
+    max-height: 280px;
+  }
+
+  .content-grid .card {
+    max-height: 380px;
+  }
+
+  .chart-card {
+    min-height: 270px;
+  }
+
+  .chart-area {
+    min-height: 200px;
+  }
+}
+
+/* Mobile M */
+@media (min-width: 321px) and (max-width: 375px) {
+  .dashboard-wrapper {
+    padding: 14px;
+  }
+
+  .alerts-list,
+  .activity-list {
+    max-height: 300px;
+  }
+
+  .content-grid .card {
+    max-height: 400px;
+  }
+
+  .chart-card {
+    min-height: 290px;
+  }
+}
+
+/* Mobile L */
+@media (min-width: 376px) and (max-width: 425px) {
+  .dashboard-wrapper {
+    padding: 16px;
+  }
+
+  .alerts-list,
+  .activity-list {
+    max-height: 320px;
+  }
+
+  .content-grid .card {
+    max-height: 420px;
+  }
+
+  .chart-card {
+    min-height: 310px;
   }
 }

@@ -235,6 +235,7 @@
               type="text"
               [(ngModel)]="formData.category_name"
               placeholder="e.g. Medical Supplies"
+              maxlength="50"
             />
           </label>
 
@@ -257,7 +258,11 @@
               rows="3"
               [(ngModel)]="formData.description"
               placeholder="Describe this category"
+              maxlength="250"
             ></textarea>
+            <div class="character-counter">
+              {{ (formData.description || '').length }} / 250
+            </div>
           </label>
         </div>
       </div>
