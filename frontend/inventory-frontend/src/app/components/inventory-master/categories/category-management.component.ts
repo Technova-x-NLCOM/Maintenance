@@ -277,6 +277,16 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.formData.category_name.length > 50) {
+      this.errorMessage = 'Category name must be 50 characters or less.';
+      return;
+    }
+
+    if (this.formData.description && this.formData.description.length > 250) {
+      this.errorMessage = 'Description must be 250 characters or less.';
+      return;
+    }
+
     this.saving = true;
 
     const payload = {
