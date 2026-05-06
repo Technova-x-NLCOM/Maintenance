@@ -584,6 +584,44 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validate length limits
+    if (this.formData.item_code.length > 50) {
+      this.errorMessage = 'Item code must be 50 characters or less.';
+      return;
+    }
+
+    if (this.formData.item_description.length > 100) {
+      this.errorMessage = 'Item name/description must be 100 characters or less.';
+      return;
+    }
+
+    if (this.formData.measurement_unit && this.formData.measurement_unit.length > 30) {
+      this.errorMessage = 'Unit of measure must be 30 characters or less.';
+      return;
+    }
+
+    if (this.formData.particular && this.formData.particular.length > 500) {
+      this.errorMessage = 'Additional details must be 500 characters or less.';
+      return;
+    }
+
+    if (this.formData.remarks && this.formData.remarks.length > 500) {
+      this.errorMessage = 'Notes must be 500 characters or less.';
+      return;
+    }
+
+    // Validate dosage field length (converted to string for length check)
+    if (this.formData.mg_dosage !== null && String(this.formData.mg_dosage).length > 50) {
+      this.errorMessage = 'Dosage value is too long (max 50 characters).';
+      return;
+    }
+
+    // Validate shelf life field length (converted to string for length check)
+    if (this.formData.shelf_life_days !== null && String(this.formData.shelf_life_days).length > 50) {
+      this.errorMessage = 'Shelf life value is too long (max 50 characters).';
+      return;
+    }
+
     this.saving = true;
 
     const payload = this.buildPayload();

@@ -428,6 +428,13 @@ textarea {
   min-height: 72px;
 }
 
+.character-counter {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: right;
+  margin-top: 4px;
+}
+
 .full-width {
   grid-column: 1 / -1;
 }
