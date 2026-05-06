@@ -431,23 +431,333 @@ $border-radius: 8px;
   line-height: 1.55;
 }
 
-@media (max-width: 768px) {
+// ── Responsive Breakpoints ───────────────────────────────
+
+/* ── Mobile S (≤320px) ── */
+@media (max-width: 320px) {
   .login-wrapper {
-    flex-direction: column;
+    flex-direction: column !important;
   }
 
+  // Banner strip at the top — logo + brand name only
   .left-panel {
-    min-height: 220px;
-    flex: none;
+    display: block !important;
+    flex: none !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: 130px !important;
   }
 
-  .left-content h1 {
-    font-size: 2.5rem;
+  .left-overlay {
+    padding: 14px 16px;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 100px;
+
+    .logo-img {
+      width: 200px;
+      height: 100px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+  }
+
+  .brand-logo .logo-img {
+    width: 74px;
+    height: 58px;
+  }
+
+  .brand-name {
+    font-size: 0.95rem;
+  }
+  .brand-sub {
+    font-size: 0.45rem;
+  }
+  .brand-ims {
+    font-size: 1.2rem;
+  }
+
+  // Hide the hero text — no room on 320px
+  .left-content {
+    display: none;
   }
 
   .right-panel {
-    width: 100%;
-    padding: 32px 20px;
+    width: 100% !important;
+    flex-shrink: unset;
+    padding: 20px 14px 28px;
+    align-items: center;
+    justify-content: center;
+    background: white;
+  }
+
+  .login-card {
+    padding: 20px 14px;
+    border-radius: 10px;
+    max-width: 100%;
+  }
+
+  .login-header {
+    margin-bottom: 14px;
+    h2 {
+      font-size: 1.1rem;
+    }
+    p {
+      font-size: 0.8rem;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+    label {
+      font-size: 0.875rem;
+    }
+  }
+
+  .form-control {
+    padding: 9px 10px;
+    font-size: 0.875rem;
+  }
+
+  .password-input-wrapper .form-control {
+    padding-right: 40px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .btn-login,
+  .btn-register {
+    font-size: 0.9375rem;
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .register-section {
+    margin-top: 16px;
+    padding-top: 12px;
+    p {
+      font-size: 0.875rem;
+    }
+  }
+
+  .toast {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: 100%;
+    font-size: 0.8rem;
+  }
+
+  .loading-card {
+    padding: 22px 14px 18px;
+    max-width: 90%;
+    .loading-logo {
+      width: 60px;
+      height: 60px;
+    }
+    .loading-title {
+      font-size: 0.9rem;
+    }
+  }
+
+  .modal-panel {
+    padding: 18px 12px;
+  }
+}
+
+/* ── Tablet (426px–768px) ── */
+@media (min-width: 426px) and (max-width: 768px) {
+  .login-wrapper {
+    flex-direction: column !important;
+  }
+
+  .left-panel {
+    flex: none !important;
+    width: 100% !important;
+    min-height: 200px;
+    height: 200px;
+  }
+
+  .left-overlay {
+    padding: 20px 28px;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    .logo-img {
+      width: 200px;
+      height: 100px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+  }
+
+  .brand-logo .logo-img {
+    width: 145px;
+    height: 80px;
+  }
+
+  .brand-name {
+    font-size: 1.2rem;
+  }
+  .brand-ims {
+    font-size: 2.5rem;
+  }
+  .left-content {
+    display: none;
+  }
+
+  .right-panel {
+    width: 100% !important;
+    flex-shrink: unset;
+    padding: 28px 32px 36px;
+    justify-content: center;
+    background: white;
+  }
+
+  .login-card {
+    padding: 28px 24px;
+    max-width: 460px;
+  }
+
+  .login-header {
+    margin-bottom: 18px;
+    h2 {
+      font-size: 1.45rem;
+    }
+  }
+
+  .form-control {
+    font-size: 1rem;
+  }
+  .form-row {
+    margin-bottom: 18px;
+  }
+
+  .btn-login,
+  .btn-register {
+    font-size: 1.0625rem;
+    min-height: 48px;
+  }
+
+  .register-section {
+    margin-top: 26px;
+  }
+
+  .toast {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: 100%;
+  }
+
+  .loading-card {
+    max-width: 380px;
+  }
+  .modal-panel {
+    max-width: 440px;
+  }
+}
+
+/* ── Laptop (769px–1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .left-overlay {
+    padding: 24px 28px;
+  }
+
+  .brand-logo .logo-img {
+    width: 160px;
+    height: 80px;
+  }
+
+  .brand-name {
+    font-size: 1.3rem;
+  }
+  .brand-ims {
+    font-size: 1.75rem;
+  }
+
+  .left-content {
+    padding-bottom: 16px;
+    h1 {
+      font-size: 2.8rem;
+    }
+    p {
+      font-size: 1rem;
+    }
+  }
+
+  .right-panel {
+    width: 48%;
+    padding: 20px 22px;
+  }
+
+  .login-card {
+    padding: 24px 20px;
+    max-width: 400px;
+  }
+
+  .login-header {
+    margin-bottom: 16px;
+    h2 {
+      font-size: 1.4rem;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-control {
+    padding: 10px 13px;
+    font-size: 0.9375rem;
+  }
+
+  .btn-login,
+  .btn-register {
+    font-size: 1rem;
+    min-height: 46px;
+  }
+
+  .register-section {
+    margin-top: 24px;
+    padding-top: 14px;
+  }
+
+  .toast {
+    top: 20px;
+    right: 20px;
+    max-width: 300px;
   }
 }
 
@@ -631,9 +941,18 @@ $border-radius: 8px;
     background: #1d4ed8;
     animation: dot-bounce 1.2s ease-in-out infinite;
 
-    &:nth-child(1) { animation-delay: 0s;   background: #ffffff; }
-    &:nth-child(2) { animation-delay: 0.2s; background: #f59e0b; }
-    &:nth-child(3) { animation-delay: 0.4s; background: #ffffff; }
+    &:nth-child(1) {
+      animation-delay: 0s;
+      background: #ffffff;
+    }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+      background: #f59e0b;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+      background: #ffffff;
+    }
   }
 }
 

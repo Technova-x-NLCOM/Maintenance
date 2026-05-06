@@ -3,7 +3,7 @@
   height: 100vh;
   background-color: #f5f7fa;
 
-  app-sidebar {
+  .sidebar-shell {
     flex-shrink: 0;
   }
 }
@@ -20,4 +20,42 @@
   overflow-y: auto;
   overflow-x: hidden;
   background-color: #f5f7fa;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* Tablet + Mobile: off-canvas sidebar (hidden until hamburger) */
+@media (max-width: 768px) {
+  .dashboard-container {
+    position: relative;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 90;
+  }
+
+  .sidebar-shell {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-110%);
+    transition: transform 0.22s ease;
+    will-change: transform;
+  }
+
+  .sidebar-shell.is-open {
+    transform: translateX(0);
+  }
+
+  .dashboard-main {
+    width: 100%;
+  }
 }

@@ -45,3 +45,105 @@
     color: #0f172a;
   }
 }
+
+.menu-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #0f172a;
+  }
+}
+
+/* Desktop: sidebar is always visible, hide hamburger */
+@media (min-width: 769px) {
+  .menu-btn {
+    display: none;
+  }
+}
+
+/* Mobile S   */
+@media (max-width: 320px) {
+  .app-header {
+    height: 48px;
+    padding: 0 10px;
+  }
+
+  .header-left {
+    gap: 8px;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .header-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .menu-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+/* Mobile M  */
+@media (min-width: 321px) and (max-width: 375px) {
+  .app-header {
+    height: 50px;
+    padding: 0 12px;
+  }
+
+  .header-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .menu-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Mobile L   */
+@media (min-width: 376px) and (max-width: 425px) {
+  .app-header {
+    height: 52px;
+    padding: 0 14px;
+  }
+}
+
+/* Tablet       */
+@media (min-width: 426px) and (max-width: 768px) {
+  .app-header {
+    padding: 0 16px;
+  }
+}

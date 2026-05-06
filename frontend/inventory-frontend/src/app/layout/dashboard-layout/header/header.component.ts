@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, EventEmitter, HostListener, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./header.component.scss'],
 })
 export class HeaderComponent {
+  @Output() menuToggle = new EventEmitter<void>();
   isFullscreen = false;
 
   private requestFullscreen(elem: Element): void {
@@ -33,6 +34,10 @@ export class HeaderComponent {
     } else {
       this.exitFullscreen();
     }
+  }
+
+  toggleMenu(): void {
+    this.menuToggle.emit();
   }
 
   @HostListener('window:resize')

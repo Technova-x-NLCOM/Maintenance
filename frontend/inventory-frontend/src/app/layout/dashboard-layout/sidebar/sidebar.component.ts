@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, ElementRef, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { AuthService, User } from '../../../services/auth.service';
@@ -14,6 +14,7 @@ import { filter } from 'rxjs/operators';
 })
 export class SidebarComponent implements OnInit {
   @Input() user: User | null = null;
+  @Output() closeRequested = new EventEmitter<void>();
   currentRole: Role | null = null;
   loadingRole = false;
   showLogoutModal = false;
@@ -72,6 +73,15 @@ export class SidebarComponent implements OnInit {
       return;
     }
 
+    // On off-canvas (mobile/tablet), the "collapse" icon should close the sidebar
+    // instead of collapsing it to a narrow rail.
+    if (this.isOffCanvasActive()) {
+      this.isCollapsed = false;
+      this.openGroups.clear();
+      this.closeRequested.emit();
+      return;
+    }
+
     this.isCollapsed = !this.isCollapsed;
     this.openGroups.clear();
   }
@@ -106,9 +116,14 @@ export class SidebarComponent implements OnInit {
     const url = this.router.url;
     return (
       url === '/dashboard' ||
-      url.startsWith('/dashboard/super-admin') ||
+      url.startsWith('/dashboard/dashboard') ||
       url.startsWith('/dashboard/inventory-manager')
     );
+  }
+
+  private isOffCanvasActive(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
   }
 
   hasPermission(permissionName: string): boolean {
