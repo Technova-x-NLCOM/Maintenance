@@ -14,12 +14,66 @@
           placeholder="Search by item code or description" (ngModelChange)="onSearch()" />
         <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
       </div>
-      <select class="form-control category-select" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
-        <option [ngValue]="null">All Categories</option>
-        <option *ngFor="let category of categories" [ngValue]="category.category_id">
-          {{ category.category_name }}
-        </option>
-      </select>
+      <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
+        <button
+          type="button"
+          class="category-filter-trigger"
+          (click)="toggleCategoryDropdown()"
+          [attr.aria-expanded]="categoryDropdownOpen"
+          aria-haspopup="listbox"
+          aria-label="Filter by category"
+        >
+          <span class="trigger-label">Category:</span>
+          <span class="trigger-value">{{ selectedCategoryLabel }}</span>
+          <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        <button
+          *ngIf="selectedCategoryId !== null"
+          class="clear-category-filter"
+          type="button"
+          (click)="clearCategoryFilter($event)"
+          aria-label="Clear category filter"
+          title="Clear category filter"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="category-filter-dropdown" *ngIf="categoryDropdownOpen">
+          <div class="category-filter-search">
+            <input
+              type="text"
+              [(ngModel)]="categorySearchQuery"
+              (ngModelChange)="onCategorySearchChange()"
+              placeholder="Search categories"
+              aria-label="Search categories"
+            />
+          </div>
+
+          <div class="category-filter-options" role="listbox" aria-label="Category options">
+            <button
+              *ngFor="let category of filteredCategories; let i = index"
+              type="button"
+              class="category-option"
+              [class.active]="i === activeCategoryIndex"
+              [class.selected]="category.category_id === selectedCategoryId"
+              (mouseenter)="onCategoryOptionHover(i)"
+              (click)="selectCategory(category)"
+            >
+              {{ category.category_name }}
+            </button>
+
+            <div *ngIf="filteredCategories.length === 0" class="category-filter-empty">
+              No matching categories
+            </div>
+          </div>
+        </div>
+      </div>
       <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
     </div>
 
@@ -152,18 +206,21 @@
       <label>
         <span>Destination *</span>
         <input type="text" class="form-control" [(ngModel)]="destination"
-          placeholder="e.g. Ward A / Department" required />
+          placeholder="e.g. Ward A / Department" required maxlength="150" />
       </label>
       <p class="empty-hint" *ngIf="attemptedSubmit && !destination.trim()">Destination is required.</p>
       <label>
         <span>Reason</span>
         <input type="text" class="form-control" [(ngModel)]="reason"
-          placeholder="e.g. Requisition Release" />
+          placeholder="e.g. Requisition Release" maxlength="250" />
       </label>
       <label>
         <span>Notes</span>
         <textarea class="form-control" rows="2" [(ngModel)]="notes"
-          placeholder="Optional notes"></textarea>
+          placeholder="Optional notes" maxlength="500"></textarea>
+        <div class="character-counter">
+          {{ (notes || '').length }} / 500
+        </div>
       </label>
     </div>
 
@@ -171,12 +228,15 @@
       <label>
         <span>Adjustment Reason *</span>
         <input type="text" class="form-control" [(ngModel)]="adjustReason"
-          placeholder="e.g. Physical count correction" />
+          placeholder="e.g. Physical count correction" maxlength="250" />
       </label>
       <label>
         <span>Adjustment Notes</span>
         <textarea class="form-control" rows="2" [(ngModel)]="adjustNotes"
-          placeholder="Optional details for audit trail"></textarea>
+          placeholder="Optional details for audit trail" maxlength="500"></textarea>
+        <div class="character-counter">
+          {{ (adjustNotes || '').length }} / 500
+        </div>
       </label>
       <label>
         <span class="selected-meta">
