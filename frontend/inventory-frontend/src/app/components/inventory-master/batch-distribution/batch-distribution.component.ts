@@ -13,6 +13,8 @@ import {
   ProgramPlanStatus,
   ProgramPlanSummary,
 } from '../../../services/batch-distribution.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 interface EditableTemplateLine {
   item_id: number;
@@ -41,7 +43,7 @@ interface EditableProcuredLine {
 @Component({
   selector: 'app-batch-distribution',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './batch-distribution.component.html',
   styleUrls: ['./batch-distribution.component.scss'],
 })
@@ -141,6 +143,7 @@ export class BatchDistributionComponent implements OnInit {
   constructor(
     private batchService: BatchDistributionService,
     private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -332,16 +335,7 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   showToast(type: 'success' | 'error', message: string): void {
-    this.clearToastTimeout();
-    this.toastType = type;
-    this.toastMessage = message;
-    this.cdr.detectChanges();
-
-    this.toastTimeout = setTimeout(() => {
-      this.toastMessage = '';
-      this.toastTimeout = undefined;
-      this.cdr.detectChanges();
-    }, 3500);
+    this.toast.show(type, message);
   }
 
   setTab(tab: 'distribution' | 'scheduled'): void {
@@ -383,7 +377,7 @@ export class BatchDistributionComponent implements OnInit {
         },
         error: (err) => {
           this.loadingTemplates = false;
-          this.errorMessage = err?.error?.message || 'Failed to load templates.';
+          this.toast.error(err?.error?.message || 'Failed to load templates.');
           this.cdr.detectChanges();
         },
       });
@@ -461,7 +455,7 @@ export class BatchDistributionComponent implements OnInit {
         },
         error: (err) => {
           this.loadingItemOptions = false;
-          this.errorMessage = err?.error?.message || 'Failed to load item options.';
+          this.toast.error(err?.error?.message || 'Failed to load item options.');
           this.cdr.detectChanges();
         },
       });
@@ -616,7 +610,7 @@ export class BatchDistributionComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'Failed to load template details.';
+        this.toast.error(err?.error?.message || 'Failed to load template details.');
         this.cdr.detectChanges();
       },
     });
@@ -649,13 +643,13 @@ export class BatchDistributionComponent implements OnInit {
 
   addLine(): void {
     if (!this.lineDraftItemId) {
-      this.errorMessage = 'Select an item to add.';
+      this.toast.error('Select an item to add.');
       return;
     }
 
     const normalizedQty = Number(this.lineDraftQuantityPerBase);
     if (!Number.isFinite(normalizedQty) || normalizedQty <= 0) {
-      this.errorMessage = 'Quantity per base must be greater than zero.';
+      this.toast.error('Quantity per base must be greater than zero.');
       return;
     }
 
@@ -800,12 +794,12 @@ export class BatchDistributionComponent implements OnInit {
     this.successMessage = '';
 
     if (!this.templateForm.template_name.trim()) {
-      this.errorMessage = 'Template name is required.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     if (this.templateForm.template_name.length > 100) {
-      this.errorMessage = 'Template name must be 100 characters or less.';
+      this.toast.error('Template name must be 100 characters or less.');
       return;
     }
 
@@ -813,17 +807,17 @@ export class BatchDistributionComponent implements OnInit {
       !Number.isFinite(Number(this.templateForm.base_unit_count)) ||
       Number(this.templateForm.base_unit_count) <= 0
     ) {
-      this.errorMessage = 'Standard batch size must be greater than zero.';
+      this.toast.error('Standard batch size must be greater than zero.');
       return;
     }
 
     if (this.templateForm.notes && this.templateForm.notes.length > 500) {
-      this.errorMessage = 'Notes must be 500 characters or less.';
+      this.toast.error('Notes must be 500 characters or less.');
       return;
     }
 
     if (this.templateLines.length === 0) {
-      this.errorMessage = 'Add at least one item to the template.';
+      this.toast.error('Add at least one item to the template.');
       return;
     }
 
@@ -870,13 +864,13 @@ export class BatchDistributionComponent implements OnInit {
           notes: '',
         }));
 
-        this.successMessage = 'Template saved successfully.';
+        this.toast.success('Template saved successfully.');
         this.loadTemplates();
         this.calculate();
       },
       error: (err) => {
         this.savingTemplate = false;
-        this.errorMessage = err?.error?.message || 'Failed to save template.';
+        this.toast.error(err?.error?.message || 'Failed to save template.');
         this.cdr.detectChanges();
       },
     });
@@ -898,13 +892,13 @@ export class BatchDistributionComponent implements OnInit {
     this.successMessage = '';
 
     if (!this.selectedTemplateId) {
-      this.errorMessage = 'Select a template first.';
+      this.toast.error('Select a template first.');
       return;
     }
 
     const normalizedTarget = Math.floor(Number(this.targetUnitCount));
     if (!Number.isFinite(normalizedTarget) || normalizedTarget <= 0) {
-      this.errorMessage = 'Target count must be greater than zero.';
+      this.toast.error('Target count must be greater than zero.');
       return;
     }
 
@@ -917,7 +911,7 @@ export class BatchDistributionComponent implements OnInit {
       },
       error: (err) => {
         this.calculating = false;
-        this.errorMessage = err?.error?.message || 'Failed to calculate distribution.';
+        this.toast.error(err?.error?.message || 'Failed to calculate distribution.');
         this.cdr.detectChanges();
       },
     });
@@ -928,37 +922,37 @@ export class BatchDistributionComponent implements OnInit {
     this.successMessage = '';
 
     if (!this.selectedTemplateId) {
-      this.errorMessage = 'Select a template first.';
+      this.toast.error('Select a template first.');
       return;
     }
 
     if (!this.calculation) {
-      this.errorMessage = 'Calculate distribution before issuing.';
+      this.toast.error('Calculate distribution before issuing.');
       return;
     }
 
     if (this.hasTotalShortage) {
-      this.errorMessage = 'Cannot issue because one or more items have shortages.';
+      this.toast.error('Cannot issue because one or more items have shortages.');
       return;
     }
 
     if (!this.destination.trim()) {
-      this.errorMessage = 'Destination is required for issuing.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     if (this.destination.length > 150) {
-      this.errorMessage = 'Destination must be 150 characters or less.';
+      this.toast.error('Destination must be 150 characters or less.');
       return;
     }
 
     if (this.reason && this.reason.length > 250) {
-      this.errorMessage = 'Reason must be 250 characters or less.';
+      this.toast.error('Reason must be 250 characters or less.');
       return;
     }
 
     if (this.issueNotes && this.issueNotes.length > 500) {
-      this.errorMessage = 'Notes must be 500 characters or less.';
+      this.toast.error('Notes must be 500 characters or less.');
       return;
     }
 
@@ -1011,7 +1005,7 @@ export class BatchDistributionComponent implements OnInit {
       },
       error: (err) => {
         this.loadingPlans = false;
-        this.errorMessage = err?.error?.message || 'Failed to load scheduled plans.';
+        this.toast.error(err?.error?.message || 'Failed to load scheduled plans.');
         this.cdr.detectChanges();
       },
     });
@@ -1022,23 +1016,23 @@ export class BatchDistributionComponent implements OnInit {
     this.successMessage = '';
 
     if (!this.planForm.template_id) {
-      this.errorMessage = 'Select a feeding template for the plan.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     if (!this.planForm.week_label.trim()) {
-      this.errorMessage = 'Week label is required.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     if (!this.planForm.planned_date) {
-      this.errorMessage = 'Planned date is required.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     const targetCount = Math.floor(Number(this.planForm.target_unit_count));
     if (!Number.isFinite(targetCount) || targetCount <= 0) {
-      this.errorMessage = 'Target count must be greater than zero.';
+      this.toast.error('Target count must be greater than zero.');
       return;
     }
 
@@ -1054,7 +1048,7 @@ export class BatchDistributionComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.savingPlan = false;
-          this.successMessage = response.message || 'Program plan created successfully.';
+          this.toast.success(response.message || 'Distribution Plan created successfully.');
           this.selectedPlanId = response.data.plan.plan_id;
           this.selectedPlanDetails = response.data;
           this.planIssueSummary = response.data.issuance ?? null;
@@ -1064,7 +1058,7 @@ export class BatchDistributionComponent implements OnInit {
         },
         error: (err) => {
           this.savingPlan = false;
-          this.errorMessage = err?.error?.message || 'Failed to create program plan.';
+          this.toast.error(err?.error?.message || 'Failed to create program plan.');
           this.cdr.detectChanges();
         },
       });
@@ -1088,7 +1082,7 @@ export class BatchDistributionComponent implements OnInit {
       },
       error: (err) => {
         this.loadingPlanDetails = false;
-        this.errorMessage = err?.error?.message || 'Failed to load selected plan details.';
+        this.toast.error(err?.error?.message || 'Failed to load selected plan details.');
         this.cdr.detectChanges();
       },
     });
@@ -1102,13 +1096,13 @@ export class BatchDistributionComponent implements OnInit {
     this.batchService.runProgramPrecheck(this.selectedPlanId).subscribe({
       next: (response) => {
         this.runningPlanAction = false;
-        this.successMessage = response.message || 'Precheck completed.';
+        this.toast.success(response.message || 'Precheck completed.');
         this.loadPlanDetails(this.selectedPlanId!);
         this.loadPlans();
       },
       error: (err) => {
         this.runningPlanAction = false;
-        this.errorMessage = err?.error?.message || 'Failed to run precheck.';
+        this.toast.error(err?.error?.message || 'Failed to run precheck.');
         this.cdr.detectChanges();
       },
     });
@@ -1120,7 +1114,7 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (!this.planIssueDestination.trim()) {
-      this.errorMessage = 'Issue destination is required before running Final Check.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
@@ -1141,13 +1135,13 @@ export class BatchDistributionComponent implements OnInit {
     }).subscribe({
       next: (response) => {
         this.runningPlanAction = false;
-        this.successMessage = response.message || 'Final check completed with receiving and issuance.';
+        this.toast.success(response.message || 'Final check completed with receiving and issuance.');
         this.loadPlanDetails(this.selectedPlanId!);
         this.loadPlans();
       },
       error: (err) => {
         this.runningPlanAction = false;
-        this.errorMessage = err?.error?.message || 'Failed to run final check.';
+        this.toast.error(err?.error?.message || 'Failed to run final check.');
         this.cdr.detectChanges();
       },
     });
@@ -1177,7 +1171,7 @@ export class BatchDistributionComponent implements OnInit {
           this.runningPlanAction = false;
           this.selectedPlanDetails = response.data;
           this.planIssueSummary = response.data.issuance ?? this.planIssueSummary;
-          this.successMessage = response.message || 'Remainder stored back to inventory successfully.';
+          this.toast.success(response.message || 'Remainder stored back to inventory successfully.');
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();
@@ -1185,7 +1179,7 @@ export class BatchDistributionComponent implements OnInit {
         },
         error: (err) => {
           this.runningPlanAction = false;
-          this.errorMessage = err?.error?.message || 'Failed to complete plan.';
+          this.toast.error(err?.error?.message || 'Failed to complete plan.');
           this.cdr.detectChanges();
         },
       });
