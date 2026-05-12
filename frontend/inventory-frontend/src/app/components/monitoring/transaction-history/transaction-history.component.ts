@@ -7,11 +7,13 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { TransactionRecord, Paginated } from '../monitoring.models';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-transaction-history',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   providers: [DatePipe],
   templateUrl: './transaction-history.component.html',
   styleUrl: './transaction-history.component.scss',
@@ -46,6 +48,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -89,7 +92,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
           this.cdr.detectChanges();
         },
         error: () => {
-          this.error = 'Failed to load transactions.';
+          this.toast.error('Failed to load transactions.');
           this.loading = false;
           this.cdr.detectChanges();
         },
