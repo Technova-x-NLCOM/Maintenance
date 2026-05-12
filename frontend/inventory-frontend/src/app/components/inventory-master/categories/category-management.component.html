@@ -7,8 +7,7 @@
     </div>
   </header>
 
-  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
-  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <app-toast></app-toast>
 
   <div
     class="modal-overlay"
@@ -23,10 +22,10 @@
       </div>
 
       <div class="modal-body-scroll">
-        <div *ngIf="modalErrorMessage" class="alert alert-error modal-alert">
+        <div *ngIf="modalErrorMessage" class="modal-alert modal-alert--error">
           {{ modalErrorMessage }}
         </div>
-        <div *ngIf="modalSuccessMessage" class="alert alert-success modal-alert">
+        <div *ngIf="modalSuccessMessage" class="modal-alert modal-alert--success">
           {{ modalSuccessMessage }}
         </div>
 
