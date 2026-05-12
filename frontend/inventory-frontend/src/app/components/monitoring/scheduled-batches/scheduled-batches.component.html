@@ -8,7 +8,7 @@
     <a routerLink="/dashboard/inventory/batch-distribution" class="btn-ghost">Open Batch Distribution Manager</a>
   </div>
 
-  <div class="alert alert-error" *ngIf="errorMessage">{{ errorMessage }}</div>
+  <app-toast></app-toast>
 
   <section class="panel filter-panel">
     <div class="filters-grid">

@@ -9,11 +9,13 @@ import {
   ProgramPlanStatus,
   ProgramPlanSummary,
 } from '../../../services/batch-distribution.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-scheduled-batches',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ToastComponent],
   templateUrl: './scheduled-batches.component.html',
   styleUrls: ['./scheduled-batches.component.scss'],
 })
@@ -35,6 +37,7 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
   constructor(
     private batchService: BatchDistributionService,
     private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -73,7 +76,7 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.loadingPlans = false;
-          this.errorMessage = err?.error?.message || 'Failed to load scheduled batches.';
+          this.toast.error(err?.error?.message || 'Failed to load scheduled batches.');
           this.cdr.detectChanges();
         },
       });
@@ -103,7 +106,7 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.loadingPlanDetails = false;
-        this.errorMessage = err?.error?.message || 'Failed to load batch plan details.';
+        this.toast.error(err?.error?.message || 'Failed to load batch plan details.');
         this.cdr.detectChanges();
       },
     });
