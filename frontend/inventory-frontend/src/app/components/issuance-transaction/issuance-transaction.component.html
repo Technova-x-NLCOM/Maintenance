@@ -4,7 +4,7 @@
     <p class="subtitle">Choose items, add them to an issuance list, then submit all lines in one action.</p>
   </div>
 
-  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+  <app-toast></app-toast>
 
   <!-- Catalog -->
   <section class="catalog-panel">
@@ -254,12 +254,4 @@
       </button>
     </div>
   </div>
-</div>
-
-<!-- Toast notification -->
-<div class="toast-notification" [class.toast-visible]="!!successMessage">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-  {{ successMessage }}
 </div>

@@ -9,6 +9,8 @@ import {
   IssuanceTransactionResponse,
   AdjustmentTransactionResponse
 } from '../../services/inventory-item.service';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../../shared/toast/toast.component';
 
 interface IssuanceCartLine {
   item_id: number;
@@ -22,7 +24,7 @@ interface IssuanceCartLine {
 @Component({
   selector: 'app-issuance-transaction',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './issuance-transaction.component.html',
   styleUrls: ['./issuance-transaction.component.scss'],
   encapsulation: ViewEncapsulation.None
@@ -103,7 +105,8 @@ export class IssuanceTransactionComponent implements OnInit {
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -214,9 +217,7 @@ export class IssuanceTransactionComponent implements OnInit {
   }
 
   showToast(message: string): void {
-    this.successMessage = message;
-    this.cdr.detectChanges();
-    setTimeout(() => { this.successMessage = ''; this.cdr.detectChanges(); }, 3000);
+    this.toast.success(message);
   }
 
   updateLineQuantity(line: IssuanceCartLine, newQty: number): void {
@@ -287,7 +288,7 @@ export class IssuanceTransactionComponent implements OnInit {
 
     if (!this.canConfirmIssuance()) {
       this.attemptedSubmit = true;
-      this.errorMessage = 'Add items and destination before confirming issuance.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
@@ -315,23 +316,19 @@ export class IssuanceTransactionComponent implements OnInit {
           this.showCartDrawer = false;
           this.loadItems(this.currentPage);
 
-          this.successMessage = `Issuance completed. Reference: ${response.data.reference_number}.`;
+          this.toast.success(`Stock Issuance completed. Reference: ${response.data.reference_number}.`);
           this.cdr.detectChanges();
-          setTimeout(() => {
-            this.successMessage = '';
-            this.cdr.detectChanges();
-          }, 3500);
         },
         error: (err: any) => {
           this.saving = false;
-          this.errorMessage = err?.error?.message || 'Failed to complete issuance.';
+          this.toast.error(err?.error?.message || 'Failed to complete issuance.');
         }
       });
   }
 
   private submitDecreaseAdjustment(): void {
     if (!this.selectedItem || !this.canSubmitDecreaseAdjustment()) {
-      this.errorMessage = 'Select an item, quantity, and reason for adjustment.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
@@ -360,16 +357,12 @@ export class IssuanceTransactionComponent implements OnInit {
           this.selectedItem = null;
           this.loadItems(this.currentPage);
 
-          this.successMessage = `Adjustment completed. Reference: ${response.data.reference_number}.`;
+          this.toast.success(`Stock Adjustment recorded. Reference: ${response.data.reference_number}.`);
           this.cdr.detectChanges();
-          setTimeout(() => {
-            this.successMessage = '';
-            this.cdr.detectChanges();
-          }, 3500);
         },
         error: (err: any) => {
           this.saving = false;
-          this.errorMessage = err?.error?.message || 'Failed to complete stock adjustment.';
+          this.toast.error(err?.error?.message || 'Failed to complete stock adjustment.');
         }
       });
   }
