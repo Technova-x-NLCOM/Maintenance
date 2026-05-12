@@ -4,8 +4,7 @@
     <p class="subtitle">Use this kiosk to correct stock discrepancies from physical count.</p>
   </div>
 
-  <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
-  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <app-toast></app-toast>
 
   <div class="toolbar">
     <div class="search-wrap">
