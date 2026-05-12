@@ -11,11 +11,13 @@ import {
   ItemFormOptions,
 } from '../../../services/inventory-item.service';
 import { InventoryCategoryService } from '../../../services/inventory-category.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-item-registration-updates',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './item-registration-updates.component.html',
   styleUrls: ['./item-registration-updates.component.scss'],
 })
@@ -97,6 +99,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     private itemService: InventoryItemService,
     private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -580,45 +583,43 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       !this.formData.category_id ||
       !this.formData.item_type_id
     ) {
-      this.errorMessage = 'Please enter item code, item description, category, and item type.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     // Validate length limits
     if (this.formData.item_code.length > 50) {
-      this.errorMessage = 'Item code must be 50 characters or less.';
+      this.toast.error('Item code must be 50 characters or less.');
       return;
     }
 
     if (this.formData.item_description.length > 100) {
-      this.errorMessage = 'Item name/description must be 100 characters or less.';
+      this.toast.error('Item name/description must be 100 characters or less.');
       return;
     }
 
     if (this.formData.measurement_unit && this.formData.measurement_unit.length > 30) {
-      this.errorMessage = 'Unit of measure must be 30 characters or less.';
+      this.toast.error('Unit of measure must be 30 characters or less.');
       return;
     }
 
     if (this.formData.particular && this.formData.particular.length > 500) {
-      this.errorMessage = 'Additional details must be 500 characters or less.';
+      this.toast.error('Additional details must be 500 characters or less.');
       return;
     }
 
     if (this.formData.remarks && this.formData.remarks.length > 500) {
-      this.errorMessage = 'Notes must be 500 characters or less.';
+      this.toast.error('Notes must be 500 characters or less.');
       return;
     }
 
-    // Validate dosage field length (converted to string for length check)
     if (this.formData.mg_dosage !== null && String(this.formData.mg_dosage).length > 50) {
-      this.errorMessage = 'Dosage value is too long (max 50 characters).';
+      this.toast.error('Dosage value is too long (max 50 characters).');
       return;
     }
 
-    // Validate shelf life field length (converted to string for length check)
     if (this.formData.shelf_life_days !== null && String(this.formData.shelf_life_days).length > 50) {
-      this.errorMessage = 'Shelf life value is too long (max 50 characters).';
+      this.toast.error('Shelf life value is too long (max 50 characters).');
       return;
     }
 
@@ -631,12 +632,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
         next: () => {
           this.saving = false;
           this.showForm = false;
-          this.successMessage = 'Item updated successfully.';
+          this.toast.success('Item updated successfully.');
           this.loadItems(this.currentPage);
         },
         error: (err) => {
           this.saving = false;
-          this.errorMessage = this.extractError(err);
+          this.toast.error(this.extractError(err));
           this.cdr.detectChanges();
         },
       });
@@ -647,12 +648,12 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       next: () => {
         this.saving = false;
         this.showForm = false;
-        this.successMessage = 'Item registered successfully.';
+        this.toast.success('New Item registered successfully.');
         this.loadItems(1);
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = this.extractError(err);
+        this.toast.error(this.extractError(err));
         this.cdr.detectChanges();
       },
     });
@@ -664,11 +665,11 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
     this.itemService.updateStatus(item.item_id, !item.is_active).subscribe({
       next: () => {
-        this.successMessage = 'Item status updated.';
+        this.toast.success('Item status updated.');
         this.loadItems(this.currentPage);
       },
       error: (err) => {
-        this.errorMessage = this.extractError(err);
+        this.toast.error(this.extractError(err));
         this.cdr.detectChanges();
       },
     });

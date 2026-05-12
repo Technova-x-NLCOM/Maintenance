@@ -8,11 +8,13 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { StockReportRecord, Paginated } from '../monitoring.models';
 import { InventoryCategoryService } from '../../../services/inventory-category.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-stock-report',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   providers: [DatePipe],
   templateUrl: './stock-report.component.html',
   styleUrls: ['./stock-report.component.scss'],
@@ -47,6 +49,7 @@ export class StockReportComponent implements OnInit {
     private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -99,7 +102,7 @@ export class StockReportComponent implements OnInit {
           this.cdr.detectChanges();
         },
         error: () => {
-          this.error = 'Failed to load stock report.';
+          this.toast.error('Failed to load stock report.');
           this.loading = false;
           this.cdr.detectChanges();
         },

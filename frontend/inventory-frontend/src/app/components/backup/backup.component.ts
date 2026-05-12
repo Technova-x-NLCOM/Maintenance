@@ -1,6 +1,8 @@
 import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../../shared/toast/toast.component';
 
 interface Backup {
   name: string;
@@ -13,7 +15,7 @@ interface Backup {
 @Component({
   selector: 'app-backup',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ToastComponent],
   templateUrl: './backup.component.html',
   styleUrls: ['./backup.component.scss']
 })
@@ -36,7 +38,7 @@ export class BackupComponent implements OnInit {
 
   private readonly API_URL = 'http://127.0.0.1:8000/api/backup';
 
-  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private toast: ToastService) {}
 
   ngOnInit(): void {
     // No server-side list; wait for user to upload a file.
@@ -120,7 +122,7 @@ export class BackupComponent implements OnInit {
 
   private setErrorFromHttp(err: HttpErrorResponse | unknown, fallback: string): void {
     void this.extractApiError(err, fallback).then((msg) => {
-      this.error = msg;
+      this.toast.error(msg);
       this.cdr.detectChanges();
     });
   }
@@ -174,7 +176,7 @@ export class BackupComponent implements OnInit {
           // Error responses may still be 200 with wrong type in edge cases; prefer status check
           if (!blob || blob.size === 0) {
             this.creating = false;
-            this.error = 'Empty response from server.';
+            this.toast.error('Empty response from server.');
             this.cdr.detectChanges();
             return;
           }
@@ -183,9 +185,9 @@ export class BackupComponent implements OnInit {
             void blob.text().then((text) => {
               try {
                 const j = JSON.parse(text) as { message?: string };
-                this.error = j.message || 'Backup failed.';
+                this.toast.error(j.message || 'Backup failed.');
               } catch {
-                this.error = text || 'Backup failed.';
+                this.toast.error(text || 'Backup failed.');
               }
               this.creating = false;
               this.cdr.detectChanges();
@@ -214,6 +216,7 @@ export class BackupComponent implements OnInit {
           setTimeout(() => {
             this.creating = false;
             this.showBackupSuccess = true;
+            this.toast.success('Backup created and downloaded successfully.');
             this.cdr.detectChanges();
           }, 0);
         },
@@ -334,6 +337,7 @@ export class BackupComponent implements OnInit {
             this.restoring = false;
             this.uploadingFile = null;
             this.showRestoreSuccess = true;
+            this.toast.success('Database restored successfully from backup file.');
             this.cdr.detectChanges();
           }, 0);
         },

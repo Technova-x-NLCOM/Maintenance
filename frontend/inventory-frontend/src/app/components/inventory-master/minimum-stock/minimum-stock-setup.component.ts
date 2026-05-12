@@ -2,6 +2,8 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InventoryItemService } from '../../../services/inventory-item.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 interface MinimumStockRow {
   item_id: number;
@@ -18,7 +20,7 @@ interface MinimumStockRow {
 @Component({
   selector: 'app-minimum-stock-setup',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './minimum-stock-setup.component.html',
   styleUrls: ['./minimum-stock-setup.component.scss']
 })
@@ -40,7 +42,8 @@ export class MinimumStockSetupComponent implements OnInit {
 
   constructor(
     private itemService: InventoryItemService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -96,7 +99,7 @@ export class MinimumStockSetupComponent implements OnInit {
 
   saveAll(): void {
     if (!this.hasPendingChanges()) {
-      this.successMessage = 'No changes to save.';
+      this.toast.success('No changes to save.');
       return;
     }
 
@@ -112,12 +115,12 @@ export class MinimumStockSetupComponent implements OnInit {
     this.itemService.bulkUpdateMinimumStock(updates).subscribe({
       next: (response) => {
         this.saving = false;
-        this.successMessage = response.message;
+        this.toast.success(response.message || 'Minimum stock values saved successfully.');
         this.loadRows(this.currentPage);
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Failed to save minimum stock values.';
+        this.toast.error(err?.error?.message || 'Failed to save minimum stock values.');
         this.cdr.detectChanges();
       }
     });

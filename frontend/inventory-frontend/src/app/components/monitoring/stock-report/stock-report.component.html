@@ -102,7 +102,7 @@
       </div>
     </div>
 
-    <div class="alert alert-error" *ngIf="error">{{ error }}</div>
+    <app-toast></app-toast>
     <div class="state-loading" *ngIf="loading">Loading stock report...</div>
 
     <div class="table-wrap" *ngIf="!loading">

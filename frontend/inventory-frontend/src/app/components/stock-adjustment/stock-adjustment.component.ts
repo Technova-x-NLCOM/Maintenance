@@ -8,11 +8,13 @@ import {
   InventoryItemService,
   PaginatedAdjustmentItemsResponse
 } from '../../services/inventory-item.service';
+import { ToastService } from '../../services/toast.service';
+import { ToastComponent } from '../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-stock-adjustment',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './stock-adjustment.component.html',
   styleUrls: ['./stock-adjustment.component.scss']
 })
@@ -47,7 +49,8 @@ export class StockAdjustmentComponent implements OnInit {
   constructor(
     private itemService: InventoryItemService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -245,11 +248,11 @@ export class StockAdjustmentComponent implements OnInit {
 
     if (!this.canSubmit()) {
       if (!this.reason.trim()) {
-        this.errorMessage = 'Reason is required.';
+        this.toast.error('Please fill out all required fields (*)');
       } else if (this.adjustmentMode === 'increase' && this.selectedItem.shelf_life_days && !this.getEffectiveExpiryDate()) {
-        this.errorMessage = 'Expiry date is required for items with configured shelf life.';
+        this.toast.error('Expiry date is required for items with configured shelf life.');
       } else {
-        this.errorMessage = 'Please complete all required fields before submitting.';
+        this.toast.error('Please fill out all required fields (*)');
       }
       return;
     }
@@ -271,13 +274,13 @@ export class StockAdjustmentComponent implements OnInit {
     }).subscribe({
       next: (response: AdjustmentTransactionResponse) => {
         this.saving = false;
-        this.successMessage = `Adjustment successful. Reference: ${response.data.reference_number}. New stock: ${response.data.new_stock}.`;
+        this.toast.success(`Stock Adjustment recorded. Reference: ${response.data.reference_number}. New stock: ${response.data.new_stock}.`);
         this.showAdjustmentModal = false;
         this.loadItems(this.currentPage);
       },
       error: (err: any) => {
         this.saving = false;
-        this.errorMessage = err?.error?.message || 'Failed to create stock adjustment.';
+        this.toast.error(err?.error?.message || 'Failed to create stock adjustment.');
       }
     });
   }

@@ -64,6 +64,26 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   color: #047857;
 }
 
+.modal-alert {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.modal-alert--error {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid $danger;
+  color: #b91c1c;
+}
+
+.modal-alert--success {
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid $success;
+  color: #047857;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;

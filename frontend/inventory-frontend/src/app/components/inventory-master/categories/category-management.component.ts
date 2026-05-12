@@ -7,11 +7,13 @@ import {
   InventoryCategory,
   InventoryCategoryService,
 } from '../../../services/inventory-category.service';
+import { ToastService } from '../../../services/toast.service';
+import { ToastComponent } from '../../../shared/toast/toast.component';
 
 @Component({
   selector: 'app-category-management',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './category-management.component.html',
   styleUrls: ['./category-management.component.scss'],
 })
@@ -71,6 +73,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   constructor(
     private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef,
+    private toast: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -273,17 +276,17 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     if (!this.formData.category_name.trim()) {
-      this.errorMessage = 'Please enter a category name.';
+      this.toast.error('Please fill out all required fields (*)');
       return;
     }
 
     if (this.formData.category_name.length > 50) {
-      this.errorMessage = 'Category name must be 50 characters or less.';
+      this.toast.error('Category name must be 50 characters or less.');
       return;
     }
 
     if (this.formData.description && this.formData.description.length > 250) {
-      this.errorMessage = 'Description must be 250 characters or less.';
+      this.toast.error('Description must be 250 characters or less.');
       return;
     }
 
@@ -300,12 +303,12 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
         next: () => {
           this.saving = false;
           this.showForm = false;
-          this.successMessage = 'Category updated successfully.';
+          this.toast.success('Category updated successfully.');
           this.loadCategories();
         },
         error: (err) => {
           this.saving = false;
-          this.errorMessage = this.extractError(err);
+          this.toast.error(this.extractError(err));
           this.cdr.detectChanges();
         },
       });
@@ -316,12 +319,12 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
       next: () => {
         this.saving = false;
         this.showForm = false;
-        this.successMessage = 'Category created successfully.';
+        this.toast.success('New Category added successfully.');
         this.loadCategories();
       },
       error: (err) => {
         this.saving = false;
-        this.errorMessage = this.extractError(err);
+        this.toast.error(this.extractError(err));
         this.cdr.detectChanges();
       },
     });
@@ -340,12 +343,12 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     this.categoryService.delete(category.category_id).subscribe({
       next: (response) => {
         this.deletingCategoryId = null;
-        this.successMessage = response.message;
+        this.toast.success(response.message);
         this.loadCategories();
       },
       error: (err) => {
         this.deletingCategoryId = null;
-        this.errorMessage = this.extractError(err);
+        this.toast.error(this.extractError(err));
         this.cdr.detectChanges();
       },
     });
