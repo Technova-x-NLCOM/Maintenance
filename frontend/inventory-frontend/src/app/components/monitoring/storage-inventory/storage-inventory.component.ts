@@ -47,8 +47,8 @@ export class StorageInventoryComponent implements OnInit {
     this.inventoryService.getStorageInventory(params).subscribe({
       next: (response: StorageInventoryResponse) => {
         this.locations = response.data.locations || [];
-        // default to collapsed on load — user can expand manually
-        this.expandedLocations = new Set<string>();
+        // keep storage contents visible by default
+        this.expandedLocations = new Set(this.locations.map((location) => this.locationKey(location)));
         this.openDropdownKey = null;
         this.loading = false;
         this.cdr.detectChanges();

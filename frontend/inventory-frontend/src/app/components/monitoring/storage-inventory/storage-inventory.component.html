@@ -98,7 +98,7 @@
           </ul>
         </div>
 
-        <div class="location-body" *ngIf="isExpanded(location)">
+        <div class="location-body">
           <table class="data-table">
             <thead>
               <tr>
@@ -124,6 +124,9 @@
                     {{ item.is_low_stock ? 'Low Stock' : 'OK' }}
                   </span>
                 </td>
+              </tr>
+              <tr *ngIf="!location.items.length">
+                <td colspan="7">No items found in this storage location.</td>
               </tr>
             </tbody>
           </table>
