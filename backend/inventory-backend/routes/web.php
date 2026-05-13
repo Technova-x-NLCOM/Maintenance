@@ -6,6 +6,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
+use App\Http\Controllers\Inventory\LocationController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\DistributionPlanController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
@@ -148,6 +149,15 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::post('/', [CategoryController::class, 'store']);
                 Route::put('{categoryId}', [CategoryController::class, 'update']);
                 Route::delete('{categoryId}', [CategoryController::class, 'destroy']);
+            });
+        });
+
+    // Inventory Master Data - Storage Locations
+    Route::prefix('api/inventory/locations')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('options', [LocationController::class, 'options']);
             });
         });
 
