@@ -172,6 +172,7 @@ export class SidebarComponent implements OnInit {
       'items',
       'categories',
       'item_types',
+      'locations',
       'inventory_batches',
       'inventory_transactions',
       'inventory_snapshots',

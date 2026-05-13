@@ -56,6 +56,21 @@ interface ItemOptionsResponse {
   data: ItemFormOptions;
 }
 
+interface LocationOption {
+  location_id: number;
+  location_code: string;
+  location_name: string;
+  location_type: string | null;
+  is_active: boolean;
+  display_name: string;
+}
+
+interface LocationOptionsResponse {
+  success: boolean;
+  message: string;
+  data: LocationOption[];
+}
+
 interface MinimumStockItem {
   item_id: number;
   item_code: string;
@@ -107,6 +122,7 @@ interface PaginatedReceivingItemsResponse {
 
 interface ReceivingTransactionRequest {
   item_id?: number;
+  location_id?: number | null;
   quantity?: number;
   batch_number?: string;
   purchase_date?: string;
@@ -169,6 +185,8 @@ interface IssuanceLineInput {
 
 interface IssuanceTransactionRequest {
   destination: string;
+  from_location_id?: number | null;
+  to_location_id?: number | null;
   reason?: string;
   notes?: string;
   items: IssuanceLineInput[];
@@ -246,6 +264,8 @@ interface AdjustmentTransactionResponse {
 }
 
 export type {
+  LocationOption,
+  LocationOptionsResponse,
   ReceivingItem,
   PaginatedReceivingItemsResponse,
   ReceivingTransactionRequest,
@@ -316,6 +336,18 @@ export class InventoryItemService {
   getOptions(): Observable<ItemOptionsResponse> {
     return this.http.get<ItemOptionsResponse>(`${this.baseUrl}/options`, {
       headers: this.getHeaders()
+    });
+  }
+
+  getLocationOptions(search?: string): Observable<LocationOptionsResponse> {
+    let params = new HttpParams();
+    if (search) {
+      params = params.set('search', search.trim());
+    }
+
+    return this.http.get<LocationOptionsResponse>('http://127.0.0.1:8000/api/inventory/locations/options', {
+      headers: this.getHeaders(),
+      params,
     });
   }
 
