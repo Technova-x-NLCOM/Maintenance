@@ -170,4 +170,112 @@ class TransactionMonitorController extends Controller
             'data' => $results,
         ]);
     }
+
+    public function storageInventory(Request $request)
+    {
+        $stockSubquery = DB::table('inventory_batches')
+            ->select('item_id', 'location_id', DB::raw('COALESCE(SUM(quantity), 0) as current_stock'))
+            ->where('status', 'active')
+            ->groupBy('item_id', 'location_id');
+
+        $query = DB::table('items as i')
+            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
+            ->leftJoinSub($stockSubquery, 's', function ($join) {
+                $join->on('i.item_id', '=', 's.item_id');
+            })
+            ->leftJoin('locations as l', 's.location_id', '=', 'l.location_id')
+            ->select(
+                'i.item_id',
+                'i.item_code',
+                'i.item_description',
+                'it.type_name as item_type_name',
+                'c.category_name',
+                'l.location_id',
+                'l.location_code',
+                'l.location_name',
+                'l.location_type',
+                'i.measurement_unit',
+                'i.reorder_level',
+                DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
+                'i.is_active'
+            )
+            ->where('i.is_active', true)
+            ->orderBy('l.location_name')
+            ->orderBy('i.item_description');
+
+        if ($request->filled('search')) {
+            $s = trim($request->input('search'));
+            $query->where(function ($q) use ($s) {
+                $q->where('i.item_code', 'like', "%{$s}%")
+                  ->orWhere('i.item_description', 'like', "%{$s}%")
+                  ->orWhere('c.category_name', 'like', "%{$s}%")
+                  ->orWhere('l.location_code', 'like', "%{$s}%")
+                  ->orWhere('l.location_name', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('location_id')) {
+            $query->where('s.location_id', (int) $request->input('location_id'));
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('i.category_id', (int) $request->input('category_id'));
+        }
+
+        $stockStatus = $request->input('stock_status');
+        if ($stockStatus === 'out_of_stock') {
+            $query->whereRaw('COALESCE(s.current_stock, 0) = 0');
+        }
+        if ($stockStatus === 'low_stock') {
+            $query->whereRaw('COALESCE(s.current_stock, 0) <= i.reorder_level');
+        }
+
+        $rows = $query->get();
+
+        $locations = $rows
+            ->groupBy(fn ($row) => $row->location_id ? (string) $row->location_id : 'unassigned')
+            ->map(function ($group, $key) {
+                $first = $group->first();
+                $items = $group->map(function ($row) {
+                    return [
+                        'item_id' => $row->item_id,
+                        'item_code' => $row->item_code,
+                        'item_description' => $row->item_description,
+                        'item_type_name' => $row->item_type_name,
+                        'category_name' => $row->category_name,
+                        'measurement_unit' => $row->measurement_unit,
+                        'reorder_level' => (int) $row->reorder_level,
+                        'current_stock' => (float) $row->current_stock,
+                        'is_low_stock' => (float) $row->current_stock <= (int) $row->reorder_level,
+                    ];
+                })->values();
+
+                $totalStock = $items->sum('current_stock');
+                $lowStockCount = $items->filter(fn ($item) => $item['is_low_stock'])->count();
+
+                return [
+                    'location_id' => $first->location_id,
+                    'location_code' => $first->location_code,
+                    'location_name' => $first->location_name ?: 'Unassigned Storage',
+                    'location_type' => $first->location_type,
+                    'item_count' => $items->count(),
+                    'total_stock' => $totalStock,
+                    'low_stock_count' => $lowStockCount,
+                    'items' => $items,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Storage inventory retrieved successfully.',
+            'data' => [
+                'locations' => $locations,
+                'location_count' => $locations->count(),
+                'total_items' => $locations->sum('item_count'),
+                'total_stock' => $locations->sum('total_stock'),
+            ],
+        ]);
+    }
 }

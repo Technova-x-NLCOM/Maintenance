@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
         // Seed categories (no dependencies)
         $this->call(CategorySeeder::class);
 
+        // Seed storage locations before inventory sample data (batches/transactions depend on locations)
+        $this->call(LocationSeeder::class);
+
         // Seed roles before users (users depend on roles)
         $this->call(RoleSeeder::class);
 
