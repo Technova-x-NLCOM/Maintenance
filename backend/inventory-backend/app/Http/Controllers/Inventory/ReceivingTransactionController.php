@@ -89,6 +89,7 @@ class ReceivingTransactionController extends Controller
 
         $data = $request->validate([
             'item_id' => ['required', 'integer', 'exists:items,item_id'],
+            'location_id' => ['nullable', 'integer'],
             'quantity' => ['required', 'integer', 'min:1'],
             'batch_number' => ['required', 'string', 'max:100'],
             'purchase_date' => ['required', 'date'],
@@ -147,6 +148,7 @@ class ReceivingTransactionController extends Controller
     {
         $data = $request->validate([
             'batch_number' => ['required', 'string', 'max:100'],
+            'location_id' => ['nullable', 'integer'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:items,item_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -182,14 +184,23 @@ class ReceivingTransactionController extends Controller
         }
 
         $reference = 'RCV-LIST-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
+        $locationId = $this->resolveLocationId($request);
+
+        if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create receiving transaction: no valid location is configured for inventory batches.',
+            ], 422);
+        }
 
         try {
-            $summary = DB::transaction(function () use ($data, $reference) {
+            $summary = DB::transaction(function () use ($data, $reference, $locationId) {
                 $receivedLines = [];
                 $totalReceived = 0;
 
                 foreach ($data['items'] as $lineData) {
                     $lineData['batch_number'] = $data['batch_number'];
+                    $lineData['location_id'] = $locationId;
                     $createdLine = $this->createReceivingLine($lineData, $reference);
                     $receivedLines[] = $createdLine;
                     $totalReceived += (int) $createdLine['quantity'];

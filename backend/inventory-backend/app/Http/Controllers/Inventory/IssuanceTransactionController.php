@@ -115,6 +115,16 @@ class IssuanceTransactionController extends Controller
             ->groupBy('item_id')
             ->pluck('current_stock', 'item_id');
 
+        if (Schema::hasColumn('inventory_batches', 'location_id') && $fromLocationId !== null) {
+            $availableStock = DB::table('inventory_batches')
+                ->select('item_id', DB::raw('COALESCE(SUM(quantity), 0) as current_stock'))
+                ->whereIn('item_id', $lineItemIds)
+                ->where('status', 'active')
+                ->where('location_id', $fromLocationId)
+                ->groupBy('item_id')
+                ->pluck('current_stock', 'item_id');
+        }
+
         $insufficient = [];
         foreach ($data['items'] as $line) {
             $itemId = (int) $line['item_id'];
@@ -158,6 +168,9 @@ class IssuanceTransactionController extends Controller
                         ->where('item_id', $itemId)
                         ->where('status', 'active')
                         ->where('quantity', '>', 0)
+                        ->when(Schema::hasColumn('inventory_batches', 'location_id') && $fromLocationId !== null, function ($query) use ($fromLocationId) {
+                            $query->where('location_id', $fromLocationId);
+                        })
                         ->orderByRaw('expiry_date IS NULL, expiry_date ASC')
                         ->orderBy('created_at')
                         ->lockForUpdate()
@@ -221,6 +234,8 @@ class IssuanceTransactionController extends Controller
                 return [
                     'reference_number' => $reference,
                     'destination' => $data['destination'],
+                    'from_location_id' => $fromLocationId,
+                    'to_location_id' => $toLocationId,
                     'issued_lines' => $allocationSummary,
                     'total_issued_quantity' => $totalIssued,
                 ];
