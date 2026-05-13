@@ -51,6 +51,13 @@ export const TABLE_CONFIGS: { [key: string]: TableConfig } = {
     icon: 'layers',
     category: 'inventory'
   },
+  'locations': {
+    name: 'locations',
+    friendlyName: 'Storage Locations',
+    description: 'Manage warehouses, rooms, shelves, and other storage points',
+    icon: 'map-pin',
+    category: 'inventory'
+  },
   'inventory_transactions': {
     name: 'inventory_transactions',
     friendlyName: 'Transactions',
@@ -156,6 +163,16 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
     'description': { friendlyName: 'Description (optional)', description: 'Short description of this category', placeholder: 'Describe this category' },
     'created_at': { friendlyName: 'Date created', description: 'When created' }
   },
+  'locations': {
+    'location_id': { friendlyName: 'Location ID', description: 'Unique identifier' },
+    'location_code': { friendlyName: 'Location Code', description: 'Short code for this storage point', placeholder: 'e.g., WH-01' },
+    'location_name': { friendlyName: 'Location Name', description: 'Friendly storage name', placeholder: 'e.g., Main Warehouse' },
+    'location_type': { friendlyName: 'Location Type', description: 'Warehouse, shelf, room, or other', placeholder: 'e.g., warehouse' },
+    'description': { friendlyName: 'Description (optional)', description: 'Notes about this location', placeholder: 'Describe this storage location' },
+    'is_active': { friendlyName: 'Active', description: 'Is this location in use?' },
+    'created_at': { friendlyName: 'Date created', description: 'When created' },
+    'updated_at': { friendlyName: 'Last updated', description: 'When updated' }
+  },
   'item_types': {
     'item_type_id': { friendlyName: 'Type ID', description: 'Unique identifier' },
     'type_name': { friendlyName: 'Type name', description: 'What kind of item is this?', placeholder: 'e.g. Medicine, Equipment' },
@@ -164,6 +181,7 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
   'inventory_batches': {
     'batch_id': { friendlyName: 'Batch ID', description: 'Unique identifier' },
     'item_id': { friendlyName: 'Item', description: 'Which item is this batch for?' },
+    'location_id': { friendlyName: 'Storage Location', description: 'Where is this batch stored?' },
     'batch_number': { friendlyName: 'Batch or lot number', description: 'Reference number for this batch', placeholder: 'e.g. LOT-2024-001' },
     'quantity': { friendlyName: 'Quantity', description: 'Number of units in this batch', placeholder: 'e.g. 100' },
     'expiry_date': { friendlyName: 'Expiry date', description: 'When does this batch expire?', placeholder: 'YYYY-MM-DD' },
@@ -178,6 +196,8 @@ export const COLUMN_CONFIGS: { [table: string]: { [column: string]: ColumnConfig
     'transaction_id': { friendlyName: 'Transaction ID', description: 'Unique identifier' },
     'item_id': { friendlyName: 'Item', description: 'Which item?' },
     'batch_id': { friendlyName: 'Batch', description: 'Which batch?' },
+    'from_location_id': { friendlyName: 'Source Location', description: 'Where did it come from?' },
+    'to_location_id': { friendlyName: 'Destination Location', description: 'Where is it going?' },
     'transaction_type': { friendlyName: 'Type', description: 'In, Out, Adjustment, or Transfer' },
     'quantity': { friendlyName: 'Quantity', description: 'How many units?', placeholder: 'e.g. 10' },
     'reference_number': { friendlyName: 'Reference number (optional)', description: 'Document or reference', placeholder: 'e.g. PO-12345' },
