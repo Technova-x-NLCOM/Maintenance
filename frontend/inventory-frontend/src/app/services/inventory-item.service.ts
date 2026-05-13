@@ -71,6 +71,40 @@ interface LocationOptionsResponse {
   data: LocationOption[];
 }
 
+export interface StorageInventoryItem {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  item_type_name: string | null;
+  category_name: string | null;
+  measurement_unit: string | null;
+  reorder_level: number;
+  current_stock: number;
+  is_low_stock: boolean;
+}
+
+export interface StorageInventoryLocation {
+  location_id: number | null;
+  location_code: string | null;
+  location_name: string;
+  location_type: string | null;
+  item_count: number;
+  total_stock: number;
+  low_stock_count: number;
+  items: StorageInventoryItem[];
+}
+
+interface StorageInventoryResponse {
+  success: boolean;
+  message: string;
+  data: {
+    locations: StorageInventoryLocation[];
+    location_count: number;
+    total_items: number;
+    total_stock: number;
+  };
+}
+
 interface MinimumStockItem {
   item_id: number;
   item_code: string;
@@ -349,6 +383,36 @@ export class InventoryItemService {
       headers: this.getHeaders(),
       params,
     });
+  }
+
+  getStorageInventory(params?: {
+    search?: string;
+    location_id?: number;
+    category_id?: number;
+    stock_status?: 'all' | 'low_stock' | 'out_of_stock';
+  }): Observable<StorageInventoryResponse> {
+    let queryParams = new HttpParams();
+
+    if (params?.search) {
+      queryParams = queryParams.set('search', params.search.trim());
+    }
+
+    if (params?.location_id) {
+      queryParams = queryParams.set('location_id', String(params.location_id));
+    }
+
+    if (params?.category_id) {
+      queryParams = queryParams.set('category_id', String(params.category_id));
+    }
+
+    if (params?.stock_status && params.stock_status !== 'all') {
+      queryParams = queryParams.set('stock_status', params.stock_status);
+    }
+
+    return this.http.get<StorageInventoryResponse>(
+      'http://127.0.0.1:8000/api/inventory/transactions/storage-inventory',
+      { headers: this.getHeaders(), params: queryParams }
+    );
   }
 
   create(payload: FormData): Observable<ItemSingleResponse> {
