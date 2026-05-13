@@ -1,0 +1,135 @@
+<div class="storage-page">
+  <section class="hero-card">
+    <div class="hero-copy">
+      <div class="eyebrow">Inventory Monitoring</div>
+      <h2>Storage Inventory</h2>
+      <p>View items grouped by storage location so you can quickly see what is stored where and which areas need attention.</p>
+    </div>
+    <div class="hero-actions">
+      <button class="btn btn-secondary" type="button" (click)="expandAll()">Expand all</button>
+      <button class="btn btn-secondary" type="button" (click)="collapseAll()">Collapse all</button>
+      <button class="btn btn-primary btn-strong" type="button" (click)="refresh()">Refresh</button>
+    </div>
+  </section>
+
+  <section class="stats-grid">
+    <article class="stat-card">
+      <span class="stat-label">Storage locations</span>
+      <strong>{{ totalLocations }}</strong>
+    </article>
+    <article class="stat-card stat-success">
+      <span class="stat-label">Items tracked</span>
+      <strong>{{ totalItems }}</strong>
+    </article>
+    <article class="stat-card stat-muted">
+      <span class="stat-label">Total stock</span>
+      <strong>{{ totalStock }}</strong>
+    </article>
+    <article class="stat-card stat-warn">
+      <span class="stat-label">Locations with low stock</span>
+      <strong>{{ lowStockLocations }}</strong>
+    </article>
+  </section>
+
+  <app-toast></app-toast>
+
+  <section class="table-card">
+    <div class="table-toolbar">
+      <div>
+        <h3>Storage Breakdown</h3>
+        <p>Search by storage code, storage name, item code, item description, or category.</p>
+      </div>
+      <div class="toolbar-actions">
+        <label class="toggle-filter">
+          <input type="checkbox" [(ngModel)]="showLowStockOnly" />
+          <span>Low stock only</span>
+        </label>
+        <input
+          class="search"
+          type="text"
+          placeholder="Search storage or item"
+          [(ngModel)]="searchTerm"
+        />
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state-loading">Loading storage inventory...</div>
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+    <div *ngIf="!loading && filteredLocations.length" class="location-list">
+      <article class="location-card" *ngFor="let location of filteredLocations; trackBy: trackByLocation">
+        <button class="location-header" type="button" (click)="toggleLocation(location)">
+          <div class="location-title-block">
+            <div class="location-title-row">
+              <h4>{{ location.location_name }}</h4>
+              <button class="location-pill" type="button" (click)="onPillClick(location, $event)">
+                <span *ngIf="location.location_code">{{ location.location_code }}</span>
+                <span *ngIf="!location.location_code">View</span>
+              </button>
+            </div>
+            <p>{{ location.location_type || 'Storage location' }}</p>
+          </div>
+
+          <div class="location-metrics">
+            <span class="metric">
+              <strong>{{ location.item_count }}</strong>
+              <small>Items</small>
+            </span>
+            <span class="metric">
+              <strong>{{ location.total_stock }}</strong>
+              <small>Total stock</small>
+            </span>
+            <span class="metric warning" [class.has-warning]="location.low_stock_count > 0">
+              <strong>{{ location.low_stock_count }}</strong>
+              <small>Low stock</small>
+            </span>
+            <span class="chevron" [class.open]="isExpanded(location)">⌄</span>
+          </div>
+        </button>
+
+        <div class="pill-dropdown" *ngIf="isDropdownOpen(location)">
+          <ul>
+            <li *ngFor="let item of location.items; let i = index">{{ item.item_code }} — {{ item.item_description }}</li>
+          </ul>
+        </div>
+
+        <div class="location-body" *ngIf="isExpanded(location)">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Item Code</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>UoM</th>
+                <th class="num-col">Current Stock</th>
+                <th class="num-col">Reorder Level</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of location.items; trackBy: trackByItem" [class.low-stock-row]="item.is_low_stock">
+                <td class="code-cell">{{ item.item_code }}</td>
+                <td class="description-cell">{{ item.item_description }}</td>
+                <td>{{ item.category_name || '—' }}</td>
+                <td>{{ item.measurement_unit || '—' }}</td>
+                <td class="num-col">{{ item.current_stock }}</td>
+                <td class="num-col">{{ item.reorder_level }}</td>
+                <td>
+                  <span class="status-badge" [class.low]="item.is_low_stock" [class.ok]="!item.is_low_stock">
+                    {{ item.is_low_stock ? 'Low Stock' : 'OK' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="!loading && !filteredLocations.length" class="empty-state">
+      <div class="empty-icon">⌂</div>
+      <h4>No storage inventory found</h4>
+      <p>Try clearing filters or create stock receiving transactions for a location.</p>
+    </div>
+  </section>
+</div>
