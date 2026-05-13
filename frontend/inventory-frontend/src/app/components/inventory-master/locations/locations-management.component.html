@@ -1,0 +1,134 @@
+  <div class="locations-page">
+    <section class="hero-card">
+      <div class="hero-copy">
+        <div class="eyebrow">Inventory Master Data</div>
+        <h2>Storage Locations</h2>
+        <p>Register, search, and manage storage points used across receiving, issuance, and monitoring.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-strong" (click)="startNew()">New Location</button>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-label">Total locations</span>
+        <strong>{{ totalLocations }}</strong>
+      </article>
+      <article class="stat-card stat-success">
+        <span class="stat-label">Active</span>
+        <strong>{{ activeLocations }}</strong>
+      </article>
+      <article class="stat-card stat-muted">
+        <span class="stat-label">Inactive</span>
+        <strong>{{ inactiveLocations }}</strong>
+      </article>
+    </section>
+
+    <app-toast></app-toast>
+
+    <section class="table-card">
+      <div class="table-toolbar">
+        <div>
+          <h3>Location Directory</h3>
+          <p>Use code or name to quickly find a storage location.</p>
+        </div>
+        <div class="toolbar-actions">
+          <input class="search" placeholder="Search by code or name" [(ngModel)]="searchTerm" />
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="state-loading">Loading locations...</div>
+      <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+      <div class="table-wrap" *ngIf="!loading && displayedRows.length">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of displayedRows">
+              <td><span class="code-pill">{{ r.location_code }}</span></td>
+              <td class="name-cell">{{ r.location_name }}</td>
+              <td>{{ r.location_type || '—' }}</td>
+              <td class="description-cell">{{ r.description || '—' }}</td>
+              <td>
+                <span class="status-pill" [class.status-on]="r.is_active" [class.status-off]="!r.is_active">
+                  {{ r.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td class="row-actions">
+                <button class="btn btn-sm" (click)="edit(r)">Edit</button>
+                <button class="btn btn-sm btn-danger" (click)="remove(r)">Delete</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && !displayedRows.length" class="empty-state">
+        <div class="empty-icon">⌂</div>
+        <h4>No locations found</h4>
+        <p>Create a new storage location to get started, or clear your search filter.</p>
+      </div>
+    </section>
+
+    <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <div class="modal-eyebrow">{{ editingId ? 'Edit Storage Location' : 'Create Storage Location' }}</div>
+            <h3>{{ editingId ? 'Update details' : 'New location' }}</h3>
+          </div>
+          <button class="modal-close" (click)="closeForm()">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="field-group code-group">
+            <label>Generated code</label>
+            <div class="code-display">{{ form.location_code }}</div>
+            <div class="code-help">This code is generated automatically and cannot be edited.</div>
+          </div>
+
+          <div class="field-group">
+            <label>Name *</label>
+            <input class="form-control" [(ngModel)]="form.location_name" placeholder="e.g. Main Pantry" />
+            <div *ngIf="!form.location_name.trim() && saving" class="field-error">Name is required.</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field-group">
+              <label>Type</label>
+              <input class="form-control" [(ngModel)]="form.location_type" placeholder="e.g. Shelves" />
+            </div>
+            <div class="field-group switch-group">
+              <label>Status</label>
+              <label class="switch">
+                <input type="checkbox" [(ngModel)]="form.is_active" />
+                <span>Active</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label>Description</label>
+            <textarea class="form-control textarea" [(ngModel)]="form.description" placeholder="Short note about the storage location"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeForm()">Cancel</button>
+          <button class="btn btn-primary btn-strong" (click)="save()" [disabled]="saving || !form.location_name.trim()">
+            {{ saving ? (editingId ? 'Saving...' : 'Creating...') : (editingId ? 'Save changes' : 'Create location') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

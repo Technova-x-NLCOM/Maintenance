@@ -252,12 +252,6 @@ export class StockReportComponent implements OnInit {
     }
   }
 
-  selectLocationFilter(location: LocationOption | null): void {
-    this.locationIdFilter = location?.location_id ?? '';
-    this.selectedLocationLabel = location?.display_name ?? location?.location_name ?? 'All Locations';
-    this.onLocationFilterChange();
-  }
-
   onCategoryComboboxKeydown(event: KeyboardEvent): void {
     const key = event.key;
 
