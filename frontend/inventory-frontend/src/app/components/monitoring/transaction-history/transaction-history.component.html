@@ -62,6 +62,7 @@
             <th>Item Code</th>
             <th>Description</th>
             <th>Batch</th>
+            <th>Location</th>
             <th class="num-col">Qty</th>
             <th>UoM</th>
             <th>Destination / Reason</th>
@@ -83,6 +84,7 @@
             <td>{{ tx.item_code }}</td>
             <td>{{ tx.item_description }}</td>
             <td>{{ tx.batch_number || '—' }}</td>
+            <td>{{ tx.batch_location_name || tx.from_location_name || tx.to_location_name || '—' }}</td>
             <td class="num-col">{{ tx.quantity }}</td>
             <td>{{ tx.measurement_unit || '—' }}</td>
             <td>{{ tx.destination || tx.reason || '—' }}</td>

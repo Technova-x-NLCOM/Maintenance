@@ -94,6 +94,67 @@
           </div>
         </div>
 
+        <div class="category-filter-combobox" (keydown)="onLocationComboboxKeydown($event)">
+          <button
+            type="button"
+            class="category-filter-trigger"
+            (click)="toggleLocationFilterDropdown()"
+            [attr.aria-expanded]="locationFilterOpen"
+            aria-haspopup="listbox"
+            aria-label="Filter by storage location"
+          >
+            <span class="trigger-label">Location:</span>
+            <span class="trigger-value">{{ selectedLocationLabel }}</span>
+            <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+
+          <button
+            *ngIf="locationIdFilter !== ''"
+            class="clear-category-filter"
+            type="button"
+            (click)="clearLocationFilter($event)"
+            aria-label="Clear location filter"
+            title="Clear location filter"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+
+          <div class="category-filter-dropdown" *ngIf="locationFilterOpen">
+            <div class="category-filter-search">
+              <input
+                type="text"
+                [(ngModel)]="locationFilterQuery"
+                (ngModelChange)="onLocationFilterQueryChange()"
+                placeholder="Search locations"
+                aria-label="Search locations"
+              />
+            </div>
+
+            <div class="category-filter-options" role="listbox" aria-label="Location options">
+              <button
+                *ngFor="let location of filteredLocationOptions; let i = index"
+                type="button"
+                class="category-option"
+                [class.active]="i === activeLocationOptionIndex"
+                [class.selected]="location.location_id === locationIdFilter"
+                (mouseenter)="onLocationOptionHover(i)"
+                (click)="selectLocationFilter(location)"
+              >
+                {{ location.display_name || location.location_name }}
+              </button>
+
+              <div *ngIf="filteredLocationOptions.length === 0" class="category-filter-empty">
+                No matching locations
+              </div>
+            </div>
+          </div>
+        </div>
+
         <select class="filter-input" [(ngModel)]="stockFilter" (ngModelChange)="onStockFilterChange()">
           <option value="all">All Stock Status</option>
           <option value="out_of_stock">Out of Stock</option>
@@ -109,6 +170,7 @@
       <table class="data-table" *ngIf="items.length > 0; else empty">
         <thead>
           <tr>
+            <th>Location</th>
             <th>Code</th>
             <th>Description</th>
             <th>Category</th>
@@ -122,6 +184,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of items" [class.low-stock-row]="isLow(item)">
+            <td>{{ item.location_name || '—' }}</td>
             <td class="cell-code">{{ item.item_code }}</td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.category_name || '—' }}</td>
