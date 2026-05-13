@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { InventoryItemService } from '../../../services/inventory-item.service';
+import { InventoryItemService, LocationOption } from '../../../services/inventory-item.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { StorageInventoryLocation, StorageInventoryResponse } from '../monitoring.models';
@@ -21,6 +21,8 @@ export class StorageInventoryComponent implements OnInit {
   showLowStockOnly = false;
   expandedLocations = new Set<string>();
   openDropdownKey: string | null = null;
+  locationOptions: LocationOption[] = [];
+  selectedLocationId: number | null = null;
 
   constructor(
     private inventoryService: InventoryItemService,
@@ -30,13 +32,19 @@ export class StorageInventoryComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadData();
+    this.loadLocationOptions();
   }
 
   loadData(): void {
     this.loading = true;
     this.error = '';
 
-    this.inventoryService.getStorageInventory().subscribe({
+    const params: any = {};
+    if (this.searchTerm) params.search = this.searchTerm;
+    if (this.selectedLocationId) params.location_id = this.selectedLocationId;
+    if (this.showLowStockOnly) params.stock_status = 'low_stock';
+
+    this.inventoryService.getStorageInventory(params).subscribe({
       next: (response: StorageInventoryResponse) => {
         this.locations = response.data.locations || [];
         // default to collapsed on load — user can expand manually
@@ -50,6 +58,19 @@ export class StorageInventoryComponent implements OnInit {
         this.error = 'Failed to load storage inventory.';
         this.toast.error(this.error);
         this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadLocationOptions(): void {
+    this.inventoryService.getLocationOptions().subscribe({
+      next: (res) => {
+        this.locationOptions = res.data || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // silent fallback — no options
+        this.locationOptions = [];
       },
     });
   }

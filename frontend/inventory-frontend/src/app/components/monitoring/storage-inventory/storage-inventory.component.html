@@ -6,8 +6,6 @@
       <p>View items grouped by storage location so you can quickly see what is stored where and which areas need attention.</p>
     </div>
     <div class="hero-actions">
-      <button class="btn btn-secondary" type="button" (click)="expandAll()">Expand all</button>
-      <button class="btn btn-secondary" type="button" (click)="collapseAll()">Collapse all</button>
       <button class="btn btn-primary btn-strong" type="button" (click)="refresh()">Refresh</button>
     </div>
   </section>
@@ -41,14 +39,21 @@
       </div>
       <div class="toolbar-actions">
         <label class="toggle-filter">
-          <input type="checkbox" [(ngModel)]="showLowStockOnly" />
+          <input type="checkbox" [(ngModel)]="showLowStockOnly" (change)="loadData()" />
           <span>Low stock only</span>
         </label>
+
+        <select class="location-filter" [(ngModel)]="selectedLocationId" (change)="loadData()">
+          <option [ngValue]="null">All locations</option>
+          <option *ngFor="let loc of locationOptions" [ngValue]="loc.location_id">{{ loc.display_name }}</option>
+        </select>
+
         <input
           class="search"
           type="text"
           placeholder="Search storage or item"
           [(ngModel)]="searchTerm"
+          (keyup.enter)="loadData()"
         />
       </div>
     </div>
