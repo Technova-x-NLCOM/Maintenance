@@ -7,7 +7,8 @@ import {
   IssuanceItem,
   PaginatedIssuanceItemsResponse,
   IssuanceTransactionResponse,
-  AdjustmentTransactionResponse
+  AdjustmentTransactionResponse,
+  LocationOption,
 } from '../../services/inventory-item.service';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
@@ -31,6 +32,7 @@ interface IssuanceCartLine {
 })
 export class IssuanceTransactionComponent implements OnInit {
   items: IssuanceItem[] = [];
+  locations: LocationOption[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
 
   currentPage = 1;
@@ -46,6 +48,8 @@ export class IssuanceTransactionComponent implements OnInit {
 
   selectedItem: IssuanceItem | null = null;
   transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
+  selectedLocationId: number | null = null;
+  selectedLocationLabel = 'Select source storage';
   issueQuantity = 1;
   adjustConfirmExpiration = false;
   adjustReason = 'Stock Adjustment (Decrease)';
@@ -110,8 +114,35 @@ export class IssuanceTransactionComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadLocationOptions();
     this.loadItems(1);
     this.loadCategoryOptions();
+  }
+
+  loadLocationOptions(): void {
+    this.itemService.getLocationOptions().subscribe({
+      next: (response) => {
+        this.locations = (response.data || []).slice().sort((a, b) =>
+          a.location_name.localeCompare(b.location_name),
+        );
+
+        if (this.locations.length > 0 && this.selectedLocationId === null) {
+          this.selectedLocationId = this.locations[0].location_id;
+          this.selectedLocationLabel = this.locations[0].display_name || this.locations[0].location_name;
+        } else if (this.selectedLocationId !== null) {
+          const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
+          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select source storage';
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.locations = [];
+        this.selectedLocationId = null;
+        this.selectedLocationLabel = 'Select source storage';
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   loadCategoryOptions(): void {
@@ -237,6 +268,10 @@ export class IssuanceTransactionComponent implements OnInit {
     if (this.cartLines.length === 0 || this.saving) {
       return false;
     }
+
+    if (this.locations.length > 0 && !this.selectedLocationId) {
+      return false;
+    }
     
     if (!this.destination.trim() || this.destination.length > 150) {
       return false;
@@ -300,6 +335,8 @@ export class IssuanceTransactionComponent implements OnInit {
     this.itemService
       .createIssuanceTransaction({
         destination: this.destination.trim(),
+        from_location_id: this.selectedLocationId,
+        to_location_id: this.selectedLocationId,
         reason: this.reason.trim() || 'Stock Issuance',
         notes: this.notes.trim() || '',
         items: this.cartLines.map((line) => ({ item_id: line.item_id, quantity: line.quantity }))

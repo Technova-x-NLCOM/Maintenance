@@ -65,6 +65,10 @@
           <span class="sub-dot"></span>
           <span class="label">Item Registration & Updates</span>
         </a>
+          <a routerLink="/dashboard/inventory/locations" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+            <span class="sub-dot"></span>
+            <span class="label">Storage Locations</span>
+          </a>
       </div>
     </div>
 
@@ -112,6 +116,10 @@
         <a routerLink="/dashboard/monitoring/stock-report" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Stock Report</span>
+        </a>
+        <a routerLink="/dashboard/monitoring/storage-inventory" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+          <span class="sub-dot"></span>
+          <span class="label">Storage Inventory</span>
         </a>
         <a routerLink="/dashboard/monitoring/transaction-history" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>

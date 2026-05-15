@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { StockReportRecord, Paginated } from '../monitoring.models';
+import { InventoryItemService, LocationOption } from '../../../services/inventory-item.service';
 import { InventoryCategoryService } from '../../../services/inventory-category.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
@@ -21,6 +22,7 @@ import { ToastComponent } from '../../../shared/toast/toast.component';
 })
 export class StockReportComponent implements OnInit {
   items: StockReportRecord[] = [];
+  locations: LocationOption[] = [];
   page = 1;
   pageSize = 10;
   readonly pageSizeOptions = [10, 20, 50];
@@ -28,13 +30,19 @@ export class StockReportComponent implements OnInit {
   totalCount = 0;
   search = '';
   stockFilter: 'all' | 'out_of_stock' | 'low_stock' = 'all';
+  locationIdFilter: number | '' = '';
   categoryIdFilter: number | '' = '';
   categories: Array<{ category_id: number; category_name: string }> = [];
+  selectedLocationLabel = 'All Locations';
   selectedCategoryLabel = 'All Categories';
   categoryFilterOpen = false;
   categoryFilterQuery = '';
   activeCategoryOptionIndex = -1;
   filteredCategoryOptions: Array<{ category_id: number; category_name: string }> = [];
+  locationFilterOpen = false;
+  locationFilterQuery = '';
+  activeLocationOptionIndex = -1;
+  filteredLocationOptions: LocationOption[] = [];
   loading = false;
   error = '';
 
@@ -46,6 +54,7 @@ export class StockReportComponent implements OnInit {
 
   constructor(
     private http: HttpClient,
+    private itemService: InventoryItemService,
     private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
@@ -53,6 +62,7 @@ export class StockReportComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadLocationOptions();
     this.loadCategoryOptions();
     this.load(1);
   }
@@ -78,6 +88,10 @@ export class StockReportComponent implements OnInit {
 
     if (this.categoryIdFilter !== '') {
       p = p.set('category_id', String(this.categoryIdFilter));
+    }
+
+    if (this.locationIdFilter !== '') {
+      p = p.set('location_id', String(this.locationIdFilter));
     }
 
     if (this.stockFilter === 'low_stock') {
@@ -127,6 +141,10 @@ export class StockReportComponent implements OnInit {
     this.load(1, this.pageSize);
   }
 
+  onLocationFilterChange(): void {
+    this.load(1, this.pageSize);
+  }
+
   toggleCategoryFilterDropdown(): void {
     this.categoryFilterOpen = !this.categoryFilterOpen;
     if (this.categoryFilterOpen) {
@@ -141,6 +159,20 @@ export class StockReportComponent implements OnInit {
     this.applyCategoryFilterSearch();
   }
 
+  toggleLocationFilterDropdown(): void {
+    this.locationFilterOpen = !this.locationFilterOpen;
+    if (this.locationFilterOpen) {
+      this.locationFilterQuery = '';
+      this.applyLocationFilterSearch();
+      this.activeLocationOptionIndex = this.getActiveLocationIndexFromSelection();
+      this.cdr.detectChanges();
+    }
+  }
+
+  onLocationFilterQueryChange(): void {
+    this.applyLocationFilterSearch();
+  }
+
   selectCategoryFilter(category: { category_id: number; category_name: string } | null): void {
     this.categoryIdFilter = category?.category_id ?? '';
     this.selectedCategoryLabel = category?.category_name ?? 'All Categories';
@@ -150,12 +182,74 @@ export class StockReportComponent implements OnInit {
     this.onCategoryFilterChange();
   }
 
+  selectLocationFilter(location: LocationOption | null): void {
+    this.locationIdFilter = location?.location_id ?? '';
+    this.selectedLocationLabel = location?.display_name ?? location?.location_name ?? 'All Locations';
+    this.locationFilterOpen = false;
+    this.locationFilterQuery = '';
+    this.activeLocationOptionIndex = -1;
+    this.onLocationFilterChange();
+  }
+
   clearCategoryFilter(event?: Event): void {
     event?.stopPropagation();
     if (this.categoryIdFilter === '') {
       return;
     }
     this.selectCategoryFilter(null);
+  }
+
+  clearLocationFilter(event?: Event): void {
+    event?.stopPropagation();
+    if (this.locationIdFilter === '') {
+      return;
+    }
+    this.selectLocationFilter(null);
+  }
+
+  onLocationComboboxKeydown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    if (!this.locationFilterOpen) {
+      if (key === 'ArrowDown' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        this.toggleLocationFilterDropdown();
+      }
+      return;
+    }
+
+    if (key === 'Escape') {
+      event.preventDefault();
+      this.locationFilterOpen = false;
+      this.activeLocationOptionIndex = -1;
+      return;
+    }
+
+    if (!this.filteredLocationOptions.length) {
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      this.activeLocationOptionIndex = Math.min(
+        this.activeLocationOptionIndex + 1,
+        this.filteredLocationOptions.length - 1,
+      );
+      return;
+    }
+
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      this.activeLocationOptionIndex = Math.max(this.activeLocationOptionIndex - 1, 0);
+      return;
+    }
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (this.activeLocationOptionIndex >= 0) {
+        this.selectLocationFilter(this.filteredLocationOptions[this.activeLocationOptionIndex]);
+      }
+    }
   }
 
   onCategoryComboboxKeydown(event: KeyboardEvent): void {
@@ -205,6 +299,10 @@ export class StockReportComponent implements OnInit {
 
   onCategoryOptionHover(index: number): void {
     this.activeCategoryOptionIndex = index;
+  }
+
+  onLocationOptionHover(index: number): void {
+    this.activeLocationOptionIndex = index;
   }
 
   onStockFilterChange(): void {
@@ -276,6 +374,61 @@ export class StockReportComponent implements OnInit {
     });
   }
 
+  private loadLocationOptions(): void {
+    this.itemService.getLocationOptions().subscribe({
+      next: (response) => {
+        this.locations = (response.data || []).slice().sort((a, b) =>
+          a.location_name.localeCompare(b.location_name),
+        );
+
+        if (this.locationIdFilter !== '') {
+          const selected = this.locations.find((location) => location.location_id === this.locationIdFilter);
+          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'All Locations';
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.locations = [];
+        this.selectedLocationLabel = 'All Locations';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private applyLocationFilterSearch(): void {
+    const query = this.locationFilterQuery.trim().toLowerCase();
+    this.filteredLocationOptions = this.locations.filter((location) => {
+      if (!query) {
+        return true;
+      }
+
+      return (
+        location.location_code.toLowerCase().includes(query) ||
+        location.location_name.toLowerCase().includes(query) ||
+        (location.location_type || '').toLowerCase().includes(query)
+      );
+    });
+
+    if (!this.filteredLocationOptions.length) {
+      this.activeLocationOptionIndex = -1;
+      return;
+    }
+
+    this.activeLocationOptionIndex = this.getActiveLocationIndexFromSelection();
+  }
+
+  private getActiveLocationIndexFromSelection(): number {
+    if (!this.filteredLocationOptions.length) {
+      return -1;
+    }
+
+    const selectedIndex = this.filteredLocationOptions.findIndex(
+      (location) => location.location_id === this.locationIdFilter,
+    );
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
   private applyCategoryFilterSearch(): void {
     const query = this.categoryFilterQuery.trim().toLowerCase();
     this.filteredCategoryOptions = this.categories.filter((category) => {
@@ -306,7 +459,7 @@ export class StockReportComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.categoryFilterOpen) {
+    if (!this.categoryFilterOpen && !this.locationFilterOpen) {
       return;
     }
 
@@ -318,6 +471,11 @@ export class StockReportComponent implements OnInit {
     if (!target.closest('.category-filter-combobox')) {
       this.categoryFilterOpen = false;
       this.activeCategoryOptionIndex = -1;
+    }
+
+    if (!target.closest('.category-filter-combobox')) {
+      this.locationFilterOpen = false;
+      this.activeLocationOptionIndex = -1;
     }
   }
 
@@ -336,8 +494,9 @@ export class StockReportComponent implements OnInit {
     if (!this.items.length) return;
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
-      ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
+      ['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
       ...this.items.map((r) => [
+        r.location_name || '—',
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
@@ -382,8 +541,9 @@ export class StockReportComponent implements OnInit {
     doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+      head: [['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
       body: this.items.map((r) => [
+        r.location_name ?? '—',
         r.item_code,
         r.item_description,
         r.category_name ?? '—',

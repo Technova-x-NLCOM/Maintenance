@@ -163,6 +163,16 @@
           <option value="adjust-decrease">Stock Adjustment (-)</option>
         </select>
       </label>
+      <label *ngIf="transactionMode === 'issuance'">
+        <span>Source Storage Location *</span>
+        <select class="form-control" [(ngModel)]="selectedLocationId" [disabled]="saving">
+          <option [ngValue]="null">Select source storage</option>
+          <option *ngFor="let location of locations" [ngValue]="location.location_id">
+            {{ location.display_name || location.location_name }}
+          </option>
+        </select>
+        <p class="empty-hint" *ngIf="selectedLocationId === null">Source storage location is required.</p>
+      </label>
     </div>
 
     <div class="selected-block" *ngIf="selectedItem">

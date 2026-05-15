@@ -5,6 +5,8 @@
 
   .sidebar-shell {
     flex-shrink: 0;
+    position: relative;
+    z-index: 10001;
   }
 }
 
@@ -13,6 +15,8 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-content {

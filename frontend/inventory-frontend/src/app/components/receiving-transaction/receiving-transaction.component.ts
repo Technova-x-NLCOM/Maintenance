@@ -11,6 +11,7 @@ import {
   PaginatedReceivingItemsResponse,
   ReceivingTransactionResponse,
   AdjustmentTransactionResponse,
+  LocationOption,
 } from '../../services/inventory-item.service';
 
 interface ReceivingCartLine {
@@ -38,12 +39,15 @@ interface ReceivingCartLine {
 export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   // Items catalog and pagination
   receivingItems: ReceivingItem[] = [];
+  locations: LocationOption[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
 
   currentPage = 1;
   lastPage = 1;
   perPage = 10;
   searchQuery = '';
+  selectedLocationId: number | null = null;
+  selectedLocationLabel = 'Select storage location';
   selectedCategoryId: number | null = null;
   selectedCategoryLabel = 'All Categories';
   categoryDropdownOpen = false;
@@ -168,6 +172,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const today = new Date();
     this.purchaseDate = today.toISOString().split('T')[0];
+    this.loadLocationOptions();
     this.loadReceivingItems(1);
     this.loadCategoryOptions();
   }
@@ -334,6 +339,32 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadLocationOptions(): void {
+    this.itemService.getLocationOptions().subscribe({
+      next: (response) => {
+        this.locations = (response.data || []).slice().sort((a, b) =>
+          a.location_name.localeCompare(b.location_name),
+        );
+
+        if (this.locations.length > 0 && this.selectedLocationId === null) {
+          this.selectedLocationId = this.locations[0].location_id;
+          this.selectedLocationLabel = this.locations[0].display_name || this.locations[0].location_name;
+        } else if (this.selectedLocationId !== null) {
+          const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
+          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select storage location';
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.locations = [];
+        this.selectedLocationId = null;
+        this.selectedLocationLabel = 'Select storage location';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   loadReceivingItems(page: number = 1): void {
     this.loading = true;
     this.itemService
@@ -490,6 +521,10 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       return false;
     }
 
+    if (this.transactionMode === 'receive' && this.locations.length > 0 && !this.selectedLocationId) {
+      return false;
+    }
+
     if (this.transactionMode === 'adjust-increase') {
       if (!this.reason.trim()) {
         return false;
@@ -638,6 +673,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
     const payload = {
       batch_number: this.confirmBatchNumber.trim(),
+      location_id: this.selectedLocationId,
       items: this.receivingLines.map((line) => ({
         item_id: line.item_id,
         quantity: line.quantity,
@@ -754,6 +790,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.computedExpiryDate = null;
     this.computedExpiryMessage = '';
     this.attemptedAddToList = false;
+    if (this.locations.length > 0) {
+      this.selectedLocationId = this.selectedLocationId ?? this.locations[0].location_id;
+      const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
+      this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select storage location';
+    }
   }
 
   showError(message: string): void {

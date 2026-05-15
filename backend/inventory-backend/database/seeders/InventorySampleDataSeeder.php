@@ -23,6 +23,7 @@ class InventorySampleDataSeeder extends Seeder
 
         $categories = DB::table('categories')->pluck('category_id', 'category_name');
         $itemTypes = DB::table('item_types')->pluck('item_type_id', 'type_name');
+        $locations = DB::table('locations')->pluck('location_id', 'location_code');
 
         $items = [
             [
@@ -88,6 +89,7 @@ class InventorySampleDataSeeder extends Seeder
                 'supplier_info' => 'ABC Pharma',
                 'batch_value' => 60000.00,
                 'status' => 'active',
+                'location_code' => 'LOCATION-001',
                 'created_at' => '2026-01-10 09:00:00',
             ],
             [
@@ -98,6 +100,7 @@ class InventorySampleDataSeeder extends Seeder
                 'supplier_info' => 'SafeCo Supplies',
                 'batch_value' => 135000.00,
                 'status' => 'active',
+                'location_code' => 'LOCATION-002',
                 'created_at' => '2026-01-11 10:30:00',
             ],
             [
@@ -108,6 +111,7 @@ class InventorySampleDataSeeder extends Seeder
                 'supplier_info' => 'AgriCorp',
                 'batch_value' => 72000.00,
                 'status' => 'active',
+                'location_code' => 'LOCATION-003',
                 'created_at' => '2026-01-11 11:00:00',
             ],
         ];
@@ -124,6 +128,7 @@ class InventorySampleDataSeeder extends Seeder
                     'batch_number' => $batch['batch_number'],
                 ],
                 [
+                    'location_id' => $locations[$batch['location_code']] ?? null,
                     'quantity' => $batch['quantity'],
                     'expiry_date' => $batch['expiry_date'],
                     'manufactured_date' => null,
@@ -150,6 +155,7 @@ class InventorySampleDataSeeder extends Seeder
                 'transaction_date' => '2026-01-10 09:00:00',
                 'reason' => 'Replenishment',
                 'destination' => 'Central Warehouse',
+                'to_location_code' => 'LOCATION-001',
                 'performed_by' => $adminId,
                 'approved_by' => $adminId,
             ],
@@ -162,6 +168,7 @@ class InventorySampleDataSeeder extends Seeder
                 'transaction_date' => '2026-01-11 10:30:00',
                 'reason' => 'Distribution',
                 'destination' => 'Typhoon Response Team',
+                'from_location_code' => 'LOCATION-002',
                 'performed_by' => $inventoryManagerId,
                 'approved_by' => $adminId,
             ],
@@ -174,6 +181,7 @@ class InventorySampleDataSeeder extends Seeder
                 'transaction_date' => '2026-01-11 11:00:00',
                 'reason' => 'Distribution',
                 'destination' => 'Mobile Kitchen',
+                'from_location_code' => 'LOCATION-003',
                 'performed_by' => $inventoryManagerId,
                 'approved_by' => $adminId,
             ],
@@ -194,6 +202,8 @@ class InventorySampleDataSeeder extends Seeder
                 ],
                 [
                     'batch_id' => $batchId,
+                    'from_location_id' => $locations[$tx['from_location_code']] ?? null,
+                    'to_location_id' => $locations[$tx['to_location_code']] ?? null,
                     'quantity' => $tx['quantity'],
                     'transaction_date' => $tx['transaction_date'],
                     'reason' => $tx['reason'],

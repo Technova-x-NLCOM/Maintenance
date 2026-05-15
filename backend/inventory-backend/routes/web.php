@@ -6,6 +6,7 @@ use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\Inventory\CategoryController;
 use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
+use App\Http\Controllers\Inventory\LocationController;
 use App\Http\Controllers\Inventory\ItemController;
 use App\Http\Controllers\Inventory\DistributionPlanController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
@@ -151,6 +152,15 @@ Route::middleware('throttle:system-api')->group(function () {
             });
         });
 
+    // Inventory Master Data - Storage Locations
+    Route::prefix('api/inventory/locations')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('options', [LocationController::class, 'options']);
+            });
+        });
+
     // Inventory Transactions - Monitor (IN/OUT history)
     Route::prefix('api/inventory/transactions')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
@@ -158,6 +168,7 @@ Route::middleware('throttle:system-api')->group(function () {
             Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
                 Route::get('/', [TransactionMonitorController::class, 'index']);
                 Route::get('/stock-report', [TransactionMonitorController::class, 'stockReport']);
+                Route::get('/storage-inventory', [TransactionMonitorController::class, 'storageInventory']);
             });
         });
 

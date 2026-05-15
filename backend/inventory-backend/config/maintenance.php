@@ -41,6 +41,10 @@ return [
                 ],
             ],
         ],
+        'locations' => [
+            'primary_key' => 'location_id',
+            'soft_deletes' => false,
+        ],
         'inventory_batches' => [
             'primary_key' => 'batch_id',
             'soft_deletes' => false, // No deleted_at column - uses status field instead
@@ -49,6 +53,11 @@ return [
                     'ref_table' => 'items',
                     'ref_key' => 'item_id',
                     'label_column' => 'item_description',
+                ],
+                'location_id' => [
+                    'ref_table' => 'locations',
+                    'ref_key' => 'location_id',
+                    'label_column' => 'location_name',
                 ],
             ],
         ],
@@ -86,6 +95,16 @@ return [
                     'ref_table' => 'inventory_batches',
                     'ref_key' => 'batch_id',
                     'label_column' => 'batch_number',
+                ],
+                'from_location_id' => [
+                    'ref_table' => 'locations',
+                    'ref_key' => 'location_id',
+                    'label_column' => 'location_name',
+                ],
+                'to_location_id' => [
+                    'ref_table' => 'locations',
+                    'ref_key' => 'location_id',
+                    'label_column' => 'location_name',
                 ],
                 'performed_by' => [
                     'ref_table' => 'users',

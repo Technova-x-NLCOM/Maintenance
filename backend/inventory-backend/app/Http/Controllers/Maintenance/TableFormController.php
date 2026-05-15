@@ -25,6 +25,19 @@ class TableFormController extends Controller
     {
         $this->assertAllowedTable($table);
         $data = $this->sanitizePayload($table, $request->all());
+        // Auto-generate `location_code` for `locations` table when not provided.
+        if ($table === 'locations' && (!array_key_exists('location_code', $data) || !$data['location_code'])) {
+            try {
+                $max = DB::table('locations')
+                    ->selectRaw("MAX(CAST(REPLACE(location_code, 'LOCATION-', '') AS UNSIGNED)) as maxnum")
+                    ->value('maxnum');
+                $next = ((int)$max) + 1;
+            } catch (\Exception $e) {
+                // Fallback: use count if query fails
+                $next = DB::table('locations')->count() + 1;
+            }
+            $data['location_code'] = 'LOCATION-' . str_pad($next, 3, '0', STR_PAD_LEFT);
+        }
         // Ensure timestamps are set when columns exist
         if (Schema::hasColumn($table, 'created_at') && !array_key_exists('created_at', $data)) {
             $data['created_at'] = now();
@@ -47,11 +60,54 @@ class TableFormController extends Controller
             $this->logAudit($table, 0, 'INSERT', null, $data, $request);
             return response()->json(['status' => 'created'], 201);
         }
+        if ($table === 'locations') {
+            // Insert with retry to avoid race-condition on unique location_code
+            $attempts = 0;
+            $insertedId = null;
+            while ($attempts < 5) {
+                $attempts++;
+                try {
+                    DB::beginTransaction();
+                    // regenerate code to reduce collision window
+                    $max = DB::table('locations')
+                        ->selectRaw("MAX(CAST(REPLACE(location_code, 'LOCATION-', '') AS UNSIGNED)) as maxnum")
+                        ->lockForUpdate()
+                        ->value('maxnum');
+                    $next = ((int)$max) + 1;
+                    $data['location_code'] = 'LOCATION-' . str_pad($next, 3, '0', STR_PAD_LEFT);
+
+                    $insertedId = DB::table($table)->insertGetId($data);
+                    // Log audit
+                    $this->logAudit($table, $insertedId, 'INSERT', null, $data, $request);
+                    DB::commit();
+                    break;
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    // If duplicate key, retry; otherwise rethrow
+                    $msg = strtolower($e->getMessage());
+                    if (strpos($msg, 'duplicate') !== false || strpos($msg, 'unique') !== false) {
+                        // small sleep to reduce collision
+                        usleep(100000);
+                        continue;
+                    }
+                    throw $e;
+                }
+            }
+
+            if ($insertedId === null) {
+                abort(500, 'Failed to create location after several attempts');
+            }
+
+            // Return id and generated code for frontend convenience
+            $created = DB::table('locations')->where('location_id', $insertedId)->first();
+            return response()->json(['id' => $insertedId, 'location_code' => $created->location_code ?? null], 201);
+        }
+
         $id = DB::table($table)->insertGetId($data);
-        
+
         // Log audit
         $this->logAudit($table, $id, 'INSERT', null, $data, $request);
-        
+
         return response()->json(['id' => $id], 201);
     }
 
