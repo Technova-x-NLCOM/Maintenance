@@ -58,7 +58,7 @@ interface CategoryItemsResponse {
   providedIn: 'root'
 })
 export class InventoryCategoryService {
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/inventory/categories';
+  private readonly baseUrl = '/api/inventory/categories';
 
   constructor(private http: HttpClient) {}
 

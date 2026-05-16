@@ -319,7 +319,7 @@ export type {
   providedIn: 'root'
 })
 export class InventoryItemService {
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/inventory/items';
+  private readonly baseUrl = '/api/inventory/items';
 
   constructor(private http: HttpClient) {}
 
@@ -379,7 +379,7 @@ export class InventoryItemService {
       params = params.set('search', search.trim());
     }
 
-    return this.http.get<LocationOptionsResponse>('http://127.0.0.1:8000/api/inventory/locations/options', {
+    return this.http.get<LocationOptionsResponse>('/api/inventory/locations/options', {
       headers: this.getHeaders(),
       params,
     });
@@ -410,7 +410,7 @@ export class InventoryItemService {
     }
 
     return this.http.get<StorageInventoryResponse>(
-      'http://127.0.0.1:8000/api/inventory/transactions/storage-inventory',
+      '/api/inventory/transactions/storage-inventory',
       { headers: this.getHeaders(), params: queryParams }
     );
   }
@@ -493,14 +493,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedReceivingItemsResponse>(
-      'http://127.0.0.1:8000/api/inventory/receiving/items',
+      '/api/inventory/receiving/items',
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createReceivingTransaction(data: ReceivingTransactionRequest): Observable<ReceivingTransactionResponse> {
     return this.http.post<ReceivingTransactionResponse>(
-      'http://127.0.0.1:8000/api/inventory/receiving/create',
+      '/api/inventory/receiving/create',
       data,
       { headers: this.getHeaders() }
     );
@@ -524,14 +524,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedIssuanceItemsResponse>(
-      'http://127.0.0.1:8000/api/inventory/issuance/items',
+      '/api/inventory/issuance/items',
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createIssuanceTransaction(data: IssuanceTransactionRequest): Observable<IssuanceTransactionResponse> {
     return this.http.post<IssuanceTransactionResponse>(
-      'http://127.0.0.1:8000/api/inventory/issuance/create',
+      '/api/inventory/issuance/create',
       data,
       { headers: this.getHeaders() }
     );
@@ -555,14 +555,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedAdjustmentItemsResponse>(
-      'http://127.0.0.1:8000/api/inventory/adjustment/items',
+      '/api/inventory/adjustment/items',
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createAdjustmentTransaction(data: AdjustmentTransactionRequest): Observable<AdjustmentTransactionResponse> {
     return this.http.post<AdjustmentTransactionResponse>(
-      'http://127.0.0.1:8000/api/inventory/adjustment/create',
+      '/api/inventory/adjustment/create',
       data,
       { headers: this.getHeaders() }
     );
