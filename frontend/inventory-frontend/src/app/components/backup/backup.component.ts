@@ -36,7 +36,7 @@ export class BackupComponent implements OnInit {
   showBackupSuccess = false;
   showRestoreSuccess = false;
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api/backup';
+  private readonly API_URL = '/api/backup';
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private toast: ToastService) {}
 

@@ -36,7 +36,7 @@ export class SettingsComponent implements OnInit {
   saveError: string | null = null;
   saveSuccess: string | null = null;
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api/settings';
+  private readonly API_URL = '/api/settings';
 
   constructor(
     private http: HttpClient,

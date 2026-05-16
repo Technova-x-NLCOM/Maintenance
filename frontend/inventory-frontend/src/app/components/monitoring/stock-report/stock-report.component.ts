@@ -50,7 +50,7 @@ export class StockReportComponent implements OnInit {
   private searchDebounceId?: ReturnType<typeof setTimeout>;
   private readonly SEARCH_DEBOUNCE_MS = 300;
 
-  private readonly BASE = 'http://127.0.0.1:8000/api/inventory/transactions';
+  private readonly BASE = '/api/inventory/transactions';
 
   constructor(
     private http: HttpClient,
