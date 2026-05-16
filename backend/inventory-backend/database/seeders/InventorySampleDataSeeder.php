@@ -194,6 +194,9 @@ class InventorySampleDataSeeder extends Seeder
                 continue;
             }
 
+            $fromLocationCode = $tx['from_location_code'] ?? null;
+            $toLocationCode = $tx['to_location_code'] ?? null;
+
             DB::table('inventory_transactions')->updateOrInsert(
                 [
                     'reference_number' => $tx['reference_number'],
@@ -202,8 +205,8 @@ class InventorySampleDataSeeder extends Seeder
                 ],
                 [
                     'batch_id' => $batchId,
-                    'from_location_id' => $locations[$tx['from_location_code']] ?? null,
-                    'to_location_id' => $locations[$tx['to_location_code']] ?? null,
+                    'from_location_id' => $fromLocationCode ? ($locations[$fromLocationCode] ?? null) : null,
+                    'to_location_id' => $toLocationCode ? ($locations[$toLocationCode] ?? null) : null,
                     'quantity' => $tx['quantity'],
                     'transaction_date' => $tx['transaction_date'],
                     'reason' => $tx['reason'],
