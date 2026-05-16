@@ -20,6 +20,8 @@ class HandleCors
             'http://127.0.0.1:4200',
             'http://localhost:1200',
             'http://127.0.0.1:1200',
+            'https://nlcom.site',
+            'https://www.nlcom.site',
         ];
 
         $origin = $request->header('Origin');
@@ -28,7 +30,7 @@ class HandleCors
             if ($request->isMethod('OPTIONS')) {
                 return response('', 200)
                     ->header('Access-Control-Allow-Origin', $origin)
-                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+                    ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
                     ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN')
                     ->header('Access-Control-Allow-Credentials', 'true')
                     ->header('Access-Control-Max-Age', '86400');
@@ -37,7 +39,7 @@ class HandleCors
             $response = $next($request);
 
             $response->headers->set('Access-Control-Allow-Origin', $origin);
-            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
             $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
             $response->headers->set('Access-Control-Allow-Credentials', 'true');
 

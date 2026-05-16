@@ -24,6 +24,8 @@ return [
         'http://127.0.0.1:4200',
         'http://localhost:1200',
         'http://127.0.0.1:1200',
+        'https://nlcom.site',
+        'https://www.nlcom.site',
     ],
 
     'allowed_origins_patterns' => [],
