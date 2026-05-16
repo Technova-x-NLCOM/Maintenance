@@ -32,7 +32,7 @@ export interface Role {
   providedIn: 'root'
 })
 export class RbacService {
-  private readonly API_URL = 'http://127.0.0.1:8000/api/rbac';
+  private readonly API_URL = '/api/rbac';
 
   constructor(private http: HttpClient) {}
 

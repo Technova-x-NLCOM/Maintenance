@@ -229,7 +229,7 @@ export interface ProgramPlanCompletePayload {
   providedIn: 'root'
 })
 export class BatchDistributionService {
-  private readonly baseUrl = 'http://127.0.0.1:8000/api/inventory/batch-distribution';
+  private readonly baseUrl = '/api/inventory/batch-distribution';
 
   constructor(private http: HttpClient) {}
 

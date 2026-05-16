@@ -60,7 +60,7 @@ export interface ResetPasswordResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://127.0.0.1:8000/api/auth';
+  private readonly API_URL = '/api/auth';
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 

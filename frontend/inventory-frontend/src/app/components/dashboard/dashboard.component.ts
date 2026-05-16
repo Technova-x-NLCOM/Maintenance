@@ -328,7 +328,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   };
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api';
+  private readonly API_URL = '/api';
 
   constructor(
     private authService: AuthService,

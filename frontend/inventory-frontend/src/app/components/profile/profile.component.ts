@@ -58,7 +58,7 @@ export class ProfileComponent implements OnInit {
 
   saving = false;
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api';
+  private readonly API_URL = '/api';
 
   constructor(
     private authService: AuthService,

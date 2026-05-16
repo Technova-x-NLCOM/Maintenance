@@ -325,7 +325,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     }
   };
 
-  private readonly API_URL = 'http://127.0.0.1:8000/api';
+  private readonly API_URL = '/api';
 
   constructor(
     private authService: AuthService,
