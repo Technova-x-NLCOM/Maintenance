@@ -11,6 +11,7 @@ import { InventoryItemService, LocationOption } from '../../../services/inventor
 import { InventoryCategoryService } from '../../../services/inventory-category.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { getApiBaseUrl } from '../../../services/api-base';
 
 @Component({
   selector: 'app-stock-report',
@@ -50,7 +51,7 @@ export class StockReportComponent implements OnInit {
   private searchDebounceId?: ReturnType<typeof setTimeout>;
   private readonly SEARCH_DEBOUNCE_MS = 300;
 
-  private readonly BASE = '/api/inventory/transactions';
+  private readonly BASE = `${getApiBaseUrl()}/inventory/transactions`;
 
   constructor(
     private http: HttpClient,

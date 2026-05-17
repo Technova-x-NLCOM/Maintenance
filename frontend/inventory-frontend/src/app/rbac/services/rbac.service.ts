@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { getApiBaseUrl } from '../../services/api-base';
 
 export interface Permission {
   permission_id: number;
@@ -32,7 +33,7 @@ export interface Role {
   providedIn: 'root'
 })
 export class RbacService {
-  private readonly API_URL = '/api/rbac';
+  private readonly API_URL = `${getApiBaseUrl()}/rbac`;
 
   constructor(private http: HttpClient) {}
 

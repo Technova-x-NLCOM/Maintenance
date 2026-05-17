@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
+import { getApiBaseUrl } from '../../services/api-base';
 
 interface Backup {
   name: string;
@@ -36,7 +37,7 @@ export class BackupComponent implements OnInit {
   showBackupSuccess = false;
   showRestoreSuccess = false;
 
-  private readonly API_URL = '/api/backup';
+  private readonly API_URL = `${getApiBaseUrl()}/backup`;
 
   constructor(private http: HttpClient, private cdr: ChangeDetectorRef, private toast: ToastService) {}
 

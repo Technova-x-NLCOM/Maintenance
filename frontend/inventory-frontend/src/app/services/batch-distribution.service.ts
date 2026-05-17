@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export type DistributionType = 'feeding_program' | 'relief_goods';
 
@@ -229,7 +230,7 @@ export interface ProgramPlanCompletePayload {
   providedIn: 'root'
 })
 export class BatchDistributionService {
-  private readonly baseUrl = '/api/inventory/batch-distribution';
+  private readonly baseUrl = `${getApiBaseUrl()}/inventory/batch-distribution`;
 
   constructor(private http: HttpClient) {}
 

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export interface InventoryCategory {
   category_id: number;
@@ -58,7 +59,7 @@ interface CategoryItemsResponse {
   providedIn: 'root'
 })
 export class InventoryCategoryService {
-  private readonly baseUrl = '/api/inventory/categories';
+  private readonly baseUrl = `${getApiBaseUrl()}/inventory/categories`;
 
   constructor(private http: HttpClient) {}
 

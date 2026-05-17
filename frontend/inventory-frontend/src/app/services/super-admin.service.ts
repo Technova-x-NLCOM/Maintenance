@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -39,7 +40,7 @@ export interface SystemAlert {
   providedIn: 'root'
 })
 export class SuperAdminService {
-  private readonly API_URL = '/api';
+  private readonly API_URL = getApiBaseUrl();
 
   constructor(private http: HttpClient) {}
 
