@@ -140,6 +140,76 @@ class DistributionPlanController extends Controller
         ]);
     }
 
+    public function stockReadiness(int $planId)
+    {
+        $plan = $this->getPlanWithTemplate($planId);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        $items = $this->loadTemplateItems((int) $plan->template_id);
+        
+        if (empty($items)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Template not configured with items.',
+                'error' => 'template_not_configured',
+                'data' => [
+                    'required' => 0,
+                    'available' => 0,
+                    'percentage' => 0,
+                ],
+            ], 422);
+        }
+
+        $baseUnitCount = (int) $plan->base_unit_count;
+        $targetUnitCount = (int) $plan->target_unit_count;
+
+        if ($baseUnitCount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Template base unit count must be greater than zero.',
+                'data' => [
+                    'required' => 0,
+                    'available' => 0,
+                    'percentage' => 0,
+                ],
+            ], 422);
+        }
+
+        $multiplier = $targetUnitCount / $baseUnitCount;
+        $totalRequired = 0;
+        $totalAvailable = 0;
+
+        foreach ($items as $line) {
+            $requiredExact = round(((float) $line['quantity_per_base']) * $multiplier, 4);
+            $requiredForIssuance = (int) ceil($requiredExact);
+            $available = (int) $line['current_stock'];
+
+            $totalRequired += $requiredForIssuance;
+            $totalAvailable += min($requiredForIssuance, $available);
+        }
+
+        $percentage = $totalRequired > 0 
+            ? (int) round(($totalAvailable / $totalRequired) * 100) 
+            : 100;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock readiness calculated successfully.',
+            'data' => [
+                'plan_id' => (int) $plan->plan_id,
+                'required' => $totalRequired,
+                'available' => $totalAvailable,
+                'percentage' => $percentage,
+                'status' => $percentage >= 100 ? 'ready' : ($percentage >= 50 ? 'partial' : 'insufficient'),
+            ],
+        ]);
+    }
+
     public function runPrecheck(Request $request, int $planId)
     {
         $plan = $this->getPlanWithTemplate($planId);
