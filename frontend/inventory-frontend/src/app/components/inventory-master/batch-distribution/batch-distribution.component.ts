@@ -6,6 +6,7 @@ import {
   BatchDistributionCalculation,
   BatchDistributionItemOption,
   BatchDistributionService,
+  BatchDistributionTemplateDetails,
   BatchDistributionTemplatePayload,
   BatchDistributionTemplateSummary,
   DistributionType,
@@ -58,6 +59,7 @@ export class BatchDistributionComponent implements OnInit {
   savingPlan = false;
   loadingPlanDetails = false;
   runningPlanAction = false;
+  calculatorOpen = false;
 
   templates: BatchDistributionTemplateSummary[] = [];
   itemOptions: BatchDistributionItemOption[] = [];
@@ -65,6 +67,7 @@ export class BatchDistributionComponent implements OnInit {
 
   selectedTemplateId: number | null = null;
   selectedTemplateName = '';
+  openTemplateMenuId: number | null = null;
 
   searchTemplate = '';
   templateTypeFilter: 'all' | DistributionType = 'all';
@@ -124,6 +127,9 @@ export class BatchDistributionComponent implements OnInit {
   planRemainingLines: EditableRemainingLine[] = [];
   planProcuredLines: EditableProcuredLine[] = [];
   planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
+  planWizardStep: 1 | 2 | 3 = 1;
+  showSaveConfirmDialog = false;
+  pendingSavedTemplate: BatchDistributionTemplateSummary | null = null;
 
   errorMessage = '';
   successMessage = '';
@@ -327,6 +333,19 @@ export class BatchDistributionComponent implements OnInit {
     return this.templatePage < this.totalTemplatePages;
   }
 
+  get planWizardTitle(): string {
+    switch (this.planWizardStep) {
+      case 1:
+        return 'Review Shortages';
+      case 2:
+        return 'Receive Missing Items';
+      case 3:
+        return 'Execute Distribution';
+      default:
+        return 'Review Shortages';
+    }
+  }
+
   private clearToastTimeout(): void {
     if (this.toastTimeout !== undefined) {
       clearTimeout(this.toastTimeout);
@@ -338,10 +357,55 @@ export class BatchDistributionComponent implements OnInit {
     this.toast.show(type, message);
   }
 
+  toggleCalculator(): void {
+    this.calculatorOpen = !this.calculatorOpen;
+  }
+
+  openCalculator(): void {
+    this.calculatorOpen = true;
+  }
+
+  closeCalculator(): void {
+    this.calculatorOpen = false;
+  }
+
+  toggleTemplateMenu(templateId: number, event: Event): void {
+    event.stopPropagation();
+    this.openTemplateMenuId = this.openTemplateMenuId === templateId ? null : templateId;
+  }
+
+  closeTemplateMenu(): void {
+    this.openTemplateMenuId = null;
+  }
+
+  runTemplateMenuAction(
+    action: 'calculate' | 'edit' | 'delete',
+    template: BatchDistributionTemplateSummary,
+  ): void {
+    this.closeTemplateMenu();
+    if (action === 'calculate') {
+      this.selectTemplate(template);
+      this.openCalculator();
+      return;
+    }
+
+    if (action === 'edit') {
+      this.editTemplate(template);
+      return;
+    }
+
+    if (action === 'delete') {
+      this.deleteTemplate(template);
+    }
+  }
+
   setTab(tab: 'distribution' | 'scheduled'): void {
     this.activeTab = tab;
     this.errorMessage = '';
     this.successMessage = '';
+    if (tab !== 'distribution') {
+      this.calculatorOpen = false;
+    }
   }
 
   loadTemplates(): void {
@@ -577,6 +641,7 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   editTemplate(summary: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -747,12 +812,16 @@ export class BatchDistributionComponent implements OnInit {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.itemComboboxOpen) {
+    const target = event.target as Element | null;
+    if (!target) {
       return;
     }
 
-    const target = event.target as Element | null;
-    if (!target) {
+    if (this.openTemplateMenuId && !target.closest('.template-menu')) {
+      this.openTemplateMenuId = null;
+    }
+
+    if (!this.itemComboboxOpen) {
       return;
     }
 
@@ -843,8 +912,6 @@ export class BatchDistributionComponent implements OnInit {
     request$.subscribe({
       next: (response) => {
         this.savingTemplate = false;
-        this.showTemplateForm = false;
-        this.isEditingTemplate = false;
 
         const template = response.data.template;
         this.selectedTemplateId = template.template_id;
@@ -866,7 +933,8 @@ export class BatchDistributionComponent implements OnInit {
 
         this.toast.success('Template saved successfully.');
         this.loadTemplates();
-        this.calculate();
+        this.pendingSavedTemplate = this.buildTemplateSummary(response.data);
+        this.showSaveConfirmDialog = true;
       },
       error: (err) => {
         this.savingTemplate = false;
@@ -876,7 +944,25 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
+  handleSaveConfirmation(shouldCalculate: boolean): void {
+    this.showSaveConfirmDialog = false;
+    this.showTemplateForm = false;
+    this.isEditingTemplate = false;
+
+    const template = this.pendingSavedTemplate;
+    this.pendingSavedTemplate = null;
+    if (!template) {
+      return;
+    }
+
+    if (shouldCalculate) {
+      this.openCalculator();
+      this.selectTemplate(template);
+    }
+  }
+
   selectTemplate(summary: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
     this.selectedTemplateId = summary.template_id;
     this.selectedTemplateName = summary.template_name;
     this.targetUnitCount = summary.base_unit_count;
@@ -1054,6 +1140,7 @@ export class BatchDistributionComponent implements OnInit {
           this.planIssueSummary = response.data.issuance ?? null;
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();
+          this.syncPlanWizardStep(response.data.plan.status);
           this.loadPlans();
         },
         error: (err) => {
@@ -1078,6 +1165,7 @@ export class BatchDistributionComponent implements OnInit {
         this.planIssueSummary = response.data.issuance ?? null;
         this.seedRemainingLinesFromCurrentDetails();
         this.seedProcuredLinesFromCurrentDetails();
+        this.syncPlanWizardStep(response.data.plan.status);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -1088,7 +1176,31 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
-  runPlanPrecheck(): void {
+  handlePlanStepOneNext(): void {
+    if (!this.selectedPlanId || this.runningPlanAction) {
+      return;
+    }
+
+    this.runPlanPrecheck(true);
+  }
+
+  handlePlanStepTwoNext(): void {
+    if (!this.selectedPlanId || this.runningPlanAction) {
+      return;
+    }
+
+    this.runPlanFinalCheck(true);
+  }
+
+  goToPlanStep(step: 1 | 2 | 3): void {
+    if (step >= this.planWizardStep) {
+      return;
+    }
+
+    this.planWizardStep = step;
+  }
+
+  runPlanPrecheck(advanceStep = false): void {
     if (!this.selectedPlanId) {
       return;
     }
@@ -1099,6 +1211,9 @@ export class BatchDistributionComponent implements OnInit {
         this.toast.success(response.message || 'Precheck completed.');
         this.loadPlanDetails(this.selectedPlanId!);
         this.loadPlans();
+        if (advanceStep) {
+          this.planWizardStep = 2;
+        }
       },
       error: (err) => {
         this.runningPlanAction = false;
@@ -1108,7 +1223,7 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
-  runPlanFinalCheck(): void {
+  runPlanFinalCheck(advanceStep = false): void {
     if (!this.selectedPlanId) {
       return;
     }
@@ -1138,6 +1253,9 @@ export class BatchDistributionComponent implements OnInit {
         this.toast.success(response.message || 'Final check completed with receiving and issuance.');
         this.loadPlanDetails(this.selectedPlanId!);
         this.loadPlans();
+        if (advanceStep) {
+          this.planWizardStep = 3;
+        }
       },
       error: (err) => {
         this.runningPlanAction = false;
@@ -1175,6 +1293,7 @@ export class BatchDistributionComponent implements OnInit {
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();
+          this.planWizardStep = 3;
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -1246,5 +1365,64 @@ export class BatchDistributionComponent implements OnInit {
         quantity_brought: 0,
         notes: '',
       }));
+  }
+
+  private syncPlanWizardStep(status: ProgramPlanStatus | string): void {
+    switch (status) {
+      case 'planned':
+        this.planWizardStep = 1;
+        break;
+      case 'checked_pre':
+        this.planWizardStep = 2;
+        break;
+      case 'ready':
+      case 'completed':
+        this.planWizardStep = 3;
+        break;
+      default:
+        this.planWizardStep = 1;
+        break;
+    }
+  }
+
+  private deleteTemplate(summary: BatchDistributionTemplateSummary): void {
+    const ok = confirm(`Delete template "${summary.template_name}"?`);
+    if (!ok) {
+      return;
+    }
+
+    this.batchService.deleteTemplate(summary.template_id).subscribe({
+      next: (response: { success: boolean; message: string }) => {
+        this.toast.success(response.message || 'Template deleted.');
+        if (this.selectedTemplateId === summary.template_id) {
+          this.selectedTemplateId = null;
+          this.selectedTemplateName = '';
+          this.calculation = null;
+        }
+        this.loadTemplates();
+        this.cdr.detectChanges();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.toast.error(err?.error?.message || 'Failed to delete template.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private buildTemplateSummary(
+    details: BatchDistributionTemplateDetails,
+  ): BatchDistributionTemplateSummary {
+    return {
+      template_id: details.template.template_id,
+      template_name: details.template.template_name,
+      distribution_type: details.template.distribution_type,
+      distribution_type_label: details.template.distribution_type_label,
+      base_unit_count: details.template.base_unit_count,
+      notes: details.template.notes ?? null,
+      is_active: details.template.is_active ?? true,
+      created_at: details.template.created_at ?? '',
+      updated_at: details.template.updated_at ?? '',
+      item_count: details.items.length,
+    };
   }
 }
