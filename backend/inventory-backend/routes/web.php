@@ -212,6 +212,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
                 Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
                 Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
+                Route::delete('templates/{templateId}', [BatchDistributionController::class, 'deleteTemplate']);
                 Route::post('calculate', [BatchDistributionController::class, 'calculate']);
                 Route::post('issue', [BatchDistributionController::class, 'issue']);
 
