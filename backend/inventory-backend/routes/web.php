@@ -212,6 +212,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
                 Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
                 Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
+                Route::delete('templates/{templateId}', [BatchDistributionController::class, 'deleteTemplate']);
                 Route::post('calculate', [BatchDistributionController::class, 'calculate']);
                 Route::post('issue', [BatchDistributionController::class, 'issue']);
 
@@ -219,6 +220,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('program-plans', [DistributionPlanController::class, 'index']);
                 Route::post('program-plans', [DistributionPlanController::class, 'store']);
                 Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
+                Route::get('program-plans/{planId}/stock-readiness', [DistributionPlanController::class, 'stockReadiness']);
                 Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);
                 Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
                 Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'update']);

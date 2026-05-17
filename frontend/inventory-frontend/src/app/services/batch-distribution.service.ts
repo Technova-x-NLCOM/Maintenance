@@ -294,6 +294,13 @@ export class BatchDistributionService {
     );
   }
 
+  deleteTemplate(templateId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/templates/${templateId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   calculate(templateId: number, targetUnitCount: number): Observable<{ success: boolean; message: string; data: BatchDistributionCalculation }> {
     return this.http.post<{ success: boolean; message: string; data: BatchDistributionCalculation }>(
       `${this.baseUrl}/calculate`,
@@ -385,6 +392,13 @@ export class BatchDistributionService {
     return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
       `${this.baseUrl}/program-plans/${planId}/complete`,
       payload,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  getStockReadiness(planId: number): Observable<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }> {
+    return this.http.get<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }>(
+      `${this.baseUrl}/program-plans/${planId}/stock-readiness`,
       { headers: this.getHeaders() }
     );
   }
