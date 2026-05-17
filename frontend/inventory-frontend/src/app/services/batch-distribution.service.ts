@@ -395,4 +395,11 @@ export class BatchDistributionService {
       { headers: this.getHeaders() }
     );
   }
+
+  getStockReadiness(planId: number): Observable<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }> {
+    return this.http.get<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }>(
+      `${this.baseUrl}/program-plans/${planId}/stock-readiness`,
+      { headers: this.getHeaders() }
+    );
+  }
 }
