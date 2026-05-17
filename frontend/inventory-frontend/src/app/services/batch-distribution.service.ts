@@ -294,6 +294,13 @@ export class BatchDistributionService {
     );
   }
 
+  deleteTemplate(templateId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/templates/${templateId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   calculate(templateId: number, targetUnitCount: number): Observable<{ success: boolean; message: string; data: BatchDistributionCalculation }> {
     return this.http.post<{ success: boolean; message: string; data: BatchDistributionCalculation }>(
       `${this.baseUrl}/calculate`,
