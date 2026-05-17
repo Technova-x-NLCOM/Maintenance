@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AuthService, User } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { getApiBaseUrl } from '../../services/api-base';
 
 interface EditProfileForm {
   first_name: string;
@@ -58,7 +59,7 @@ export class ProfileComponent implements OnInit {
 
   saving = false;
 
-  private readonly API_URL = '/api';
+  private readonly API_URL = getApiBaseUrl();
 
   constructor(
     private authService: AuthService,

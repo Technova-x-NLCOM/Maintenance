@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export interface SystemUserDto {
   user_id: number;
@@ -43,7 +44,7 @@ export interface UpdateUserPayload {
 
 @Injectable({ providedIn: 'root' })
 export class UserManagementService {
-  private readonly baseUrl = '/api/users';
+  private readonly baseUrl = `${getApiBaseUrl()}/users`;
 
   constructor(private http: HttpClient) {}
 

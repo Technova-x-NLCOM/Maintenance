@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export interface User {
   user_id: number;
@@ -60,7 +61,7 @@ export interface ResetPasswordResponse {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = '/api/auth';
+  private readonly API_URL = `${getApiBaseUrl()}/auth`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 

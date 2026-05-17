@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { getApiBaseUrl } from './api-base';
 
 export interface InventoryItem {
   item_id: number;
@@ -319,7 +320,7 @@ export type {
   providedIn: 'root'
 })
 export class InventoryItemService {
-  private readonly baseUrl = '/api/inventory/items';
+  private readonly baseUrl = `${getApiBaseUrl()}/inventory/items`;
 
   constructor(private http: HttpClient) {}
 
@@ -379,7 +380,7 @@ export class InventoryItemService {
       params = params.set('search', search.trim());
     }
 
-    return this.http.get<LocationOptionsResponse>('/api/inventory/locations/options', {
+    return this.http.get<LocationOptionsResponse>(`${getApiBaseUrl()}/inventory/locations/options`, {
       headers: this.getHeaders(),
       params,
     });
@@ -410,7 +411,7 @@ export class InventoryItemService {
     }
 
     return this.http.get<StorageInventoryResponse>(
-      '/api/inventory/transactions/storage-inventory',
+      `${getApiBaseUrl()}/inventory/transactions/storage-inventory`,
       { headers: this.getHeaders(), params: queryParams }
     );
   }
@@ -493,14 +494,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedReceivingItemsResponse>(
-      '/api/inventory/receiving/items',
+      `${getApiBaseUrl()}/inventory/receiving/items`,
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createReceivingTransaction(data: ReceivingTransactionRequest): Observable<ReceivingTransactionResponse> {
     return this.http.post<ReceivingTransactionResponse>(
-      '/api/inventory/receiving/create',
+      `${getApiBaseUrl()}/inventory/receiving/create`,
       data,
       { headers: this.getHeaders() }
     );
@@ -524,14 +525,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedIssuanceItemsResponse>(
-      '/api/inventory/issuance/items',
+      `${getApiBaseUrl()}/inventory/issuance/items`,
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createIssuanceTransaction(data: IssuanceTransactionRequest): Observable<IssuanceTransactionResponse> {
     return this.http.post<IssuanceTransactionResponse>(
-      '/api/inventory/issuance/create',
+      `${getApiBaseUrl()}/inventory/issuance/create`,
       data,
       { headers: this.getHeaders() }
     );
@@ -555,14 +556,14 @@ export class InventoryItemService {
     }
 
     return this.http.get<PaginatedAdjustmentItemsResponse>(
-      '/api/inventory/adjustment/items',
+      `${getApiBaseUrl()}/inventory/adjustment/items`,
       { params: httpParams, headers: this.getHeaders() }
     );
   }
 
   createAdjustmentTransaction(data: AdjustmentTransactionRequest): Observable<AdjustmentTransactionResponse> {
     return this.http.post<AdjustmentTransactionResponse>(
-      '/api/inventory/adjustment/create',
+      `${getApiBaseUrl()}/inventory/adjustment/create`,
       data,
       { headers: this.getHeaders() }
     );

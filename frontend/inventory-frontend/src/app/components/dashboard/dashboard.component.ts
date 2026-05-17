@@ -13,6 +13,7 @@ import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/ro
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { AuthService, User } from '../../services/auth.service';
 import { Subscription, filter, forkJoin, catchError, of, switchMap, map } from 'rxjs';
+import { getApiBaseUrl } from '../../services/api-base';
 import {
   Chart,
   ChartConfiguration,
@@ -328,7 +329,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   };
 
-  private readonly API_URL = '/api';
+  private readonly API_URL = getApiBaseUrl();
 
   constructor(
     private authService: AuthService,

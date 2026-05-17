@@ -9,6 +9,7 @@ import autoTable from 'jspdf-autotable';
 import { TransactionRecord, Paginated } from '../monitoring.models';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { getApiBaseUrl } from '../../../services/api-base';
 
 @Component({
   selector: 'app-transaction-history',
@@ -42,7 +43,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     dateTo: string;
   } | null = null;
 
-  private readonly BASE = '/api/inventory/transactions';
+  private readonly BASE = `${getApiBaseUrl()}/inventory/transactions`;
 
   constructor(
     private http: HttpClient,

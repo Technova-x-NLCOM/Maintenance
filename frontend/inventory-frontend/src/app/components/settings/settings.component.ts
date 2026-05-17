@@ -5,6 +5,7 @@ import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http
 import { AuthService, User } from '../../services/auth.service';
 import { RbacService, Role } from '../../rbac/services/rbac.service';
 import { BackupComponent } from '../backup/backup.component';
+import { getApiBaseUrl } from '../../services/api-base';
 
 interface SystemSetting {
   setting_id: number;
@@ -36,7 +37,7 @@ export class SettingsComponent implements OnInit {
   saveError: string | null = null;
   saveSuccess: string | null = null;
 
-  private readonly API_URL = '/api/settings';
+  private readonly API_URL = `${getApiBaseUrl()}/settings`;
 
   constructor(
     private http: HttpClient,

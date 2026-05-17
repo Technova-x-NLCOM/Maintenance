@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { getApiBaseUrl } from './api-base';
 
 export interface MaintenanceTableInfo {
   name: string;
@@ -11,7 +12,7 @@ export interface MaintenanceTableInfo {
 
 @Injectable({ providedIn: 'root' })
 export class MaintenanceService {
-  private baseUrl = '/api/maintenance';
+  private baseUrl = `${getApiBaseUrl()}/maintenance`;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

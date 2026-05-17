@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getApiBaseUrl } from '../../services/api-base';
 
 export interface TransactionRecord {
   transaction_id: number;
@@ -97,7 +98,7 @@ export class MonitoringComponent implements OnInit, OnDestroy {
     dateTo: string;
   } | null = null;
 
-  private readonly BASE = '/api/inventory/transactions';
+  private readonly BASE = `${getApiBaseUrl()}/inventory/transactions`;
 
   constructor(
     private http: HttpClient,

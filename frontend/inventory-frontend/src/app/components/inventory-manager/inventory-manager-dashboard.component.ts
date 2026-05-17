@@ -13,6 +13,7 @@ import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/ro
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { AuthService, User } from '../../services/auth.service';
 import { Subscription, filter, forkJoin, catchError, of, map, switchMap } from 'rxjs';
+import { getApiBaseUrl } from '../../services/api-base';
 import {
   Chart,
   ChartConfiguration,
@@ -325,7 +326,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     }
   };
 
-  private readonly API_URL = '/api';
+  private readonly API_URL = getApiBaseUrl();
 
   constructor(
     private authService: AuthService,
