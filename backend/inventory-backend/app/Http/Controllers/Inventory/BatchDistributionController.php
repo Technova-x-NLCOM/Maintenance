@@ -228,6 +228,49 @@ class BatchDistributionController extends Controller
         }
     }
 
+    public function deleteTemplate(Request $request, int $templateId)
+    {
+        $template = DB::table('distribution_templates')->where('template_id', $templateId)->first();
+        if (!$template) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Distribution template not found.',
+            ], 404);
+        }
+
+        try {
+            DB::transaction(function () use ($templateId) {
+                DB::table('distribution_template_items')
+                    ->where('template_id', $templateId)
+                    ->delete();
+
+                DB::table('distribution_templates')
+                    ->where('template_id', $templateId)
+                    ->delete();
+            });
+
+            AuditLogService::log(
+                'distribution_templates',
+                $templateId,
+                'DELETE',
+                $template ? (array) $template : null,
+                null,
+                $request
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Distribution template deleted successfully.',
+            ]);
+        } catch (	hrowable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete distribution template.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
     public function calculate(Request $request)
     {
         $validated = $request->validate([
