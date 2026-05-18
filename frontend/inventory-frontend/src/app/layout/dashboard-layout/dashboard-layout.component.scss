@@ -1,17 +1,20 @@
 .dashboard-container {
   display: flex;
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
   background-color: #f5f7fa;
+}
 
-  .sidebar-shell {
-    flex-shrink: 0;
-    position: relative;
-    z-index: 10001;
-  }
+.sidebar-shell {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10001;
 }
 
 .dashboard-main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -24,42 +27,52 @@
   overflow-y: auto;
   overflow-x: hidden;
   background-color: #f5f7fa;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sidebar-backdrop {
   display: none;
 }
 
-/* Tablet + Mobile: off-canvas sidebar (hidden until hamburger) */
+/* ── Mobile & Tablet (≤ 768px): off-canvas sidebar ──────────────── */
 @media (max-width: 768px) {
   .dashboard-container {
     position: relative;
   }
 
+  /* Dim backdrop shown when sidebar is open */
   .sidebar-backdrop {
     display: block;
     position: fixed;
     inset: 0;
     background: rgba(15, 23, 42, 0.45);
-    z-index: 90;
+    z-index: 10000;
   }
 
+  /* Pull the shell completely out of the flex row so it takes 0 width.
+     The sidebar panel inside it slides in/out via transform. */
   .sidebar-shell {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
-    z-index: 100;
-    transform: translateX(-110%);
-    transition: transform 0.22s ease;
+    /* width matches the sidebar inside — needed so the panel is fully visible when open */
+    width: 280px;
+    z-index: 10001;
+    /* Start off-screen to the left */
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
     will-change: transform;
   }
 
+  /* Hamburger opens it */
   .sidebar-shell.is-open {
     transform: translateX(0);
   }
 
+  /* dashboard-main fills the full viewport since sidebar-shell is position:fixed */
   .dashboard-main {
     width: 100%;
+    flex: 1;
   }
 }
