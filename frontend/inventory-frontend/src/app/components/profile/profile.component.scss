@@ -19,6 +19,35 @@ $danger: #dc2626;
   align-items: start;
 }
 
+@media (max-width: 768px) {
+  .profile-page {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .profile-sidebar,
+  .profile-main {
+    width: 100%;
+  }
+
+  .sidebar-actions .btn {
+    width: 100%;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .setting-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
 // ── Sidebar ────────────────────────────────────────────────────────
 .profile-sidebar {
   background: #fff;
