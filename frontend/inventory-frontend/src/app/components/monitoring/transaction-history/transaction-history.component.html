@@ -72,7 +72,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let tx of transactions">
-            <td>
+            <td data-label="Type">
               <span class="type-badge"
                 [class.badge-in]="tx.transaction_type === 'IN'"
                 [class.badge-out]="tx.transaction_type === 'OUT'"
@@ -80,16 +80,16 @@
                 {{ tx.transaction_type === 'IN' ? '▲ IN' : (tx.transaction_type === 'OUT' ? '▼ OUT' : '△ ADJ') }}
               </span>
             </td>
-            <td class="cell-code">{{ tx.reference_number }}</td>
-            <td>{{ tx.item_code }}</td>
-            <td>{{ tx.item_description }}</td>
-            <td>{{ tx.batch_number || '—' }}</td>
-            <td>{{ tx.batch_location_name || tx.from_location_name || tx.to_location_name || '—' }}</td>
-            <td class="num-col">{{ tx.quantity }}</td>
-            <td>{{ tx.measurement_unit || '—' }}</td>
-            <td>{{ tx.destination || tx.reason || '—' }}</td>
-            <td>{{ tx.performed_by_name }}</td>
-            <td class="date-cell">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>
+            <td class="cell-code" data-label="Reference">{{ tx.reference_number }}</td>
+            <td data-label="Item Code">{{ tx.item_code }}</td>
+            <td data-label="Description">{{ tx.item_description }}</td>
+            <td data-label="Batch">{{ tx.batch_number || '—' }}</td>
+            <td data-label="Location">{{ tx.batch_location_name || tx.from_location_name || tx.to_location_name || '—' }}</td>
+            <td class="num-col" data-label="Qty">{{ tx.quantity }}</td>
+            <td data-label="UoM">{{ tx.measurement_unit || '—' }}</td>
+            <td data-label="Destination / Reason">{{ tx.destination || tx.reason || '—' }}</td>
+            <td data-label="Performed By">{{ tx.performed_by_name }}</td>
+            <td class="date-cell" data-label="Date">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>
           </tr>
         </tbody>
       </table>
