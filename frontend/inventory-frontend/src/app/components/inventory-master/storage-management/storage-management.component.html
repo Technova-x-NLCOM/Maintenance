@@ -1,0 +1,341 @@
+<div class="storage-management-page">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="header-text">
+      <!-- Eyebrow removed for cleaner header -->
+      <h1 class="page-title">Storage Management</h1>
+      <p class="subtitle">
+        Manage storage locations and monitor inventory distribution across all storage points.
+        Click <strong>Add new location</strong> to create one, or <strong>Edit</strong> on a row to update.
+      </p>
+    </div>
+  </header>
+
+  <app-toast></app-toast>
+
+  <!-- Location Form Modal -->
+  <div class="modal-overlay" *ngIf="showLocationForm">
+    <div class="modal-content location-form-modal" (click)="$event.stopPropagation()">
+      <div class="form-panel-header">
+        <h2 class="panel-title">{{ editingLocationId ? 'Edit location' : 'Add new location' }}</h2>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="form-grid">
+          <div class="full-width code-display-field">
+            <span class="field-label">Generated code</span>
+            <div class="code-display-box">{{ locationForm.location_code }}</div>
+            <div class="code-help">This code is generated automatically and cannot be edited.</div>
+          </div>
+
+          <label class="full-width">
+            <span>Location name <em>*</em></span>
+            <input
+              type="text"
+              [(ngModel)]="locationForm.location_name"
+              placeholder="e.g. Main Pantry"
+              maxlength="100"
+            />
+          </label>
+
+          <label>
+            <span>Location type</span>
+            <input
+              type="text"
+              [(ngModel)]="locationForm.location_type"
+              placeholder="e.g. Shelves, Rack, Room"
+              maxlength="50"
+            />
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="locationForm.is_active" />
+            <span>Show this location as active</span>
+          </label>
+
+          <label class="full-width">
+            <span>Description (optional)</span>
+            <textarea
+              rows="2"
+              [(ngModel)]="locationForm.description"
+              placeholder="Short note about the storage location"
+              maxlength="500"
+            ></textarea>
+            <div class="character-counter">
+              {{ (locationForm.description || '').length }} / 500
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" type="button" (click)="closeLocationForm()">Cancel</button>
+        <button
+          class="btn-primary"
+          type="button"
+          (click)="saveLocation()"
+          [disabled]="savingLocation || !locationForm.location_name.trim()"
+        >
+          {{ savingLocation ? 'Saving...' : editingLocationId ? 'Save changes' : 'Add location' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main List Panel -->
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">
+        Location Directory <span class="count">({{ registeredLocations }})</span>
+      </h2>
+      <div class="toolbar-actions">
+        <button class="btn-primary" (click)="startNewLocation()" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add new location
+        </button>
+        <div class="search-row">
+          <div class="search-box">
+            <svg
+              class="search-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="locationSearchTerm"
+              placeholder="Search by code or name"
+            />
+            <button
+              *ngIf="locationSearchTerm"
+              class="btn-clear-input"
+              type="button"
+              (click)="locationSearchTerm = ''"
+              aria-label="Clear search"
+              title="Clear search"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="state-loading">Loading locations...</div>
+
+    <div class="table-wrap" *ngIf="!loading && displayedLocationRows.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of paginatedLocationRows; trackBy: trackByLocationRow">
+            <td>
+              <span class="cell-code">{{ r.location_code }}</span>
+            </td>
+            <td>{{ r.location_name }}</td>
+            <td>{{ r.location_type || '—' }}</td>
+            <td class="description-cell">{{ r.description || '—' }}</td>
+            <td>
+              <span class="status-badge" [class.inactive]="!r.is_active">
+                {{ r.is_active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn-sm btn-view" type="button" (click)="openDrawer(r)">
+                View
+              </button>
+              <button class="btn-sm btn-edit" type="button" (click)="editLocation(r)">Edit</button>
+              <button class="btn-sm btn-toggle" type="button" (click)="deleteLocation(r)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="paginatedLocationRows.length === 0">
+            <td colspan="6" class="empty">No locations found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && !displayedLocationRows.length" class="empty">
+      No locations found. Create a new storage location to get started, or clear your search filter.
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="firstPage()"
+          type="button"
+        >
+          &laquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage <= 1"
+          (click)="previousPage()"
+          type="button"
+        >
+          &lsaquo;
+        </button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="nextPage()"
+          type="button"
+        >
+          &rsaquo;
+        </button>
+        <button
+          class="btn-ghost page-btn"
+          [disabled]="currentPage >= totalPages"
+          (click)="lastPage()"
+          type="button"
+        >
+          &raquo;
+        </button>
+      </div>
+
+      <div class="page-size-wrap">
+        <label for="locations-rows-per-page">Rows per page</label>
+        <select
+          class="rows-per-page"
+          id="locations-rows-per-page"
+          [(ngModel)]="itemsPerPage"
+          (ngModelChange)="onPageSizeChange()"
+        >
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Slide-Out Drawer for Inventory -->
+  <div class="modal-overlay" *ngIf="isDrawerOpen" (click)="closeDrawer()"></div>
+  
+  <div class="drawer" [class.drawer-open]="isDrawerOpen" *ngIf="isDrawerOpen">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="drawer-title-block">
+        <h3>{{ selectedLocation?.location_name }}</h3>
+        <p class="drawer-subtitle">
+          <span class="cell-code">{{ selectedLocation?.location_code }}</span>
+          <span *ngIf="selectedLocation?.location_type" class="type-label">{{ selectedLocation?.location_type }}</span>
+        </p>
+      </div>
+      <button 
+        class="drawer-close" 
+        type="button" 
+        (click)="closeDrawer()"
+        aria-label="Close drawer"
+        title="Close (Esc)"
+      >
+        ×
+      </button>
+    </div>
+
+    <!-- Drawer Content -->
+    <div class="drawer-content">
+      <!-- Filter Controls -->
+      <div class="drawer-controls">
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="showLowStockOnly" />
+          <span>Show low stock only</span>
+        </label>
+        <div class="item-count">
+          {{ filteredInventoryItems.length }} 
+          {{ filteredInventoryItems.length === 1 ? 'item' : 'items' }}
+        </div>
+      </div>
+
+      <!-- Loading Skeleton -->
+      <div *ngIf="isLoadingInventory" class="drawer-loading" aria-live="polite" aria-busy="true">
+        <div class="skeleton-card" *ngFor="let i of [1, 2, 3, 4]">
+          <div class="skeleton-bar skeleton-title"></div>
+          <div class="skeleton-bar skeleton-text"></div>
+          <div class="skeleton-bar skeleton-text short"></div>
+        </div>
+      </div>
+
+      <!-- Inventory Items -->
+      <div 
+        *ngIf="!isLoadingInventory && filteredInventoryItems.length" 
+        class="inventory-list"
+        aria-live="polite"
+        aria-busy="false"
+      >
+        <div 
+          *ngFor="let item of filteredInventoryItems; trackBy: trackByInventoryItem"
+          class="inventory-item-card"
+          [class.low-stock-card]="item.is_low_stock"
+        >
+          <div class="item-header">
+            <div class="cell-code">{{ item.item_code }}</div>
+            <span 
+              class="status-badge" 
+              [class.ok]="!item.is_low_stock" 
+              [class.low]="item.is_low_stock && item.current_stock > 0"
+              [class.critical]="item.is_low_stock && item.current_stock === 0"
+            >
+              {{ item.current_stock === 0 ? 'Out of Stock' : (item.is_low_stock ? 'Low Stock' : 'OK') }}
+            </span>
+          </div>
+          
+          <h4 class="item-name">{{ item.item_description }}</h4>
+          
+          <div class="item-details">
+            <p><strong>Category:</strong> {{ item.category_name || '—' }}</p>
+            <p><strong>Unit:</strong> {{ item.measurement_unit || '—' }}</p>
+          </div>
+
+          <div class="item-stock-info">
+            <div class="stock-metric">
+              <span class="metric-label">Current Stock</span>
+              <strong class="metric-value" [class.critical-value]="item.current_stock === 0">
+                {{ item.current_stock }}
+              </strong>
+            </div>
+            <div class="stock-metric">
+              <span class="metric-label">Reorder Level</span>
+              <strong class="metric-value">{{ item.reorder_level }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoadingInventory && !filteredInventoryItems.length" class="drawer-empty">
+        <div class="empty-icon">📦</div>
+        <h5 *ngIf="!showLowStockOnly">No inventory items found</h5>
+        <p *ngIf="!showLowStockOnly">This location does not have any inventory items yet.</p>
+        <h5 *ngIf="showLowStockOnly">No low stock items</h5>
+        <p *ngIf="showLowStockOnly">All items are adequately stocked at this location.</p>
+      </div>
+    </div>
+  </div>
+</div>

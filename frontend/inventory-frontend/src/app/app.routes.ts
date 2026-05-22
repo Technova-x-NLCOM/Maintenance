@@ -12,7 +12,7 @@ import { RolesComponent } from './components/roles/roles.component';
 import { MaintenanceComponent } from './components/maintenance/maintenance.component';
 import { SettingsComponent } from './components/settings/settings.component';
 import { CategoryManagementComponent } from './components/inventory-master/categories/category-management.component';
-import { LocationsManagementComponent } from './components/inventory-master/locations/locations-management.component';
+import { StorageManagementComponent } from './components/inventory-master/storage-management/storage-management.component';
 import { ItemRegistrationUpdatesComponent } from './components/inventory-master/items/item-registration-updates.component';
 import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
@@ -20,7 +20,6 @@ import { IssuanceTransactionComponent } from './components/issuance-transaction/
 import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './components/monitoring/transaction-history/transaction-history.component';
 import { ScheduledBatchesComponent } from './components/monitoring/scheduled-batches/scheduled-batches.component';
-import { StorageInventoryComponent } from './components/monitoring/storage-inventory/storage-inventory.component';
 import { SystemUsersComponent } from './components/system-users/system-users.component';
 import { AuditLogComponent } from './components/audit-log/audit-log.component';
 import { permissionGuard } from './guards/auth.guard';
@@ -43,7 +42,8 @@ export const routes: Routes = [
       { path: 'system-users', component: SystemUsersComponent },
       { path: 'backup', redirectTo: 'settings', pathMatch: 'full' },
       { path: 'inventory/categories', component: CategoryManagementComponent },
-      { path: 'inventory/locations', component: LocationsManagementComponent },
+      { path: 'inventory/storage-management', component: StorageManagementComponent },
+      { path: 'inventory/locations', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
       { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
@@ -51,7 +51,7 @@ export const routes: Routes = [
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
       { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
       { path: 'monitoring/stock-report', component: StockReportComponent },
-      { path: 'monitoring/storage-inventory', component: StorageInventoryComponent },
+      { path: 'monitoring/storage-inventory', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
       { path: 'monitoring/scheduled-batches', component: ScheduledBatchesComponent },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
