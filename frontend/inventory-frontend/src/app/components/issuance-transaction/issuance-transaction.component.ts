@@ -48,6 +48,30 @@ export class IssuanceTransactionComponent implements OnInit {
 
   selectedItem: IssuanceItem | null = null;
   transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
+
+  // Mobile detection
+  private _isMobileView = false;
+
+  isMobileView(): boolean {
+    return this._isMobileView;
+  }
+
+  private updateMobileView(): void {
+    const wasMobile = this._isMobileView;
+    this._isMobileView = window.innerWidth <= 425;
+    
+    // If switching from mobile to desktop or vice versa, close the drawer
+    if (wasMobile !== this._isMobileView && this.showListModal) {
+      this.showListModal = false;
+    }
+    
+    this.cdr.detectChanges();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.updateMobileView();
+  }
   selectedLocationId: number | null = null;
   selectedLocationLabel = 'Select source storage';
   issueQuantity = 1;
@@ -68,6 +92,25 @@ export class IssuanceTransactionComponent implements OnInit {
   showCartDrawer = false;
   attemptedSubmit = false;
 
+  // Drawer methods
+  toggleListDrawer(): void {
+    if (this.saving) return;
+    this.showCartDrawer = !this.showCartDrawer;
+  }
+
+  // Alias properties for template compatibility
+  get issuanceLines(): IssuanceCartLine[] {
+    return this.cartLines;
+  }
+
+  get showListModal(): boolean {
+    return this.showCartDrawer;
+  }
+
+  set showListModal(value: boolean) {
+    this.showCartDrawer = value;
+  }
+
   isInCart(itemId: number): boolean {
     return this.cartLines.some(l => l.item_id === itemId);
   }
@@ -79,31 +122,24 @@ export class IssuanceTransactionComponent implements OnInit {
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
     // Open drawer if not already open; don't close it if already open
-    if (!this.showCartDrawer) {
-      this.showCartDrawer = true;
+    if (!this.showListModal) {
+      this.showListModal = true;
     }
     this.attemptedSubmit = false;
   }
 
   closeCartModal(): void {
     if (this.saving) return;
-    this.showCartDrawer = false;
+    this.showListModal = false;
     this.attemptedSubmit = false;
   }
 
   openIssuanceModal(): void {
-    this.showCartDrawer = true;
+    this.showListModal = true;
   }
 
   toggleIssuanceModal(): void {
-    if (this.saving && this.showCartDrawer) {
-      return;
-    }
-
-    this.showCartDrawer = !this.showCartDrawer;
-    if (!this.showCartDrawer) {
-      this.attemptedSubmit = false;
-    }
+    this.toggleListDrawer();
   }
 
   constructor(
@@ -114,6 +150,7 @@ export class IssuanceTransactionComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.updateMobileView();
     this.loadLocationOptions();
     this.loadItems(1);
     this.loadCategoryOptions();
@@ -350,7 +387,7 @@ export class IssuanceTransactionComponent implements OnInit {
           this.destination = '';
           this.reason = 'Stock Issuance';
           this.notes = '';
-          this.showCartDrawer = false;
+          this.showListModal = false;
           this.loadItems(this.currentPage);
 
           this.toast.success(`Stock Issuance completed. Reference: ${response.data.reference_number}.`);
