@@ -630,6 +630,25 @@
   }
 }
 
+@media (max-width: 375px) {
+  .receiving-transaction-page {
+    padding-bottom: 72px;
+  }
+
+  .drawer-tab {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    justify-content: center;
+    z-index: 1200;
+  }
+}
+
 // ── Receiving List Slide-in Drawer ────────────────────────────────────
 $drawer-width: 440px;
 $tab-width: 36px;
@@ -1003,4 +1022,47 @@ $tab-width: 36px;
   color: #64748b;
   text-align: right;
   margin-top: 4px;
+}
+
+@media (max-width: 425px) {
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .catalog-toolbar .btn,
+  .catalog-toolbar .form-control,
+  .catalog-toolbar .category-filter-combobox {
+    width: 100%;
+  }
+
+  .receiving-drawer {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    max-height: 60vh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(100%);
+  }
+
+  .receiving-drawer.drawer-open {
+    transform: translateY(0);
+  }
+
+  .drawer-tab {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    justify-content: center;
+    z-index: 1200;
+  }
 }
