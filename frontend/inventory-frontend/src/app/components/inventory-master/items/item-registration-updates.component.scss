@@ -23,6 +23,13 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
+@media (max-width: 768px) {
+  .items-page {
+    height: auto;
+    overflow: visible;
+  }
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -36,15 +43,6 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 .header-text {
   flex: 1;
   min-width: 0;
-}
-
-.eyebrow {
-  margin: 0 0 4px 0;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.75rem;
-  color: $text-muted;
-  font-weight: 600;
 }
 
 .page-title {
@@ -307,6 +305,12 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
     min-height: 0;
     margin-bottom: 0;
     padding-bottom: 0;
+  }
+}
+
+@media (max-width: 425px) {
+  .panel.list-panel {
+    flex: 0 1 auto;
   }
 }
 
@@ -784,6 +788,7 @@ textarea {
   min-height: 0;
   border-radius: $radius-sm;
   border: 1px solid $border;
+  -webkit-overflow-scrolling: touch;
 
   &::-webkit-scrollbar { width: 6px; height: 6px; }
   &::-webkit-scrollbar-track { background: #f1f5f9; }
@@ -872,6 +877,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9375rem;
+  min-width: 720px;
 }
 
 th,
@@ -896,6 +902,57 @@ tr:last-child td {
 }
 tr:hover td {
   background: rgba(37, 99, 235, 0.04);
+}
+
+@media (max-width: 768px) {
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  td:nth-child(2),
+  td:nth-child(3) {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  th:last-child,
+  td:last-child {
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 425px) {
+  .table-wrap {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 320px) {
+  .items-page {
+    padding: 16px 12px 0;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .list-toolbar {
+    gap: 10px;
+  }
+
+  .toolbar-actions {
+    gap: 10px;
+  }
+
+  .search-box input,
+  .category-filter-trigger {
+    min-width: 100%;
+    width: 100%;
+  }
 }
 
 .cell-code {
