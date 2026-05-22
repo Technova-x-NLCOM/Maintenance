@@ -364,6 +364,17 @@ $info-blue: #1d4ed8;
   }
 }
 
+@media (max-width: 425px) {
+  .chart-area-wide {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chart-area-wide canvas {
+    min-width: 520px;
+  }
+}
+
 .alert-item,
 .activity-item {
   border-radius: 10px;
