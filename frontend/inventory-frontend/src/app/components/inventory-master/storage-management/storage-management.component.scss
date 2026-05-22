@@ -19,8 +19,15 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   color: $text-primary;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  // Responsive height & scrolling
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  
+  @media (min-width: 768px) {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .page-header {
@@ -31,6 +38,11 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   margin-bottom: 24px;
   flex-wrap: wrap;
   flex-shrink: 0;
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .header-text {
@@ -271,6 +283,22 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
         height: 16px;
       }
     }
+    
+    @media (max-width: 640px) {
+      width: 100%;
+      justify-content: flex-start;
+      
+      > * {
+        flex: 1 1 auto;
+        min-width: 120px;
+      }
+    }
+  }
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 }
 
@@ -470,6 +498,18 @@ textarea {
   min-height: 0;
   border-radius: $radius-sm;
   border: 1px solid $border;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  
+  // Responsive scrolling behavior
+  @media (max-width: 767px) {
+    overflow-y: visible;
+    max-height: none;
+  }
+  
+  @media (min-width: 768px) {
+    overflow-y: auto;
+  }
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -488,6 +528,12 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9375rem;
+  // Ensure minimum width for horizontal scrolling on mobile
+  min-width: 600px;
+  
+  @media (min-width: 768px) {
+    min-width: auto;
+  }
 }
 
 th,
@@ -513,6 +559,48 @@ tr:last-child td {
 
 tr:hover td {
   background: rgba(37, 99, 235, 0.04);
+}
+
+@media (max-width: 768px) {
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  table {
+    min-width: 760px;
+  }
+
+  td.description-cell {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th:last-child,
+  td:last-child {
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 320px) {
+  .storage-management-page {
+    padding: 16px 12px 0;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-box input {
+    width: 100%;
+  }
 }
 
 .cell-code {
@@ -1499,18 +1587,6 @@ tr:hover td {
 @media (min-width: 1400px) {
   .storage-management-page {
     padding: 32px 40px 0;
-  }
-
-  .panel {
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .page-header {
-    max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
   }
 }
 
