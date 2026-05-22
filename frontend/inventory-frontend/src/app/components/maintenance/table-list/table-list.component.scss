@@ -318,11 +318,13 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   border-radius: $radius;
   box-shadow: $shadow-card;
   border: 1px solid $border;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 720px;
 }
 
 th, td {
@@ -342,6 +344,7 @@ th {
 
 .actions-header {
   text-align: center;
+  min-width: 220px;
 }
 
 td {
@@ -366,6 +369,7 @@ tr.deleted-row td {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
+  min-width: 220px;
 }
 
 .edit-btn, .delete-btn, .restore-btn {
@@ -582,5 +586,38 @@ tr.deleted-row td {
   .pagination {
     flex-direction: column;
     gap: 12px;
+  }
+
+  th,
+  td {
+    white-space: nowrap;
+  }
+
+  td:not(.actions) {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 320px) {
+  .table-list {
+    padding: 16px 12px;
+  }
+
+  .list-header,
+  .toolbar,
+  .pagination {
+    padding: 12px;
+  }
+
+  .search-box .search-input {
+    padding: 8px 36px 8px 38px;
+  }
+
+  .back-btn,
+  .add-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
