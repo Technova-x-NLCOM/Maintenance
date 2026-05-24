@@ -48,6 +48,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   searchQuery = '';
   selectedLocationId: number | null = null;
   selectedLocationLabel = 'Select storage location';
+
   selectedCategoryId: number | null = null;
   selectedCategoryLabel = 'All Categories';
   categoryDropdownOpen = false;
@@ -96,6 +97,16 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   private scanner = new BrowserMultiFormatReader();
   private scannerControls?: IScannerControls;
 
+  // Mobile detection and drawer methods
+  isMobileView(): boolean {
+    return window.innerWidth <= 375;
+  }
+
+  toggleListDrawer(): void {
+    if (this.saving) return;
+    this.showListModal = !this.showListModal;
+  }
+
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
     this.transactionMode = 'receive';
@@ -118,11 +129,6 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   closeListModal(): void {
     this.showListModal = false;
-  }
-
-  toggleListDrawer(): void {
-    if (this.saving) return;
-    this.showListModal = !this.showListModal;
   }
 
   closeBatchQrModal(): void {

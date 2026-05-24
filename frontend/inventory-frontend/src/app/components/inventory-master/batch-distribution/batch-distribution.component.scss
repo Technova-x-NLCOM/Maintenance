@@ -1,6 +1,17 @@
 .batch-distribution-page {
-  padding: 24px;
+  padding: 28px 24px 0;
   background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  // Responsive height & scrolling
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+  
+  @media (min-width: 768px) {
+    height: 100%;
+    overflow: hidden;
+  }
 }
 
 .page-header {
@@ -26,6 +37,7 @@
   margin-bottom: 14px;
   background: #e2e8f0;
   border-radius: 14px;
+  flex-shrink: 0;
 }
 
 .tab-btn {
@@ -88,6 +100,10 @@
 
 .scheduled-tab-layout {
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .panel {
@@ -96,6 +112,24 @@
   border-radius: 14px;
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
   padding: 14px;
+
+  &.templates-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  &.plans-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
 }
 
 .pane-card {
@@ -111,11 +145,19 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
 
   h2 {
     margin: 0;
     font-size: 16px;
     color: #0f172a;
+  }
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
   }
 }
 
@@ -176,6 +218,7 @@
   align-items: center;
   margin-bottom: 10px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 
   .search-wrap {
     position: relative;
@@ -281,9 +324,9 @@
 .templates-list-region {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: visible;
+  overflow-y: auto;
   padding-right: 2px;
-  padding-bottom: 120px;
+  padding-bottom: 20px;
 }
 
 .template-card {
@@ -447,6 +490,7 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .pagination-info {
@@ -576,6 +620,9 @@
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .plans-table {
@@ -818,6 +865,13 @@
   gap: 16px;
   margin-bottom: 12px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+  
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 }
 
 .toolbar-left {
@@ -827,6 +881,11 @@
   flex: 1;
   min-width: 0;
   flex-wrap: wrap;
+  
+  @media (max-width: 640px) {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .toolbar-right {
@@ -834,6 +893,11 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  
+  @media (max-width: 640px) {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .search-input-group {
@@ -1178,13 +1242,30 @@
   border-radius: 10px;
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 520px;
+  flex: 1;
+  min-height: 0;
   margin-bottom: 12px;
+  width: 100%;
+  
+  // Responsive scrolling behavior
+  @media (max-width: 767px) {
+    overflow-y: visible;
+  }
+  
+  @media (min-width: 768px) {
+    overflow-y: auto;
+  }
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  // Ensure minimum width for horizontal scrolling on mobile
+  min-width: 600px;
+  
+  @media (min-width: 768px) {
+    min-width: auto;
+  }
 }
 
 th,
@@ -1926,6 +2007,35 @@ label span {
   }
 }
 
+@media (max-width: 375px) {
+  .calendar-view {
+    padding: 6px;
+  }
+
+  .calendar-weekday {
+    padding: 6px 2px;
+    font-size: 10px;
+  }
+
+  .calendar-day {
+    min-height: 70px;
+    padding: 4px;
+  }
+
+  .calendar-day-number {
+    font-size: 11px;
+  }
+
+  .calendar-day-plans {
+    max-height: 54px;
+  }
+
+  .calendar-plan-chip {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+}
+
 .plan-chip-dot {
   width: 6px;
   height: 6px;
@@ -1944,4 +2054,29 @@ label span {
 .btn-sm {
   padding: 6px 10px;
   font-size: 12px;
+}
+
+@media (max-width: 425px) {
+  .batch-distribution-page .templates-panel .search-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .batch-distribution-page .templates-panel .search-row > * {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .batch-distribution-page .templates-panel .search-row .search-wrap {
+    min-width: 100%;
+  }
+
+  .batch-distribution-page .templates-panel .search-row .filter-select,
+  .batch-distribution-page .templates-panel .search-row .form-control,
+  .batch-distribution-page .templates-panel .search-row .btn {
+    width: 100%;
+  }
 }

@@ -763,6 +763,17 @@ $danger: #b91c1c;
   }
 }
 
+@media (max-width: 425px) {
+  .chart-area-wide {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .chart-area-wide canvas {
+    min-width: 520px;
+  }
+}
+
 /* Tablet       */
 @media (min-width: 426px) and (max-width: 768px) {
   .dashboard-wrapper {
