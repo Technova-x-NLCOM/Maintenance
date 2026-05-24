@@ -170,12 +170,12 @@
       <table class="data-table" *ngIf="items.length > 0; else empty">
         <thead>
           <tr>
-            <th>Storage Location</th>
             <th>Code</th>
             <th>Description</th>
             <th>Category</th>
             <th>UoM</th>
             <th class="num-col">Current Stock</th>
+            <th>Location</th>
             <th class="num-col">Total IN</th>
             <th class="num-col">Total OUT</th>
             <th class="num-col">Reorder Level</th>
@@ -184,12 +184,12 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of items" [class.low-stock-row]="isLow(item)">
-            <td>{{ item.location_name || 'Unassigned Storage' }}</td>
             <td class="cell-code">{{ item.item_code }}</td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.category_name || '—' }}</td>
             <td>{{ item.measurement_unit || '—' }}</td>
             <td class="num-col">{{ item.current_stock }}</td>
+            <td class="location-col">{{ item.location_name || 'Unassigned Storage' }}</td>
             <td class="num-col in-val">+{{ item.total_in }}</td>
             <td class="num-col out-val">-{{ item.total_out }}</td>
             <td class="num-col">{{ item.reorder_level }}</td>

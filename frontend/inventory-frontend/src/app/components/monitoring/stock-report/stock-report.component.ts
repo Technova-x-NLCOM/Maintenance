@@ -495,14 +495,14 @@ export class StockReportComponent implements OnInit {
     if (!this.items.length) return;
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
-      ['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
+      ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Location', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
       ...this.items.map((r) => [
-        this.formatLocation(r),
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
+        this.formatLocation(r),
         r.total_in,
         r.total_out,
         r.reorder_level,
@@ -542,14 +542,14 @@ export class StockReportComponent implements OnInit {
     doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Storage Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+      head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Location', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
       body: this.items.map((r) => [
-        this.formatLocation(r),
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
+        this.formatLocation(r),
         r.total_in,
         r.total_out,
         r.reorder_level,
