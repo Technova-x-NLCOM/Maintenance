@@ -542,9 +542,9 @@ export class StockReportComponent implements OnInit {
     doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+      head: [['Storage Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
       body: this.items.map((r) => [
-        r.location_name ?? '—',
+        this.formatLocation(r),
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
@@ -559,7 +559,7 @@ export class StockReportComponent implements OnInit {
       headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 8) {
+        if (data.section === 'body' && data.column.index === 9) {
           data.cell.styles.textColor =
             (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
@@ -571,5 +571,12 @@ export class StockReportComponent implements OnInit {
 
   private authHeaders(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('access_token')}` });
+  }
+
+  private formatLocation(item: StockReportRecord): string {
+    const labelParts = [item.location_code, item.location_name].filter((value): value is string => Boolean(value && value.trim()));
+    const label = labelParts.length ? labelParts.join(' - ') : '—';
+    const type = item.location_type?.trim();
+    return type ? `${label} (${type})` : label;
   }
 }

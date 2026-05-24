@@ -27,6 +27,7 @@ export interface StockReportRecord {
   location_id?: number | null;
   location_code?: string | null;
   location_name?: string | null;
+  location_type?: string | null;
   measurement_unit: string | null;
   reorder_level: number;
   current_stock: number;

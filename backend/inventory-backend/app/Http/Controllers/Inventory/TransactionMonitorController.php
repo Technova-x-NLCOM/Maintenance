@@ -124,6 +124,7 @@ class TransactionMonitorController extends Controller
                 'l.location_id',
                 'l.location_code',
                 'l.location_name',
+                'l.location_type',
                 'i.measurement_unit',
                 'i.reorder_level',
                 DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
