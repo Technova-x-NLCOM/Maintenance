@@ -185,7 +185,7 @@ export class StockReportComponent implements OnInit {
 
   selectLocationFilter(location: LocationOption | null): void {
     this.locationIdFilter = location?.location_id ?? '';
-    this.selectedLocationLabel = location?.display_name ?? location?.location_name ?? 'All Locations';
+    this.selectedLocationLabel = location?.location_name ?? 'All Locations';
     this.locationFilterOpen = false;
     this.locationFilterQuery = '';
     this.activeLocationOptionIndex = -1;
@@ -384,7 +384,7 @@ export class StockReportComponent implements OnInit {
 
         if (this.locationIdFilter !== '') {
           const selected = this.locations.find((location) => location.location_id === this.locationIdFilter);
-          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'All Locations';
+          this.selectedLocationLabel = selected?.location_name || 'All Locations';
         }
 
         this.cdr.detectChanges();
@@ -497,7 +497,7 @@ export class StockReportComponent implements OnInit {
     const dataRows: any[][] = [
       ['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
       ...this.items.map((r) => [
-        r.location_name || '—',
+        this.formatLocation(r),
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
@@ -574,9 +574,6 @@ export class StockReportComponent implements OnInit {
   }
 
   private formatLocation(item: StockReportRecord): string {
-    const labelParts = [item.location_code, item.location_name].filter((value): value is string => Boolean(value && value.trim()));
-    const label = labelParts.length ? labelParts.join(' - ') : '—';
-    const type = item.location_type?.trim();
-    return type ? `${label} (${type})` : label;
+    return item.location_name?.trim() || '—';
   }
 }

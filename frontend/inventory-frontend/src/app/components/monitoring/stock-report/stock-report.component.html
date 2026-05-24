@@ -145,7 +145,7 @@
                 (mouseenter)="onLocationOptionHover(i)"
                 (click)="selectLocationFilter(location)"
               >
-                {{ location.display_name || location.location_name }}
+                {{ location.location_name }}
               </button>
 
               <div *ngIf="filteredLocationOptions.length === 0" class="category-filter-empty">
@@ -184,11 +184,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of items" [class.low-stock-row]="isLow(item)">
-            <td>
-              <div>{{ item.location_code || '—' }}</div>
-              <small>{{ item.location_name || 'Unassigned Storage' }}</small>
-              <div class="muted-meta">{{ item.location_type || 'Storage location' }}</div>
-            </td>
+            <td>{{ item.location_name || 'Unassigned Storage' }}</td>
             <td class="cell-code">{{ item.item_code }}</td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.category_name || '—' }}</td>
