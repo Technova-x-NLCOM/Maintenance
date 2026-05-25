@@ -22,7 +22,6 @@ class InventorySampleDataSeeder extends Seeder
         $inventoryManagerId = $userIds['inventory_manager'] ?? $adminId;
 
         $categories = DB::table('categories')->pluck('category_id', 'category_name');
-        $itemTypes = DB::table('item_types')->pluck('item_type_id', 'type_name');
         $locations = DB::table('locations')->pluck('location_id', 'location_code');
 
         $items = [
@@ -63,7 +62,6 @@ class InventorySampleDataSeeder extends Seeder
                 ['item_code' => $item['item_code']],
                 [
                     'item_description' => $item['item_description'],
-                    'item_type_id' => $itemTypes[$item['type_name']] ?? null,
                     'category_id' => $categories[$item['category_name']] ?? null,
                     'measurement_unit' => $item['measurement_unit'],
                     'unit_value' => $item['unit_value'],

@@ -15,9 +15,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed item types first (no dependencies)
-        $this->call(ItemTypeSeeder::class);
-
         // Seed categories (no dependencies)
         $this->call(CategorySeeder::class);
 
