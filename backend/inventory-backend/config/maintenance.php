@@ -16,19 +16,11 @@ return [
                 ],
             ],
         ],
-        'item_types' => [
-            'primary_key' => 'item_type_id',
-            'soft_deletes' => false, // No deleted_at column in this table
-        ],
+        
         'items' => [
             'primary_key' => 'item_id',
             'soft_deletes' => false, // No deleted_at column - uses is_active instead
             'relations' => [
-                'item_type_id' => [
-                    'ref_table' => 'item_types',
-                    'ref_key' => 'item_type_id',
-                    'label_column' => 'type_name',
-                ],
                 'category_id' => [
                     'ref_table' => 'categories',
                     'ref_key' => 'category_id',

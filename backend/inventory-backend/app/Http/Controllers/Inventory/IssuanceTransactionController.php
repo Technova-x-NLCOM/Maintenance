@@ -28,7 +28,6 @@ class IssuanceTransactionController extends Controller
             ->groupBy('item_id');
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoinSub($stockSubquery, 's', function ($join) {
                 $join->on('i.item_id', '=', 's.item_id');
@@ -40,7 +39,6 @@ class IssuanceTransactionController extends Controller
                 'i.item_id',
                 'i.item_code',
                 'i.item_description',
-                'it.type_name as item_type_name',
                 'c.category_name',
                 'i.measurement_unit',
                 'i.image_url',
@@ -56,7 +54,6 @@ class IssuanceTransactionController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder->where('i.item_code', 'like', "%{$search}%")
                     ->orWhere('i.item_description', 'like', "%{$search}%")
-                    ->orWhere('it.type_name', 'like', "%{$search}%")
                     ->orWhere('c.category_name', 'like', "%{$search}%");
             });
         }

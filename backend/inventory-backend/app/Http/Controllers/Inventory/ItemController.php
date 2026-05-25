@@ -18,15 +18,12 @@ class ItemController extends Controller
         $perPage = $perPage > 0 ? min($perPage, 100) : 15;
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoin('users as u', 'i.created_by', '=', 'u.user_id')
             ->select(
                 'i.item_id',
                 'i.item_code',
                 'i.item_description',
-                'i.item_type_id',
-                'it.type_name as item_type_name',
                 'i.category_id',
                 'c.category_name',
                 'i.measurement_unit',
@@ -50,13 +47,8 @@ class ItemController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder->where('i.item_code', 'like', "%{$search}%")
                     ->orWhere('i.item_description', 'like', "%{$search}%")
-                    ->orWhere('it.type_name', 'like', "%{$search}%")
                     ->orWhere('c.category_name', 'like', "%{$search}%");
             });
-        }
-
-        if ($request->filled('item_type_id')) {
-            $query->where('i.item_type_id', (int) $request->input('item_type_id'));
         }
 
         if ($request->filled('category_id')) {
@@ -85,15 +77,12 @@ class ItemController extends Controller
     public function show(int $itemId)
     {
         $item = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoin('users as u', 'i.created_by', '=', 'u.user_id')
             ->select(
                 'i.item_id',
                 'i.item_code',
                 'i.item_description',
-                'i.item_type_id',
-                'it.type_name as item_type_name',
                 'i.category_id',
                 'c.category_name',
                 'i.measurement_unit',
@@ -134,7 +123,6 @@ class ItemController extends Controller
         $data = $request->validate([
             'item_code' => ['required', 'string', 'max:50', Rule::unique('items', 'item_code')],
             'item_description' => ['required', 'string', 'max:255'],
-            'item_type_id' => ['required', 'integer', 'exists:item_types,item_type_id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,category_id'],
             'measurement_unit' => ['nullable', 'string', 'max:50'],
             'particular' => ['nullable', 'string'],
@@ -161,8 +149,7 @@ class ItemController extends Controller
             $itemId = DB::table('items')->insertGetId([
                 'item_code' => trim($data['item_code']),
                 'item_description' => trim($data['item_description']),
-                'item_type_id' => $data['item_type_id'],
-                'category_id' => $data['category_id'] ?? null,
+                    'category_id' => $data['category_id'] ?? null,
                 'measurement_unit' => $data['measurement_unit'] ?? null,
                 'particular' => $data['particular'] ?? null,
                 'mg_dosage' => $data['mg_dosage'] ?? null,
@@ -219,7 +206,6 @@ class ItemController extends Controller
         $data = $request->validate([
             'item_code' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('items', 'item_code')->ignore($itemId, 'item_id')],
             'item_description' => ['sometimes', 'required', 'string', 'max:255'],
-            'item_type_id' => ['sometimes', 'required', 'integer', 'exists:item_types,item_type_id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,category_id'],
             'measurement_unit' => ['nullable', 'string', 'max:50'],
             'particular' => ['nullable', 'string'],
@@ -343,7 +329,6 @@ class ItemController extends Controller
             ->groupBy('item_id');
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoinSub($stockSubquery, 's', function ($join) {
                 $join->on('i.item_id', '=', 's.item_id');
@@ -355,7 +340,6 @@ class ItemController extends Controller
                 'i.reorder_level',
                 'i.shelf_life_days',
                 'i.is_active',
-                'it.type_name as item_type_name',
                 'c.category_name',
                 DB::raw('COALESCE(s.current_stock, 0) as current_stock')
             )
@@ -366,7 +350,6 @@ class ItemController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder->where('i.item_code', 'like', "%{$search}%")
                     ->orWhere('i.item_description', 'like', "%{$search}%")
-                    ->orWhere('it.type_name', 'like', "%{$search}%")
                     ->orWhere('c.category_name', 'like', "%{$search}%");
             });
         }
@@ -474,11 +457,6 @@ class ItemController extends Controller
 
     public function options()
     {
-        $itemTypes = DB::table('item_types')
-            ->select('item_type_id', 'type_name')
-            ->orderBy('type_name')
-            ->get();
-
         $categories = DB::table('categories')
             ->select('category_id', 'category_name')
             ->orderBy('category_name')
@@ -488,7 +466,6 @@ class ItemController extends Controller
             'success' => true,
             'message' => 'Item form options retrieved successfully.',
             'data' => [
-                'item_types' => $itemTypes,
                 'categories' => $categories,
             ],
         ]);
