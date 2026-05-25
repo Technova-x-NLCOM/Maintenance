@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id('item_id');
             $table->string('item_code', 50)->unique();
             $table->string('item_description', 255);
-            $table->unsignedBigInteger('item_type_id');
             $table->unsignedBigInteger('category_id')->nullable();
             $table->string('measurement_unit', 50)->nullable();
             $table->text('particular')->nullable();
@@ -30,10 +29,6 @@ return new class extends Migration
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();
 
             // Foreign keys
-            $table->foreign('item_type_id')
-                ->references('item_type_id')
-                ->on('item_types');
-            
             $table->foreign('category_id')
                 ->references('category_id')
                 ->on('categories')
@@ -45,7 +40,7 @@ return new class extends Migration
                 ->onDelete('set null');
 
             // Indexes (item_code already unique via column definition)
-            $table->index('item_type_id');
+            
             $table->index('category_id');
             $table->index('is_active');
             $table->fullText('item_description');

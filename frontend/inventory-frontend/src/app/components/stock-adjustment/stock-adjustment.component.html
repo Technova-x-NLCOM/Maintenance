@@ -29,7 +29,7 @@
       </div>
       <p class="code">{{ item.item_code }}</p>
       <p class="desc">{{ item.item_description }}</p>
-      <p class="meta">{{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}</p>
+      <p class="meta">{{ item.category_name || 'Uncategorized' }}</p>
       <span class="stock-pill">Current: {{ item.current_stock }} {{ item.measurement_unit || '' }}</span>
       <span class="stock-pill expired">Expired: {{ item.expired_stock }}</span>
       <span class="stock-pill shelf" *ngIf="item.shelf_life_days">Shelf life: {{ item.shelf_life_days }}d</span>

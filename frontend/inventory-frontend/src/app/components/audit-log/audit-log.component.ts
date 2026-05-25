@@ -203,7 +203,7 @@ export class AuditLogComponent implements OnInit {
       role_permissions: 'Role Permission Rule',
       categories: 'Category',
       items: 'Item',
-      item_types: 'Item Type',
+      
       inventory_batches: 'Inventory Batch',
       inventory_transactions: 'Inventory Transaction',
       inventory_snapshots: 'Inventory Snapshot',
@@ -246,7 +246,7 @@ export class AuditLogComponent implements OnInit {
       return 'Category';
     }
 
-    if (table.includes('inventory') || table === 'items' || table === 'item_types' || table === 'expiry_alerts') {
+    if (table.includes('inventory') || table === 'items' || table === 'expiry_alerts') {
       return 'Inventory';
     }
 

@@ -9,7 +9,7 @@ interface MinimumStockRow {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name?: string;
+  item_type_name?: string | null;
   category_name?: string;
   reorder_level: number;
   current_stock: number;

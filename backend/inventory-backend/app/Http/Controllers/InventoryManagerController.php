@@ -129,7 +129,7 @@ class InventoryManagerController extends Controller
                 'al.ip_address',
                 'al.created_at'
             )
-            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'categories', 'item_types'])
+            ->whereIn('al.table_name', ['items', 'inventory_batches', 'inventory_transactions', 'categories'])
             ->orderBy('al.created_at', 'desc')
             ->limit($limit)
             ->get();

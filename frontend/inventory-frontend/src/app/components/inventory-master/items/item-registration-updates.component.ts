@@ -416,7 +416,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     this.formData = {
       item_code: item.item_code,
       item_description: item.item_description,
-      item_type_id: item.item_type_id,
+      item_type_id: item.item_type_id ?? null,
       category_id: item.category_id,
       measurement_unit: item.measurement_unit || '',
       particular: item.particular || '',

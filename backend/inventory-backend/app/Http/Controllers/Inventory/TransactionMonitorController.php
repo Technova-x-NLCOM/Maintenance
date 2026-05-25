@@ -103,7 +103,6 @@ class TransactionMonitorController extends Controller
             ->groupBy('item_id', 'from_location_id');
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoinSub($stockSubquery, 's', fn($j) => $j->on('i.item_id', '=', 's.item_id'))
             ->leftJoinSub($inSubquery, 'tin', function ($join) {
@@ -119,11 +118,11 @@ class TransactionMonitorController extends Controller
                 'i.item_id',
                 'i.item_code',
                 'i.item_description',
-                'it.type_name as item_type_name',
                 'c.category_name',
                 'l.location_id',
                 'l.location_code',
                 'l.location_name',
+                'l.location_type',
                 'i.measurement_unit',
                 'i.reorder_level',
                 DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
@@ -179,7 +178,7 @@ class TransactionMonitorController extends Controller
             ->groupBy('item_id', 'location_id');
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->leftJoinSub($stockSubquery, 's', function ($join) {
                 $join->on('i.item_id', '=', 's.item_id');
@@ -189,7 +188,6 @@ class TransactionMonitorController extends Controller
                 'i.item_id',
                 'i.item_code',
                 'i.item_description',
-                'it.type_name as item_type_name',
                 'c.category_name',
                 'l.location_id',
                 'l.location_code',
@@ -242,7 +240,7 @@ class TransactionMonitorController extends Controller
                         'item_id' => $row->item_id,
                         'item_code' => $row->item_code,
                         'item_description' => $row->item_description,
-                        'item_type_name' => $row->item_type_name,
+                        'item_type_name' => $row->category_name,
                         'category_name' => $row->category_name,
                         'measurement_unit' => $row->measurement_unit,
                         'reorder_level' => (int) $row->reorder_level,

@@ -23,7 +23,7 @@ class CategoryController extends Controller
         $search = trim((string) $request->input('search', ''));
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
+            ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->select(
                 'i.item_id',
                 'i.item_code',
@@ -31,7 +31,7 @@ class CategoryController extends Controller
                 'i.image_url',
                 'i.is_active',
                 'i.category_id',
-                'it.type_name as item_type_name'
+                'c.category_name as category_name'
             )
             ->where('i.category_id', $categoryId)
             ->orderBy('i.item_description');
@@ -40,7 +40,7 @@ class CategoryController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder->where('i.item_code', 'like', "%{$search}%")
                     ->orWhere('i.item_description', 'like', "%{$search}%")
-                    ->orWhere('it.type_name', 'like', "%{$search}%");
+                    ->orWhere('c.category_name', 'like', "%{$search}%");
             });
         }
 
@@ -61,7 +61,6 @@ class CategoryController extends Controller
             : null;
 
         $query = DB::table('items as i')
-            ->leftJoin('item_types as it', 'i.item_type_id', '=', 'it.item_type_id')
             ->leftJoin('categories as c', 'i.category_id', '=', 'c.category_id')
             ->select(
                 'i.item_id',
@@ -70,8 +69,7 @@ class CategoryController extends Controller
                 'i.image_url',
                 'i.is_active',
                 'i.category_id',
-                'c.category_name',
-                'it.type_name as item_type_name'
+                'c.category_name'
             )
             ->orderBy('i.item_description');
 
@@ -79,7 +77,6 @@ class CategoryController extends Controller
             $query->where(function ($builder) use ($search) {
                 $builder->where('i.item_code', 'like', "%{$search}%")
                     ->orWhere('i.item_description', 'like', "%{$search}%")
-                    ->orWhere('it.type_name', 'like', "%{$search}%")
                     ->orWhere('c.category_name', 'like', "%{$search}%");
             });
         }

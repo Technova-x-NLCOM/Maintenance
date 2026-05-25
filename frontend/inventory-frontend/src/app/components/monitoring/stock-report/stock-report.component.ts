@@ -185,7 +185,7 @@ export class StockReportComponent implements OnInit {
 
   selectLocationFilter(location: LocationOption | null): void {
     this.locationIdFilter = location?.location_id ?? '';
-    this.selectedLocationLabel = location?.display_name ?? location?.location_name ?? 'All Locations';
+    this.selectedLocationLabel = location?.location_name ?? 'All Locations';
     this.locationFilterOpen = false;
     this.locationFilterQuery = '';
     this.activeLocationOptionIndex = -1;
@@ -384,7 +384,7 @@ export class StockReportComponent implements OnInit {
 
         if (this.locationIdFilter !== '') {
           const selected = this.locations.find((location) => location.location_id === this.locationIdFilter);
-          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'All Locations';
+          this.selectedLocationLabel = selected?.location_name || 'All Locations';
         }
 
         this.cdr.detectChanges();
@@ -495,14 +495,14 @@ export class StockReportComponent implements OnInit {
     if (!this.items.length) return;
     const dateStr = this.datePipe.transform(new Date(), 'MMMM d, y') ?? '';
     const dataRows: any[][] = [
-      ['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
+      ['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Location', 'Total IN', 'Total OUT', 'Reorder Level', 'Status'],
       ...this.items.map((r) => [
-        r.location_name || '—',
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
+        this.formatLocation(r),
         r.total_in,
         r.total_out,
         r.reorder_level,
@@ -542,14 +542,14 @@ export class StockReportComponent implements OnInit {
     doc.text(`Generated: ${dateStr}`, 40, 68);
     autoTable(doc, {
       startY: 80,
-      head: [['Location', 'Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
+      head: [['Item Code', 'Description', 'Category', 'UoM', 'Current Stock', 'Location', 'Total IN', 'Total OUT', 'Reorder Level', 'Status']],
       body: this.items.map((r) => [
-        r.location_name ?? '—',
         r.item_code,
         r.item_description,
         r.category_name ?? '—',
         r.measurement_unit ?? '—',
         r.current_stock,
+        this.formatLocation(r),
         r.total_in,
         r.total_out,
         r.reorder_level,
@@ -559,7 +559,7 @@ export class StockReportComponent implements OnInit {
       headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
       didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 8) {
+        if (data.section === 'body' && data.column.index === 9) {
           data.cell.styles.textColor =
             (data.cell.raw as string) === 'Low Stock' ? [234, 88, 12] : [22, 163, 74];
           data.cell.styles.fontStyle = 'bold';
@@ -571,5 +571,9 @@ export class StockReportComponent implements OnInit {
 
   private authHeaders(): HttpHeaders {
     return new HttpHeaders({ Authorization: `Bearer ${localStorage.getItem('access_token')}` });
+  }
+
+  private formatLocation(item: StockReportRecord): string {
+    return item.location_name?.trim() || '—';
   }
 }

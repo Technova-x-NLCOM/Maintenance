@@ -119,7 +119,7 @@
           <p class="code">{{ item.item_code }}</p>
           <p class="desc">{{ item.item_description }}</p>
           <p class="meta">
-            {{ item.item_type_name || 'N/A' }} • {{ item.category_name || 'Uncategorized' }}
+            {{ item.category_name || 'Uncategorized' }}
           </p>
           <div class="stats-row">
             <span class="pill">Stock: {{ item.current_stock }}</span>
@@ -368,7 +368,6 @@
           <div class="selected-code">{{ selectedItem.item_code }}</div>
           <div class="selected-desc">{{ selectedItem.item_description }}</div>
           <div class="selected-meta">
-            <span *ngIf="selectedItem.item_type_name">{{ selectedItem.item_type_name }}</span>
             <span *ngIf="selectedItem.category_name">{{ selectedItem.category_name }}</span>
             <span class="stock-badge">Stock: {{ selectedItem.current_stock }}</span>
           </div>
