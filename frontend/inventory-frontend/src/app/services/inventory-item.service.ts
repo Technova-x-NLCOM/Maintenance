@@ -7,8 +7,8 @@ export interface InventoryItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_id: number;
-  item_type_name?: string;
+  item_type_id?: number | null;
+  item_type_name?: string | null;
   category_id: number | null;
   category_name?: string;
   measurement_unit: string | null;
@@ -29,7 +29,7 @@ export interface InventoryItem {
 }
 
 export interface ItemFormOptions {
-  item_types: Array<{ item_type_id: number; type_name: string }>;
+  item_types?: Array<{ item_type_id: number; type_name: string; description?: string }>;
   categories: Array<{ category_id: number; category_name: string }>;
 }
 
@@ -76,7 +76,7 @@ export interface StorageInventoryItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name: string | null;
+  item_type_name?: string | null;
   category_name: string | null;
   measurement_unit: string | null;
   reorder_level: number;
@@ -110,7 +110,7 @@ interface MinimumStockItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name?: string;
+  item_type_name?: string | null;
   category_name?: string;
   reorder_level: number;
   current_stock: number;
@@ -134,7 +134,7 @@ interface ReceivingItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name?: string;
+  item_type_name?: string | null;
   category_name?: string;
   measurement_unit: string | null;
   shelf_life_days: number | null;
@@ -190,7 +190,7 @@ interface IssuanceItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name?: string;
+  item_type_name?: string | null;
   category_name?: string;
   measurement_unit: string | null;
   image_url: string | null;
@@ -246,7 +246,7 @@ interface AdjustmentItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name?: string;
+  item_type_name?: string | null;
   category_name?: string;
   measurement_unit: string | null;
   image_url: string | null;
@@ -341,7 +341,6 @@ export class InventoryItemService {
     page?: number;
     per_page?: number;
     search?: string;
-    item_type_id?: number;
     category_id?: number;
     is_active?: boolean;
   }): Observable<PaginatedItemsResponse> {
@@ -350,7 +349,6 @@ export class InventoryItemService {
     if (params.page) queryParams = queryParams.set('page', String(params.page));
     if (params.per_page) queryParams = queryParams.set('per_page', String(params.per_page));
     if (params.search) queryParams = queryParams.set('search', params.search.trim());
-    if (params.item_type_id) queryParams = queryParams.set('item_type_id', String(params.item_type_id));
     if (params.category_id) queryParams = queryParams.set('category_id', String(params.category_id));
     if (typeof params.is_active === 'boolean') {
       queryParams = queryParams.set('is_active', String(params.is_active));
@@ -478,7 +476,6 @@ export class InventoryItemService {
     search?: string;
     per_page?: number;
     page?: number;
-    item_type_id?: number;
     category_id?: number;
   }): Observable<PaginatedReceivingItemsResponse> {
     let httpParams = new HttpParams();
@@ -487,7 +484,6 @@ export class InventoryItemService {
       if (params.search) httpParams = httpParams.set('search', params.search);
       if (params.per_page) httpParams = httpParams.set('per_page', params.per_page.toString());
       if (params.page) httpParams = httpParams.set('page', params.page.toString());
-      if (params.item_type_id) httpParams = httpParams.set('item_type_id', params.item_type_id.toString());
       if (params.category_id) httpParams = httpParams.set('category_id', params.category_id.toString());
     } else {
       httpParams = httpParams.set('per_page', '15');

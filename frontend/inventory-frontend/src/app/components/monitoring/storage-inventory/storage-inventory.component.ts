@@ -92,7 +92,7 @@ export class StorageInventoryComponent implements OnInit {
       const itemMatches =
         !query ||
         location.items.some((item) =>
-          [item.item_code, item.item_description, item.category_name, item.item_type_name]
+          [item.item_code, item.item_description, item.category_name]
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(query)),
         );

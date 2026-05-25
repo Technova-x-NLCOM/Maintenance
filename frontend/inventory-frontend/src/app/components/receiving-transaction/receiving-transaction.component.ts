@@ -415,11 +415,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: (response) => {
-          this.receivingItems = response.data.data.map((item) => ({
+            this.receivingItems = response.data.data.map((item) => ({
             item_id: item.item_id,
             item_code: item.item_code,
             item_description: item.item_description,
-            item_type_name: item.item_type_name,
+            item_type_name: item.category_name,
             category_name: item.category_name,
             measurement_unit: item.measurement_unit,
             shelf_life_days: item.shelf_life_days,

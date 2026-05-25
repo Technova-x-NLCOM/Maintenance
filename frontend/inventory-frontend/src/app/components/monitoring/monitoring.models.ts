@@ -22,7 +22,6 @@ export interface StockReportRecord {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name: string | null;
   category_name: string | null;
   location_id?: number | null;
   location_code?: string | null;
@@ -39,7 +38,6 @@ export interface StorageInventoryItem {
   item_id: number;
   item_code: string;
   item_description: string;
-  item_type_name: string | null;
   category_name: string | null;
   measurement_unit: string | null;
   reorder_level: number;

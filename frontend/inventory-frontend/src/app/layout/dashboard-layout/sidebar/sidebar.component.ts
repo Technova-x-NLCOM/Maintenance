@@ -171,7 +171,6 @@ export class SidebarComponent implements OnInit {
     const inventoryTables = [
       'items',
       'categories',
-      'item_types',
       'locations',
       'inventory_batches',
       'inventory_transactions',
