@@ -76,7 +76,7 @@ export class LoginComponent implements OnInit {
     });
 
     this.setPasswordForm = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[\S]+$/)]],
       password_confirmation: ['', [Validators.required]],
     });
   }
@@ -179,7 +179,8 @@ export class LoginComponent implements OnInit {
 
   submitSetPassword() {
     if (this.setPasswordForm.invalid) return;
-    const { password, password_confirmation } = this.setPasswordForm.value;
+    const password = (this.setPasswordForm.get('password')?.value || '').trim();
+    const password_confirmation = (this.setPasswordForm.get('password_confirmation')?.value || '').trim();
     if (password !== password_confirmation) {
       this.setPasswordError = 'Passwords do not match.';
       return;

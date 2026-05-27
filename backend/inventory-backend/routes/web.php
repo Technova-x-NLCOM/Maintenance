@@ -29,6 +29,8 @@ Route::middleware('throttle:system-api')->group(function () {
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('forgot-password', [AuthController::class, 'forgotPassword'])
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::get('reset-password', [AuthController::class, 'redirectToResetPassword'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('reset-password', [AuthController::class, 'resetPassword'])
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
     

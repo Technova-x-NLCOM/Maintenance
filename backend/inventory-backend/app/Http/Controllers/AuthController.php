@@ -44,6 +44,12 @@ class AuthController extends Controller
     public function setInitialPassword(Request $request)
     {
         try {
+            $request->merge([
+                'identifier' => trim((string) $request->input('identifier')),
+                'password' => trim((string) $request->input('password')),
+                'password_confirmation' => trim((string) $request->input('password_confirmation')),
+            ]);
+
             $data = $request->validate([
                 'identifier' => 'required|string',
                 'password' => [
@@ -51,11 +57,11 @@ class AuthController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[^\\s]+$/',
                     'confirmed',
                 ],
             ], [
-                'password.regex' => 'Password must contain uppercase, lowercase, number, and a special character (@$!%*?&).',
+                'password.regex' => 'Password must contain uppercase, lowercase, number, and a special character.',
             ]);
         } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Validation failed.', 'errors' => $e->errors()], 422);
@@ -92,7 +98,7 @@ class AuthController extends Controller
                     'string',
                     'min:3',
                     'max:50',
-                    'alpha_dash',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[^\\s]+$/',
                     Rule::unique('users', 'username')
                 ],
                 'email' => [
@@ -152,7 +158,7 @@ class AuthController extends Controller
                 'password.required' => 'Password is required.',
                 'password.min' => 'Password must be at least 8 characters long.',
                 'password.max' => 'Password cannot exceed 255 characters.',
-                'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&).',
+                'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
                 
                 'password_confirmation.required' => 'Password confirmation is required.',
                 'password_confirmation.same' => 'Password confirmation does not match the password.',
@@ -611,6 +617,23 @@ class AuthController extends Controller
                 'message' => 'If an account exists with this email, a password reset link will be sent shortly.',
             ], 200);
         }
+    }
+
+    /**
+     * Redirect browser GET requests for the API reset-password path to the frontend reset page.
+     */
+    public function redirectToResetPassword(Request $request)
+    {
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:4200'), '/');
+
+        $query = $request->only(['token', 'email']);
+        $targetUrl = $frontendUrl . '/reset-password';
+
+        if (!empty($query)) {
+            $targetUrl .= '?' . http_build_query($query);
+        }
+
+        return redirect()->away($targetUrl, 302);
     }
 
     /**
