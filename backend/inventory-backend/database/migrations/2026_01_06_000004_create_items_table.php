@@ -43,7 +43,9 @@ return new class extends Migration
             
             $table->index('category_id');
             $table->index('is_active');
-            $table->fullText('item_description');
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->fullText('item_description');
+            }
         });
     }
 
