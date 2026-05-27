@@ -805,16 +805,11 @@ export class BatchDistributionComponent implements OnInit {
   bounceModal(selector: string): void {
     const el = document.querySelector<HTMLElement>(`.${selector}`);
     if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    el.classList.remove('bounce');
+    // Force reflow so re-adding the class triggers the animation
+    void el.offsetWidth;
+    el.classList.add('bounce');
+    setTimeout(() => el.classList.remove('bounce'), 400);
   }
 
   addLine(): void {
@@ -1311,6 +1306,14 @@ export class BatchDistributionComponent implements OnInit {
     this.currentPlanPage = 1; // Reset to first page when sorting changes
   }
 
+  onPlanStatusFilterChange(): void {
+    this.currentPlanPage = 1;
+    // Rebuild calendar so it respects the new filter
+    if (this.planViewMode === 'calendar') {
+      this.buildCalendar();
+    }
+  }
+
   // Pagination methods
   goToFirstPage(): void {
     this.currentPlanPage = 1;
@@ -1363,6 +1366,7 @@ export class BatchDistributionComponent implements OnInit {
 
   openPlanConfirm(action: 'cancel' | 'delete' | 'execute', plan: ProgramPlanSummary): void {
     this.closePlanMenu();
+
     if (action === 'cancel') {
       this.planConfirmDialog = {
         open: true,
@@ -1682,10 +1686,10 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     switch (plan.status) {
-      case 'completed':
-        return { label: 'Completed', className: 'status-completed', icon: 'ti-circle-check' };
       case 'cancelled':
         return { label: 'Cancelled', className: 'status-cancelled', icon: 'ti-ban' };
+      case 'completed':
+        return { label: 'Completed', className: 'status-completed', icon: 'ti-circle-check' };
       default:
         return { label: 'Planned', className: 'status-planned', icon: 'ti-clock' };
     }
@@ -1708,14 +1712,10 @@ export class BatchDistributionComponent implements OnInit {
     switch (status) {
       case 'planned':
         return 'tag-planned';
-      case 'checked_pre':
-        return 'tag-checked';
-      case 'ready':
-        return 'tag-ready';
-      case 'completed':
-        return 'tag-completed';
       case 'cancelled':
         return 'tag-cancelled';
+      case 'completed':
+        return 'tag-completed';
       default:
         return '';
     }
@@ -1769,14 +1769,8 @@ export class BatchDistributionComponent implements OnInit {
 
   private syncPlanWizardStep(status: ProgramPlanStatus | string): void {
     switch (status) {
-      case 'planned':
-        this.planWizardStep = 1;
-        break;
-      case 'checked_pre':
-        this.planWizardStep = 2;
-        break;
-      case 'ready':
       case 'completed':
+      case 'cancelled':
         this.planWizardStep = 3;
         break;
       default:
@@ -2051,6 +2045,15 @@ export class BatchDistributionComponent implements OnInit {
   openPlanFromCalendar(plan: ProgramPlanSummary, event: Event): void {
     event.stopPropagation();
     this.selectPlan(plan);
+  }
+
+  closePlanDetailModal(): void {
+    this.selectedPlanId = null;
+    this.selectedPlanDetails = null;
+    this.planIssueSummary = null;
+    this.planProcuredLines = [];
+    this.planRemainingLines = [];
+    this.expandedPlanId = null;
   }
 
   loadStockReadinessForPlans(): void {

@@ -433,7 +433,7 @@
             <!-- Status Filter -->
             <div class="toolbar-field">
               <label for="planStatusFilter">Status</label>
-              <select id="planStatusFilter" class="form-control" [(ngModel)]="planStatusFilter">
+              <select id="planStatusFilter" class="form-control" [(ngModel)]="planStatusFilter" (ngModelChange)="onPlanStatusFilterChange()">
                 <option value="all">All</option>
                 <option value="planned">Planned</option>
                 <option value="completed">Completed</option>
@@ -607,11 +607,15 @@
                               type="button"
                               (click)="openEditPlan(plan)"
                               [disabled]="isPlanLocked(plan)"
-                              [title]="isPlanLocked(plan) ? 'Completed plans cannot be edited' : 'Edit plan'"
+                              [title]="isPlanLocked(plan) ? 'Completed or cancelled plans cannot be edited' : 'Edit plan'"
                             >
                               Edit
                             </button>
-                            <button type="button" (click)="openPlanConfirm('cancel', plan)">
+                            <button
+                              type="button"
+                              (click)="openPlanConfirm('cancel', plan)"
+                              [disabled]="isPlanLocked(plan)"
+                            >
                               Cancel Plan
                             </button>
                             <button type="button" (click)="openPlanConfirm('delete', plan)">
@@ -902,12 +906,24 @@
         </div>
       </div>
 
-      <div class="plans-details-wrap" *ngIf="selectedPlanDetails && planViewMode === 'calendar'">
-        <h3>
-          {{ selectedPlanDetails.plan.week_label }}
-          <span class="tag" [ngClass]="getPlanStatusClass(selectedPlanDetails.plan.status)">{{ selectedPlanDetails.plan.status }}</span>
-        </h3>
+      <div class="summary-strip" *ngIf="planIssueSummary && planViewMode !== 'calendar'">
+        <span><strong>Issued Ref:</strong> {{ planIssueSummary.reference_number }}</span>
+        <span><strong>Total Issued:</strong> {{ planIssueSummary.total_issued_quantity }}</span>
+      </div>
+    </section>
+  </div>
 
+  <!-- Plan Detail Modal (calendar view) - at root level to avoid event bubbling issues -->
+  <div class="modal-overlay plan-detail-overlay" *ngIf="selectedPlanDetails && planViewMode === 'calendar'" (click)="bounceModal('plan-detail-modal')">
+    <div class="modal-card plan-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="plan-detail-modal-title">
+          <span>{{ selectedPlanDetails.plan.week_label }}</span>
+          <span [ngClass]="getPlanStatusClass(selectedPlanDetails.plan.status)">{{ selectedPlanDetails.plan.status }}</span>
+        </div>
+      </div>
+
+      <div class="modal-body">
         <div class="wizard-header">
           <div class="step-indicator">Step {{ planWizardStep }} of 3</div>
           <div class="step-title">{{ planWizardTitle }}</div>
@@ -922,6 +938,7 @@
             <strong>Shortages:</strong> {{ selectedPlanDetails.inventory_check.summary.insufficient_items_count }}
           </span>
         </div>
+
         <div class="wizard-step" *ngIf="planWizardStep === 1">
           <p class="step-help">Review the shortage summary before continuing.</p>
           <div class="table-wrap compact-table" *ngIf="selectedPlanDetails.inventory_check.items.length > 0">
@@ -935,10 +952,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  *ngFor="let row of selectedPlanDetails.inventory_check.items"
-                  [class.has-shortage]="row.has_shortage"
-                >
+                <tr *ngFor="let row of selectedPlanDetails.inventory_check.items" [class.has-shortage]="row.has_shortage">
                   <td>{{ row.item_code }} - {{ row.item_description }}</td>
                   <td>{{ row.required_quantity_for_issuance }}</td>
                   <td>{{ row.current_stock }}</td>
@@ -948,6 +962,7 @@
             </table>
           </div>
           <div class="wizard-actions">
+            <button class="btn btn-cancel" type="button" (click)="closePlanDetailModal()">Close</button>
             <button class="btn btn-primary" type="button" (click)="handlePlanStepOneNext()" [disabled]="runningPlanAction">
               {{ runningPlanAction ? 'Running Pre-check...' : 'Next' }}
             </button>
@@ -970,20 +985,12 @@
                   <td>{{ line.item_code }} - {{ line.item_description }}</td>
                   <td>{{ line.shortage_quantity }}</td>
                   <td>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      class="form-control"
-                      [(ngModel)]="line.quantity_brought"
-                      placeholder="Qty bought"
-                    />
+                    <input type="number" min="0" step="1" class="form-control" [(ngModel)]="line.quantity_brought" placeholder="Qty bought" />
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-
           <div class="issue-grid compact-issue-grid">
             <label>
               <span>Issue Destination For Final Check *</span>
@@ -994,11 +1001,8 @@
               <input class="form-control" [(ngModel)]="planIssueReason" placeholder="For Week 3" maxlength="250" />
             </label>
           </div>
-
           <div class="wizard-actions">
-            <button class="btn btn-secondary" type="button" (click)="goToPlanStep(1)" [disabled]="runningPlanAction">
-              Back
-            </button>
+            <button class="btn btn-secondary" type="button" (click)="goToPlanStep(1)" [disabled]="runningPlanAction">Back</button>
             <button class="btn btn-primary" type="button" (click)="handlePlanStepTwoNext()" [disabled]="runningPlanAction">
               {{ runningPlanAction ? 'Final Check Running...' : 'Next' }}
             </button>
@@ -1025,23 +1029,20 @@
               </tbody>
             </table>
           </div>
-
           <div class="wizard-actions">
-            <button class="btn btn-secondary" type="button" (click)="goToPlanStep(2)" [disabled]="runningPlanAction">
-              Back
-            </button>
+            <button class="btn btn-secondary" type="button" (click)="goToPlanStep(2)" [disabled]="runningPlanAction">Back</button>
             <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="runningPlanAction">
               {{ runningPlanAction ? 'Saving Remainder...' : 'Complete' }}
             </button>
           </div>
         </div>
-      </div>
 
-      <div class="summary-strip" *ngIf="planIssueSummary as issueSummary">
-        <span><strong>Issued Ref:</strong> {{ issueSummary.reference_number }}</span>
-        <span><strong>Total Issued:</strong> {{ issueSummary.total_issued_quantity }}</span>
+        <div class="summary-strip" *ngIf="planIssueSummary as issueSummary">
+          <span><strong>Issued Ref:</strong> {{ issueSummary.reference_number }}</span>
+          <span><strong>Total Issued:</strong> {{ issueSummary.total_issued_quantity }}</span>
+        </div>
       </div>
-    </section>
+    </div>
   </div>
 
   <div class="modal-overlay" *ngIf="showTemplateForm" (click)="bounceModal('modal-card')">

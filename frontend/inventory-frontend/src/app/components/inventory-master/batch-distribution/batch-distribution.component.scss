@@ -1056,6 +1056,46 @@
   gap: 10px;
 }
 
+.plan-detail-overlay {
+  z-index: 1050;
+}
+
+.plan-detail-modal {
+  width: min(640px, 96vw);
+}
+
+.plan-detail-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  span:first-child {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  span:last-child {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: capitalize;
+  }
+}
+
+@keyframes modalBounce {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.03); }
+  50%  { transform: scale(0.98); }
+  75%  { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+.plan-detail-modal.bounce {
+  animation: modalBounce 0.35s ease;
+}
+
 .plan-card-actions {
   display: inline-flex;
   align-items: center;
@@ -1087,14 +1127,14 @@
   color: #633806;
 }
 
-.status-completed {
-  background: #eaf3de;
-  color: #27500a;
-}
-
 .status-cancelled {
   background: #f1efe8;
   color: #5f5e5a;
+}
+
+.status-completed {
+  background: #eaf3de;
+  color: #27500a;
 }
 
 .status-overdue {
@@ -1210,24 +1250,14 @@
   color: #92400e;
 }
 
-.tag-checked {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.tag-ready {
-  background: #dcfce7;
-  color: #166534;
+.tag-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .tag-completed {
   background: #bbf7d0;
   color: #14532d;
-}
-
-.tag-cancelled {
-  background: #fee2e2;
-  color: #991b1b;
 }
 
 .summary-pills {
@@ -2037,21 +2067,21 @@ label span {
     }
   }
 
-  &.status-completed {
-    background: #eaf3de;
-    color: #27500a;
-
-    &:hover {
-      background: #dfeacd;
-    }
-  }
-
   &.status-cancelled {
     background: #f1efe8;
     color: #5f5e5a;
 
     &:hover {
       background: #e5e3dc;
+    }
+  }
+
+  &.status-completed {
+    background: #eaf3de;
+    color: #27500a;
+
+    &:hover {
+      background: #dfeacd;
     }
   }
 
