@@ -36,6 +36,13 @@ export class AdminLoginComponent implements OnInit {
   // Deactivated account modal
   showInactiveAccountModal = false;
 
+  // Forgot password modal
+  showForgotPasswordModal = false;
+  forgotPasswordForm!: FormGroup;
+  forgotPasswordLoading = false;
+  forgotPasswordMessage = '';
+  forgotPasswordError = '';
+
   showToast(message: string, type: 'success' | 'error' = 'error') {
     this.toastMessage = message;
     this.toastType = type;
@@ -69,6 +76,9 @@ export class AdminLoginComponent implements OnInit {
     this.setPasswordForm = this.fb.group({
       password: ['', [Validators.required, Validators.minLength(8)]],
       password_confirmation: ['', [Validators.required]],
+    });
+    this.forgotPasswordForm = this.fb.group({
+      email: ['', [Validators.required]]
     });
   }
 
@@ -200,5 +210,53 @@ export class AdminLoginComponent implements OnInit {
         }
       }
     });
+  }
+
+  openForgotPasswordModal() {
+    this.forgotPasswordMessage = '';
+    this.forgotPasswordError = '';
+    this.forgotPasswordForm.reset();
+    this.showForgotPasswordModal = true;
+    this.cdr.detectChanges();
+    // autofocus the email input for accessibility
+    setTimeout(() => {
+      const el = document.getElementById('fp-email') as HTMLInputElement | null;
+      if (el) { el.focus(); }
+    }, 50);
+  }
+
+  closeForgotPasswordModal() {
+    this.showForgotPasswordModal = false;
+  }
+
+  submitForgotPassword() {
+    if (this.forgotPasswordForm.invalid) {
+      this.forgotPasswordError = 'Please enter your email address.';
+      return;
+    }
+
+    const email = (this.forgotPasswordForm.get('email')?.value || '').trim();
+    if (!email) {
+      this.forgotPasswordError = 'Please enter your email address.';
+      return;
+    }
+
+    this.forgotPasswordLoading = true;
+    this.forgotPasswordError = '';
+    this.authService.forgotPassword(email)
+      .pipe(
+        timeout(15000),
+        finalize(() => (this.forgotPasswordLoading = false))
+      )
+      .subscribe({
+        next: (res) => {
+          this.forgotPasswordMessage = res.message || 'If that email exists, a reset link has been sent.';
+          this.showToast(this.forgotPasswordMessage, 'success');
+          this.showForgotPasswordModal = false;
+        },
+        error: (err) => {
+          this.forgotPasswordError = err?.error?.message || 'Failed to send reset email. Please try again.';
+        }
+      });
   }
 }

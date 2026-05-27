@@ -36,4 +36,30 @@ describe('AdminLoginComponent (unit)', () => {
     component.onSubmit();
     expect(component.showToast).toHaveBeenCalled();
   });
+
+  it('forgot password modal opens and validates email', () => {
+    // extend fakeAuth for forgotPassword
+    (fakeAuth as any).forgotPassword = () => ({ pipe: () => ({ subscribe: () => {} }) });
+
+    component.openForgotPasswordModal();
+    expect(component.showForgotPasswordModal).toBeTrue();
+
+    // submitting without email should set error
+    component.submitForgotPassword();
+    expect(component.forgotPasswordError).toContain('Please enter your email');
+  });
+
+  it('submitForgotPassword calls auth service and shows toast on success', () => {
+    const spyForgot = jasmine.createSpy('forgotPassword').and.returnValue({ pipe: () => ({ subscribe: (obj: any) => obj.next({ message: 'sent' }) }) });
+    (fakeAuth as any).forgotPassword = spyForgot;
+    spyOn(component, 'showToast');
+
+    component.openForgotPasswordModal();
+    component.forgotPasswordForm.patchValue({ email: 'me@example.com' });
+    component.submitForgotPassword();
+
+    expect(spyForgot).toHaveBeenCalledWith('me@example.com');
+    expect(component.showForgotPasswordModal).toBeFalse();
+    expect(component.showToast).toHaveBeenCalled();
+  });
 });
