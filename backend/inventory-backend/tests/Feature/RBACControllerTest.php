@@ -23,7 +23,22 @@ it('allows super_admin to create a role', function () {
 });
 
 it('forbids non-privileged user from creating a role', function () {
-    $user = User::factory()->create();
+    $user = new class extends User {
+        public function hasRole($roleName)
+        {
+            return false;
+        }
+
+        public function hasPermission($permissionName)
+        {
+            return false;
+        }
+    };
+
+    // Make the stub look like an authenticated model
+    $user->user_id = 99999;
+    $user->username = 'noperms';
+    $user->exists = true;
 
     $this->actingAs($user, 'api')
         ->postJson('/api/rbac/roles', ['role_name' => 'should_not_create'])
