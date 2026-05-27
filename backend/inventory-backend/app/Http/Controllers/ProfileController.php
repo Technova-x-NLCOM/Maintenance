@@ -63,6 +63,10 @@ class ProfileController extends Controller
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
+        $request->merge([
+            'new_password_confirmation' => $request->input('new_password_confirmation', $request->input('password_confirmation')),
+        ]);
+
         $data = $request->validate([
             'current_password' => ['required', 'string'],
             'new_password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -75,9 +79,11 @@ class ProfileController extends Controller
             ], 422);
         }
 
-        // Update password
-        $user->password_hash = Hash::make($data['new_password']);
-        $user->save();
+        // Update password atomically so the database never keeps a half-finished state.
+        \DB::transaction(function () use ($user, $data) {
+            $user->password_hash = Hash::make($data['new_password']);
+            $user->save();
+        });
 
         return response()->json([
             'message' => 'Password changed successfully'
