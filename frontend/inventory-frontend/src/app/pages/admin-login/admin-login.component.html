@@ -59,6 +59,9 @@
         <span class="error" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
           Password must be at least 6 characters
         </span>
+        <div class="forgot-wrap">
+          <a class="forgot-link" role="button" aria-haspopup="dialog" (click)="openForgotPasswordModal()">Forgot password?</a>
+        </div>
       </div>
 
       <button
@@ -71,6 +74,42 @@
     </form>
   </div>
 </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-backdrop" *ngIf="showForgotPasswordModal" (click)="closeForgotPasswordModal()" role="dialog" aria-modal="true" aria-labelledby="fp-title">
+    <div class="modal-panel" (click)="$event.stopPropagation()" role="document">
+      <div class="modal-head">
+        <h2 id="fp-title">Reset Password</h2>
+        <p>Enter your account email to receive a password reset link.</p>
+        <button type="button" class="modal-close-btn app-modal-close" (click)="closeForgotPasswordModal()" aria-label="Close">&#x2715;</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="forgotPasswordMessage" class="forgot-success" role="status">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l3 3 5-6"></path></svg>
+          <div class="forgot-success-text">{{ forgotPasswordMessage }}</div>
+        </div>
+
+        <div *ngIf="!forgotPasswordMessage">
+          <div class="modal-alert" *ngIf="forgotPasswordError">{{ forgotPasswordError }}</div>
+          <div class="form-group">
+            <label for="fp-email">Email address</label>
+            <input id="fp-email" type="email" class="form-control" [formControl]="$any(forgotPasswordForm.get('email'))" placeholder="you@domain.com" aria-describedby="fp-help" />
+            <div id="fp-help" class="error" *ngIf="forgotPasswordForm.get('email')?.invalid && (forgotPasswordForm.get('email')?.touched || forgotPasswordError)">
+              Please enter a valid email address.
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-admin btn-login" (click)="submitForgotPassword()" [disabled]="forgotPasswordLoading">
+              <span *ngIf="forgotPasswordLoading" class="btn-spinner" aria-hidden="true"></span>
+              {{ forgotPasswordLoading ? 'Sending...' : 'Send Reset Link' }}
+            </button>
+            <button class="btn" (click)="closeForgotPasswordModal()" type="button">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <!-- Set Initial Password Modal -->
 <div class="modal-backdrop" *ngIf="showSetPasswordModal" (click)="bounceModal()">
