@@ -585,18 +585,9 @@ class AuthController extends Controller
             'created_at' => now(),
         ]);
 
-        // Build reset URL for frontend
-        $frontendUrl = config('app.frontend_url');
-
-        // If running in local environment or app URL contains 'localhost', prefer localhost frontend
-        if (config('app.env') === 'local' || Str::contains(config('app.url'), 'localhost')) {
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:4200');
-        } else {
-            // For production/web use nlcom.site by default unless FRONTEND_URL is explicitly set
-            $frontendUrl = env('FRONTEND_URL', 'https://nlcom.site');
-        }
-
-        $resetUrl = rtrim($frontendUrl, '/') . '/reset-password?token=' . $token . '&email=' . urlencode($email);
+        // Build reset URL for frontend from config so cached production config keeps working.
+        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:4200'), '/');
+        $resetUrl = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($email);
 
         try {
             // Send reset email
