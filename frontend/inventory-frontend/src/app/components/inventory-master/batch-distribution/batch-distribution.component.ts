@@ -45,7 +45,7 @@ interface EditableProcuredLine {
 @Component({
   selector: 'app-batch-distribution',
   standalone: true,
-  imports: [CommonModule, FormsModule, ToastComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './batch-distribution.component.html',
   styleUrls: ['./batch-distribution.component.scss'],
   animations: [
@@ -160,6 +160,12 @@ export class BatchDistributionComponent implements OnInit {
   }> = [];
   planStockReadiness: Map<number, { required: number; available: number; percentage: number; status: string; loading: boolean }> = new Map();
   planSearchTerm = '';
+  
+  // Pagination properties
+  currentPlanPage = 1;
+  planPageSize = 10;
+  readonly planPageSizeOptions = [5, 10, 25, 50];
+  
   planConfirmDialog: {
     open: boolean;
     title: string;
@@ -424,6 +430,17 @@ export class BatchDistributionComponent implements OnInit {
 
   get calendarWeekDays(): string[] {
     return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  }
+
+  // Pagination getters
+  get totalPlanPages(): number {
+    return Math.ceil(this.filteredPlans.length / this.planPageSize) || 1;
+  }
+
+  get paginatedPlans(): ProgramPlanSummary[] {
+    const startIndex = (this.currentPlanPage - 1) * this.planPageSize;
+    const endIndex = startIndex + this.planPageSize;
+    return this.filteredPlans.slice(startIndex, endIndex);
   }
 
   get isPlanDialogEditing(): boolean {
@@ -1291,6 +1308,32 @@ export class BatchDistributionComponent implements OnInit {
 
   togglePlanSortDirection(): void {
     this.planSortDirection = this.planSortDirection === 'desc' ? 'asc' : 'desc';
+    this.currentPlanPage = 1; // Reset to first page when sorting changes
+  }
+
+  // Pagination methods
+  goToFirstPage(): void {
+    this.currentPlanPage = 1;
+  }
+
+  goToPreviousPlanPage(): void {
+    if (this.currentPlanPage > 1) {
+      this.currentPlanPage--;
+    }
+  }
+
+  goToNextPlanPage(): void {
+    if (this.currentPlanPage < this.totalPlanPages) {
+      this.currentPlanPage++;
+    }
+  }
+
+  goToLastPage(): void {
+    this.currentPlanPage = this.totalPlanPages;
+  }
+
+  onPlanPageSizeChange(): void {
+    this.currentPlanPage = 1; // Reset to first page when page size changes
   }
 
   togglePlanMenu(planId: number, event: Event): void {

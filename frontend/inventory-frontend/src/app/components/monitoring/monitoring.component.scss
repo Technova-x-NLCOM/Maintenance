@@ -12,6 +12,14 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
+  
+  // Apply condensed spacing
+  padding: 12px 20px;
+  margin-bottom: 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
   .header-title {
     display: flex;
@@ -19,22 +27,25 @@
     gap: 0.75rem;
 
     .header-icon {
-      width: 2rem;
-      height: 2rem;
+      width: 1.75rem; // Reduced from 2rem
+      height: 1.75rem;
       color: #6366f1;
       flex-shrink: 0;
     }
 
     h1 {
-      font-size: 1.5rem;
+      font-size: 1.25rem; // Reduced from 1.5rem
       font-weight: 700;
       color: #1e293b;
       margin: 0;
+      line-height: 1.3; // Tighter line height
     }
+    
     .subtitle {
-      font-size: 0.875rem;
+      font-size: 0.8125rem; // Reduced from 0.875rem
       color: #64748b;
-      margin: 0;
+      margin: 2px 0 0 0; // Reduced margin
+      line-height: 1.4;
     }
   }
 

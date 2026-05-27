@@ -579,6 +579,114 @@
   color: #0f172a;
 }
 
+// QR Action Buttons
+.qr-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.qr-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    color: #2563eb;
+    transform: translateY(-1px);
+  }
+
+  &.btn-download {
+    border-color: rgba(37, 99, 235, 0.3);
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563eb;
+
+    &:hover {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: #2563eb;
+    }
+  }
+
+  &.btn-print {
+    border-color: rgba(5, 150, 105, 0.3);
+    background: rgba(5, 150, 105, 0.08);
+    color: #047857;
+
+    &:hover {
+      background: rgba(5, 150, 105, 0.12);
+      border-color: #059669;
+    }
+  }
+
+  &.btn-copy {
+    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.08);
+    color: #d97706;
+
+    &:hover {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: #f59e0b;
+    }
+  }
+
+  &.btn-share {
+    border-color: rgba(139, 69, 19, 0.3);
+    background: rgba(139, 69, 19, 0.08);
+    color: #92400e;
+
+    &:hover {
+      background: rgba(139, 69, 19, 0.12);
+      border-color: #a16207;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+
+    &:hover {
+      background: white;
+      border-color: #e2e8f0;
+      color: #334155;
+      transform: none;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .qr-actions {
+    flex-direction: column;
+    align-items: stretch;
+    
+    .qr-action-btn {
+      justify-content: center;
+    }
+  }
+}
+
 .state-loading,
 .empty-state {
   text-align: center;

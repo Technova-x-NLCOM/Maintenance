@@ -3,19 +3,14 @@
   background: #f8fafc;
   display: flex;
   flex-direction: column;
-  // Responsive height & scrolling
-  height: auto;
-  min-height: 100vh;
-  overflow: visible;
-  
-  @media (min-width: 768px) {
-    height: 100%;
-    overflow: hidden;
-  }
+  // Fixed height container for layout stability
+  height: 100vh;
+  overflow: hidden;
 }
 
 .page-header {
   margin-bottom: 16px;
+  flex-shrink: 0; // Keep header locked in place
 
   h1 {
     margin: 0 0 6px;
@@ -37,7 +32,7 @@
   margin-bottom: 14px;
   background: #e2e8f0;
   border-radius: 14px;
-  flex-shrink: 0;
+  flex-shrink: 0; // Keep tabs locked in place
 }
 
 .tab-btn {
@@ -104,6 +99,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
+  overflow: hidden; // Prevent layout overflow
 }
 
 .panel {
@@ -129,6 +125,7 @@
     min-height: 0;
     margin-bottom: 0;
     padding-bottom: 0;
+    overflow: hidden; // Prevent panel overflow
   }
 }
 
@@ -607,14 +604,41 @@
   padding: 10px;
   background: #f8fafc;
   overflow: visible;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 
   h3 {
     margin: 0 0 8px;
     color: #0f172a;
     font-size: 14px;
+    flex-shrink: 0; // Keep header locked
   }
 }
 
+// Unified toolbar - locked at top
+.unified-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+  flex-shrink: 0; // Keep toolbar locked in place
+  flex-wrap: wrap;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+// Scrollable container for list view
 .plans-table-wrap {
   border: 1px solid #dbe4ef;
   border-radius: 10px;
@@ -622,7 +646,25 @@
   overflow: hidden;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  
+  // Isolated scrolling - only the table content scrolls
+  .plans-table {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+}
+
+// Pagination container - locked at bottom
+.pagination-container {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 0 10px 10px;
 }
 
 .plans-table {
@@ -1836,11 +1878,16 @@ label span {
   color: #dc2626;
 }
 
-// Calendar View Styles
+// Calendar View Styles - Fixed viewport overflow
 .calendar-view {
   padding: 10px;
   background: #ffffff;
   border-radius: 10px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .calendar-header {
@@ -1851,6 +1898,7 @@ label span {
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0; // Keep header locked
 
   .btn-sm {
     padding: 6px 10px;
@@ -1872,6 +1920,15 @@ label span {
   text-align: center;
 }
 
+// Calendar wrapper with isolated scrolling
+.calendar-view-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px; // Space for scrollbar
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1880,6 +1937,7 @@ label span {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   overflow: hidden;
+  min-height: 600px; // Ensure enough space for all weeks
 }
 
 .calendar-weekday {
@@ -2078,5 +2136,160 @@ label span {
   .batch-distribution-page .templates-panel .search-row .form-control,
   .batch-distribution-page .templates-panel .search-row .btn {
     width: 100%;
+  }
+}
+
+// Standardized Pagination Component
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  
+  .pagination-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .page-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover:not(:disabled) {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: #f8fafc;
+    }
+    
+    &.active {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+  }
+  
+  .page-info {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+  }
+  
+  .page-size-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    label {
+      font-size: 14px;
+      font-weight: 500;
+      color: #64748b;
+    }
+    
+    select {
+      padding: 6px 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: #fff;
+      font-size: 14px;
+      color: #475569;
+      min-width: 80px;
+    }
+  }
+}
+
+// Responsive pagination
+@media (max-width: 640px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    
+    .pagination-nav {
+      justify-content: center;
+    }
+    
+    .page-info,
+    .page-size-controls {
+      justify-content: center;
+      text-align: center;
+    }
+  }
+}
+
+// Layout stability improvements
+.plans-list-header {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+}
+
+// Scrollable list container
+.scheduled-list-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// Calendar viewport fix
+.calendar-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.calendar-view-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #94a3b8;
+    }
   }
 }
