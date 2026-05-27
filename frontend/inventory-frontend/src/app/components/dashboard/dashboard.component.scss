@@ -242,32 +242,19 @@ $danger: #b91c1c;
   display: block;
 }
 
-.paired-charts-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-
-  @media (max-width: 1060px) {
-    grid-template-columns: 1fr;
-  }
+.movement-card-full {
+  width: 100%;
+  min-height: 380px;
 }
 
 .chart-card {
   min-height: 320px;
 }
 
-.movement-card {
-  grid-column: auto;
-}
-
 .chart-area {
   position: relative;
   flex: 1;
   min-height: 240px;
-}
-
-.chart-area-tall {
-  min-height: 290px;
 }
 
 .chart-area-wide {
@@ -786,10 +773,6 @@ $danger: #b91c1c;
 
   .stat-card {
     grid-column: span 4;
-  }
-
-  .paired-charts-grid {
-    grid-template-columns: 1fr;
   }
 
   .chart-card {

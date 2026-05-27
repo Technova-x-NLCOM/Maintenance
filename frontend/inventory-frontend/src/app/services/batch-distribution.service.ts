@@ -110,7 +110,7 @@ export interface BatchDistributionIssueResponse {
   }>;
 }
 
-export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'ready' | 'completed' | 'cancelled';
+export type ProgramPlanStatus = 'planned' | 'completed' | 'cancelled';
 
 export interface ProgramPlanSummary {
   plan_id: number;
