@@ -44,6 +44,12 @@ class AuthController extends Controller
     public function setInitialPassword(Request $request)
     {
         try {
+            $request->merge([
+                'identifier' => trim((string) $request->input('identifier')),
+                'password' => trim((string) $request->input('password')),
+                'password_confirmation' => trim((string) $request->input('password_confirmation')),
+            ]);
+
             $data = $request->validate([
                 'identifier' => 'required|string',
                 'password' => [

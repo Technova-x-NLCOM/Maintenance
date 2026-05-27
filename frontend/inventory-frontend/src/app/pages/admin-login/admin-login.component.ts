@@ -134,7 +134,8 @@ export class AdminLoginComponent implements OnInit {
 
   submitSetPassword() {
     if (this.setPasswordForm.invalid) return;
-    const { password, password_confirmation } = this.setPasswordForm.value;
+    const password = (this.setPasswordForm.get('password')?.value || '').trim();
+    const password_confirmation = (this.setPasswordForm.get('password_confirmation')?.value || '').trim();
     if (password !== password_confirmation) {
       this.setPasswordError = 'Passwords do not match.';
       return;
