@@ -49,6 +49,9 @@ export class IssuanceTransactionComponent implements OnInit {
   selectedItem: IssuanceItem | null = null;
   transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
 
+  // Mobile FAB state for issuance list sidebar
+  isIssuanceListSidebarOpen = false;
+
   // Mobile detection
   private _isMobileView = false;
 
@@ -581,5 +584,21 @@ export class IssuanceTransactionComponent implements OnInit {
       this.categoryDropdownOpen = false;
       this.activeCategoryIndex = -1;
     }
+  }
+
+  // Mobile FAB methods for issuance list sidebar
+  shouldShowIssuanceListFab(): boolean {
+    return window.innerWidth <= 425;
+  }
+
+  toggleIssuanceListSidebar(): void {
+    this.isIssuanceListSidebarOpen = !this.isIssuanceListSidebarOpen;
+    // Actually toggle the drawer state
+    this.showListModal = !this.showListModal;
+  }
+
+  closeIssuanceListSidebar(): void {
+    this.isIssuanceListSidebarOpen = false;
+    this.showListModal = false;
   }
 }

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route-Based FAB Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .demo-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .route-simulator {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .route-btn {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .route-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .route-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .route-btn.target-route {
+            border-color: #10b981;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+
+        .route-btn.target-route.active {
+            background: #10b981;
+            color: white;
+        }
+
+        .width-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        .width-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .status-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .status-card {
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-card.visible {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .status-card.hidden {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .device-width-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 9999;
+        }
+
+        /* Receiving List Sidebar FAB (Mobile S & M only: ≤ 375px) */
+        .receiving-list-fab {
+            display: none;
+        }
+
+        @media (max-width: 375px) {
+            .receiving-list-fab {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                border: none;
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: white;
+                cursor: pointer;
+                box-shadow: 
+                    0 4px 12px rgba(59, 130, 246, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 10002;
+            }
+
+            .receiving-list-fab svg {
+                fill: currentColor;
+                stroke: currentColor;
+                stroke-width: 1.5;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .receiving-list-fab:hover {
+                transform: translateY(-2px);
+                box-shadow: 
+                    0 6px 16px rgba(59, 130, 246, 0.5),
+                    0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .receiving-list-fab.hidden {
+                display: none !important;
+            }
+        }
+
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .target-route-color {
+            background: #10b981;
+        }
+
+        .other-route-color {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="device-width-indicator">
+        Width: <span id="currentWidth"></span>px
+    </div>
+
+    <div class="demo-container">
+        <h1>Route-Based FAB Conditional Rendering Demo</h1>
+        <p>This demo shows how the FAB only appears on specific routes AND mobile screen sizes.</p>
+
+        <h2>🎯 Route Simulation</h2>
+        <p>Click buttons to simulate navigation to different pages:</p>
+        
+        <div class="route-simulator">
+            <button class="route-btn target-route" data-route="/dashboard/inventory/receiving">
+                📦 Stock Receiving (IN)
+            </button>
+            <button class="route-btn target-route" data-route="/dashboard/inventory/issuance">
+                📤 Stock Issuance (OUT)
+            </button>
+            <button class="route-btn" data-route="/dashboard/inventory/categories">
+                📋 Category Management
+            </button>
+            <button class="route-btn" data-route="/dashboard/inventory/storage-management">
+                🏪 Storage Management
+            </button>
+            <button class="route-btn" data-route="/dashboard/inventory/items">
+                📝 Item Registration
+            </button>
+            <button class="route-btn" data-route="/dashboard/monitoring/stock-report">
+                📊 Stock Report
+            </button>
+            <button class="route-btn" data-route="/dashboard/settings">
+                ⚙️ Settings
+            </button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color target-route-color"></div>
+                <span><strong>Green buttons</strong> = Target routes (FAB will show on mobile)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color other-route-color"></div>
+                <span><strong>Gray buttons</strong> = Other routes (FAB will NOT show)</span>
+            </div>
+        </div>
+
+        <h2>📱 Screen Size Control</h2>
+        <div class="width-controls">
+            <label for="widthSlider">Simulate Screen Width: <span id="widthValue">375</span>px</label>
+            <input type="range" id="widthSlider" class="width-slider" min="280" max="800" value="375">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-top: 5px;">
+                <span>Mobile S (320px)</span>
+                <span>Mobile M (375px)</span>
+                <span>Tablet (768px)</span>
+            </div>
+        </div>
+
+        <h2>📊 Current Status</h2>
+        <div class="status-display">
+            <div class="status-card" id="routeStatus">
+                <h3>Route Condition</h3>
+                <p id="routeText">Select a route above</p>
+            </div>
+            <div class="status-card" id="sizeStatus">
+                <h3>Screen Size Condition</h3>
+                <p id="sizeText">Checking...</p>
+            </div>
+        </div>
+
+        <div class="status-card" id="fabStatus">
+            <h3>🎯 FAB Visibility</h3>
+            <p id="fabText">Calculating...</p>
+        </div>
+
+        <h2>✅ Test Scenarios</h2>
+        <ol>
+            <li><strong>Target Route + Mobile Size</strong>: Click "Stock Receiving" + set width ≤ 375px → FAB should appear</li>
+            <li><strong>Target Route + Desktop Size</strong>: Click "Stock Receiving" + set width > 375px → FAB should hide</li>
+            <li><strong>Other Route + Mobile Size</strong>: Click "Category Management" + set width ≤ 375px → FAB should hide</li>
+            <li><strong>Route Navigation</strong>: Switch between target and non-target routes → FAB should appear/disappear</li>
+        </ol>
+    </div>
+
+    <!-- Simulated FAB -->
+    <button class="receiving-list-fab" id="simulatedFab">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+    </button>
+
+    <script>
+        let currentRoute = '';
+        let currentWidth = 375;
+
+        const routeButtons = document.querySelectorAll('.route-btn');
+        const widthSlider = document.getElementById('widthSlider');
+        const widthValue = document.getElementById('widthValue');
+        const currentWidthSpan = document.getElementById('currentWidth');
+        const simulatedFab = document.getElementById('simulatedFab');
+
+        // Target routes where FAB should appear
+        const targetRoutes = [
+            '/dashboard/inventory/receiving',
+            '/dashboard/inventory/issuance'
+        ];
+
+        function updateStatus() {
+            const isTargetRoute = targetRoutes.includes(currentRoute);
+            const isMobileSize = currentWidth <= 375;
+            const shouldShowFab = isTargetRoute && isMobileSize;
+
+            // Update route status
+            const routeStatus = document.getElementById('routeStatus');
+            const routeText = document.getElementById('routeText');
+            if (currentRoute) {
+                routeText.textContent = isTargetRoute ? 
+                    `✅ Target route: ${currentRoute}` : 
+                    `❌ Other route: ${currentRoute}`;
+                routeStatus.className = `status-card ${isTargetRoute ? 'visible' : 'hidden'}`;
+            } else {
+                routeText.textContent = 'No route selected';
+                routeStatus.className = 'status-card';
+            }
+
+            // Update size status
+            const sizeStatus = document.getElementById('sizeStatus');
+            const sizeText = document.getElementById('sizeText');
+            sizeText.textContent = isMobileSize ? 
+                `✅ Mobile size: ${currentWidth}px ≤ 375px` : 
+                `❌ Desktop size: ${currentWidth}px > 375px`;
+            sizeStatus.className = `status-card ${isMobileSize ? 'visible' : 'hidden'}`;
+
+            // Update FAB status
+            const fabStatus = document.getElementById('fabStatus');
+            const fabText = document.getElementById('fabText');
+            fabText.textContent = shouldShowFab ? 
+                '✅ FAB VISIBLE (Target route + Mobile size)' : 
+                '❌ FAB HIDDEN (Missing: ' + 
+                (!isTargetRoute ? 'Target route' : '') + 
+                (!isTargetRoute && !isMobileSize ? ' + ' : '') +
+                (!isMobileSize ? 'Mobile size' : '') + ')';
+            fabStatus.className = `status-card ${shouldShowFab ? 'visible' : 'hidden'}`;
+
+            // Show/hide simulated FAB
+            if (shouldShowFab) {
+                simulatedFab.classList.remove('hidden');
+            } else {
+                simulatedFab.classList.add('hidden');
+            }
+
+            // Update width indicator
+            currentWidthSpan.textContent = currentWidth;
+            widthValue.textContent = currentWidth;
+        }
+
+        // Route button handlers
+        routeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                routeButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                button.classList.add('active');
+                // Update current route
+                currentRoute = button.dataset.route;
+                updateStatus();
+            });
+        });
+
+        // Width slider handler
+        widthSlider.addEventListener('input', (e) => {
+            currentWidth = parseInt(e.target.value);
+            updateStatus();
+        });
+
+        // Initialize
+        updateStatus();
+
+        // Update width indicator on window resize
+        function updateWindowWidth() {
+            const actualWidth = window.innerWidth;
+            currentWidthSpan.textContent = `${actualWidth} (actual) | ${currentWidth} (simulated)`;
+        }
+
+        window.addEventListener('resize', updateWindowWidth);
+        updateWindowWidth();
+    </script>
+</body>
+</html>

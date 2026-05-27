@@ -48,6 +48,9 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   searchQuery = '';
   selectedLocationId: number | null = null;
   selectedLocationLabel = 'Select storage location';
+  
+  // Mobile FAB state for receiving list sidebar
+  isReceivingListSidebarOpen = false;
 
   selectedCategoryId: number | null = null;
   selectedCategoryLabel = 'All Categories';
@@ -940,5 +943,21 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       this.categoryDropdownOpen = false;
       this.activeCategoryIndex = -1;
     }
+  }
+
+  // Mobile FAB methods for receiving list sidebar
+  shouldShowReceivingListFab(): boolean {
+    return window.innerWidth <= 425;
+  }
+
+  toggleReceivingListSidebar(): void {
+    this.isReceivingListSidebarOpen = !this.isReceivingListSidebarOpen;
+    // Actually toggle the drawer state
+    this.showListModal = !this.showListModal;
+  }
+
+  closeReceivingListSidebar(): void {
+    this.isReceivingListSidebarOpen = false;
+    this.showListModal = false;
   }
 }
