@@ -46,7 +46,7 @@ export class ResponsiveService {
   private getBreakpointState(): BreakpointState {
     const width = typeof window === 'undefined' ? 1024 : window.innerWidth;
     const isMobileS = width <= 320;
-    const isMobileM = width <= 425;
+    const isMobileM = width <= 375; // Updated to match requirement
     const isMobile = width <= 576;
     const isTablet = width > 576 && width <= 1024;
     const isDesktop = width > 1024;

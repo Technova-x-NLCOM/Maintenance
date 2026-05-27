@@ -1,5 +1,5 @@
 <div class="issuance-page">
-  <div class="page-header">
+  <div class="page-header header-condensed">
     <h1>Stock Issuance (OUT)</h1>
     <p class="subtitle">Choose items, add them to an issuance list, then submit all lines in one action.</p>
   </div>
@@ -129,21 +129,6 @@
       </div>
     </div>
   </section>
-
-  <!-- Mobile FAB for drawer toggle (only visible on mobile) -->
-  <button 
-    class="mobile-drawer-fab" 
-    type="button"
-    (click)="toggleListDrawer()"
-    [class.has-items]="issuanceLines.length > 0"
-    [attr.aria-label]="showListModal ? 'Hide issuance list' : 'Show issuance list'"
-    *ngIf="isMobileView()"
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
-    </svg>
-    <span class="fab-badge" *ngIf="issuanceLines.length > 0">{{ issuanceLines.length }}</span>
-  </button>
 
   <!-- Mobile backdrop (only visible on mobile when drawer is open) -->
   <div 
@@ -421,3 +406,18 @@
     </div>
   </div>
 </div>
+<!-- Mobile FAB for Issuance List Sidebar (Mobile S & M: ≤ 425px) -->
+<button 
+  class="mobile-fab"
+  *ngIf="shouldShowIssuanceListFab()"
+  (click)="toggleIssuanceListSidebar()"
+  [attr.aria-label]="isIssuanceListSidebarOpen ? 'Close issuance list' : 'Open issuance list'"
+>
+  <!-- 2x2 Grid Icon -->
+  <svg viewBox="0 0 24 24" width="24" height="24">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+</button>

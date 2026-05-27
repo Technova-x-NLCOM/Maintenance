@@ -1,0 +1,186 @@
+// Global Header Optimization Utilities
+// Apply these classes to existing page headers for consistent space management
+
+// Condensed header spacing
+.header-condensed {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 16px !important;
+  
+  .page-title, 
+  h1, 
+  h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .subtitle,
+  .page-desc,
+  .header-subtitle {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+    margin-top: 2px !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .eyebrow {
+    font-size: 0.75rem !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+// Ultra-compact for mobile or dense layouts
+.header-ultra-compact {
+  padding: 8px 16px !important;
+  margin-bottom: 12px !important;
+  
+  .page-title,
+  h1,
+  h2 {
+    font-size: 1.125rem !important;
+    margin: 0 !important;
+  }
+  
+  .subtitle,
+  .page-desc,
+  .header-subtitle {
+    font-size: 0.8125rem !important;
+    margin: 2px 0 0 0 !important;
+  }
+  
+  .eyebrow {
+    display: none !important; // Hide eyebrow in ultra-compact
+  }
+}
+
+// Tooltip-enabled headers
+.header-with-tooltip {
+  .subtitle,
+  .page-desc,
+  .header-subtitle {
+    display: none; // Hide by default
+    
+    &.tooltip-visible {
+      display: block;
+      position: absolute;
+      z-index: 10;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 320px;
+      margin-top: 8px;
+    }
+  }
+  
+  .tooltip-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    cursor: pointer;
+    margin-left: 8px;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+    
+    &:hover {
+      background: rgba(37, 99, 235, 0.15);
+    }
+  }
+}
+
+// Collapsible headers
+.header-collapsible {
+  .subtitle,
+  .page-desc,
+  .header-subtitle {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    opacity: 0;
+    
+    &.expanded {
+      max-height: 100px;
+      opacity: 1;
+      margin-top: 4px;
+    }
+  }
+  
+  .collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: transform 0.2s ease;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.2s ease;
+    }
+    
+    &.rotated svg {
+      transform: rotate(180deg);
+    }
+    
+    &:hover {
+      background: rgba(37, 99, 235, 0.15);
+    }
+  }
+}
+
+// Responsive header adjustments
+@media (max-width: 768px) {
+  .page-header,
+  .header-condensed,
+  .header-ultra-compact {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  
+  .page-title,
+  h1,
+  h2 {
+    font-size: 1.125rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header,
+  .header-condensed {
+    padding: 8px 10px !important;
+  }
+  
+  .header-ultra-compact {
+    padding: 6px 10px !important;
+  }
+  
+  .page-title,
+  h1,
+  h2 {
+    font-size: 1rem !important;
+  }
+  
+  .subtitle,
+  .page-desc,
+  .header-subtitle {
+    font-size: 0.75rem !important;
+  }
+}

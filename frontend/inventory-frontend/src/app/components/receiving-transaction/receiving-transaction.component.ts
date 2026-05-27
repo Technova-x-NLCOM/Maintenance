@@ -48,6 +48,9 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   searchQuery = '';
   selectedLocationId: number | null = null;
   selectedLocationLabel = 'Select storage location';
+  
+  // Mobile FAB state for receiving list sidebar
+  isReceivingListSidebarOpen = false;
 
   selectedCategoryId: number | null = null;
   selectedCategoryLabel = 'All Categories';
@@ -137,6 +140,242 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.batchQrLabel = '';
     this.batchQrPayload = '';
     this.batchQrImageDataUrl = null;
+  }
+
+  // QR Code Download Methods
+  downloadBatchQr(): void {
+    if (!this.batchQrImageDataUrl) return;
+
+    try {
+      // Create download link
+      const link = document.createElement('a');
+      link.href = this.batchQrImageDataUrl;
+      link.download = `batch-qr-${this.confirmBatchNumber || 'code'}.png`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      this.showSuccessMessage = true;
+      this.successMessage = 'QR code downloaded successfully!';
+    } catch (error) {
+      console.error('Download failed:', error);
+      this.showError('Failed to download QR code. Please try again.');
+    }
+  }
+
+  printBatchQr(): void {
+    if (!this.batchQrImageDataUrl) return;
+
+    try {
+      // Generate printable HTML
+      const printHtml = this.generatePrintableBatchQrHtml();
+      
+      // Create new window for printing
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        this.showError('Please allow popups to enable printing.');
+        return;
+      }
+      
+      printWindow.document.write(printHtml);
+      printWindow.document.close();
+      
+      // Wait for content to load, then print
+      printWindow.onload = () => {
+        printWindow.print();
+        printWindow.close();
+      };
+      
+      this.showSuccessMessage = true;
+      this.successMessage = 'Print dialog opened successfully!';
+    } catch (error) {
+      console.error('Print failed:', error);
+      this.showError('Failed to open print dialog. Please try again.');
+    }
+  }
+
+  async copyBatchQrToClipboard(): Promise<void> {
+    if (!this.batchQrImageDataUrl) return;
+
+    try {
+      // Check if Clipboard API is supported
+      if (!navigator.clipboard || !navigator.clipboard.write) {
+        // Fallback: copy QR payload as text
+        await this.copyTextToClipboard(this.batchQrPayload);
+        this.showSuccessMessage = true;
+        this.successMessage = 'QR code data copied to clipboard as text!';
+        return;
+      }
+
+      // Convert data URL to blob
+      const response = await fetch(this.batchQrImageDataUrl);
+      const blob = await response.blob();
+      
+      // Copy image to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      
+      this.showSuccessMessage = true;
+      this.successMessage = 'QR code image copied to clipboard!';
+    } catch (error) {
+      console.error('Copy failed:', error);
+      // Fallback to text copy
+      try {
+        await this.copyTextToClipboard(this.batchQrPayload);
+        this.showSuccessMessage = true;
+        this.successMessage = 'QR code data copied to clipboard as text!';
+      } catch (textError) {
+        this.showError('Failed to copy QR code. Please try again.');
+      }
+    }
+  }
+
+  private async copyTextToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+  }
+
+  shareBatchQr(): void {
+    if (!this.batchQrImageDataUrl) return;
+
+    try {
+      // Check if Web Share API is supported
+      if (navigator.share) {
+        // Convert data URL to blob for sharing
+        fetch(this.batchQrImageDataUrl)
+          .then(response => response.blob())
+          .then(blob => {
+            const file = new File([blob], `batch-qr-${this.confirmBatchNumber || 'code'}.png`, { type: 'image/png' });
+            
+            return navigator.share({
+              title: `Batch QR Code: ${this.batchQrLabel}`,
+              text: `QR code for batch: ${this.confirmBatchNumber}`,
+              files: [file]
+            });
+          })
+          .then(() => {
+            this.showSuccessMessage = true;
+            this.successMessage = 'QR code shared successfully!';
+          })
+          .catch((error) => {
+            if (error.name !== 'AbortError') {
+              console.error('Share failed:', error);
+              this.fallbackShare();
+            }
+          });
+      } else {
+        this.fallbackShare();
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+      this.fallbackShare();
+    }
+  }
+
+  private fallbackShare(): void {
+    // Fallback: copy share text to clipboard
+    const shareText = `Batch QR Code: ${this.batchQrLabel}\nBatch Number: ${this.confirmBatchNumber}\nQR Data: ${this.batchQrPayload}`;
+    
+    this.copyTextToClipboard(shareText)
+      .then(() => {
+        this.showSuccessMessage = true;
+        this.successMessage = 'QR code details copied to clipboard for sharing!';
+      })
+      .catch(() => {
+        this.showError('Sharing not supported on this device. Please use download instead.');
+      });
+  }
+
+  private generatePrintableBatchQrHtml(): string {
+    const currentDate = new Date().toLocaleDateString();
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Batch QR Code - ${this.batchQrLabel}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: white;
+          }
+          .print-container {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+          }
+          .qr-image {
+            width: 280px;
+            height: 280px;
+            margin: 16px auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            background: white;
+          }
+          .batch-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 8px;
+          }
+          .batch-label {
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 16px;
+            font-weight: 600;
+          }
+          .batch-info {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+          }
+          .print-date {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-top: 8px;
+          }
+          @media print {
+            body { margin: 0; padding: 10px; }
+            .print-container { border: 1px solid #ccc; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">
+          <div class="batch-title">${this.batchQrTitle}</div>
+          <div class="batch-label">${this.batchQrLabel}</div>
+          <img src="${this.batchQrImageDataUrl}" alt="Batch QR Code" class="qr-image" />
+          <div class="batch-info">
+            <div>Batch Number: ${this.confirmBatchNumber}</div>
+            <div>Generated: ${currentDate}</div>
+            <div class="print-date">Inventory Management System</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
   }
 
   openQrScanner(): void {
@@ -940,5 +1179,21 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       this.categoryDropdownOpen = false;
       this.activeCategoryIndex = -1;
     }
+  }
+
+  // Mobile FAB methods for receiving list sidebar
+  shouldShowReceivingListFab(): boolean {
+    return window.innerWidth <= 425;
+  }
+
+  toggleReceivingListSidebar(): void {
+    this.isReceivingListSidebarOpen = !this.isReceivingListSidebarOpen;
+    // Actually toggle the drawer state
+    this.showListModal = !this.showListModal;
+  }
+
+  closeReceivingListSidebar(): void {
+    this.isReceivingListSidebarOpen = false;
+    this.showListModal = false;
   }
 }

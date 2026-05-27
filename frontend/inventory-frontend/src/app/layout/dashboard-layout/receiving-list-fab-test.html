@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receiving List Sidebar FAB Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .test-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .device-width-indicator {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 9999;
+        }
+
+        .sidebar-demo {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-demo.is-open {
+            transform: translateX(0);
+        }
+
+        .sidebar-demo h3 {
+            margin-top: 0;
+            color: #1f2937;
+        }
+
+        .sidebar-demo .item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Receiving List Sidebar FAB (Mobile S & M only: ≤ 425px) */
+        .receiving-list-fab {
+            display: none;
+        }
+
+        @media (max-width: 425px) {
+            .receiving-list-fab {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                border: none;
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: white;
+                cursor: pointer;
+                box-shadow: 
+                    0 4px 12px rgba(59, 130, 246, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 10002;
+            }
+
+            .receiving-list-fab svg {
+                fill: currentColor;
+                stroke: currentColor;
+                stroke-width: 1.5;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+            }
+
+            .receiving-list-fab:hover {
+                transform: translateY(-2px);
+                box-shadow: 
+                    0 6px 16px rgba(59, 130, 246, 0.5),
+                    0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .receiving-list-fab:active {
+                transform: translateY(0);
+                box-shadow: 
+                    0 2px 8px rgba(59, 130, 246, 0.3),
+                    0 1px 2px rgba(0, 0, 0, 0.1);
+            }
+
+            /* Subtle pulse animation when sidebar is open */
+            .receiving-list-fab[aria-label*="Close"] {
+                animation: subtle-pulse 2s infinite;
+            }
+
+            .sidebar-demo {
+                width: 280px;
+            }
+        }
+
+        @keyframes subtle-pulse {
+            0%, 100% {
+                box-shadow: 
+                    0 4px 12px rgba(59, 130, 246, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            50% {
+                box-shadow: 
+                    0 4px 12px rgba(59, 130, 246, 0.6),
+                    0 2px 4px rgba(0, 0, 0, 0.15);
+            }
+        }
+
+        @media (min-width: 426px) {
+            .test-content::after {
+                content: "FAB is hidden on screens > 425px";
+                display: block;
+                margin-top: 20px;
+                padding: 12px;
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 6px;
+                color: #92400e;
+                font-weight: 600;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="device-width-indicator" id="widthIndicator">
+        Width: <span id="currentWidth"></span>px
+    </div>
+
+    <div class="test-content">
+        <h1>Receiving List Sidebar FAB Test</h1>
+        <p><strong>Target:</strong> Mobile S (≤320px) and Mobile M (≤425px) only</p>
+        
+        <h2>Test Instructions:</h2>
+        <ol>
+            <li>Resize your browser window to ≤ 425px width</li>
+            <li>Look for the blue circular FAB in the bottom-right corner</li>
+            <li>Click the FAB to toggle the receiving list sidebar</li>
+            <li>Notice the subtle pulse animation when sidebar is open</li>
+            <li>Resize to > 425px to see the FAB disappear</li>
+        </ol>
+
+        <h2>Features Tested:</h2>
+        <ul>
+            <li>✅ <strong>Strict Responsiveness:</strong> Only visible on Mobile S & M (≤ 425px)</li>
+            <li>✅ <strong>Blue Background:</strong> Gradient blue matching IMS theme</li>
+            <li>✅ <strong>2x2 Grid Icon:</strong> White square grid icon</li>
+            <li>✅ <strong>Fixed Position:</strong> Bottom-right corner positioning</li>
+            <li>✅ <strong>Soft Drop Shadow:</strong> Blue-tinted shadow with hover effects</li>
+            <li>✅ <strong>Toggle Functionality:</strong> Opens/closes sidebar state</li>
+            <li>✅ <strong>Accessibility:</strong> Proper ARIA labels</li>
+            <li>✅ <strong>Visual Feedback:</strong> Pulse animation when active</li>
+        </ul>
+
+        <h2>Current Status:</h2>
+        <p id="fabStatus">FAB Status: <span id="fabVisibility">Checking...</span></p>
+        <p id="sidebarStatus">Sidebar Status: <span id="sidebarState">Closed</span></p>
+    </div>
+
+    <!-- Demo Sidebar -->
+    <div class="sidebar-demo" id="demoSidebar">
+        <h3>📦 Receiving List</h3>
+        <p>This sidebar would contain the receiving transaction items on mobile devices.</p>
+        
+        <div class="item">
+            <strong>Item #001</strong><br>
+            Medical Supplies - Box A<br>
+            <small>Qty: 50 | Exp: 2025-12-31</small>
+        </div>
+        
+        <div class="item">
+            <strong>Item #002</strong><br>
+            Surgical Instruments<br>
+            <small>Qty: 25 | Exp: 2026-06-15</small>
+        </div>
+        
+        <div class="item">
+            <strong>Item #003</strong><br>
+            Pharmaceuticals - Batch B<br>
+            <small>Qty: 100 | Exp: 2025-08-20</small>
+        </div>
+        
+        <p><small>On larger screens, this sidebar would be naturally visible, so the FAB is hidden.</small></p>
+    </div>
+
+    <!-- Receiving List FAB -->
+    <button 
+        class="receiving-list-fab"
+        id="receivingFab"
+        aria-label="Open receiving list"
+    >
+        <!-- 2x2 Grid Icon -->
+        <svg viewBox="0 0 24 24" width="24" height="24">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+    </button>
+
+    <script>
+        let isListSidebarOpen = false;
+        const fab = document.getElementById('receivingFab');
+        const sidebar = document.getElementById('demoSidebar');
+        const widthIndicator = document.getElementById('currentWidth');
+        const fabVisibility = document.getElementById('fabVisibility');
+        const sidebarState = document.getElementById('sidebarState');
+
+        function updateWidth() {
+            const width = window.innerWidth;
+            widthIndicator.textContent = width;
+            
+            // Update FAB visibility status
+            if (width <= 425) {
+                fabVisibility.textContent = 'Visible (Mobile S/M)';
+                fabVisibility.style.color = '#059669';
+            } else {
+                fabVisibility.textContent = 'Hidden (> 425px)';
+                fabVisibility.style.color = '#dc2626';
+            }
+        }
+
+        function toggleReceivingListSidebar() {
+            isListSidebarOpen = !isListSidebarOpen;
+            
+            if (isListSidebarOpen) {
+                sidebar.classList.add('is-open');
+                fab.setAttribute('aria-label', 'Close receiving list');
+                sidebarState.textContent = 'Open';
+                sidebarState.style.color = '#059669';
+            } else {
+                sidebar.classList.remove('is-open');
+                fab.setAttribute('aria-label', 'Open receiving list');
+                sidebarState.textContent = 'Closed';
+                sidebarState.style.color = '#6b7280';
+            }
+        }
+
+        // Event listeners
+        fab.addEventListener('click', toggleReceivingListSidebar);
+        window.addEventListener('resize', updateWidth);
+
+        // Initial setup
+        updateWidth();
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+            if (isListSidebarOpen && !e.target.closest('.sidebar-demo') && !e.target.closest('.receiving-list-fab')) {
+                toggleReceivingListSidebar();
+            }
+        });
+    </script>
+</body>
+</html>

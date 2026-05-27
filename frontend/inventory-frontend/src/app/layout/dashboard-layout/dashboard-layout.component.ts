@@ -16,9 +16,13 @@ import { filter, Subscription } from 'rxjs';
 export class DashboardLayoutComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   sidebarOpen = false;
+  
   private routerSub?: Subscription;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router
+  ) {}
 
   ngOnInit() {
     this.authService.currentUser$.subscribe((user) => {

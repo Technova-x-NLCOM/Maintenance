@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile FAB Test</title>
+    <style>
+        /* Copy the mobile FAB styles for testing */
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .test-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .mobile-fab-container {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-fab-container {
+                display: block;
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                z-index: 10002;
+            }
+
+            .mobile-fab-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.3);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.25s ease;
+                z-index: -1;
+            }
+
+            .mobile-fab-backdrop.is-open {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .mobile-fab-button {
+                width: 56px;
+                height: 56px;
+                border-radius: 50%;
+                border: none;
+                background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                box-shadow: 
+                    0 4px 12px rgba(59, 130, 246, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                z-index: 2;
+            }
+
+            .mobile-fab-button svg {
+                fill: currentColor;
+                stroke: currentColor;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                transition: transform 0.25s ease;
+            }
+
+            .mobile-fab-button:hover {
+                transform: translateY(-2px);
+                box-shadow: 
+                    0 6px 16px rgba(59, 130, 246, 0.5),
+                    0 4px 8px rgba(0, 0, 0, 0.15);
+            }
+
+            .mobile-fab-button.is-open {
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                box-shadow: 
+                    0 4px 12px rgba(239, 68, 68, 0.4),
+                    0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .mobile-fab-button.is-open svg {
+                transform: rotate(90deg);
+            }
+
+            .mobile-fab-menu {
+                position: absolute;
+                bottom: 72px;
+                right: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(20px) scale(0.9);
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .mobile-fab-menu.is-open {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0) scale(1);
+            }
+
+            .fab-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 12px 16px;
+                background: white;
+                border: none;
+                border-radius: 28px;
+                color: #1f2937;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                box-shadow: 
+                    0 4px 12px rgba(0, 0, 0, 0.1),
+                    0 2px 4px rgba(0, 0, 0, 0.06);
+                transition: all 0.2s ease;
+                white-space: nowrap;
+                min-width: 140px;
+            }
+
+            .fab-menu-item svg {
+                fill: #3b82f6;
+                stroke: #3b82f6;
+                stroke-width: 2;
+                stroke-linecap: round;
+                stroke-linejoin: round;
+                flex-shrink: 0;
+            }
+
+            .fab-menu-item span {
+                color: #374151;
+                font-weight: 600;
+            }
+
+            .fab-menu-item:hover {
+                transform: translateX(-4px);
+                background: #f8fafc;
+                box-shadow: 
+                    0 6px 16px rgba(0, 0, 0, 0.15),
+                    0 4px 8px rgba(0, 0, 0, 0.08);
+            }
+
+            .fab-menu-item:hover svg {
+                fill: #1d4ed8;
+                stroke: #1d4ed8;
+            }
+
+            .fab-menu-item:hover span {
+                color: #1f2937;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>Mobile FAB Test Page</h1>
+        <p>This page demonstrates the mobile FAB functionality. To test:</p>
+        <ol>
+            <li>Open this page on a mobile device or resize your browser to ≤ 768px width</li>
+            <li>Look for the blue circular button in the bottom-right corner</li>
+            <li>Tap the button to open the menu</li>
+            <li>Tap menu items to see the navigation (will show alerts in this test)</li>
+            <li>Tap outside the menu or the X button to close</li>
+        </ol>
+        
+        <h2>Features Tested:</h2>
+        <ul>
+            <li>✅ Responsive visibility (only on mobile)</li>
+            <li>✅ Blue gradient background</li>
+            <li>✅ 2x2 grid icon when closed</li>
+            <li>✅ X icon when open with rotation</li>
+            <li>✅ Smooth animations</li>
+            <li>✅ Menu expansion with 4 items</li>
+            <li>✅ Click outside to close</li>
+            <li>✅ Proper z-index layering</li>
+        </ul>
+    </div>
+
+    <!-- Mobile FAB -->
+    <div class="mobile-fab-container">
+        <div class="mobile-fab-backdrop" id="fabBackdrop"></div>
+        
+        <div class="mobile-fab-menu" id="fabMenu">
+            <button class="fab-menu-item" onclick="navigate('Stock IN')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                </svg>
+                <span>Stock IN</span>
+            </button>
+
+            <button class="fab-menu-item" onclick="navigate('Stock OUT')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M19 13H5v-2h14v2z"/>
+                </svg>
+                <span>Stock OUT</span>
+            </button>
+
+            <button class="fab-menu-item" onclick="navigate('Reports')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                </svg>
+                <span>Reports</span>
+            </button>
+
+            <button class="fab-menu-item" onclick="navigate('History')">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                </svg>
+                <span>History</span>
+            </button>
+        </div>
+
+        <button class="mobile-fab-button" id="fabButton">
+            <svg id="gridIcon" viewBox="0 0 24 24" width="24" height="24">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
+            <svg id="closeIcon" viewBox="0 0 24 24" width="24" height="24" style="display: none;">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        let isOpen = false;
+        const fabButton = document.getElementById('fabButton');
+        const fabMenu = document.getElementById('fabMenu');
+        const fabBackdrop = document.getElementById('fabBackdrop');
+        const gridIcon = document.getElementById('gridIcon');
+        const closeIcon = document.getElementById('closeIcon');
+
+        function toggleFab() {
+            isOpen = !isOpen;
+            
+            if (isOpen) {
+                fabButton.classList.add('is-open');
+                fabMenu.classList.add('is-open');
+                fabBackdrop.classList.add('is-open');
+                gridIcon.style.display = 'none';
+                closeIcon.style.display = 'block';
+            } else {
+                fabButton.classList.remove('is-open');
+                fabMenu.classList.remove('is-open');
+                fabBackdrop.classList.remove('is-open');
+                gridIcon.style.display = 'block';
+                closeIcon.style.display = 'none';
+            }
+        }
+
+        function closeFab() {
+            if (isOpen) {
+                toggleFab();
+            }
+        }
+
+        function navigate(page) {
+            alert(`Navigating to: ${page}`);
+            closeFab();
+        }
+
+        // Event listeners
+        fabButton.addEventListener('click', toggleFab);
+        fabBackdrop.addEventListener('click', closeFab);
+
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.mobile-fab-container') && isOpen) {
+                closeFab();
+            }
+        });
+    </script>
+</body>
+</html>

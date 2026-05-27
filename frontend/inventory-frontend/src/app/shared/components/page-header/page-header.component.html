@@ -1,0 +1,74 @@
+<header class="page-header" [class.compact]="compact" [class.collapsible]="collapsible">
+  <div class="header-content">
+    <div class="header-text">
+      <!-- Eyebrow text (optional) -->
+      <p class="eyebrow" *ngIf="eyebrow && !compact">{{ eyebrow }}</p>
+      
+      <!-- Main title with optional icon -->
+      <div class="title-row">
+        <!-- Icon (optional) -->
+        <svg *ngIf="icon" class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="icon"></svg>
+        
+        <!-- Title -->
+        <h1 class="page-title">{{ title }}</h1>
+        
+        <!-- Tooltip trigger (optional) -->
+        <button 
+          *ngIf="showTooltip && subtitle" 
+          class="tooltip-trigger"
+          type="button"
+          (click)="toggleTooltip()"
+          [attr.aria-label]="showTooltipContent ? 'Hide description' : 'Show description'"
+          [attr.aria-expanded]="showTooltipContent"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <path d="M12 17h.01"/>
+          </svg>
+        </button>
+        
+        <!-- Collapsible toggle (optional) -->
+        <button 
+          *ngIf="collapsible && subtitle && !showTooltip" 
+          class="collapse-toggle"
+          type="button"
+          (click)="toggleDescription()"
+          [attr.aria-label]="isDescriptionExpanded ? 'Hide description' : 'Show description'"
+          [attr.aria-expanded]="isDescriptionExpanded"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+               [class.rotated]="isDescriptionExpanded">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Subtitle/Description -->
+      <div class="subtitle-container" *ngIf="subtitle">
+        <!-- Regular subtitle (always visible when not using tooltip/collapsible) -->
+        <p class="subtitle" 
+           *ngIf="!showTooltip && !collapsible">{{ subtitle }}</p>
+        
+        <!-- Collapsible subtitle -->
+        <div class="collapsible-content" 
+             *ngIf="collapsible && !showTooltip"
+             [class.expanded]="isDescriptionExpanded">
+          <p class="subtitle">{{ subtitle }}</p>
+        </div>
+        
+        <!-- Tooltip content -->
+        <div class="tooltip-content" 
+             *ngIf="showTooltip && showTooltipContent"
+             [@slideDown]="showTooltipContent">
+          <p class="subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Action buttons -->
+    <div class="header-actions" *ngIf="actions">
+      <ng-container *ngTemplateOutlet="actions"></ng-container>
+    </div>
+  </div>
+</header>
