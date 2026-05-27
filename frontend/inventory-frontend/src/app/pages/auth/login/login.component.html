@@ -149,6 +149,11 @@
             class="form-control"
             placeholder="Min 8 chars, upper, lower, number, special"
           />
+          <small class="validation-error" *ngIf="setPasswordForm.get('password')?.touched && setPasswordForm.get('password')?.invalid">
+            <span *ngIf="setPasswordForm.get('password')?.errors?.['required']">Password is required.</span>
+            <span *ngIf="setPasswordForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters long.</span>
+            <span *ngIf="setPasswordForm.get('password')?.errors?.['pattern']">Password must contain uppercase, lowercase, number, and a special character.</span>
+          </small>
           <button type="button" class="password-toggle" (click)="showSetPwd = !showSetPwd">
             <svg *ngIf="!showSetPwd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
