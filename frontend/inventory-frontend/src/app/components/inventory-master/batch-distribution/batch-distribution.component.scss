@@ -129,6 +129,18 @@
   }
 }
 
+.form-control--invalid {
+  border-color: rgba(220, 38, 38, 0.85) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
+.field-error {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
 .pane-card {
   height: 100%;
   display: flex;
