@@ -12,6 +12,8 @@ export interface AuditLogEntry {
   new_values?: any;
   performed_by: number;
   performed_by_name?: string;
+  performed_by_role?: string | null;
+  performed_by_role_display?: string | null;
   ip_address: string;
   created_at: string;
 }
@@ -42,11 +44,42 @@ type ModuleType = 'Category' | 'Inventory' | 'Users' | 'Other';
 const HIDDEN_DETAIL_FIELDS = new Set([
   'batch_id',
   'batch_value',
+  'created_at',
+  'created_by',
+  'deleted_at',
+  'ip_address',
   'manufactured_date',
+  'performed_by',
   'qr_payload',
   'qr_label',
-  'supplier_info',
+  'record_id',
+  'table_name',
+  'updated_at',
 ]);
+
+const FRIENDLY_FIELD_LABELS: Record<string, string> = {
+  base_unit_count: 'Base unit count',
+  distribution_type: 'Distribution type',
+  is_active: 'Active',
+  item_code: 'Item code',
+  item_description: 'Item name',
+  item_id: 'Item',
+  location_id: 'Location',
+  notes: 'Notes',
+  reason: 'Reason',
+  template_id: 'Template',
+  template_name: 'Template name',
+  user_id: 'User',
+};
+
+const VALUE_MAPPERS: Record<string, (value: unknown) => string> = {
+  distribution_type: (value) => {
+    if (value === 'relief_goods') return 'Relief goods';
+    if (value === 'feeding_program') return 'Feeding program';
+    return String(value ?? '');
+  },
+  is_active: (value) => (value === 1 || value === '1' || value === true ? 'Yes' : 'No'),
+};
 
 @Component({
   selector: 'app-audit-log',
@@ -64,8 +97,7 @@ export class AuditLogComponent implements OnInit {
   total = 0;
   search = '';
   expandedLogId: number | null = null;
-  filterStartDate = '';
-  filterEndDate = '';
+  sortOrder: 'newest' | 'oldest' = 'newest';
   filterActionType = 'ALL';
   filterModule = 'ALL';
 
@@ -89,7 +121,11 @@ export class AuditLogComponent implements OnInit {
       .listRows('audit_log', {
         page: this.currentPage,
         perPage: this.perPage,
-        search: this.search || undefined
+        search: this.search || undefined,
+        extraParams: {
+          excludeTables: 'inventory_transactions',
+          sortOrder: this.sortOrder,
+        },
       })
       .subscribe({
         next: (response: AuditLogResponse) => {
@@ -141,11 +177,11 @@ export class AuditLogComponent implements OnInit {
   getActionLabel(action: string): string {
     switch (action) {
       case 'INSERT':
-        return 'Add';
+        return 'Created';
       case 'UPDATE':
-        return 'Update';
+        return 'Edited';
       case 'DELETE':
-        return 'Delete';
+        return 'Removed';
       default:
         return action;
     }
@@ -222,12 +258,29 @@ export class AuditLogComponent implements OnInit {
     return (log.performed_by_name || '').trim() || 'A user';
   }
 
+  getActorRoleLabel(log: AuditLogEntry): string {
+    const display = (log.performed_by_role_display || '').trim();
+    if (display) return display;
+    const role = (log.performed_by_role || '').trim();
+    if (role === 'super_admin') return 'Super Admin';
+    if (role === 'inventory_manager') return 'Inventory Manager';
+    if (role) return this.formatFieldLabel(role);
+    return 'User';
+  }
+
+  getActorRoleClass(log: AuditLogEntry): string {
+    const role = (log.performed_by_role || '').trim();
+    if (role === 'super_admin') return 'role-super-admin';
+    if (role === 'inventory_manager') return 'role-inventory-manager';
+    return 'role-default';
+  }
+
   getActionPhrase(action: string): string {
     switch (action) {
       case 'INSERT':
-        return 'added a new';
+        return 'created a new';
       case 'UPDATE':
-        return 'updated';
+        return 'edited';
       case 'DELETE':
         return 'removed';
       default:
@@ -307,14 +360,21 @@ export class AuditLogComponent implements OnInit {
   }
 
   formatFieldLabel(key: string): string {
+    if (FRIENDLY_FIELD_LABELS[key]) {
+      return FRIENDLY_FIELD_LABELS[key];
+    }
     return key
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (letter) => letter.toUpperCase());
   }
 
-  formatFieldValue(value: any): string {
+  formatFieldValue(value: any, key?: string): string {
     if (value === null || value === undefined || value === '') {
       return 'Not set';
+    }
+
+    if (key && VALUE_MAPPERS[key]) {
+      return VALUE_MAPPERS[key](value);
     }
 
     if (typeof value === 'boolean') {
@@ -354,7 +414,7 @@ export class AuditLogComponent implements OnInit {
 
     return keys
       .map((key) => {
-        const value = this.formatFieldValue(newValues[key]);
+        const value = this.formatFieldValue(newValues[key], key);
         return {
           key,
           label: this.formatFieldLabel(key),
@@ -372,7 +432,7 @@ export class AuditLogComponent implements OnInit {
 
     return keys
       .map((key) => {
-        const value = this.formatFieldValue(oldValues[key]);
+        const value = this.formatFieldValue(oldValues[key], key);
         return {
           key,
           label: this.formatFieldLabel(key),
@@ -389,8 +449,8 @@ export class AuditLogComponent implements OnInit {
 
     return keys
       .map((key) => {
-        const beforeValue = this.formatFieldValue(oldValues[key]);
-        const afterValue = this.formatFieldValue(newValues[key]);
+        const beforeValue = this.formatFieldValue(oldValues[key], key);
+        const afterValue = this.formatFieldValue(newValues[key], key);
 
         return {
           key,
@@ -429,14 +489,14 @@ export class AuditLogComponent implements OnInit {
 
   getDetailHeading(log: AuditLogEntry): string {
     if (log.action === 'INSERT') {
-      return 'Added Information';
+      return 'What Was Created';
     }
 
     if (log.action === 'DELETE') {
-      return 'Removed Information';
+      return 'What Was Removed';
     }
 
-    return 'What Changed';
+    return 'What Was Edited';
   }
 
   getChangeSummary(log: AuditLogEntry): string {
@@ -444,7 +504,7 @@ export class AuditLogComponent implements OnInit {
 
     if (log.action === 'INSERT') {
       const fieldCount = this.getCreationFields(log).length;
-      return `Added ${itemName} with ${fieldCount} detail${fieldCount === 1 ? '' : 's'}.`;
+      return `Created ${itemName} with ${fieldCount} detail${fieldCount === 1 ? '' : 's'}.`;
     }
 
     if (log.action === 'DELETE') {
@@ -454,39 +514,17 @@ export class AuditLogComponent implements OnInit {
 
     const fieldCount = this.getUpdateFields(log).length;
     return fieldCount > 0
-      ? `Updated ${itemName} and changed ${fieldCount} detail${fieldCount === 1 ? '' : 's'}.`
-      : `Updated ${itemName} with no visible detail changes.`;
+      ? `Edited ${itemName} and changed ${fieldCount} detail${fieldCount === 1 ? '' : 's'}.`
+      : `Edited ${itemName} with no visible detail changes.`;
   }
 
   hasDetails(log: AuditLogEntry): boolean {
     return this.getDetailFields(log).length > 0;
   }
 
-  private isWithinDateRange(log: AuditLogEntry): boolean {
-    if (!this.filterStartDate && !this.filterEndDate) {
-      return true;
-    }
-
-    const logDate = new Date(log.created_at);
-    if (Number.isNaN(logDate.getTime())) {
-      return false;
-    }
-
-    if (this.filterStartDate) {
-      const start = new Date(`${this.filterStartDate}T00:00:00`);
-      if (!Number.isNaN(start.getTime()) && logDate < start) {
-        return false;
-      }
-    }
-
-    if (this.filterEndDate) {
-      const end = new Date(`${this.filterEndDate}T23:59:59`);
-      if (!Number.isNaN(end.getTime()) && logDate > end) {
-        return false;
-      }
-    }
-
-    return true;
+  private getSortTimestamp(dateStr: string): number {
+    const time = new Date(dateStr).getTime();
+    return Number.isNaN(time) ? 0 : time;
   }
 
   private matchesActionFilter(log: AuditLogEntry): boolean {
@@ -506,15 +544,14 @@ export class AuditLogComponent implements OnInit {
   }
 
   clearAdvancedFilters(): void {
-    this.filterStartDate = '';
-    this.filterEndDate = '';
+    this.sortOrder = 'newest';
     this.filterActionType = 'ALL';
     this.filterModule = 'ALL';
   }
 
   get filteredLogs(): AuditLogEntry[] {
     return this.logs.filter((log) => {
-      return this.isWithinDateRange(log) && this.matchesActionFilter(log) && this.matchesModuleFilter(log);
+      return this.matchesActionFilter(log) && this.matchesModuleFilter(log);
     });
   }
 

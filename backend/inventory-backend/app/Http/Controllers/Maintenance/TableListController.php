@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\JsonResponse;
+use App\Support\DbIdentifier;
 
 class TableListController extends Controller
 {
@@ -41,7 +42,9 @@ class TableListController extends Controller
         $columnDetails = [];
         $enumValues = [];
         foreach ($visibleColumns as $col) {
-            $columnInfo = DB::select("SHOW COLUMNS FROM `{$table}` WHERE Field = ?", [$col])[0] ?? null;
+            // Use DbIdentifier to ensure table name is validated/quoted before interpolation
+            $safeTable = DbIdentifier::quote($table);
+            $columnInfo = DB::select("SHOW COLUMNS FROM {$safeTable} WHERE Field = ?", [$col])[0] ?? null;
             $type = $columnInfo->Type ?? 'text';
             $columnDetails[$col] = [
                 'nullable' => $columnInfo ? ($columnInfo->Null === 'YES') : true,
@@ -100,15 +103,31 @@ class TableListController extends Controller
         $showDeleted = filter_var($request->query('showDeleted', 'false'), FILTER_VALIDATE_BOOLEAN);
         $pk = $this->tables[$table]['primary_key'];
         $search = $request->query('search');
+        $sortOrder = $request->query('sortOrder', 'newest');
+        $sortDirection = $sortOrder === 'oldest' ? 'asc' : 'desc';
 
         $query = DB::table($table);
         if ($table === 'audit_log') {
             $query = DB::table('audit_log as al')
                 ->leftJoin('users as u', 'al.performed_by', '=', 'u.user_id')
+                ->leftJoin('user_roles as ur', function ($join) {
+                    $join->on('u.user_id', '=', 'ur.user_id')
+                        ->where('ur.is_primary', '=', 1);
+                })
+                ->leftJoin('roles as r', 'ur.role_id', '=', 'r.role_id')
                 ->select(
                     'al.*',
-                    DB::raw("TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) as performed_by_name")
+                    DB::raw("TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) as performed_by_name"),
+                    'r.role_name as performed_by_role',
+                    DB::raw("COALESCE(r.display_name, r.role_name) as performed_by_role_display")
                 );
+            $excludeTables = $request->query('excludeTables');
+            if (is_string($excludeTables) && trim($excludeTables) !== '') {
+                $exclude = array_filter(array_map('trim', explode(',', $excludeTables)));
+                if (!empty($exclude)) {
+                    $query->whereNotIn('al.table_name', $exclude);
+                }
+            }
         }
         if ($soft) {
             if (!$showDeleted) {
@@ -140,8 +159,11 @@ class TableListController extends Controller
         }
 
         // Sort descending by primary key to show latest first
-        if (is_string($pk)) {
-            $query->orderBy($table === 'audit_log' ? 'al.' . $pk : $pk, 'desc');
+        if ($table === 'audit_log') {
+            $query->orderBy('al.created_at', $sortDirection)
+                ->orderBy('al.log_id', $sortDirection);
+        } elseif (is_string($pk)) {
+            $query->orderBy($pk, 'desc');
         }
 
         // Basic pagination

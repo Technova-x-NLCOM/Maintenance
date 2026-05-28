@@ -240,13 +240,21 @@ $info-blue: #1d4ed8;
 .chart-area {
   position: relative;
   min-height: 240px;
+  width: 100%;
+  overflow: hidden;
+
+  canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
 .chart-area-container {
   position: relative;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -259,6 +267,7 @@ $info-blue: #1d4ed8;
 
 .chart-area-wide {
   min-height: 310px;
+  width: 100%;
 }
 
 .card {
@@ -365,13 +374,12 @@ $info-blue: #1d4ed8;
 }
 
 @media (max-width: 425px) {
-  .chart-area-wide {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+  .chart-area {
+    min-height: 210px;
   }
 
-  .chart-area-wide canvas {
-    min-width: 520px;
+  .chart-area-wide {
+    min-height: 230px;
   }
 }
 
