@@ -81,6 +81,38 @@
     </div>
   </div>
 
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
+    <div
+      class="modal-confirm"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-location-title"
+    >
+      <div class="confirm-icon-wrap confirm-icon-danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <line x1="12" y1="7" x2="12" y2="13" />
+          <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+      <h2 class="confirm-title" id="delete-location-title">Confirm Deletion</h2>
+      <p class="confirm-body">
+        Are you sure you want to delete this location
+        <strong *ngIf="deleteTarget">"{{ deleteTarget.location_name }}"</strong>?
+      </p>
+      <div class="confirm-footer">
+        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">
+          Cancel
+        </button>
+        <button type="button" class="btn-danger" (click)="confirmDeleteLocation()" [disabled]="deleteLoading">
+          {{ deleteLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main List Panel -->
   <section class="panel list-panel">
     <div class="list-toolbar">
@@ -168,7 +200,9 @@
                 View
               </button>
               <button class="btn-sm btn-edit" type="button" (click)="editLocation(r)">Edit</button>
-              <button class="btn-sm btn-toggle" type="button" (click)="deleteLocation(r)">Delete</button>
+              <button class="btn-sm btn-toggle" type="button" (click)="openDeleteConfirm(r)">
+                Delete
+              </button>
             </td>
           </tr>
           <tr *ngIf="paginatedLocationRows.length === 0">

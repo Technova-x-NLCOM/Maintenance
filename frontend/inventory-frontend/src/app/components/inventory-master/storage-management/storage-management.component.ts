@@ -36,6 +36,9 @@ export class StorageManagementComponent implements OnInit {
   locationSearchTerm = '';
   showLocationForm = false;
   editingLocationId: number | null = null;
+  showDeleteConfirm = false;
+  deleteTarget: LocationRow | null = null;
+  deleteLoading = false;
   locationForm: {
     location_code: string;
     location_name: string;
@@ -71,6 +74,10 @@ export class StorageManagementComponent implements OnInit {
   // ===== ESCAPE KEY LISTENER =====
   @HostListener('document:keydown.escape')
   handleEscapeKey(): void {
+    if (this.showDeleteConfirm && !this.deleteLoading) {
+      this.cancelDeleteConfirm();
+      return;
+    }
     if (this.isDrawerOpen) {
       this.closeDrawer();
     }
@@ -272,17 +279,36 @@ export class StorageManagementComponent implements OnInit {
     });
   }
 
-  async deleteLocation(row: LocationRow): Promise<void> {
-    const ok = confirm(`Delete location "${row.location_name}"?`);
-    if (!ok) return;
+  openDeleteConfirm(row: LocationRow): void {
+    this.deleteTarget = row;
+    this.showDeleteConfirm = true;
+    this.deleteLoading = false;
+    this.cdr.markForCheck();
+  }
+
+  cancelDeleteConfirm(): void {
+    if (this.deleteLoading) return;
+    this.showDeleteConfirm = false;
+    this.deleteTarget = null;
+    this.cdr.markForCheck();
+  }
+
+  confirmDeleteLocation(): void {
+    if (!this.deleteTarget || this.deleteLoading) return;
+    const target = this.deleteTarget;
+    this.deleteLoading = true;
     this.loading = true;
-    this.maintenanceService.deleteRow('locations', row.location_id).subscribe({
+    this.maintenanceService.deleteRow('locations', target.location_id).subscribe({
       next: () => {
+        this.deleteLoading = false;
+        this.showDeleteConfirm = false;
+        this.deleteTarget = null;
         this.toastService.success('Location deleted.');
         this.loadLocationsMasterData();
         this.cdr.markForCheck();
       },
       error: (err) => {
+        this.deleteLoading = false;
         this.loading = false;
         this.toastService.error(err?.error?.message || 'Failed to delete.');
         this.cdr.markForCheck();
