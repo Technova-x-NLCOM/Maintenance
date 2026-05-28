@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append([
             \App\Http\Middleware\HandleCors::class,
+            // Global input sanitation middleware to trim/strip control chars from requests
+            \App\Http\Middleware\SanitizeInput::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

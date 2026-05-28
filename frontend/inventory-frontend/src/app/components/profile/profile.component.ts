@@ -172,6 +172,13 @@ export class ProfileComponent implements OnInit {
       return;
     }
 
+    // Validate password complexity (uppercase, lowercase, number, special char)
+    const complexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[\S]+$/;
+    if (!complexityRegex.test(this.passwordForm.new_password)) {
+      this.passwordError = 'New password must include uppercase, lowercase, number, and special character.';
+      return;
+    }
+
     this.saving = true;
 
     this.http
@@ -204,6 +211,14 @@ export class ProfileComponent implements OnInit {
           }, 0);
         },
       });
+  }
+
+  isPasswordHintVisible(): boolean {
+    const p = this.passwordForm.new_password || '';
+    if (!p.trim()) return false;
+    if (p.length < 8) return true;
+    const complexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[\S]+$/;
+    return !complexityRegex.test(p);
   }
 
   closeEditSuccessModal() {

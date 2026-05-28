@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Http\JsonResponse;
+use App\Support\DbIdentifier;
 
 class TableListController extends Controller
 {
@@ -41,7 +42,9 @@ class TableListController extends Controller
         $columnDetails = [];
         $enumValues = [];
         foreach ($visibleColumns as $col) {
-            $columnInfo = DB::select("SHOW COLUMNS FROM `{$table}` WHERE Field = ?", [$col])[0] ?? null;
+            // Use DbIdentifier to ensure table name is validated/quoted before interpolation
+            $safeTable = DbIdentifier::quote($table);
+            $columnInfo = DB::select("SHOW COLUMNS FROM {$safeTable} WHERE Field = ?", [$col])[0] ?? null;
             $type = $columnInfo->Type ?? 'text';
             $columnDetails[$col] = [
                 'nullable' => $columnInfo ? ($columnInfo->Null === 'YES') : true,
