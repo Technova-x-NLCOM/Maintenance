@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DashboardTrendService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -80,6 +81,8 @@ class InventoryManagerController extends Controller
                 ->where('status', 'active')
                 ->count();
 
+            $trends = app(DashboardTrendService::class)->inventoryTrends();
+
             return response()->json([
                 'totalItems' => $totalItems,
                 'lowStockItems' => $lowStockItems,
@@ -90,6 +93,7 @@ class InventoryManagerController extends Controller
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
                 'activeBatches' => $activeBatches,
+                'trends' => $trends,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -102,6 +106,12 @@ class InventoryManagerController extends Controller
                 'totalCategories' => 0,
                 'expiringItems' => 0,
                 'activeBatches' => 0,
+                'trends' => [
+                    'items' => ['current' => 0, 'previous' => 0],
+                    'transactions' => ['current' => 0, 'previous' => 0],
+                    'categories' => ['current' => 0, 'previous' => 0],
+                    'batches' => ['current' => 0, 'previous' => 0],
+                ],
                 'error' => $e->getMessage()
             ], 500);
         }

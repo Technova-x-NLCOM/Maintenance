@@ -53,6 +53,12 @@ it('returns dashboard stats for a super admin', function () {
             'pendingAlerts',
             'totalCategories',
             'expiringItems',
+            'trends' => [
+                'items' => ['current', 'previous'],
+                'transactions' => ['current', 'previous'],
+                'categories' => ['current', 'previous'],
+                'batches' => ['current', 'previous'],
+            ],
         ]);
 });
 
