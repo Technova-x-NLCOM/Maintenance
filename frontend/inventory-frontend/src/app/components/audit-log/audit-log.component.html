@@ -157,15 +157,17 @@
               <h3 class="detail-title">{{ getDetailHeading(log) }}</h3>
 
               <div class="update-list" *ngIf="log.action === 'UPDATE' && getUpdateFields(log).length > 0; else genericDetails">
+                <p class="detail-intro">These are the details that were changed:</p>
                 <div class="update-diff-card" *ngFor="let field of getUpdateFields(log)">
                   <h4 class="field-name">{{ field.label }}</h4>
+                  <p class="change-sentence">{{ getUpdateChangeSentence(field) }}</p>
                   <div class="update-diff-grid">
                     <div class="diff-col old-col">
-                      <p class="diff-label">Old Value</p>
+                      <p class="diff-label">Before</p>
                       <p class="diff-value">{{ field.beforeValue }}</p>
                     </div>
                     <div class="diff-col new-col">
-                      <p class="diff-label">New Value</p>
+                      <p class="diff-label">After</p>
                       <p class="diff-value">{{ field.afterValue }}</p>
                     </div>
                   </div>
@@ -173,6 +175,11 @@
               </div>
 
               <ng-template #genericDetails>
+                <p class="detail-intro" *ngIf="getDetailFields(log).length > 0">
+                  <ng-container *ngIf="log.action === 'INSERT'">Key information recorded for this new record:</ng-container>
+                  <ng-container *ngIf="log.action === 'DELETE'">Key information from the removed record:</ng-container>
+                  <ng-container *ngIf="log.action !== 'INSERT' && log.action !== 'DELETE'">Recorded details:</ng-container>
+                </p>
                 <div class="detail-grid" *ngIf="getDetailFields(log).length > 0; else noDetails">
                   <div class="detail-card" *ngFor="let field of getDetailFields(log)">
                     <span class="field-name">{{ field.label }}</span>
