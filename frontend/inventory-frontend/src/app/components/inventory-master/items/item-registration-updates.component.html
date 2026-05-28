@@ -60,16 +60,6 @@
           </label>
 
           <label>
-            <span>Item Type <em>*</em></span>
-            <select [(ngModel)]="formData.item_type_id">
-              <option [ngValue]="null">Select item type</option>
-              <option *ngFor="let itemType of options.item_types" [ngValue]="itemType.item_type_id">
-                {{ itemType.type_name }}
-              </option>
-            </select>
-          </label>
-
-          <label>
             <span>Unit of measure</span>
             <input
               type="text"

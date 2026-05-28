@@ -45,7 +45,7 @@ interface EditableProcuredLine {
 @Component({
   selector: 'app-batch-distribution',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToastComponent],
   templateUrl: './batch-distribution.component.html',
   styleUrls: ['./batch-distribution.component.scss'],
   animations: [
@@ -72,6 +72,7 @@ export class BatchDistributionComponent implements OnInit {
   savingPlan = false;
   loadingPlanDetails = false;
   runningPlanAction = false;
+  completingPlan = false;
   calculatorOpen = false;
 
   templates: BatchDistributionTemplateSummary[] = [];
@@ -137,6 +138,7 @@ export class BatchDistributionComponent implements OnInit {
   planIssueDestination = '';
   planIssueReason = 'For Week 3';
   planIssueNotes = '';
+  planFinalCheckAttempted = false;
   planRemainingLines: EditableRemainingLine[] = [];
   planProcuredLines: EditableProcuredLine[] = [];
   planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
@@ -144,6 +146,7 @@ export class BatchDistributionComponent implements OnInit {
   showSaveConfirmDialog = false;
   pendingSavedTemplate: BatchDistributionTemplateSummary | null = null;
   showScheduleDialog = false;
+  scheduleDialogStep: 1 | 2 = 1;
   planStatusFilter: 'all' | ProgramPlanStatus = 'all';
   planSortDirection: 'desc' | 'asc' = 'desc';
   planDialogMode: 'create' | 'edit' = 'create';
@@ -198,6 +201,7 @@ export class BatchDistributionComponent implements OnInit {
   private loadItemOptionsSub?: Subscription;
   private itemOptionsSearchDebounce?: ReturnType<typeof setTimeout>;
   private itemOptionsBaseline: BatchDistributionItemOption[] | null = null;
+  private lastLoadedPlansParams: { status?: ProgramPlanStatus; from_date?: string; to_date?: string } = {};
 
   constructor(
     private batchService: BatchDistributionService,
@@ -365,18 +369,6 @@ export class BatchDistributionComponent implements OnInit {
   get paginatedTemplates(): BatchDistributionTemplateSummary[] {
     const start = (this.templatePage - 1) * this.templatePageSize;
     return this.templates.slice(start, start + this.templatePageSize);
-  }
-
-  get templatePageStart(): number {
-    if (this.templates.length === 0) {
-      return 0;
-    }
-
-    return (this.templatePage - 1) * this.templatePageSize + 1;
-  }
-
-  get templatePageEnd(): number {
-    return Math.min(this.templatePage * this.templatePageSize, this.templates.length);
   }
 
   get canGoToPreviousTemplatePage(): boolean {
@@ -1185,16 +1177,8 @@ export class BatchDistributionComponent implements OnInit {
   loadPlans(): void {
     this.loadingPlans = true;
     
-    let params: { status?: ProgramPlanStatus; from_date?: string; to_date?: string } = {};
-    
-    // If calendar view, load only the current month
-    if (this.planViewMode === 'calendar') {
-      const firstDay = new Date(this.calendarCurrentDate.getFullYear(), this.calendarCurrentDate.getMonth(), 1);
-      const lastDay = new Date(this.calendarCurrentDate.getFullYear(), this.calendarCurrentDate.getMonth() + 1, 0);
-      
-      params.from_date = this.formatDateForApi(firstDay);
-      params.to_date = this.formatDateForApi(lastDay);
-    }
+    const params = this.getCurrentPlansQueryParams();
+    this.lastLoadedPlansParams = { ...params };
     
     this.batchService.listProgramPlans(params).subscribe({
       next: (response) => {
@@ -1220,6 +1204,26 @@ export class BatchDistributionComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private getCurrentPlansQueryParams(): { status?: ProgramPlanStatus; from_date?: string; to_date?: string } {
+    const params: { status?: ProgramPlanStatus; from_date?: string; to_date?: string } = {};
+
+    // Keep server query aligned with the active status filter when possible.
+    if (this.planStatusFilter !== 'all') {
+      params.status = this.planStatusFilter;
+    }
+
+    // If calendar view, load only the current month so the dataset matches the calendar viewport.
+    if (this.planViewMode === 'calendar') {
+      const firstDay = new Date(this.calendarCurrentDate.getFullYear(), this.calendarCurrentDate.getMonth(), 1);
+      const lastDay = new Date(this.calendarCurrentDate.getFullYear(), this.calendarCurrentDate.getMonth() + 1, 0);
+
+      params.from_date = this.formatDateForApi(firstDay);
+      params.to_date = this.formatDateForApi(lastDay);
+    }
+
+    return params;
   }
 
   createPlan(): void {
@@ -1266,8 +1270,12 @@ export class BatchDistributionComponent implements OnInit {
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();
           this.syncPlanWizardStep(response.data.plan.status);
-          this.closeScheduleDialog();
-          this.loadPlans();
+          // Advance the schedule modal instead of closing it.
+          // Step 2 shows the inventory check (shortage review) for the newly created plan.
+          this.scheduleDialogStep = 2;
+          // Refresh with the same query params that were used for the current view,
+          // so the list doesn't "jump" to a different dataset after save.
+          this.loadPlansUsingLastParams();
         },
         error: (err) => {
           this.savingPlan = false;
@@ -1277,10 +1285,31 @@ export class BatchDistributionComponent implements OnInit {
       });
   }
 
+  private loadPlansUsingLastParams(): void {
+    this.loadingPlans = true;
+    const params = this.lastLoadedPlansParams ?? {};
+
+    this.batchService.listProgramPlans(params).subscribe({
+      next: (response) => {
+        this.plans = response.data;
+        this.loadingPlans = false;
+        this.buildCalendar();
+        this.loadStockReadinessForPlans();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingPlans = false;
+        this.toast.error(err?.error?.message || 'Failed to load scheduled plans.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   openScheduleDialog(): void {
     this.showScheduleDialog = true;
     this.planDialogMode = 'create';
     this.editingPlanId = null;
+    this.scheduleDialogStep = 1;
     this.resetPlanForm();
   }
 
@@ -1289,10 +1318,16 @@ export class BatchDistributionComponent implements OnInit {
     this.savingPlan = false;
     this.planDialogMode = 'create';
     this.editingPlanId = null;
+    this.scheduleDialogStep = 1;
+    this.planFinalCheckAttempted = false;
     this.resetPlanForm();
   }
 
   submitPlanDialog(): void {
+    if (this.scheduleDialogStep === 2) {
+      this.closeScheduleDialog();
+      return;
+    }
     if (this.isPlanDialogEditing) {
       this.updatePlanLocal();
       return;
@@ -1308,10 +1343,8 @@ export class BatchDistributionComponent implements OnInit {
 
   onPlanStatusFilterChange(): void {
     this.currentPlanPage = 1;
-    // Rebuild calendar so it respects the new filter
-    if (this.planViewMode === 'calendar') {
-      this.buildCalendar();
-    }
+    // Keep backing dataset aligned with the filter so refreshes don't jump datasets.
+    this.loadPlans();
   }
 
   // Pagination methods
@@ -1458,6 +1491,7 @@ export class BatchDistributionComponent implements OnInit {
     // Expand new row and collapse previous
     this.expandedPlanId = plan.plan_id;
     this.selectedPlanId = plan.plan_id;
+    this.planFinalCheckAttempted = false;
     this.loadPlanDetails(plan.plan_id);
   }
 
@@ -1542,8 +1576,11 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    this.planFinalCheckAttempted = true;
+
     if (!this.planIssueDestination.trim()) {
-      this.toast.error('Please fill out all required fields (*)');
+      this.toast.error('Issue destination is required.');
+      this.focusFinalCheckFirstInvalidField();
       return;
     }
 
@@ -1579,8 +1616,16 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
+  private focusFinalCheckFirstInvalidField(): void {
+    // Focus the visible "Issue Destination" input in either list view or calendar modal.
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>('input[data-finalcheck-destination="true"]');
+      el?.focus();
+    }, 0);
+  }
+
   completePlan(): void {
-    if (!this.selectedPlanId) {
+    if (!this.selectedPlanId || this.completingPlan) {
       return;
     }
 
@@ -1593,6 +1638,7 @@ export class BatchDistributionComponent implements OnInit {
       }));
 
     this.runningPlanAction = true;
+    this.completingPlan = true;
     this.batchService
       .completeProgramPlan(this.selectedPlanId, {
         status: 'completed',
@@ -1601,9 +1647,11 @@ export class BatchDistributionComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.runningPlanAction = false;
+          this.completingPlan = false;
           this.selectedPlanDetails = response.data;
           this.planIssueSummary = response.data.issuance ?? this.planIssueSummary;
-          this.toast.success(response.message || 'Remainder stored back to inventory successfully.');
+          // Prefer a consistent UX-focused success message here (final step completion).
+          this.toast.success(response.message || 'Batch distribution scheduled successfully!');
           this.loadPlans();
           this.seedRemainingLinesFromCurrentDetails();
           this.seedProcuredLinesFromCurrentDetails();
@@ -1612,6 +1660,7 @@ export class BatchDistributionComponent implements OnInit {
         },
         error: (err) => {
           this.runningPlanAction = false;
+          this.completingPlan = false;
           this.toast.error(err?.error?.message || 'Failed to complete plan.');
           this.cdr.detectChanges();
         },
@@ -1769,9 +1818,13 @@ export class BatchDistributionComponent implements OnInit {
 
   private syncPlanWizardStep(status: ProgramPlanStatus | string): void {
     switch (status) {
+      case 'ready':
       case 'completed':
       case 'cancelled':
         this.planWizardStep = 3;
+        break;
+      case 'checked_pre':
+        this.planWizardStep = 2;
         break;
       default:
         this.planWizardStep = 1;
@@ -1927,10 +1980,24 @@ export class BatchDistributionComponent implements OnInit {
 
   setPlanViewMode(mode: 'list' | 'calendar'): void {
     this.planViewMode = mode;
+    // Prevent state leakage between views (fixes "flashing" modal in calendar view).
+    this.showScheduleDialog = false;
+    this.scheduleDialogStep = 1;
+    this.planFinalCheckAttempted = false;
+    this.openPlanMenuId = null;
+    this.planConfirmDialog.open = false;
+    this.selectedPlanId = null;
+    this.selectedPlanDetails = null;
+    this.expandedPlanId = null;
+    this.planWizardStep = 1;
     if (mode === 'calendar') {
       this.buildCalendar();
       this.loadPlans();
+      return;
     }
+    // Switching from calendar -> list should reload unbounded data (no month constraint),
+    // otherwise the list can appear to "lose" rows that were just outside the calendar range.
+    this.loadPlans();
   }
 
   buildCalendar(): void {

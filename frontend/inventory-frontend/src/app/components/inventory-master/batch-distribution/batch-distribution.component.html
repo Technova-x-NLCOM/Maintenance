@@ -1,4 +1,5 @@
 <div class="batch-distribution-page">
+  <app-toast></app-toast>
   <div class="page-header header-condensed">
     <h1>Batch Distribution</h1>
     <p class="subtitle">
@@ -117,76 +118,22 @@
           [class.templates-list]="templateViewMode === 'card'"
           [class.list-mode]="templateViewMode === 'list'"
         >
-        <ng-container *ngIf="templateViewMode === 'card'">
-          <div
-            class="template-card template-tile"
-            role="button"
-            tabindex="0"
-            *ngFor="let template of paginatedTemplates"
-            [class.active]="selectedTemplateId === template.template_id"
-            (click)="selectTemplate(template)"
-            (keydown.enter)="selectTemplate(template)"
-            (keydown.space)="selectTemplate(template)"
-          >
-            <div class="template-card-top">
-              <strong>{{ template.template_name }}</strong>
-              <div class="template-card-actions" (click)="$event.stopPropagation()">
-                <span class="tag">{{ template.distribution_type_label }}</span>
-                <div class="template-menu">
-                  <button
-                    class="kebab-btn"
-                    type="button"
-                    aria-label="Template actions"
-                    (click)="toggleTemplateMenu(template.template_id, $event)"
-                  >
-                    ⋮
-                  </button>
-                  <div class="kebab-menu" *ngIf="openTemplateMenuId === template.template_id">
-                    <button type="button" (click)="runTemplateMenuAction('calculate', template)">
-                      Calculate Requirements
-                    </button>
-                    <button type="button" (click)="runTemplateMenuAction('edit', template)">
-                      Edit
-                    </button>
-                    <button type="button" (click)="runTemplateMenuAction('delete', template)">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="template-meta">
-              Base: {{ template.base_unit_count }}
-              <span>•</span>
-              Items: {{ template.item_count }}
-            </div>
-          </div>
-        </ng-container>
-
-        <div class="template-list-table" *ngIf="templateViewMode === 'list' && templates.length > 0">
-          <table>
-            <thead>
-              <tr>
-                <th>Template</th>
-                <th>Type</th>
-                <th>Base</th>
-                <th>Items</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let template of paginatedTemplates"
-                class="template-row"
-                [class.active]="selectedTemplateId === template.template_id"
-                (click)="selectTemplate(template)"
-              >
-                <td>{{ template.template_name }}</td>
-                <td>{{ template.distribution_type_label }}</td>
-                <td>{{ template.base_unit_count }}</td>
-                <td>{{ template.item_count }}</td>
-                <td>
-                  <div class="template-menu" (click)="$event.stopPropagation()">
+          <ng-container *ngIf="templateViewMode === 'card'">
+            <div
+              class="template-card template-tile"
+              role="button"
+              tabindex="0"
+              *ngFor="let template of paginatedTemplates"
+              [class.active]="selectedTemplateId === template.template_id"
+              (click)="selectTemplate(template)"
+              (keydown.enter)="selectTemplate(template)"
+              (keydown.space)="selectTemplate(template)"
+            >
+              <div class="template-card-top">
+                <strong>{{ template.template_name }}</strong>
+                <div class="template-card-actions" (click)="$event.stopPropagation()">
+                  <span class="tag">{{ template.distribution_type_label }}</span>
+                  <div class="template-menu">
                     <button
                       class="kebab-btn"
                       type="button"
@@ -207,16 +154,68 @@
                       </button>
                     </div>
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+              <div class="template-meta">
+                Base: {{ template.base_unit_count }}
+                <span>•</span>
+                Items: {{ template.item_count }}
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="template-list-table" *ngIf="templateViewMode === 'list' && templates.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Type</th>
+                  <th>Base</th>
+                  <th>Items</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let template of paginatedTemplates"
+                  class="template-row"
+                  [class.active]="selectedTemplateId === template.template_id"
+                  (click)="selectTemplate(template)"
+                >
+                  <td>{{ template.template_name }}</td>
+                  <td>{{ template.distribution_type_label }}</td>
+                  <td>{{ template.base_unit_count }}</td>
+                  <td>{{ template.item_count }}</td>
+                  <td>
+                    <div class="template-menu" (click)="$event.stopPropagation()">
+                      <button
+                        class="kebab-btn"
+                        type="button"
+                        aria-label="Template actions"
+                        (click)="toggleTemplateMenu(template.template_id, $event)"
+                      >
+                        ⋮
+                      </button>
+                      <div class="kebab-menu" *ngIf="openTemplateMenuId === template.template_id">
+                        <button type="button" (click)="runTemplateMenuAction('calculate', template)">
+                          Calculate Requirements
+                        </button>
+                        <button type="button" (click)="runTemplateMenuAction('edit', template)">
+                          Edit
+                        </button>
+                        <button type="button" (click)="runTemplateMenuAction('delete', template)">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="pagination-row" *ngIf="templates.length > 0">
-          <span class="pagination-info">
-            Showing {{ templatePageStart }}-{{ templatePageEnd }} of {{ templates.length }}
-          </span>
           <div class="pagination-controls">
             <button
               type="button"
@@ -242,7 +241,6 @@
 
         <p class="empty" *ngIf="templates.length === 0">No templates found.</p>
         </div>
-      </div>
 
       <div class="templates-list-region" *ngIf="loadingTemplates">
         <p class="empty">Loading templates...</p>
@@ -723,7 +721,17 @@
                             <div class="issue-grid compact-issue-grid">
                               <label>
                                 <span>Issue Destination For Final Check *</span>
-                                <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" maxlength="150" />
+                                <input
+                                  class="form-control"
+                                  [(ngModel)]="planIssueDestination"
+                                  placeholder="Feeding site"
+                                  maxlength="150"
+                                  data-finalcheck-destination="true"
+                                  [class.form-control--invalid]="planFinalCheckAttempted && !planIssueDestination.trim()"
+                                />
+                                <div class="field-error" *ngIf="planFinalCheckAttempted && !planIssueDestination.trim()">
+                                  Issue destination is required.
+                                </div>
                               </label>
                               <label>
                                 <span>Issue Reason</span>
@@ -767,8 +775,8 @@
                               <button class="btn btn-secondary" type="button" (click)="goToPlanStep(2)" [disabled]="runningPlanAction">
                                 Back
                               </button>
-                              <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="runningPlanAction">
-                                {{ runningPlanAction ? 'Saving Remainder...' : 'Complete' }}
+                              <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="completingPlan">
+                                {{ completingPlan ? 'Completing...' : 'Complete' }}
                               </button>
                             </div>
                           </div>
@@ -996,7 +1004,17 @@
           <div class="issue-grid compact-issue-grid">
             <label>
               <span>Issue Destination For Final Check *</span>
-              <input class="form-control" [(ngModel)]="planIssueDestination" placeholder="Feeding site" maxlength="150" />
+              <input
+                class="form-control"
+                [(ngModel)]="planIssueDestination"
+                placeholder="Feeding site"
+                maxlength="150"
+                data-finalcheck-destination="true"
+                [class.form-control--invalid]="planFinalCheckAttempted && !planIssueDestination.trim()"
+              />
+              <div class="field-error" *ngIf="planFinalCheckAttempted && !planIssueDestination.trim()">
+                Issue destination is required.
+              </div>
             </label>
             <label>
               <span>Issue Reason</span>
@@ -1033,8 +1051,8 @@
           </div>
           <div class="wizard-actions">
             <button class="btn btn-secondary" type="button" (click)="goToPlanStep(2)" [disabled]="runningPlanAction">Back</button>
-            <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="runningPlanAction">
-              {{ runningPlanAction ? 'Saving Remainder...' : 'Complete' }}
+            <button class="btn btn-primary" type="button" (click)="completePlan()" [disabled]="completingPlan">
+              {{ completingPlan ? 'Completing...' : 'Complete' }}
             </button>
           </div>
         </div>
@@ -1244,7 +1262,9 @@
   <div class="modal-overlay" *ngIf="showScheduleDialog" (click)="closeScheduleDialog()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>{{ isPlanDialogEditing ? 'Edit Schedule' : 'Create Schedule' }}</h2>
+        <h2>
+          {{ isPlanDialogEditing ? 'Edit Schedule' : (scheduleDialogStep === 1 ? 'Create Schedule' : 'Review Shortages') }}
+        </h2>
         <button
           type="button"
           class="btn-close app-modal-close"
@@ -1256,52 +1276,99 @@
       </div>
 
       <div class="modal-body">
-        <div class="form-grid">
-          <label>
-            <span>Feeding Template *</span>
-            <select class="form-control" [(ngModel)]="planForm.template_id">
-              <option [ngValue]="null">Select template</option>
-              <option
-                *ngFor="let t of templates"
-                [ngValue]="t.template_id"
-                [disabled]="t.distribution_type !== 'feeding_program'"
-              >
-                {{ t.template_name }}
-              </option>
-            </select>
-          </label>
-          <label>
-            <span>Work Label *</span>
-            <input class="form-control" [(ngModel)]="planForm.week_label" placeholder="Week 1" />
-          </label>
-          <label>
-            <span>Planned Date *</span>
-            <input type="date" class="form-control" [(ngModel)]="planForm.planned_date" />
-          </label>
-          <label>
-            <span>Number of Relief Packs *</span>
-            <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
-          </label>
-          <label class="full">
-            <span>Notes</span>
-            <textarea
-              class="form-control"
-              rows="2"
-              [(ngModel)]="planForm.notes"
-              placeholder="Optional planning notes"
-              maxlength="500"
-            ></textarea>
-            <div class="character-counter">
-              {{ (planForm.notes || '').length }} / 500
+        <ng-container *ngIf="scheduleDialogStep === 1">
+          <div class="form-grid">
+            <label>
+              <span>Feeding Template *</span>
+              <select class="form-control" [(ngModel)]="planForm.template_id">
+                <option [ngValue]="null">Select template</option>
+                <option
+                  *ngFor="let t of templates"
+                  [ngValue]="t.template_id"
+                  [disabled]="t.distribution_type !== 'feeding_program'"
+                >
+                  {{ t.template_name }}
+                </option>
+              </select>
+            </label>
+            <label>
+              <span>Work Label *</span>
+              <input class="form-control" [(ngModel)]="planForm.week_label" placeholder="Week 1" />
+            </label>
+            <label>
+              <span>Planned Date *</span>
+              <input type="date" class="form-control" [(ngModel)]="planForm.planned_date" />
+            </label>
+            <label>
+              <span>Number of Relief Packs *</span>
+              <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
+            </label>
+            <label class="full">
+              <span>Notes</span>
+              <textarea
+                class="form-control"
+                rows="2"
+                [(ngModel)]="planForm.notes"
+                placeholder="Optional planning notes"
+                maxlength="500"
+              ></textarea>
+              <div class="character-counter">
+                {{ (planForm.notes || '').length }} / 500
+              </div>
+            </label>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="scheduleDialogStep === 2">
+          <div *ngIf="selectedPlanDetails as details; else missingScheduleDetails">
+            <div class="summary-strip compact-summary">
+              <span><strong>Label:</strong> {{ details.plan.week_label }}</span>
+              <span class="separator">|</span>
+              <span><strong>Date:</strong> {{ details.plan.planned_date }}</span>
+              <span class="separator">|</span>
+              <span><strong>Target:</strong> {{ details.plan.target_unit_count }}</span>
             </div>
-          </label>
-        </div>
+
+            <p class="step-help">Review shortages before continuing to pre-check.</p>
+
+            <div class="table-wrap compact-table" *ngIf="details.inventory_check.items.length > 0">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ingredient</th>
+                    <th>Required</th>
+                    <th>Current Stock</th>
+                    <th>Shortage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of details.inventory_check.items" [class.has-shortage]="row.has_shortage">
+                    <td>{{ row.item_code }} - {{ row.item_description }}</td>
+                    <td>{{ row.required_quantity_for_issuance }}</td>
+                    <td>{{ row.current_stock }}</td>
+                    <td>{{ row.shortage_quantity }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <ng-template #missingScheduleDetails>
+            <p class="empty">Loading shortage review...</p>
+          </ng-template>
+        </ng-container>
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-cancel" type="button" (click)="closeScheduleDialog()">Cancel</button>
+        <button class="btn btn-cancel" type="button" (click)="closeScheduleDialog()">
+          {{ scheduleDialogStep === 2 ? 'Close' : 'Cancel' }}
+        </button>
         <button class="btn btn-primary" type="button" (click)="submitPlanDialog()" [disabled]="savingPlan">
-          {{ savingPlan ? 'Saving...' : (isPlanDialogEditing ? 'Update Plan' : 'Create Plan') }}
+          {{
+            savingPlan
+              ? 'Saving...'
+              : (scheduleDialogStep === 2 ? 'Done' : (isPlanDialogEditing ? 'Update Plan' : 'Next'))
+          }}
         </button>
       </div>
     </div>
