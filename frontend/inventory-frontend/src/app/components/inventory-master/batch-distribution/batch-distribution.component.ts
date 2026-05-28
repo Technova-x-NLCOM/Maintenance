@@ -371,18 +371,6 @@ export class BatchDistributionComponent implements OnInit {
     return this.templates.slice(start, start + this.templatePageSize);
   }
 
-  get templatePageStart(): number {
-    if (this.templates.length === 0) {
-      return 0;
-    }
-
-    return (this.templatePage - 1) * this.templatePageSize + 1;
-  }
-
-  get templatePageEnd(): number {
-    return Math.min(this.templatePage * this.templatePageSize, this.templates.length);
-  }
-
   get canGoToPreviousTemplatePage(): boolean {
     return this.templatePage > 1;
   }

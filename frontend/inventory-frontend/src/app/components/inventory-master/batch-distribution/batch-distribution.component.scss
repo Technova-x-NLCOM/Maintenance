@@ -336,6 +336,8 @@
   overflow-y: auto;
   padding-right: 2px;
   padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 .template-card {
@@ -495,16 +497,12 @@
 .pagination-row {
   margin-top: 8px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   flex-shrink: 0;
-}
-
-.pagination-info {
-  font-size: 12px;
-  color: #64748b;
+  margin-top: auto;
 }
 
 .pagination-controls {

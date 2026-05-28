@@ -118,76 +118,22 @@
           [class.templates-list]="templateViewMode === 'card'"
           [class.list-mode]="templateViewMode === 'list'"
         >
-        <ng-container *ngIf="templateViewMode === 'card'">
-          <div
-            class="template-card template-tile"
-            role="button"
-            tabindex="0"
-            *ngFor="let template of paginatedTemplates"
-            [class.active]="selectedTemplateId === template.template_id"
-            (click)="selectTemplate(template)"
-            (keydown.enter)="selectTemplate(template)"
-            (keydown.space)="selectTemplate(template)"
-          >
-            <div class="template-card-top">
-              <strong>{{ template.template_name }}</strong>
-              <div class="template-card-actions" (click)="$event.stopPropagation()">
-                <span class="tag">{{ template.distribution_type_label }}</span>
-                <div class="template-menu">
-                  <button
-                    class="kebab-btn"
-                    type="button"
-                    aria-label="Template actions"
-                    (click)="toggleTemplateMenu(template.template_id, $event)"
-                  >
-                    ⋮
-                  </button>
-                  <div class="kebab-menu" *ngIf="openTemplateMenuId === template.template_id">
-                    <button type="button" (click)="runTemplateMenuAction('calculate', template)">
-                      Calculate Requirements
-                    </button>
-                    <button type="button" (click)="runTemplateMenuAction('edit', template)">
-                      Edit
-                    </button>
-                    <button type="button" (click)="runTemplateMenuAction('delete', template)">
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="template-meta">
-              Base: {{ template.base_unit_count }}
-              <span>•</span>
-              Items: {{ template.item_count }}
-            </div>
-          </div>
-        </ng-container>
-
-        <div class="template-list-table" *ngIf="templateViewMode === 'list' && templates.length > 0">
-          <table>
-            <thead>
-              <tr>
-                <th>Template</th>
-                <th>Type</th>
-                <th>Base</th>
-                <th>Items</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let template of paginatedTemplates"
-                class="template-row"
-                [class.active]="selectedTemplateId === template.template_id"
-                (click)="selectTemplate(template)"
-              >
-                <td>{{ template.template_name }}</td>
-                <td>{{ template.distribution_type_label }}</td>
-                <td>{{ template.base_unit_count }}</td>
-                <td>{{ template.item_count }}</td>
-                <td>
-                  <div class="template-menu" (click)="$event.stopPropagation()">
+          <ng-container *ngIf="templateViewMode === 'card'">
+            <div
+              class="template-card template-tile"
+              role="button"
+              tabindex="0"
+              *ngFor="let template of paginatedTemplates"
+              [class.active]="selectedTemplateId === template.template_id"
+              (click)="selectTemplate(template)"
+              (keydown.enter)="selectTemplate(template)"
+              (keydown.space)="selectTemplate(template)"
+            >
+              <div class="template-card-top">
+                <strong>{{ template.template_name }}</strong>
+                <div class="template-card-actions" (click)="$event.stopPropagation()">
+                  <span class="tag">{{ template.distribution_type_label }}</span>
+                  <div class="template-menu">
                     <button
                       class="kebab-btn"
                       type="button"
@@ -208,16 +154,68 @@
                       </button>
                     </div>
                   </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                </div>
+              </div>
+              <div class="template-meta">
+                Base: {{ template.base_unit_count }}
+                <span>•</span>
+                Items: {{ template.item_count }}
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="template-list-table" *ngIf="templateViewMode === 'list' && templates.length > 0">
+            <table>
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Type</th>
+                  <th>Base</th>
+                  <th>Items</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let template of paginatedTemplates"
+                  class="template-row"
+                  [class.active]="selectedTemplateId === template.template_id"
+                  (click)="selectTemplate(template)"
+                >
+                  <td>{{ template.template_name }}</td>
+                  <td>{{ template.distribution_type_label }}</td>
+                  <td>{{ template.base_unit_count }}</td>
+                  <td>{{ template.item_count }}</td>
+                  <td>
+                    <div class="template-menu" (click)="$event.stopPropagation()">
+                      <button
+                        class="kebab-btn"
+                        type="button"
+                        aria-label="Template actions"
+                        (click)="toggleTemplateMenu(template.template_id, $event)"
+                      >
+                        ⋮
+                      </button>
+                      <div class="kebab-menu" *ngIf="openTemplateMenuId === template.template_id">
+                        <button type="button" (click)="runTemplateMenuAction('calculate', template)">
+                          Calculate Requirements
+                        </button>
+                        <button type="button" (click)="runTemplateMenuAction('edit', template)">
+                          Edit
+                        </button>
+                        <button type="button" (click)="runTemplateMenuAction('delete', template)">
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div class="pagination-row" *ngIf="templates.length > 0">
-          <span class="pagination-info">
-            Showing {{ templatePageStart }}-{{ templatePageEnd }} of {{ templates.length }}
-          </span>
           <div class="pagination-controls">
             <button
               type="button"
@@ -243,7 +241,6 @@
 
         <p class="empty" *ngIf="templates.length === 0">No templates found.</p>
         </div>
-      </div>
 
       <div class="templates-list-region" *ngIf="loadingTemplates">
         <p class="empty">Loading templates...</p>
