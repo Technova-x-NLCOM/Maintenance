@@ -91,6 +91,8 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
 .modal-overlay {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(2px);
   display: flex;
@@ -98,7 +100,27 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   justify-content: center;
   z-index: 1000;
   padding: 24px;
+  box-sizing: border-box;
   animation: overlayIn 0.18s ease;
+}
+
+// Center in main content column (right of sidebar); stay below sidebar (z-index 10001)
+.items-modal-overlay,
+.category-form-overlay {
+  z-index: 9999;
+
+  @media (min-width: 769px) {
+    left: var(--app-sidebar-width, 280px);
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+  }
+}
+
+.items-modal-overlay .items-modal {
+  margin: auto;
 }
 
 @keyframes overlayIn {
