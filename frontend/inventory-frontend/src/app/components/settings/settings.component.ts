@@ -156,12 +156,16 @@ export class SettingsComponent implements OnInit {
 
   private normalizeSettings(data: unknown): SystemSetting[] {
     if (Array.isArray(data)) {
-      return data.map((row) => this.normalizeSettingRow(row));
+      return data
+        .map((row) => this.normalizeSettingRow(row))
+        .filter((row) => !['low_stock_threshold', 'require_approval_for_out'].includes(row.setting_key));
     }
 
     const asRecord = data as { data?: unknown } | null;
     if (asRecord && Array.isArray(asRecord.data)) {
-      return asRecord.data.map((row) => this.normalizeSettingRow(row));
+      return asRecord.data
+        .map((row) => this.normalizeSettingRow(row))
+        .filter((row) => !['low_stock_threshold', 'require_approval_for_out'].includes(row.setting_key));
     }
 
     return [];
