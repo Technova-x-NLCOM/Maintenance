@@ -468,11 +468,11 @@
           <label for="su-role">Role</label>
           <select id="su-role" [(ngModel)]="form.role">
             <option *ngFor="let r of roles" [ngValue]="r.role_name">
-              {{ r.display_name || r.role_name }}
+              {{ roleOptionLabel(r) }}
             </option>
             <ng-container *ngIf="roles.length === 0">
               <option [ngValue]="'inventory_manager'">Inventory Manager</option>
-              <option [ngValue]="'super_admin'">Super Administrator</option>
+              <option [ngValue]="'super_admin'">Admin</option>
             </ng-container>
           </select>
           <span class="field-err" *ngIf="fieldError('role')">{{ fieldError('role') }}</span>
