@@ -130,6 +130,17 @@ h1 {
   max-height: 440px;
 }
 
+@media (max-width: 640px) {
+  .table-wrap {
+    overflow-x: auto;
+    max-height: none;
+  }
+
+  table {
+    min-width: 560px;
+  }
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

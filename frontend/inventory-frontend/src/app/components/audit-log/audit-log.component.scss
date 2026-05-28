@@ -7,10 +7,10 @@
 }
 
 .audit-header {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 
   .audit-title {
-    font-size: 2rem;
+    font-size: 1.7rem;
     line-height: 1.2;
     font-weight: 700;
     margin: 0;
@@ -18,8 +18,8 @@
   }
 
   .audit-subtitle {
-    margin: 10px 0 0 0;
-    font-size: 1.125rem;
+    margin: 6px 0 0 0;
+    font-size: 1rem;
     line-height: 1.5;
     color: #334155;
   }
@@ -102,13 +102,27 @@
   gap: 18px;
 }
 
-.search-bar {
-  display: flex;
-  gap: 12px;
+.filter-panel {
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 14px;
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-row-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  flex: 2 1 360px;
 
   .search-input-group {
     flex: 1;
@@ -186,16 +200,6 @@
   }
 }
 
-.filter-row {
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 14px;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr)) auto;
-  gap: 10px;
-  align-items: end;
-}
 
 .filter-field {
   display: flex;
@@ -409,6 +413,31 @@
 }
 
 .badge-default {
+  background: #e2e8f0;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.badge-role {
+  background: #eef2ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  font-weight: 700;
+}
+
+.badge-role.role-super-admin {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.badge-role.role-inventory-manager {
+  background: #dbeafe;
+  color: #1e3a8a;
+  border: 1px solid #93c5fd;
+}
+
+.badge-role.role-default {
   background: #e2e8f0;
   color: #334155;
   border: 1px solid #cbd5e1;
@@ -632,10 +661,20 @@
 
   .search-bar {
     flex-direction: column;
+    flex: 1 1 100%;
 
     .search-btn {
       width: 100%;
     }
+  }
+
+  .filter-panel {
+    padding: 12px;
+  }
+
+  .filter-row-inline {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .stats-bar {

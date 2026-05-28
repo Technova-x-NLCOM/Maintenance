@@ -3,9 +3,8 @@
   background: #f8fafc;
   display: flex;
   flex-direction: column;
-  // Fixed height container for layout stability
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow: visible;
 }
 
 .page-header {
@@ -99,7 +98,7 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: hidden; // Prevent layout overflow
+  overflow: visible;
 }
 
 .panel {
@@ -125,7 +124,7 @@
     min-height: 0;
     margin-bottom: 0;
     padding-bottom: 0;
-    overflow: hidden; // Prevent panel overflow
+    overflow: visible;
   }
 }
 
@@ -653,18 +652,14 @@
   border: 1px solid #dbe4ef;
   border-radius: 10px;
   background: #ffffff;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  
-  // Isolated scrolling - only the table content scrolls
-  .plans-table {
-    flex: 1;
-    min-height: 0;
+  overflow: visible;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .plans-table-wrap {
+    max-height: 420px;
     overflow-y: auto;
-    overflow-x: hidden;
   }
 }
 
@@ -1923,18 +1918,16 @@ label span {
   padding: 10px;
   background: #ffffff;
   border-radius: 10px;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: block;
   overflow: hidden;
+  width: 100%;
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #e2e8f0;
@@ -1944,6 +1937,7 @@ label span {
     padding: 6px 10px;
     font-size: 12px;
     min-width: auto;
+    flex: 0 0 auto;
 
     svg {
       margin: 0;
@@ -1956,17 +1950,34 @@ label span {
   font-size: 16px;
   font-weight: 700;
   color: #0f172a;
-  min-width: 180px;
+  min-width: 0;
   text-align: center;
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 520px) {
+  .calendar-header {
+    gap: 6px;
+    padding-bottom: 10px;
+  }
+
+  .calendar-month-title {
+    font-size: 14px;
+  }
 }
 
 // Calendar wrapper with isolated scrolling
 .calendar-view-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px; // Space for scrollbar
+  max-width: 100%;
+  overflow-x: scroll;
+  overflow-y: visible;
+  scrollbar-gutter: stable both-edges;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .calendar-grid {
@@ -1978,6 +1989,32 @@ label span {
   border-radius: 8px;
   overflow: hidden;
   min-height: 600px; // Ensure enough space for all weeks
+  width: 100%;
+}
+
+.calendar-scroll-hint {
+  display: none;
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: right;
+}
+
+@media (max-width: 520px) {
+  .calendar-view-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendar-grid {
+    min-width: 560px;
+    width: 560px;
+  }
+
+  .calendar-scroll-hint {
+    display: block;
+  }
 }
 
 .calendar-weekday {
@@ -2037,21 +2074,7 @@ label span {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  overflow-y: auto;
-  max-height: 70px;
-
-  &::-webkit-scrollbar {
-    width: 3px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 2px;
-  }
+  overflow: visible;
 }
 
 .calendar-plan-chip {
@@ -2154,7 +2177,7 @@ label span {
   font-size: 12px;
 }
 
-@media (max-width: 425px) {
+@media (max-width: 520px) {
   .batch-distribution-page .templates-panel .search-row {
     display: flex;
     flex-direction: column;
@@ -2176,6 +2199,11 @@ label span {
   .batch-distribution-page .templates-panel .search-row .form-control,
   .batch-distribution-page .templates-panel .search-row .btn {
     width: 100%;
+    max-width: 100%;
+  }
+
+  .batch-distribution-page .templates-panel .search-row .filter-select {
+    max-width: none;
   }
 }
 
@@ -2292,44 +2320,18 @@ label span {
 
 // Scrollable list container
 .scheduled-list-wrapper {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  display: block;
+  overflow: visible;
 }
 
 // Calendar viewport fix
 .calendar-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: block;
   overflow: hidden;
+  max-width: 100%;
 }
 
 .calendar-view-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px;
-  
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 3px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-    
-    &:hover {
-      background: #94a3b8;
-    }
-  }
+  overflow-x: auto;
+  overflow-y: hidden;
 }
