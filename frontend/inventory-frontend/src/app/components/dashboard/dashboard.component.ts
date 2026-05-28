@@ -6,7 +6,8 @@ import {
   ChangeDetectorRef,
   NgZone,
   ElementRef,
-  ViewChild
+  ViewChild,
+  HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
@@ -398,6 +399,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    this.applyResponsiveChartOptions();
     this.ensureChartsRendered();
   }
 
@@ -407,6 +409,15 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.destroyCharts();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.applyResponsiveChartOptions();
+    this.restockChart?.resize();
+    this.categoryChart?.resize();
+    this.movementChart?.resize();
+    this.refreshCharts();
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -581,6 +592,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private renderCharts(): void {
+    this.applyResponsiveChartOptions();
+
     if (this.restockChartRef?.nativeElement) {
       this.restockChart = new Chart(this.restockChartRef.nativeElement, {
         type: 'bar',
@@ -620,6 +633,23 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.movementChart) {
       this.movementChart.data = this.stockMovementData;
       this.movementChart.update();
+    }
+  }
+
+  private applyResponsiveChartOptions(): void {
+    const isMobile = window.innerWidth <= 768;
+
+    if (this.categoryDonutOptions?.plugins?.legend) {
+      this.categoryDonutOptions.plugins.legend.position = isMobile ? 'bottom' : 'right';
+      if (this.categoryDonutOptions.plugins.legend.labels) {
+        this.categoryDonutOptions.plugins.legend.labels.padding = isMobile ? 10 : 16;
+        this.categoryDonutOptions.plugins.legend.labels.boxWidth = isMobile ? 8 : 10;
+      }
+    }
+
+    const xScale = this.stockMovementOptions?.scales?.['x'];
+    if (xScale?.ticks) {
+      xScale.ticks.maxTicksLimit = isMobile ? 4 : 8;
     }
   }
 

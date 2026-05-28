@@ -120,6 +120,8 @@ class ItemController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeItemRequest($request);
+
         $data = $request->validate([
             'item_code' => ['required', 'string', 'max:50', Rule::unique('items', 'item_code')],
             'item_description' => ['required', 'string', 'max:255'],
@@ -202,6 +204,8 @@ class ItemController extends Controller
                 'message' => 'Item not found.',
             ], 404);
         }
+
+        $this->normalizeItemRequest($request);
 
         $data = $request->validate([
             'item_code' => ['sometimes', 'required', 'string', 'max:50', Rule::unique('items', 'item_code')->ignore($itemId, 'item_id')],
@@ -575,13 +579,33 @@ class ItemController extends Controller
         return str_starts_with($path, 'storage/') ? substr($path, 8) : $path;
     }
 
+    private function normalizeItemRequest(Request $request): void
+    {
+        $nullableNumericFields = ['category_id', 'mg_dosage', 'unit_value', 'shelf_life_days', 'reorder_level'];
+
+        foreach ($nullableNumericFields as $field) {
+            if ($request->has($field) && $request->input($field) === '') {
+                $request->merge([$field => null]);
+            }
+        }
+
+        if ($request->has('is_active')) {
+            $request->merge([
+                'is_active' => filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+            ]);
+        }
+    }
+
     private function buildItemSaveErrorResponse(string $action, \Throwable $e)
     {
         $actionLabel = $action === 'create' ? 'create' : 'update';
         $message = "Unable to {$actionLabel} the item right now. Please try again.";
         $errorType = 'item_save_failed';
 
-        if (str_contains($e->getMessage(), "Unknown column 'image'")) {
+        if (str_contains($e->getMessage(), "item_type_id") && str_contains(strtolower($e->getMessage()), 'default')) {
+            $message = 'The database still requires item type. Run the latest migrations: php artisan migrate';
+            $errorType = 'item_type_column_not_migrated';
+        } elseif (str_contains($e->getMessage(), "Unknown column 'image'")) {
             $message = 'Unable to save the uploaded image because the server image field is not configured correctly.';
             $errorType = 'item_image_storage_misconfigured';
         } elseif (str_contains(strtolower($e->getMessage()), 'storage') || str_contains(strtolower($e->getMessage()), 'file')) {

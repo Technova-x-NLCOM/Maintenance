@@ -270,6 +270,14 @@ $danger: #b91c1c;
   width: 100%;
 }
 
+.chart-area canvas,
+.chart-area-wide canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+}
+
 .card {
   background: $bg-card;
   border: 1px solid $border-color;
