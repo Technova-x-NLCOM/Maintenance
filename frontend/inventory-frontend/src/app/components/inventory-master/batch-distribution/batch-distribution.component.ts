@@ -245,6 +245,17 @@ export class BatchDistributionComponent implements OnInit {
       : 'Target Attendees';
   }
 
+  get planTargetCountLabel(): string {
+    const template = this.templates.find((t) => t.template_id === this.planForm.template_id);
+    if (template?.distribution_type === 'relief_goods') {
+      return 'Number of Relief Packs';
+    }
+    if (template?.distribution_type === 'feeding_program') {
+      return 'Target Attendees';
+    }
+    return 'Target Count';
+  }
+
   get perUnitLabel(): string {
     return this.selectedDistributionType === 'relief_goods' ? 'Items per Pack' : 'Amount per Serving';
   }
@@ -1275,7 +1286,8 @@ export class BatchDistributionComponent implements OnInit {
           this.scheduleDialogStep = 2;
           // Refresh with the same query params that were used for the current view,
           // so the list doesn't "jump" to a different dataset after save.
-          this.loadPlansUsingLastParams();
+          this.currentPlanPage = 1;
+          this.loadPlansUsingLastParams(response.data.plan);
         },
         error: (err) => {
           this.savingPlan = false;
@@ -1285,13 +1297,16 @@ export class BatchDistributionComponent implements OnInit {
       });
   }
 
-  private loadPlansUsingLastParams(): void {
+  private loadPlansUsingLastParams(preferredPlan?: ProgramPlanSummary): void {
     this.loadingPlans = true;
     const params = this.lastLoadedPlansParams ?? {};
 
     this.batchService.listProgramPlans(params).subscribe({
       next: (response) => {
         this.plans = response.data;
+        if (preferredPlan && !this.plans.some((plan) => plan.plan_id === preferredPlan.plan_id)) {
+          this.plans = [preferredPlan, ...this.plans];
+        }
         this.loadingPlans = false;
         this.buildCalendar();
         this.loadStockReadinessForPlans();
