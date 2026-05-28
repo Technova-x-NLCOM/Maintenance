@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../services/maintenance.service';
+import { InventoryCategoryService } from '../../services/inventory-category.service';
 
 export interface AuditLogEntry {
   log_id: number;
@@ -44,32 +45,88 @@ type ModuleType = 'Category' | 'Inventory' | 'Users' | 'Other';
 const HIDDEN_DETAIL_FIELDS = new Set([
   'batch_id',
   'batch_value',
+  'category_id',
   'created_at',
   'created_by',
   'deleted_at',
   'ip_address',
+  'item_id',
+  'log_id',
   'manufactured_date',
+  'parent_category_id',
   'performed_by',
+  'permission_id',
   'qr_payload',
   'qr_label',
   'record_id',
+  'role_id',
   'table_name',
+  'template_id',
   'updated_at',
+  'user_id',
 ]);
 
+/** Fields worth showing per table, in display order. */
+const TABLE_IMPORTANT_FIELDS: Record<string, string[]> = {
+  categories: ['category_name', 'parent_category', 'description'],
+  items: [
+    'item_code',
+    'item_description',
+    'category',
+    'measurement_unit',
+    'particular',
+    'mg_dosage',
+    'remarks',
+    'unit_value',
+    'reorder_level',
+    'shelf_life_days',
+    'is_active',
+    'image',
+  ],
+  distribution_templates: [
+    'template_name',
+    'distribution_type',
+    'base_unit_count',
+    'notes',
+    'is_active',
+  ],
+  users: ['username', 'email', 'first_name', 'last_name', 'contact_info', 'is_active'],
+  roles: ['role_name', 'display_name', 'description', 'is_system_role'],
+  permissions: ['permission_name', 'display_name', 'module', 'description'],
+};
+
 const FRIENDLY_FIELD_LABELS: Record<string, string> = {
-  base_unit_count: 'Base unit count',
-  distribution_type: 'Distribution type',
-  is_active: 'Active',
+  base_unit_count: 'Serving size (units)',
+  category: 'Category',
+  category_name: 'Category name',
+  contact_info: 'Contact',
+  description: 'Description',
+  display_name: 'Display name',
+  distribution_type: 'Program type',
+  email: 'Email',
+  first_name: 'First name',
+  image: 'Image',
+  is_active: 'Status',
+  is_system_role: 'System role',
   item_code: 'Item code',
   item_description: 'Item name',
-  item_id: 'Item',
+  last_name: 'Last name',
   location_id: 'Location',
+  measurement_unit: 'Unit of measure',
+  mg_dosage: 'Dosage (mg)',
+  module: 'Module',
   notes: 'Notes',
+  parent_category: 'Parent category',
+  particular: 'Particular',
+  permission_name: 'Permission',
   reason: 'Reason',
-  template_id: 'Template',
+  reorder_level: 'Reorder level',
+  remarks: 'Remarks',
+  role_name: 'Role',
+  shelf_life_days: 'Shelf life (days)',
   template_name: 'Template name',
-  user_id: 'User',
+  unit_value: 'Unit value',
+  username: 'Username',
 };
 
 const VALUE_MAPPERS: Record<string, (value: unknown) => string> = {
@@ -78,7 +135,10 @@ const VALUE_MAPPERS: Record<string, (value: unknown) => string> = {
     if (value === 'feeding_program') return 'Feeding program';
     return String(value ?? '');
   },
-  is_active: (value) => (value === 1 || value === '1' || value === true ? 'Yes' : 'No'),
+  is_active: (value) => {
+    const active = value === 1 || value === '1' || value === true;
+    return active ? 'Active' : 'Inactive';
+  },
 };
 
 @Component({
@@ -102,13 +162,32 @@ export class AuditLogComponent implements OnInit {
   filterModule = 'ALL';
 
 
+  private categoryNameById = new Map<number, string>();
+
   constructor(
     private api: MaintenanceService,
+    private categoryService: InventoryCategoryService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.loadCategoryLookup();
     this.loadLogs();
+  }
+
+  private loadCategoryLookup(): void {
+    this.categoryService.getOptions().subscribe({
+      next: (response) => {
+        const categories = response.data?.categories ?? [];
+        this.categoryNameById = new Map(
+          categories.map((category) => [category.category_id, category.category_name]),
+        );
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Lookup is optional; IDs are shown if categories cannot be loaded.
+      },
+    });
   }
 
 
@@ -369,6 +448,10 @@ export class AuditLogComponent implements OnInit {
   }
 
   formatFieldValue(value: any, key?: string): string {
+    if (key === 'image' || key === 'image_url') {
+      return value ? 'Has image' : 'No image';
+    }
+
     if (value === null || value === undefined || value === '') {
       return 'Not set';
     }
@@ -386,13 +469,115 @@ export class AuditLogComponent implements OnInit {
     }
 
     if (typeof value === 'object') {
-      return JSON.stringify(value);
+      return this.formatObjectValue(value);
     }
 
     const text = String(value).trim();
-    if (text === '1') return 'Yes';
+    if (text === '1' && key !== 'item_code') return 'Yes';
     if (text === '0') return 'No';
     return text;
+  }
+
+  private formatObjectValue(value: Record<string, unknown>): string {
+    const preferredKeys = [
+      'item_description',
+      'item_code',
+      'category_name',
+      'template_name',
+      'name',
+      'label',
+      'title',
+      'message',
+    ];
+
+    for (const key of preferredKeys) {
+      const nested = value[key];
+      if (nested !== null && nested !== undefined && String(nested).trim() !== '') {
+        return String(nested).trim();
+      }
+    }
+
+    const pairs = Object.entries(value)
+      .filter(([key, nested]) => !this.isHiddenField(key) && nested !== null && nested !== undefined && String(nested).trim() !== '')
+      .slice(0, 4)
+      .map(([key, nested]) => `${this.formatFieldLabel(key)}: ${this.formatFieldValue(nested, key)}`);
+
+    return pairs.length > 0 ? pairs.join('; ') : 'Details recorded';
+  }
+
+  private resolveCategoryName(value: unknown): string {
+    if (value === null || value === undefined || value === '') {
+      return 'None (top level)';
+    }
+
+    const categoryId = Number(value);
+    if (Number.isNaN(categoryId)) {
+      return String(value);
+    }
+
+    return this.categoryNameById.get(categoryId) ?? `Category #${categoryId}`;
+  }
+
+  private isSensitiveField(key: string): boolean {
+    const normalized = key.toLowerCase();
+    return normalized.includes('password') || normalized.endsWith('_hash') || normalized.includes('token');
+  }
+
+  private isHiddenField(key: string): boolean {
+    return HIDDEN_DETAIL_FIELDS.has(key) || this.isSensitiveField(key);
+  }
+
+  private buildReadableFieldMap(
+    tableName: string,
+    values: Record<string, any>,
+  ): Record<string, unknown> {
+    const readable: Record<string, unknown> = {};
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (key === 'category_id') {
+        readable['category'] = this.resolveCategoryName(value);
+        return;
+      }
+
+      if (key === 'parent_category_id') {
+        readable['parent_category'] = this.resolveCategoryName(value);
+        return;
+      }
+
+      if (key === 'image_url') {
+        readable['image'] = value;
+        return;
+      }
+
+      if (this.isHiddenField(key) || this.isSensitiveField(key)) {
+        return;
+      }
+
+      if (key.endsWith('_id')) {
+        return;
+      }
+
+      readable[key] = value;
+    });
+
+    return readable;
+  }
+
+  private getOrderedDetailKeys(tableName: string, keys: string[]): string[] {
+    const whitelist = TABLE_IMPORTANT_FIELDS[tableName];
+    if (!whitelist) {
+      return keys.sort();
+    }
+
+    const ordered = whitelist.filter((key) => keys.includes(key));
+    const extras = keys.filter((key) => !whitelist.includes(key)).sort();
+    return [...ordered, ...extras];
+  }
+
+  private getDetailKeysForLog(log: AuditLogEntry, values: Record<string, any>): string[] {
+    const readable = this.buildReadableFieldMap(log.table_name, values);
+    const keys = Object.keys(readable);
+    return this.getOrderedDetailKeys(log.table_name, keys);
   }
 
   private isMeaningfulFormattedValue(value: string): boolean {
@@ -400,52 +585,40 @@ export class AuditLogComponent implements OnInit {
     return normalized !== '' && normalized !== 'not set' && normalized !== 'null' && normalized !== 'undefined';
   }
 
-  private getVisibleKeys(oldValues: Record<string, any>, newValues: Record<string, any>): string[] {
-    return Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)]))
-      .filter((key) => !HIDDEN_DETAIL_FIELDS.has(key))
-      .sort();
+  private buildDetailFields(
+    log: AuditLogEntry,
+    values: Record<string, any>,
+  ): DetailField[] {
+    const readable = this.buildReadableFieldMap(log.table_name, values);
+    const keys = this.getDetailKeysForLog(log, values);
+
+    return keys
+      .map((key) => {
+        const value = this.formatFieldValue(readable[key], key);
+        return {
+          key,
+          label: this.formatFieldLabel(key),
+          value,
+        };
+      })
+      .filter((field) => this.isMeaningfulFormattedValue(field.value));
   }
 
   getCreationFields(log: AuditLogEntry): DetailField[] {
-    const newValues = this.parseStoredValues(log.new_values);
-    const keys = Object.keys(newValues)
-      .filter((key) => !HIDDEN_DETAIL_FIELDS.has(key))
-      .sort();
-
-    return keys
-      .map((key) => {
-        const value = this.formatFieldValue(newValues[key], key);
-        return {
-          key,
-          label: this.formatFieldLabel(key),
-          value,
-        };
-      })
-      .filter((field) => this.isMeaningfulFormattedValue(field.value));
+    return this.buildDetailFields(log, this.parseStoredValues(log.new_values));
   }
 
   getDeletionFields(log: AuditLogEntry): DetailField[] {
-    const oldValues = this.parseStoredValues(log.old_values);
-    const keys = Object.keys(oldValues)
-      .filter((key) => !HIDDEN_DETAIL_FIELDS.has(key))
-      .sort();
-
-    return keys
-      .map((key) => {
-        const value = this.formatFieldValue(oldValues[key], key);
-        return {
-          key,
-          label: this.formatFieldLabel(key),
-          value,
-        };
-      })
-      .filter((field) => this.isMeaningfulFormattedValue(field.value));
+    return this.buildDetailFields(log, this.parseStoredValues(log.old_values));
   }
 
   getUpdateFields(log: AuditLogEntry): UpdateDetailField[] {
-    const oldValues = this.parseStoredValues(log.old_values);
-    const newValues = this.parseStoredValues(log.new_values);
-    const keys = this.getVisibleKeys(oldValues, newValues);
+    const oldValues = this.buildReadableFieldMap(log.table_name, this.parseStoredValues(log.old_values));
+    const newValues = this.buildReadableFieldMap(log.table_name, this.parseStoredValues(log.new_values));
+    const keys = this.getOrderedDetailKeys(
+      log.table_name,
+      Array.from(new Set([...Object.keys(oldValues), ...Object.keys(newValues)])),
+    );
 
     return keys
       .map((key) => {
@@ -469,6 +642,10 @@ export class AuditLogComponent implements OnInit {
 
         return field.beforeValue !== field.afterValue;
       });
+  }
+
+  getUpdateChangeSentence(field: UpdateDetailField): string {
+    return `${field.label} changed from “${field.beforeValue}” to “${field.afterValue}”.`;
   }
 
   getDetailFields(log: AuditLogEntry): DetailField[] {

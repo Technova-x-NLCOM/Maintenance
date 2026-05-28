@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DashboardTrendService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -65,6 +66,8 @@ class SuperAdminController extends Controller
                 $expiringItems = 0;
             }
 
+            $trends = app(DashboardTrendService::class)->inventoryTrends();
+
             return response()->json([
                 'totalUsers' => $totalUsers,
                 'activeUsers' => $activeUsers,
@@ -74,6 +77,7 @@ class SuperAdminController extends Controller
                 'pendingAlerts' => $pendingAlerts,
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
+                'trends' => $trends,
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -85,6 +89,12 @@ class SuperAdminController extends Controller
                 'pendingAlerts' => 0,
                 'totalCategories' => 0,
                 'expiringItems' => 0,
+                'trends' => [
+                    'items' => ['current' => 0, 'previous' => 0],
+                    'transactions' => ['current' => 0, 'previous' => 0],
+                    'categories' => ['current' => 0, 'previous' => 0],
+                    'batches' => ['current' => 0, 'previous' => 0],
+                ],
                 'error' => $e->getMessage()
             ], 500);
         }

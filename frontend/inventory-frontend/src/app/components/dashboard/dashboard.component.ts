@@ -26,6 +26,18 @@ import {
 
 Chart.register(...registerables);
 
+interface MonthTrendCount {
+  current: number;
+  previous: number;
+}
+
+export interface DashboardTrends {
+  items: MonthTrendCount;
+  transactions: MonthTrendCount;
+  categories: MonthTrendCount;
+  batches: MonthTrendCount;
+}
+
 export interface DashboardStats {
   totalUsers: number;
   activeUsers: number;
@@ -35,6 +47,7 @@ export interface DashboardStats {
   pendingAlerts: number;
   totalCategories: number;
   expiringItems: number;
+  trends?: DashboardTrends;
 }
 
 export interface AuditLogEntry {
@@ -392,7 +405,8 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
           this.stats = stats;
           this.recentActivity = activity;
           this.systemAlerts = alerts;
-          this.updateTrendIndicators(transactions, alerts);
+          this.applyTrendsFromStats(stats.trends);
+          this.updateAlertTrendIndicators(alerts);
           this.applyLiveChartData(stockReport, transactions);
           this.refreshCharts();
           this.loading = false;
@@ -634,7 +648,25 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
       );
   }
 
-  private updateTrendIndicators(transactions: TransactionRecord[], alerts: SystemAlert[]): void {
+  private applyTrendsFromStats(trends?: DashboardTrends): void {
+    if (!trends) {
+      return;
+    }
+
+    this.stockTrend = this.buildMoMTrend(trends.items.current, trends.items.previous, 'new items');
+    this.transactionTrend = this.buildMoMTrend(
+      trends.transactions.current,
+      trends.transactions.previous,
+      'transactions',
+    );
+    this.categoryTrend = this.buildMoMTrend(
+      trends.categories.current,
+      trends.categories.previous,
+      'new categories',
+    );
+  }
+
+  private updateAlertTrendIndicators(alerts: SystemAlert[]): void {
     const currentMonthStart = new Date();
     currentMonthStart.setDate(1);
     currentMonthStart.setHours(0, 0, 0, 0);
@@ -642,46 +674,9 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const previousMonthStart = new Date(currentMonthStart);
     previousMonthStart.setMonth(previousMonthStart.getMonth() - 1);
 
-    const inCurrent = transactions
-      .filter(txn => txn.transaction_type === 'IN' && this.isInRange(txn.transaction_date, currentMonthStart, new Date()))
-      .reduce((sum, txn) => sum + (Number(txn.quantity) || 0), 0);
-
-    const inPrevious = transactions
-      .filter(txn => txn.transaction_type === 'IN' && this.isInRange(txn.transaction_date, previousMonthStart, currentMonthStart))
-      .reduce((sum, txn) => sum + (Number(txn.quantity) || 0), 0);
-
-    const txCountCurrent = transactions.filter(txn => this.isInRange(txn.transaction_date, currentMonthStart, new Date())).length;
-    const txCountPrevious = transactions.filter(txn => this.isInRange(txn.transaction_date, previousMonthStart, currentMonthStart)).length;
-
-    const usersCurrent = new Set(
-      this.recentActivity
-        .filter(log => this.isInRange(log.created_at, currentMonthStart, new Date()))
-        .map(log => log.performed_by)
-    ).size;
-    const usersPrevious = new Set(
-      this.recentActivity
-        .filter(log => this.isInRange(log.created_at, previousMonthStart, currentMonthStart))
-        .map(log => log.performed_by)
-    ).size;
-
-    const categoryCurrent = new Set(
-      this.recentActivity
-        .filter(log => log.table_name?.toLowerCase().includes('categor') && this.isInRange(log.created_at, currentMonthStart, new Date()))
-        .map(log => log.record_id)
-    ).size;
-    const categoryPrevious = new Set(
-      this.recentActivity
-        .filter(log => log.table_name?.toLowerCase().includes('categor') && this.isInRange(log.created_at, previousMonthStart, currentMonthStart))
-        .map(log => log.record_id)
-    ).size;
-
     const alertsCurrent = alerts.filter(alert => this.isInRange(alert.created_at, currentMonthStart, new Date())).length;
     const alertsPrevious = alerts.filter(alert => this.isInRange(alert.created_at, previousMonthStart, currentMonthStart)).length;
 
-    this.stockTrend = this.buildMoMTrend(inCurrent, inPrevious, 'incoming stock');
-    this.usersTrend = this.buildMoMTrend(usersCurrent, usersPrevious, 'active users');
-    this.transactionTrend = this.buildMoMTrend(txCountCurrent, txCountPrevious, 'transactions');
-    this.categoryTrend = this.buildMoMTrend(categoryCurrent, categoryPrevious, 'category updates');
     this.alertsTrend = this.buildMoMTrend(alertsCurrent, alertsPrevious, 'alerts');
   }
 
@@ -689,14 +684,14 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     if (current === previous) {
       return {
         direction: 'steady',
-        description: 'No change this month'
+        description: `${current} ${label} this month (same as last month)`,
       };
     }
 
     if (previous <= 0) {
       return {
         direction: current > 0 ? 'up' : 'steady',
-        description: current > 0 ? `Up from 0 last month (${label})` : 'No change this month'
+        description: current > 0 ? `${current} ${label} this month (none last month)` : `No ${label} this month`,
       };
     }
 
@@ -704,7 +699,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const percent = Math.round((Math.abs(delta) / previous) * 100);
     return {
       direction: delta > 0 ? 'up' : 'down',
-      description: `${delta > 0 ? 'Up' : 'Down'} ${percent}% this month`
+      description: `${delta > 0 ? 'Up' : 'Down'} ${percent}% vs last month (${previous} → ${current})`,
     };
   }
 

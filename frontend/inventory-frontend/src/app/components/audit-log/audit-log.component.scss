@@ -519,6 +519,21 @@
   font-weight: 700;
 }
 
+.detail-intro {
+  margin: 0 0 12px 0;
+  color: #334155;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.change-sentence {
+  margin: 0 0 10px 0;
+  color: #1e293b;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

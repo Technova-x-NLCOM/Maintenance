@@ -26,6 +26,18 @@ import {
 
 Chart.register(...registerables);
 
+interface MonthTrendCount {
+  current: number;
+  previous: number;
+}
+
+export interface InventoryManagerTrends {
+  items: MonthTrendCount;
+  transactions: MonthTrendCount;
+  categories: MonthTrendCount;
+  batches: MonthTrendCount;
+}
+
 export interface InventoryManagerStats {
   totalItems: number;
   lowStockItems: number;
@@ -36,6 +48,7 @@ export interface InventoryManagerStats {
   totalCategories: number;
   expiringItems: number;
   activeBatches: number;
+  trends?: InventoryManagerTrends;
 }
 
 export interface AuditLogEntry {
@@ -388,7 +401,8 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
           this.stats = stats;
           this.recentActivity = activity;
           this.systemAlerts = alerts;
-          this.updateTrendIndicators(transactions, alerts);
+          this.applyTrendsFromStats(stats.trends);
+          this.updateAlertTrendIndicators(alerts);
           this.applyLiveChartData(stockReport, transactions);
           this.refreshCharts();
           this.loading = false;
@@ -629,7 +643,21 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
       );
   }
 
-  private updateTrendIndicators(transactions: TransactionRecord[], alerts: SystemAlert[]): void {
+  private applyTrendsFromStats(trends?: InventoryManagerTrends): void {
+    if (!trends) {
+      return;
+    }
+
+    this.stockTrend = this.buildMoMTrend(trends.items.current, trends.items.previous, 'new items');
+    this.transactionTrend = this.buildMoMTrend(
+      trends.transactions.current,
+      trends.transactions.previous,
+      'transactions',
+    );
+    this.batchTrend = this.buildMoMTrend(trends.batches.current, trends.batches.previous, 'new batches');
+  }
+
+  private updateAlertTrendIndicators(alerts: SystemAlert[]): void {
     const currentMonthStart = new Date();
     currentMonthStart.setDate(1);
     currentMonthStart.setHours(0, 0, 0, 0);
@@ -637,26 +665,9 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     const previousMonthStart = new Date(currentMonthStart);
     previousMonthStart.setMonth(previousMonthStart.getMonth() - 1);
 
-    const inCurrent = transactions
-      .filter(txn => txn.transaction_type === 'IN' && this.isInRange(txn.transaction_date, currentMonthStart, new Date()))
-      .reduce((sum, txn) => sum + (Number(txn.quantity) || 0), 0);
-
-    const inPrevious = transactions
-      .filter(txn => txn.transaction_type === 'IN' && this.isInRange(txn.transaction_date, previousMonthStart, currentMonthStart))
-      .reduce((sum, txn) => sum + (Number(txn.quantity) || 0), 0);
-
-    const txCountCurrent = transactions.filter(txn => this.isInRange(txn.transaction_date, currentMonthStart, new Date())).length;
-    const txCountPrevious = transactions.filter(txn => this.isInRange(txn.transaction_date, previousMonthStart, currentMonthStart)).length;
-
-    const batchCurrent = transactions.filter(txn => Boolean(txn.batch_number) && this.isInRange(txn.transaction_date, currentMonthStart, new Date())).length;
-    const batchPrevious = transactions.filter(txn => Boolean(txn.batch_number) && this.isInRange(txn.transaction_date, previousMonthStart, currentMonthStart)).length;
-
     const alertsCurrent = alerts.filter(alert => this.isInRange(alert.created_at, currentMonthStart, new Date())).length;
     const alertsPrevious = alerts.filter(alert => this.isInRange(alert.created_at, previousMonthStart, currentMonthStart)).length;
 
-    this.stockTrend = this.buildMoMTrend(inCurrent, inPrevious, 'incoming stock');
-    this.transactionTrend = this.buildMoMTrend(txCountCurrent, txCountPrevious, 'transactions');
-    this.batchTrend = this.buildMoMTrend(batchCurrent, batchPrevious, 'batch activity');
     this.alertsTrend = this.buildMoMTrend(alertsCurrent, alertsPrevious, 'alerts');
   }
 
@@ -664,14 +675,14 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     if (current === previous) {
       return {
         direction: 'steady',
-        description: 'No change this month'
+        description: `${current} ${label} this month (same as last month)`,
       };
     }
 
     if (previous <= 0) {
       return {
         direction: current > 0 ? 'up' : 'steady',
-        description: current > 0 ? `Up from 0 last month (${label})` : 'No change this month'
+        description: current > 0 ? `${current} ${label} this month (none last month)` : `No ${label} this month`,
       };
     }
 
@@ -679,7 +690,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     const percent = Math.round((Math.abs(delta) / previous) * 100);
     return {
       direction: delta > 0 ? 'up' : 'down',
-      description: `${delta > 0 ? 'Up' : 'Down'} ${percent}% this month`
+      description: `${delta > 0 ? 'Up' : 'Down'} ${percent}% vs last month (${previous} → ${current})`,
     };
   }
 
