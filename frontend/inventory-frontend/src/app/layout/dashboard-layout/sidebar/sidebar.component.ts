@@ -49,6 +49,29 @@ export class SidebarComponent implements OnInit {
         this.expandGroupForCurrentRoute(event.urlAfterRedirects || event.url);
         this.cdr.detectChanges();
       });
+
+    this.syncSidebarWidthCssVar();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.syncSidebarWidthCssVar();
+  }
+
+  /** Keeps modals centered in the main column (right of the sidebar). */
+  private syncSidebarWidthCssVar(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    let width = '280px';
+    if (this.isOffCanvasActive()) {
+      width = '0px';
+    } else if (this.isCollapsed && this.canCollapseSidebar) {
+      width = '92px';
+    }
+
+    document.documentElement.style.setProperty('--app-sidebar-width', width);
   }
 
   toggleGroup(group: string): void {
@@ -84,6 +107,7 @@ export class SidebarComponent implements OnInit {
 
     this.isCollapsed = !this.isCollapsed;
     this.openGroups.clear();
+    this.syncSidebarWidthCssVar();
   }
 
   closeCollapsedFlyouts(): void {

@@ -38,10 +38,9 @@ class SuperAdminController extends Controller
                 $lowStockItems = 0;
             }
 
-            // Total transactions this month
-            $totalTransactions = DB::table('inventory_transactions')
-                ->whereMonth('transaction_date', now()->month)
-                ->whereYear('transaction_date', now()->year)
+            // Total transactions (same base query as Transaction History monitor)
+            $totalTransactions = DB::table('inventory_transactions as t')
+                ->join('items as i', 't.item_id', '=', 'i.item_id')
                 ->count();
 
             // Pending alerts - count both expiry alerts and low stock items

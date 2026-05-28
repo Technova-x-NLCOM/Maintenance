@@ -593,11 +593,10 @@
       <p class="qr-label" *ngIf="batchQrLabel">{{ batchQrLabel }}</p>
       <p class="qr-caption">Scan this QR to identify the whole submitted batch transaction.</p>
       
-      <!-- QR Action Buttons -->
       <div class="qr-actions" *ngIf="batchQrImageDataUrl">
-        <button 
-          type="button" 
-          class="qr-action-btn btn-download" 
+        <button
+          type="button"
+          class="qr-action-btn btn-download"
           (click)="downloadBatchQr()"
           title="Download QR code as PNG image"
         >
@@ -607,49 +606,6 @@
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
           Download
-        </button>
-        
-        <button 
-          type="button" 
-          class="qr-action-btn btn-print" 
-          (click)="printBatchQr()"
-          title="Print QR code for sticker labels"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="6 9 6 2 18 2 18 9"/>
-            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-            <rect x="6" y="14" width="12" height="8"/>
-          </svg>
-          Print
-        </button>
-        
-        <button 
-          type="button" 
-          class="qr-action-btn btn-copy" 
-          (click)="copyBatchQrToClipboard()"
-          title="Copy QR code to clipboard"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
-          Copy
-        </button>
-        
-        <button 
-          type="button" 
-          class="qr-action-btn btn-share" 
-          (click)="shareBatchQr()"
-          title="Share QR code"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
-          Share
         </button>
       </div>
     </div>
