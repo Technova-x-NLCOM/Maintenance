@@ -25,20 +25,6 @@ class SystemSettingsController extends Controller
                 'updated_at' => $now,
             ],
             [
-                'setting_key' => 'low_stock_threshold',
-                'setting_value' => '10',
-                'description' => 'Minimum quantity threshold for low stock alerts',
-                'updated_by' => null,
-                'updated_at' => $now,
-            ],
-            [
-                'setting_key' => 'require_approval_for_out',
-                'setting_value' => 'true',
-                'description' => 'Require approval for OUT transactions',
-                'updated_by' => null,
-                'updated_at' => $now,
-            ],
-            [
                 'setting_key' => 'expiry_email_recipients',
                 'setting_value' => '',
                 'description' => 'Comma-separated recipient emails for near-expiry notification messages',
@@ -53,6 +39,8 @@ class SystemSettingsController extends Controller
      */
     private function ensureDefaultSettingsExist(): void
     {
+        DB::table('system_settings')->where('setting_key', 'low_stock_threshold')->delete();
+        DB::table('system_settings')->where('setting_key', 'require_approval_for_out')->delete();
         if (DB::table('system_settings')->exists()) {
             return;
         }
@@ -69,7 +57,10 @@ class SystemSettingsController extends Controller
     {
         $this->ensureDefaultSettingsExist();
 
-        $settings = DB::table('system_settings')->orderBy('setting_key')->get();
+        $settings = DB::table('system_settings')
+            ->whereNotIn('setting_key', ['low_stock_threshold', 'require_approval_for_out'])
+            ->orderBy('setting_key')
+            ->get();
 
         return response()->json($settings);
     }
@@ -79,6 +70,9 @@ class SystemSettingsController extends Controller
      */
     public function update(Request $request, $key)
     {
+        if ($key === 'low_stock_threshold' || $key === 'require_approval_for_out') {
+            return response()->json(['message' => 'Setting not found'], 404);
+        }
         $data = $request->validate([
             'setting_value' => 'required|string|max:1000',
         ]);
