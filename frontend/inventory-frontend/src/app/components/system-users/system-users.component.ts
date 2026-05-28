@@ -384,7 +384,26 @@ export class SystemUsersComponent implements OnInit {
   }
 
   roleLabel(u: SystemUserDto): string {
-    return u.role_display_name || u.role_name || '—';
+    return this.formatRoleLabel(u.role_display_name || u.role_name || '', u.role_name);
+  }
+
+  roleOptionLabel(role: Role): string {
+    return this.formatRoleLabel(role.display_name || role.role_name, role.role_name);
+  }
+
+  private formatRoleLabel(label: string, roleName?: string | null): string {
+    const normalizedRole = (roleName || '').toLowerCase();
+    const normalizedLabel = label.trim().toLowerCase();
+
+    if (
+      normalizedRole === 'super_admin' ||
+      normalizedLabel === 'super administrator' ||
+      normalizedLabel === 'super admin'
+    ) {
+      return 'Admin';
+    }
+
+    return label.trim() || '—';
   }
 
   get displayedUsers(): SystemUserDto[] {
