@@ -6,7 +6,8 @@ import {
   ChangeDetectorRef,
   NgZone,
   ElementRef,
-  ViewChild
+  ViewChild,
+  HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, NavigationEnd, ActivatedRoute } from '@angular/router';
@@ -64,13 +65,6 @@ interface KpiTrend {
   description: string;
 }
 
-interface RestockRow {
-  item: string;
-  currentStock: number;
-  minimumThreshold: number;
-  status: 'critical' | 'warning' | 'healthy';
-}
-
 interface StockReportRecord {
   item_id: number;
   item_description: string;
@@ -104,7 +98,6 @@ interface PaginatedApiResponse<T> {
   styleUrl: './inventory-manager-dashboard.component.scss'
 })
 export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('restockChart') restockChartRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('categoryChart') categoryChartRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('movementChart') movementChartRef?: ElementRef<HTMLCanvasElement>;
 
@@ -118,7 +111,6 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   loading = true;
   readonly skeletonCards = Array.from({ length: 4 });
   private routerSubscription: Subscription | null = null;
-  private restockChart: Chart<'bar'> | null = null;
   private categoryChart: Chart<'doughnut'> | null = null;
   private movementChart: Chart<'line'> | null = null;
 
@@ -137,78 +129,6 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   alertsTrend: KpiTrend = {
     direction: 'steady',
     description: 'No change this month'
-  };
-
-  restockRows: RestockRow[] = [];
-
-  restockBarData: ChartData<'bar'> = {
-    labels: [],
-    datasets: [
-      {
-        label: 'Current stock',
-        data: [],
-        borderRadius: 6,
-        backgroundColor: []
-      },
-      {
-        label: 'Minimum threshold',
-        data: [],
-        borderRadius: 6,
-        backgroundColor: '#94a3b8'
-      }
-    ]
-  };
-
-  readonly restockBarOptions: ChartOptions<'bar'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    indexAxis: 'y',
-    scales: {
-      x: {
-        beginAtZero: true,
-        ticks: {
-          color: '#51627d'
-        },
-        grid: {
-          color: '#e2e8f0'
-        }
-      },
-      y: {
-        ticks: {
-          color: '#243349'
-        },
-        grid: {
-          display: false
-        }
-      }
-    },
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          usePointStyle: true,
-          boxWidth: 10,
-          color: '#243349'
-        }
-      },
-      tooltip: {
-        backgroundColor: '#0f172a',
-        displayColors: false,
-        callbacks: {
-          label: (context: TooltipItem<'bar'>) => {
-            const row = this.restockRows[context.dataIndex];
-            const value = Number(context.raw) || 0;
-
-            if (context.dataset.label === 'Current stock') {
-              return `Current stock: ${value} units (${this.getStockStateLabel(row.status)} level)`;
-            }
-
-            return `Minimum needed: ${value} units`;
-          },
-          afterBody: (_context: TooltipItem<'bar'>[]) => 'Meaning: reorder when current stock is lower than minimum needed.'
-        }
-      }
-    }
   };
 
   categoryDonutData: ChartData<'doughnut'> = {
@@ -393,6 +313,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   ngAfterViewInit() {
+    this.applyResponsiveChartOptions();
     this.ensureChartsRendered();
   }
 
@@ -402,6 +323,14 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     }
 
     this.destroyCharts();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.applyResponsiveChartOptions();
+    this.categoryChart?.resize();
+    this.movementChart?.resize();
+    this.refreshCharts();
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -577,13 +506,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private renderCharts(): void {
-    if (this.restockChartRef?.nativeElement) {
-      this.restockChart = new Chart(this.restockChartRef.nativeElement, {
-        type: 'bar',
-        data: this.restockBarData,
-        options: this.restockBarOptions
-      });
-    }
+    this.applyResponsiveChartOptions();
 
     if (this.categoryChartRef?.nativeElement) {
       this.categoryChart = new Chart(this.categoryChartRef.nativeElement, {
@@ -603,11 +526,6 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private refreshCharts(): void {
-    if (this.restockChart) {
-      this.restockChart.data = this.restockBarData;
-      this.restockChart.update();
-    }
-
     if (this.categoryChart) {
       this.categoryChart.data = this.categoryDonutData;
       this.categoryChart.update();
@@ -619,9 +537,26 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     }
   }
 
+  private applyResponsiveChartOptions(): void {
+    const isMobile = window.innerWidth <= 768;
+
+    if (this.categoryDonutOptions?.plugins?.legend) {
+      this.categoryDonutOptions.plugins.legend.position = isMobile ? 'bottom' : 'right';
+      if (this.categoryDonutOptions.plugins.legend.labels) {
+        this.categoryDonutOptions.plugins.legend.labels.padding = isMobile ? 10 : 16;
+        this.categoryDonutOptions.plugins.legend.labels.boxWidth = isMobile ? 8 : 10;
+      }
+    }
+
+    const xScale = this.stockMovementOptions?.scales?.['x'];
+    if (xScale?.ticks) {
+      xScale.ticks.maxTicksLimit = isMobile ? 4 : 8;
+    }
+  }
+
   private ensureChartsRendered(): void {
     setTimeout(() => {
-      if (!this.restockChart || !this.categoryChart || !this.movementChart) {
+      if (!this.categoryChart || !this.movementChart) {
         this.destroyCharts();
         this.renderCharts();
       }
@@ -631,37 +566,11 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private destroyCharts(): void {
-    this.restockChart?.destroy();
     this.categoryChart?.destroy();
     this.movementChart?.destroy();
 
-    this.restockChart = null;
     this.categoryChart = null;
     this.movementChart = null;
-  }
-
-  private getRestockColor(status: RestockRow['status']): string {
-    if (status === 'critical') {
-      return '#dc2626';
-    }
-
-    if (status === 'warning') {
-      return '#f59e0b';
-    }
-
-    return '#16a34a';
-  }
-
-  private getStockStateLabel(status: RestockRow['status']): string {
-    if (status === 'critical') {
-      return 'critical';
-    }
-
-    if (status === 'warning') {
-      return 'warning';
-    }
-
-    return 'healthy';
   }
 
   private getStockReportRows() {
@@ -784,45 +693,6 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private applyLiveChartData(stockReportRows: StockReportRecord[], transactions: TransactionRecord[]): void {
-    const lowStockRows = stockReportRows
-      .filter(row => Number(row.reorder_level) > 0)
-      .map(row => {
-        const current = Number(row.current_stock) || 0;
-        const minimum = Number(row.reorder_level) || 0;
-        const ratio = minimum > 0 ? current / minimum : 1;
-        const status: RestockRow['status'] = ratio < 0.7 ? 'critical' : ratio < 1 ? 'warning' : 'healthy';
-        return {
-          item: row.item_description,
-          currentStock: current,
-          minimumThreshold: minimum,
-          status,
-          gap: minimum - current
-        };
-      })
-      .filter(row => row.gap > 0)
-      .sort((a, b) => b.gap - a.gap)
-      .slice(0, 6)
-      .map(({ item, currentStock, minimumThreshold, status }) => ({ item, currentStock, minimumThreshold, status }));
-
-    this.restockRows = lowStockRows;
-    this.restockBarData = {
-      labels: lowStockRows.map(row => row.item),
-      datasets: [
-        {
-          label: 'Current stock',
-          data: lowStockRows.map(row => row.currentStock),
-          borderRadius: 6,
-          backgroundColor: lowStockRows.map(row => this.getRestockColor(row.status))
-        },
-        {
-          label: 'Minimum threshold',
-          data: lowStockRows.map(row => row.minimumThreshold),
-          borderRadius: 6,
-          backgroundColor: '#94a3b8'
-        }
-      ]
-    };
-
     const categoryTotals = new Map<string, number>();
     stockReportRows.forEach(row => {
       const key = row.category_name || 'Uncategorized';

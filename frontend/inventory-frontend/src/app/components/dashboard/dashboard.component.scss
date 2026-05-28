@@ -18,16 +18,9 @@ $danger: #b91c1c;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
-  overflow-y: auto;
+  height: auto;
+  min-height: 0;
   overflow-x: hidden;
-  scrollbar-gutter: stable;
-  @media (max-width: 1060px) {
-    height: auto;
-    overflow: visible;
-    padding: 12px;
-    gap: 10px;
-  }
 }
 
 .hero-panel {
@@ -233,8 +226,22 @@ $danger: #b91c1c;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  align-items: stretch;
+
+  > .card {
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+  }
+
   @media (max-width: 1060px) {
     grid-template-columns: 1fr;
+    align-items: start;
+
+    > .card {
+      align-self: start;
+      height: auto;
+    }
   }
 }
 
@@ -244,30 +251,32 @@ $danger: #b91c1c;
 
 .movement-card-full {
   width: 100%;
-  min-height: 380px;
+  min-height: 0;
 }
 
 .chart-card {
-  min-height: 320px;
+  min-height: 0;
 }
 
 .chart-area {
   position: relative;
-  flex: 1;
-  min-height: 240px;
+  flex: none;
   width: 100%;
+  height: clamp(200px, 28vh, 260px);
+  min-height: 200px;
+  max-height: 260px;
   overflow: hidden;
 
   canvas {
     display: block;
-    width: 100% !important;
-    height: 100% !important;
   }
 }
 
 .chart-area-wide {
-  min-height: 310px;
   width: 100%;
+  height: clamp(220px, 32vh, 300px);
+  min-height: 220px;
+  max-height: 300px;
 }
 
 .chart-area canvas,
@@ -351,19 +360,29 @@ $danger: #b91c1c;
   }
 }
 
+.system-alerts {
+  justify-content: flex-start;
+}
+
+.donut-card {
+  justify-content: flex-start;
+}
+
 .alerts-list,
 .activity-list {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  flex: 1;
-  max-height: 350px;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  width: 100%;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding-right: 4px;
   min-height: 0;
 
   .list-footer {
-    margin: 0;
+    margin: auto 0 0;
     padding: 4px 2px 0;
     color: $text-light;
     font-size: 0.68rem;
@@ -579,12 +598,41 @@ $danger: #b91c1c;
 }
 
 .panel-skeleton {
-  height: 380px;
+  height: 280px;
   border-radius: 14px;
   border: 1px solid $border-color;
   background: linear-gradient(110deg, #f2f7ff 8%, #ffffff 18%, #f2f7ff 33%);
   background-size: 200% 100%;
   animation: shimmer 1.5s linear infinite;
+}
+
+/* Desktop: matched alert/chart row height */
+@media (min-width: 1061px) {
+  .content-grid {
+    align-items: stretch;
+
+    > .card {
+      align-self: stretch;
+      height: 100%;
+    }
+  }
+
+  .system-alerts .alerts-list {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .donut-card .chart-area {
+    height: 240px;
+    min-height: 240px;
+    max-height: 240px;
+  }
+
+  .movement-card-full .chart-area-wide {
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
+  }
 }
 
 @keyframes shimmer {

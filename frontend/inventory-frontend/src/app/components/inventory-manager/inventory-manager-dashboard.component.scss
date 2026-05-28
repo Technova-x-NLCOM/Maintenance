@@ -202,16 +202,22 @@ $info-blue: #1d4ed8;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  align-items: stretch;
+
+  > .card {
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+  }
 
   @media (max-width: 1060px) {
     grid-template-columns: 1fr;
-  }
+    align-items: start;
 
-  .card {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    max-height: 450px; // Constrain middle row cards
+    > .card {
+      align-self: start;
+      height: auto;
+    }
   }
 }
 
@@ -219,55 +225,45 @@ $info-blue: #1d4ed8;
   display: block;
 }
 
-.paired-charts-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-
-  @media (max-width: 1060px) {
-    grid-template-columns: 1fr;
-  }
+.movement-card-full {
+  width: 100%;
+  min-height: 0;
 }
 
 .chart-card {
-  min-height: 320px;
-}
-
-.movement-card {
-  grid-column: auto;
+  min-height: 0;
 }
 
 .chart-area {
   position: relative;
-  min-height: 240px;
+  flex: none;
   width: 100%;
+  height: clamp(200px, 28vh, 260px);
+  min-height: 200px;
+  max-height: 260px;
   overflow: hidden;
 
   canvas {
     display: block;
     width: 100% !important;
     height: 100% !important;
+    max-width: 100%;
   }
 }
 
-.chart-area-container {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 0;
-}
-
-.chart-area-tall {
-  min-height: 290px;
-}
-
 .chart-area-wide {
-  min-height: 310px;
   width: 100%;
+  height: clamp(220px, 32vh, 300px);
+  min-height: 220px;
+  max-height: 300px;
+}
+
+.system-alerts {
+  justify-content: flex-start;
+}
+
+.donut-card {
+  justify-content: flex-start;
 }
 
 .card {
@@ -347,14 +343,16 @@ $info-blue: #1d4ed8;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1;
-  max-height: 350px;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  width: 100%;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding-right: 2px;
   min-height: 0;
 
   .list-footer {
-    margin: 0;
+    margin: auto 0 0;
     padding: 2px 1px 0;
     color: $text-light;
     font-size: 0.76rem;
@@ -573,7 +571,7 @@ $info-blue: #1d4ed8;
 }
 
 .panel-skeleton {
-  height: 380px;
+  height: 280px;
   border-radius: 14px;
   border: 1px solid $border-color;
   background: linear-gradient(110deg, #f2f7ff 8%, #ffffff 18%, #f2f7ff 33%);
@@ -584,6 +582,34 @@ $info-blue: #1d4ed8;
 @keyframes shimmer {
   to {
     background-position-x: -200%;
+  }
+}
+
+@media (min-width: 1061px) {
+  .content-grid {
+    align-items: stretch;
+
+    > .card {
+      align-self: stretch;
+      height: 100%;
+    }
+  }
+
+  .system-alerts .alerts-list {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .donut-card .chart-area {
+    height: 240px;
+    min-height: 240px;
+    max-height: 240px;
+  }
+
+  .movement-card-full .chart-area-wide {
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
   }
 }
 
@@ -610,10 +636,6 @@ $info-blue: #1d4ed8;
   .alerts-list,
   .activity-list {
     max-height: 320px;
-  }
-
-  .content-grid .card {
-    max-height: 420px;
   }
 }
 
@@ -676,13 +698,5 @@ $info-blue: #1d4ed8;
   .alerts-list,
   .activity-list {
     max-height: 320px;
-  }
-
-  .content-grid .card {
-    max-height: 420px;
-  }
-
-  .chart-card {
-    min-height: 310px;
   }
 }
