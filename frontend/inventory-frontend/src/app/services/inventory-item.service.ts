@@ -29,7 +29,6 @@ export interface InventoryItem {
 }
 
 export interface ItemFormOptions {
-  item_types?: Array<{ item_type_id: number; type_name: string; description?: string }>;
   categories: Array<{ category_id: number; category_name: string }>;
 }
 

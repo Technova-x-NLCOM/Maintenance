@@ -49,15 +49,86 @@
             />
           </label>
 
-          <label>
-            <span>Category <em>*</em></span>
-            <select [(ngModel)]="formData.category_id" (ngModelChange)="onCategoryChange()">
-              <option [ngValue]="null">Select category</option>
-              <option *ngFor="let category of options.categories" [ngValue]="category.category_id">
-                {{ category.category_name }}
-              </option>
-            </select>
-          </label>
+          <div class="form-field">
+            <span class="field-label">Category <em>*</em></span>
+            <div
+              class="category-filter-combobox form-category-combobox"
+              data-category-combobox="form"
+              (keydown)="onFormCategoryComboboxKeydown($event)"
+            >
+              <button
+                type="button"
+                class="category-filter-trigger"
+                (click)="toggleFormCategoryDropdown()"
+                [attr.aria-expanded]="formCategoryOpen"
+                aria-haspopup="listbox"
+                aria-label="Select category"
+              >
+                <span
+                  class="trigger-value"
+                  [class.is-placeholder]="!formData.category_id"
+                >
+                  {{ selectedFormCategoryName }}
+                </span>
+                <svg
+                  class="trigger-caret"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <button
+                *ngIf="formData.category_id"
+                class="clear-category-filter"
+                type="button"
+                (click)="clearFormCategory($event)"
+                aria-label="Clear selected category"
+                title="Clear selected category"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              <div class="category-filter-dropdown" *ngIf="formCategoryOpen">
+                <div class="category-filter-search">
+                  <input
+                    type="text"
+                    [(ngModel)]="formCategoryQuery"
+                    (ngModelChange)="onFormCategoryQueryChange()"
+                    placeholder="Search categories"
+                    aria-label="Search categories"
+                  />
+                </div>
+
+                <div class="category-filter-options" role="listbox" aria-label="Category options">
+                  <button
+                    *ngFor="let category of filteredFormCategoryOptions; let i = index"
+                    type="button"
+                    class="category-option"
+                    [class.active]="i === formActiveCategoryOptionIndex"
+                    [class.selected]="category.category_id === formData.category_id"
+                    (mouseenter)="onFormCategoryOptionHover(i)"
+                    (click)="selectFormCategory(category)"
+                  >
+                    {{ category.category_name }}
+                  </button>
+
+                  <div
+                    *ngIf="filteredFormCategoryOptions.length === 0"
+                    class="category-filter-empty"
+                  >
+                    No matching categories
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <label>
             <span>Unit of measure</span>
@@ -232,7 +303,11 @@
             Cards
           </button>
         </div>
-        <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
+        <div
+          class="category-filter-combobox"
+          data-category-combobox="filter"
+          (keydown)="onCategoryComboboxKeydown($event)"
+        >
           <button
             type="button"
             class="category-filter-trigger"

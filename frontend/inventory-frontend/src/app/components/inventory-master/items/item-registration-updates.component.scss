@@ -392,12 +392,14 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   gap: 18px 24px;
 }
 
-label {
+label,
+.form-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 
-  span {
+  > span,
+  .field-label {
     font-size: 0.9375rem;
     color: $text-primary;
     font-weight: 600;
@@ -406,6 +408,51 @@ label {
       color: $danger;
       font-style: normal;
     }
+  }
+}
+
+.form-category-combobox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  .category-filter-trigger {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: $radius-sm;
+    background: #fafafa;
+    font-size: 0.9375rem;
+
+    &:focus {
+      background: white;
+    }
+
+    .trigger-value {
+      max-width: none;
+      flex: 1;
+
+      &.is-placeholder {
+        color: #94a3b8;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .category-filter-dropdown {
+    width: 100%;
+    max-width: none;
+    left: 0;
+    right: 0;
+    z-index: 30;
+  }
+
+  .category-filter-search input {
+    padding: 9px 11px;
+    font-size: 0.9375rem;
   }
 }
 

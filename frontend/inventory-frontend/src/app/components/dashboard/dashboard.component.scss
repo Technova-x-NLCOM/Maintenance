@@ -255,10 +255,19 @@ $danger: #b91c1c;
   position: relative;
   flex: 1;
   min-height: 240px;
+  width: 100%;
 }
 
 .chart-area-wide {
   min-height: 310px;
+}
+
+.chart-area canvas,
+.chart-area-wide canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
 }
 
 .card {
@@ -752,12 +761,7 @@ $danger: #b91c1c;
 
 @media (max-width: 425px) {
   .chart-area-wide {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .chart-area-wide canvas {
-    min-width: 520px;
+    min-height: 220px;
   }
 }
 

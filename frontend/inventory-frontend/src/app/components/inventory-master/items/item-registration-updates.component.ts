@@ -27,7 +27,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   saving = false;
 
   items: InventoryItem[] = [];
-  options: ItemFormOptions = { item_types: [], categories: [] };
+  options: ItemFormOptions = { categories: [] };
 
   currentPage = 1;
   totalPages = 1;
@@ -43,6 +43,11 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   activeCategoryOptionIndex = -1;
   categoryFilterOptions: Array<{ category_id: number; category_name: string }> = [];
   filteredCategoryFilterOptions: Array<{ category_id: number; category_name: string }> = [];
+
+  formCategoryOpen = false;
+  formCategoryQuery = '';
+  formActiveCategoryOptionIndex = -1;
+  filteredFormCategoryOptions: Array<{ category_id: number; category_name: string }> = [];
 
   private readonly SEARCH_DEBOUNCE_MS = 300;
   private loadItemsSub?: Subscription;
@@ -105,12 +110,24 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     return navigator;
   }
 
+  get selectedFormCategoryName(): string {
+    if (!this.formData.category_id) {
+      return 'Select category';
+    }
+
+    const category = this.options.categories.find(
+      (entry) => entry.category_id === this.formData.category_id,
+    );
+
+    return category?.category_name ?? 'Select category';
+  }
+
   ngOnInit(): void {
     this.loadOptionsAndItems();
   }
 
   onCategoryChange(): void {
-    // Category change handler intentionally left empty after removing item type logic.
+    // Category change handler kept for future dependent-field behavior.
   }
 
   loadOptionsAndItems(): void {
@@ -121,7 +138,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     this.itemService.getOptions().subscribe({
       next: (optionsRes) => {
         this.options = optionsRes.data;
-        // Options loaded.
+        this.applyFormCategorySearch();
         this.loadItems(1);
       },
       error: (err) => {
@@ -315,6 +332,132 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
     this.activeCategoryOptionIndex = index;
   }
 
+  toggleFormCategoryDropdown(): void {
+    this.formCategoryOpen = !this.formCategoryOpen;
+    if (this.formCategoryOpen) {
+      this.formCategoryQuery = '';
+      this.applyFormCategorySearch();
+      this.formActiveCategoryOptionIndex = this.getFormActiveIndexFromSelection();
+      this.cdr.detectChanges();
+    }
+  }
+
+  onFormCategoryQueryChange(): void {
+    this.applyFormCategorySearch();
+  }
+
+  selectFormCategory(category: { category_id: number; category_name: string }): void {
+    this.formData.category_id = category.category_id;
+    this.formCategoryOpen = false;
+    this.formCategoryQuery = '';
+    this.formActiveCategoryOptionIndex = -1;
+    this.onCategoryChange();
+    this.cdr.detectChanges();
+  }
+
+  clearFormCategory(event?: Event): void {
+    event?.stopPropagation();
+    if (!this.formData.category_id) {
+      return;
+    }
+
+    this.formData.category_id = null;
+    this.formCategoryOpen = false;
+    this.formCategoryQuery = '';
+    this.formActiveCategoryOptionIndex = -1;
+    this.onCategoryChange();
+    this.cdr.detectChanges();
+  }
+
+  onFormCategoryComboboxKeydown(event: KeyboardEvent): void {
+    const key = event.key;
+
+    if (!this.formCategoryOpen) {
+      if (key === 'ArrowDown' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        this.toggleFormCategoryDropdown();
+      }
+      return;
+    }
+
+    if (key === 'Escape') {
+      event.preventDefault();
+      this.formCategoryOpen = false;
+      this.formActiveCategoryOptionIndex = -1;
+      return;
+    }
+
+    if (!this.filteredFormCategoryOptions.length) {
+      return;
+    }
+
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      this.formActiveCategoryOptionIndex = Math.min(
+        this.formActiveCategoryOptionIndex + 1,
+        this.filteredFormCategoryOptions.length - 1,
+      );
+      return;
+    }
+
+    if (key === 'ArrowUp') {
+      event.preventDefault();
+      this.formActiveCategoryOptionIndex = Math.max(this.formActiveCategoryOptionIndex - 1, 0);
+      return;
+    }
+
+    if (key === 'Enter') {
+      event.preventDefault();
+      if (this.formActiveCategoryOptionIndex >= 0) {
+        this.selectFormCategory(
+          this.filteredFormCategoryOptions[this.formActiveCategoryOptionIndex],
+        );
+      }
+    }
+  }
+
+  onFormCategoryOptionHover(index: number): void {
+    this.formActiveCategoryOptionIndex = index;
+  }
+
+  private resetFormCategoryCombobox(): void {
+    this.formCategoryOpen = false;
+    this.formCategoryQuery = '';
+    this.formActiveCategoryOptionIndex = -1;
+    this.applyFormCategorySearch();
+  }
+
+  private applyFormCategorySearch(): void {
+    const query = this.formCategoryQuery.trim().toLowerCase();
+    this.filteredFormCategoryOptions = (this.options.categories || []).filter((category) => {
+      if (!query) {
+        return true;
+      }
+      return category.category_name.toLowerCase().includes(query);
+    });
+
+    if (!this.filteredFormCategoryOptions.length) {
+      this.formActiveCategoryOptionIndex = -1;
+      return;
+    }
+
+    const selectedIndex = this.filteredFormCategoryOptions.findIndex(
+      (category) => category.category_id === this.formData.category_id,
+    );
+    this.formActiveCategoryOptionIndex = selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
+  private getFormActiveIndexFromSelection(): number {
+    if (!this.filteredFormCategoryOptions.length) {
+      return -1;
+    }
+
+    const selectedIndex = this.filteredFormCategoryOptions.findIndex(
+      (category) => category.category_id === this.formData.category_id,
+    );
+    return selectedIndex >= 0 ? selectedIndex : 0;
+  }
+
   private applyCategoryFilterSearch(): void {
     const query = this.categoryFilterQuery.trim().toLowerCase();
     this.filteredCategoryFilterOptions = this.categoryFilterOptions.filter((category) => {
@@ -347,18 +490,19 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.categoryFilterOpen) {
-      return;
-    }
-
     const target = event.target as Element | null;
     if (!target) {
       return;
     }
 
-    if (!target.closest('.category-filter-combobox')) {
+    if (this.categoryFilterOpen && !target.closest('[data-category-combobox="filter"]')) {
       this.categoryFilterOpen = false;
       this.activeCategoryOptionIndex = -1;
+    }
+
+    if (this.formCategoryOpen && !target.closest('[data-category-combobox="form"]')) {
+      this.formCategoryOpen = false;
+      this.formActiveCategoryOptionIndex = -1;
     }
   }
 
@@ -381,10 +525,9 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       reorder_level: item.reorder_level,
       is_active: item.is_active,
     };
-    // Type removed from UI.
-
     this.resetSelectedImage();
     this.imagePreviewUrl = item.image_url || null;
+    this.resetFormCategoryCombobox();
 
     this.cdr.detectChanges();
   }
@@ -408,7 +551,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       reorder_level: 0,
       is_active: true,
     };
-    // Type removed from UI.
     this.resetSelectedImage();
     this.cdr.detectChanges();
   }
@@ -432,8 +574,8 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
       reorder_level: 0,
       is_active: true,
     };
-    // Type removed from UI.
     this.resetSelectedImage();
+    this.resetFormCategoryCombobox();
     this.cdr.detectChanges();
   }
 
