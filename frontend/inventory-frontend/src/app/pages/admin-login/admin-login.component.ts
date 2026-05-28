@@ -78,7 +78,7 @@ export class AdminLoginComponent implements OnInit {
       password_confirmation: ['', [Validators.required]],
     });
     this.forgotPasswordForm = this.fb.group({
-      email: ['', [Validators.required]]
+      email: ['', [Validators.required, Validators.email]]
     });
   }
 
