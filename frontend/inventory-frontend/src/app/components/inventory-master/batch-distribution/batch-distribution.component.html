@@ -1279,13 +1279,12 @@
         <ng-container *ngIf="scheduleDialogStep === 1">
           <div class="form-grid">
             <label>
-              <span>Feeding Template *</span>
+              <span>Template *</span>
               <select class="form-control" [(ngModel)]="planForm.template_id">
                 <option [ngValue]="null">Select template</option>
                 <option
                   *ngFor="let t of templates"
                   [ngValue]="t.template_id"
-                  [disabled]="t.distribution_type !== 'feeding_program'"
                 >
                   {{ t.template_name }}
                 </option>
@@ -1300,7 +1299,7 @@
               <input type="date" class="form-control" [(ngModel)]="planForm.planned_date" />
             </label>
             <label>
-              <span>Number of Relief Packs *</span>
+              <span>{{ planTargetCountLabel }} *</span>
               <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
             </label>
             <label class="full">
