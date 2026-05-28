@@ -27,6 +27,7 @@ interface ReceivingCartLine {
   batch_value: number | null;
   reason: string | null;
   notes: string | null;
+  batch_number?: string | null;
 }
 
 @Component({
@@ -64,7 +65,6 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   selectedItem: ReceivingItem | null = null;
   transactionMode: 'receive' | 'adjust-increase' = 'receive';
   quantity = 1;
-  batchNumber = '';
   purchaseDate = '';
   expiryDate: string | null = null;
   manufacturedDate: string | null = null;
@@ -796,12 +796,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       return true;
     }
 
-    if (!this.batchNumber.trim()) {
-      return false;
-    }
-    if (this.batchNumber.length > 50) {
-      return false;
-    }
+    // Batch number is provided at list submission time (confirmBatchNumber); per-line batch input removed.
     if (!this.purchaseDate) {
       return false;
     }
@@ -855,6 +850,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       batch_value: this.batchValue || null,
       reason: this.reason?.trim() || 'Stock Received',
       notes: this.notes?.trim() || null,
+      batch_number: this.confirmBatchNumber?.trim() || null,
     };
 
     const existingIndex = this.receivingLines.findIndex((entry) => entry.item_id === line.item_id);
@@ -868,6 +864,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       this.receivingLines[existingIndex].batch_value = line.batch_value;
       this.receivingLines[existingIndex].reason = line.reason;
       this.receivingLines[existingIndex].notes = line.notes;
+      this.receivingLines[existingIndex].batch_number = line.batch_number;
     } else {
       this.receivingLines.push(line);
     }
@@ -899,6 +896,14 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     }
     
     return true;
+  }
+
+  onConfirmBatchNumberChange(value: string): void {
+    // propagate the confirmed batch number to all existing lines so the list shows the same batch
+    this.receivingLines = this.receivingLines.map((line) => ({
+      ...line,
+      batch_number: value?.trim() || null,
+    }));
   }
 
   submitReceivingList(): void {

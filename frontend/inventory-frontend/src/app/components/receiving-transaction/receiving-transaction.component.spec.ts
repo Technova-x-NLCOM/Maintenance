@@ -33,7 +33,7 @@ describe('ReceivingTransactionComponent (unit)', () => {
 
     component.selectedItem = { item_id:1, item_code:'X', item_description:'', category_name:'', measurement_unit:null, shelf_life_days: null, image_url:null, current_stock:0, is_active:true } as any;
     component.quantity = 1;
-    component.batchNumber = '  ';
+    component.confirmBatchNumber = '  ';
     expect(component.canAddToList()).toBeFalse();
   });
 });

@@ -244,6 +244,7 @@
         <thead>
           <tr>
             <th>Item</th>
+            <th>Batch</th>
             <th>Qty</th>
             <th>Purchase</th>
             <th>Expiry</th>
@@ -256,6 +257,7 @@
               <div class="line-code">{{ line.item_code }}</div>
               <div class="line-desc">{{ line.item_description }}</div>
             </td>
+            <td>{{ line.batch_number || confirmBatchNumber || '—' }}</td>
             <td>{{ line.quantity }} {{ line.measurement_unit || '' }}</td>
             <td>{{ line.purchase_date }}</td>
             <td>{{ line.expiry_date || 'N/A' }}</td>
@@ -292,6 +294,7 @@
         class="form-control"
         placeholder="e.g., BATCH-2026-001"
         [(ngModel)]="confirmBatchNumber"
+        (ngModelChange)="onConfirmBatchNumberChange($event)"
         [disabled]="saving"
         maxlength="50"
       />
@@ -417,20 +420,7 @@
               [disabled]="saving"
             />
           </div>
-          <div class="form-group" *ngIf="transactionMode === 'receive'">
-            <label class="form-label">Batch Number *</label>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="e.g., BATCH-2026-001"
-              [(ngModel)]="batchNumber"
-              [disabled]="saving"
-              maxlength="50"
-            />
-            <div class="hint" *ngIf="attemptedAddToList && !batchNumber.trim()">
-              Batch number is required.
-            </div>
-          </div>
+          <!-- Batch number is collected for the whole list only. Per-line input removed. -->
           <div class="form-group">
             <label class="form-label">Measurement Unit</label>
             <input
