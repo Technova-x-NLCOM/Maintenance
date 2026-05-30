@@ -6,7 +6,7 @@
       <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
     </div>
       <div class="page-actions" *ngIf="hasManageRoles()">
-        <button class="primary" (click)="openCreateModal()">Create Role</button>
+        <button class="primary" (click)="openCreateModal()" [disabled]="savingNewRole">Create Role</button>
       </div>
   </header>
 
@@ -187,8 +187,8 @@
         <label><input type="checkbox" [(ngModel)]="newRole.is_system_role" /> Is system role</label>
       </div>
       <div class="actions">
-        <button class="ghost" (click)="closeCreateModal()">Cancel</button>
-        <button class="primary" (click)="submitCreateRole()">Create</button>
+        <button class="ghost" (click)="closeCreateModal()" [disabled]="savingNewRole">Cancel</button>
+        <button class="primary" (click)="submitCreateRole()" [disabled]="savingNewRole">{{ savingNewRole ? 'Creating...' : 'Create' }}</button>
       </div>
     </div>
   </div>

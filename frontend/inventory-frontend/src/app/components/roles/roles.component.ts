@@ -20,6 +20,7 @@ export class RolesComponent implements OnInit {
   // create role modal
   showCreateModal = false;
   newRole: { role_name: string; display_name?: string; description?: string; is_system_role?: boolean } = { role_name: '' };
+  savingNewRole = false;
   // editing state per role
   editingRoleId: number | null = null;
   editPermissions: { [permissionId: number]: { can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean } } = {};
@@ -69,15 +70,21 @@ export class RolesComponent implements OnInit {
       return;
     }
     this.error = null;
-    this.rbac.createRole(this.newRole).toPromise()
-      .then((r) => {
+    this.savingNewRole = true;
+    this.rbac.createRole(this.newRole).subscribe({
+      next: (r) => {
+        this.savingNewRole = false;
         this.showCreateModal = false;
         this.loadRoles();
-      })
-      .catch(err => {
-        this.error = err?.message || 'Failed to create role';
+      },
+      error: (err) => {
+        this.savingNewRole = false;
+        // Better surface validation and server errors
+        const serverMsg = err?.error?.message || (err?.error ? JSON.stringify(err.error) : null);
+        this.error = serverMsg || err?.message || 'Failed to create role';
         this.cdr.detectChanges();
-      });
+      }
+    });
   }
 
   startEdit(role: Role) {
