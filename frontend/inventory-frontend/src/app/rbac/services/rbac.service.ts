@@ -82,6 +82,13 @@ export class RbacService {
   }
 
   /**
+   * Create a new role
+   */
+  createRole(payload: { role_name: string; display_name?: string | null; description?: string | null; is_system_role?: boolean; }) {
+    return this.http.post<Role>(`${this.API_URL}/roles`, payload, { headers: this.authHeaders() });
+  }
+
+  /**
    * Check if a role has a specific permission
    */
   roleHasPermission(role: Role | undefined | null, permissionName: string): boolean {

@@ -5,6 +5,9 @@
       <h2>Roles & Permissions</h2>
       <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
     </div>
+      <div class="page-actions" *ngIf="hasManageRoles()">
+        <button class="primary" (click)="openCreateModal()">Create Role</button>
+      </div>
   </header>
 
   <div *ngIf="loading" class="state state-loading">Loading roles...</div>
@@ -160,6 +163,32 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Role Modal -->
+  <div class="modal-backdrop" *ngIf="showCreateModal">
+    <div class="modal">
+      <h3>Create New Role</h3>
+      <div class="field">
+        <label>Role Name (machine)</label>
+        <input type="text" [(ngModel)]="newRole.role_name" />
+      </div>
+      <div class="field">
+        <label>Display Name</label>
+        <input type="text" [(ngModel)]="newRole.display_name" />
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea [(ngModel)]="newRole.description"></textarea>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" [(ngModel)]="newRole.is_system_role" /> Is system role</label>
+      </div>
+      <div class="actions">
+        <button class="ghost" (click)="closeCreateModal()">Cancel</button>
+        <button class="primary" (click)="submitCreateRole()">Create</button>
       </div>
     </div>
   </div>

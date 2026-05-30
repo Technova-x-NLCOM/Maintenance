@@ -1,20 +1,25 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RbacService, Role, Permission } from '../../rbac/services/rbac.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-roles',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './roles.component.html',
   styleUrls: ['./roles.component.scss']
 })
 export class RolesComponent implements OnInit {
   roles: Role[] = [];
   permissions: Permission[] = [];
+  currentRole: Role | null = null;
   loading = false;
   error: string | null = null;
+  // create role modal
+  showCreateModal = false;
+  newRole: { role_name: string; display_name?: string; description?: string; is_system_role?: boolean } = { role_name: '' };
   // editing state per role
   editingRoleId: number | null = null;
   editPermissions: { [permissionId: number]: { can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean } } = {};
@@ -29,8 +34,9 @@ export class RolesComponent implements OnInit {
   loadRoles(): void {
     this.loading = true;
     this.error = null;
-    forkJoin({ roles: this.rbac.getRoles(), permissions: this.rbac.getPermissions() }).subscribe({
-      next: ({ roles, permissions }) => {
+    forkJoin({ roles: this.rbac.getRoles(), permissions: this.rbac.getPermissions(), currentRole: this.rbac.getCurrentRole() }).subscribe({
+      next: ({ roles, permissions, currentRole }) => {
+        this.currentRole = currentRole || null;
         this.roles = roles || [];
         this.permissions = permissions || [];
         this.loading = false;
@@ -42,6 +48,36 @@ export class RolesComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  hasManageRoles(): boolean {
+    return this.rbac.roleHasPermission(this.currentRole || undefined, 'manage_roles');
+  }
+
+  openCreateModal() {
+    this.newRole = { role_name: '' };
+    this.showCreateModal = true;
+  }
+
+  closeCreateModal() {
+    this.showCreateModal = false;
+  }
+
+  submitCreateRole() {
+    if (!this.newRole.role_name) {
+      this.error = 'Role name is required';
+      return;
+    }
+    this.error = null;
+    this.rbac.createRole(this.newRole).toPromise()
+      .then((r) => {
+        this.showCreateModal = false;
+        this.loadRoles();
+      })
+      .catch(err => {
+        this.error = err?.message || 'Failed to create role';
+        this.cdr.detectChanges();
+      });
   }
 
   startEdit(role: Role) {
