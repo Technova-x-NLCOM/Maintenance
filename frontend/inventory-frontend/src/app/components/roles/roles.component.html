@@ -5,9 +5,12 @@
       <h2>Roles & Permissions</h2>
       <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
     </div>
-      <div class="page-actions" *ngIf="hasManageRoles()">
-        <button class="primary" (click)="openCreateModal()" [disabled]="savingNewRole">Create Role</button>
-      </div>
+    <div class="page-actions" *ngIf="hasManageRoles()">
+      <button class="primary create-role-trigger" (click)="openCreateModal()" [disabled]="savingNewRole">
+        <span class="button-icon" aria-hidden="true">+</span>
+        <span>Create Role</span>
+      </button>
+    </div>
   </header>
 
   <div *ngIf="loading" class="state state-loading">Loading roles...</div>
@@ -167,29 +170,68 @@
     </div>
   </div>
 
-  <!-- Create Role Modal -->
-  <div class="modal-backdrop" *ngIf="showCreateModal">
-    <div class="modal">
-      <h3>Create New Role</h3>
-      <div class="field">
-        <label>Role Name (machine)</label>
-        <input type="text" [(ngModel)]="newRole.role_name" />
+  <div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreateModal()">
+    <div class="modal create-role-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <p class="eyebrow">New role</p>
+          <h3>Create Role</h3>
+          <p class="modal-subtitle">Add a new role before assigning permissions.</p>
+        </div>
+        <button class="icon-button" type="button" (click)="closeCreateModal()" [disabled]="savingNewRole" aria-label="Close dialog">×</button>
       </div>
-      <div class="field">
-        <label>Display Name</label>
-        <input type="text" [(ngModel)]="newRole.display_name" />
-      </div>
-      <div class="field">
-        <label>Description</label>
-        <textarea [(ngModel)]="newRole.description"></textarea>
-      </div>
-      <div class="field">
-        <label><input type="checkbox" [(ngModel)]="newRole.is_system_role" /> Is system role</label>
-      </div>
-      <div class="actions">
-        <button class="ghost" (click)="closeCreateModal()" [disabled]="savingNewRole">Cancel</button>
-        <button class="primary" (click)="submitCreateRole()" [disabled]="savingNewRole">{{ savingNewRole ? 'Creating...' : 'Create' }}</button>
-      </div>
+
+      <div class="modal-alert" *ngIf="createRoleError">{{ createRoleError }}</div>
+
+      <form class="create-role-form" #createRoleForm="ngForm" (ngSubmit)="submitCreateRole()">
+        <div class="form-grid">
+          <label class="field">
+            <span class="field-label required">Role name</span>
+            <input
+              type="text"
+              name="role_name"
+              [(ngModel)]="newRole.role_name"
+              placeholder="inventory_supervisor"
+              autocomplete="off"
+              required
+              minlength="2"
+              maxlength="60"
+            />
+            <small class="field-help">Use lowercase letters, numbers, and underscores.</small>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Display name</span>
+            <input
+              type="text"
+              name="display_name"
+              [(ngModel)]="newRole.display_name"
+              placeholder="Inventory Supervisor"
+              maxlength="120"
+            />
+            <small class="field-help">This is the friendly label shown in the UI.</small>
+          </label>
+        </div>
+
+        <label class="field field-full">
+          <span class="field-label">Description</span>
+          <textarea
+            name="description"
+            [(ngModel)]="newRole.description"
+            rows="4"
+            placeholder="Describe what this role can do"
+            maxlength="255"
+          ></textarea>
+          <small class="field-help">Optional, but useful for admins reviewing access later.</small>
+        </label>
+
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeCreateModal()" [disabled]="savingNewRole">Cancel</button>
+          <button class="primary" type="submit" [disabled]="!canSubmitCreateRole || createRoleForm.invalid">
+            {{ savingNewRole ? 'Creating...' : 'Create role' }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </div>

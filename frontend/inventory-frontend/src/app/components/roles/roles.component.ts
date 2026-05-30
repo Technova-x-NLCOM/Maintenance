@@ -19,8 +19,9 @@ export class RolesComponent implements OnInit {
   error: string | null = null;
   // create role modal
   showCreateModal = false;
-  newRole: { role_name: string; display_name?: string; description?: string; is_system_role?: boolean } = { role_name: '' };
+  newRole: { role_name: string; display_name?: string; description?: string; is_system_role?: boolean } = { role_name: '', is_system_role: true };
   savingNewRole = false;
+  createRoleError: string | null = null;
   // editing state per role
   editingRoleId: number | null = null;
   editPermissions: { [permissionId: number]: { can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean } } = {};
@@ -56,32 +57,47 @@ export class RolesComponent implements OnInit {
   }
 
   openCreateModal() {
-    this.newRole = { role_name: '' };
+    this.createRoleError = null;
+    this.newRole = { role_name: '', is_system_role: true };
     this.showCreateModal = true;
   }
 
   closeCreateModal() {
     this.showCreateModal = false;
+    this.createRoleError = null;
+  }
+
+  get canSubmitCreateRole(): boolean {
+    return !!this.newRole.role_name?.trim() && !this.savingNewRole;
   }
 
   submitCreateRole() {
-    if (!this.newRole.role_name) {
-      this.error = 'Role name is required';
+    const roleName = this.newRole.role_name.trim();
+    if (!roleName) {
+      this.createRoleError = 'Role name is required';
       return;
     }
-    this.error = null;
+    this.createRoleError = null;
     this.savingNewRole = true;
-    this.rbac.createRole(this.newRole).subscribe({
-      next: (r) => {
+    this.rbac.createRole({
+      ...this.newRole,
+      role_name: roleName,
+      display_name: this.newRole.display_name?.trim() || undefined,
+      description: this.newRole.description?.trim() || undefined,
+    }).subscribe({
+      next: () => {
         this.savingNewRole = false;
         this.showCreateModal = false;
         this.loadRoles();
       },
       error: (err) => {
         this.savingNewRole = false;
-        // Better surface validation and server errors
-        const serverMsg = err?.error?.message || (err?.error ? JSON.stringify(err.error) : null);
-        this.error = serverMsg || err?.message || 'Failed to create role';
+        const details = err?.error;
+        const validationMessage = details?.errors
+          ? Object.values(details.errors).flat().join(' ')
+          : null;
+        const serverMsg = details?.message || validationMessage || (details ? JSON.stringify(details) : null);
+        this.createRoleError = serverMsg || err?.message || 'Failed to create role';
         this.cdr.detectChanges();
       }
     });
