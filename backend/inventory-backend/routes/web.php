@@ -68,6 +68,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('/', [UserManagementController::class, 'index']);
                 Route::post('/', [UserManagementController::class, 'store']);
                 Route::put('{userId}', [UserManagementController::class, 'update']);
+                Route::post('{userId}/resend-invite', [UserManagementController::class, 'resendInvite']);
             });
         });
 
