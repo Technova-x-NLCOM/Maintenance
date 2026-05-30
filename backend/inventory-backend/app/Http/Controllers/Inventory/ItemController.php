@@ -521,8 +521,7 @@ class ItemController extends Controller
     private function normalizeItem(object $item): object
     {
         $item->image_url = $this->resolveImageUrl($item->image_url ?? null);
-        $item->qr_payload = $this->buildItemQrPayload($item);
-        $item->qr_label = $this->buildItemQrLabel($item);
+        // QR payload/label removed per feature removal request.
 
         return $item;
     }
