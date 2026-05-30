@@ -54,6 +54,7 @@
 
     <div class="state state-loading" *ngIf="loading">Loading users…</div>
     <div class="state state-error" *ngIf="!loading && error">{{ error }}</div>
+    <div class="state state-success" *ngIf="!loading && actionMessage">{{ actionMessage }}</div>
 
     <div class="toolbar-search" *ngIf="!loading && !error">
       <div class="search-wrap">
@@ -125,6 +126,19 @@
               </td>
               <td class="col-actions">
                 <div class="action-btns">
+                  <button
+                    type="button"
+                    class="btn-icon btn-resend"
+                    (click)="resendInvite(u)"
+                    [disabled]="resendInviteLoading === u.user_id"
+                    title="Send password reset email"
+                  >
+                    <span class="btn-resend-label">{{ resendInviteLabel(u) }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 7l9 6 9-6" />
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     class="btn-icon btn-edit"
@@ -251,19 +265,34 @@
                 <span class="pill pill-role">{{ roleLabel(u) }}</span>
               </td>
               <td class="col-actions">
-                <button
-                  type="button"
-                  class="btn-icon btn-activate"
-                  (click)="activateUser(u)"
-                  title="Activate user"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="8.5" cy="7" r="4" />
-                    <line x1="20" y1="8" x2="20" y2="14" />
-                    <line x1="23" y1="11" x2="17" y2="11" />
-                  </svg>
-                </button>
+                <div class="action-btns">
+                  <button
+                    type="button"
+                    class="btn-icon btn-resend"
+                    (click)="resendInvite(u)"
+                    [disabled]="resendInviteLoading === u.user_id"
+                    title="Send password reset email"
+                  >
+                    <span class="btn-resend-label">{{ resendInviteLabel(u) }}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 7l9 6 9-6" />
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-icon btn-activate"
+                    (click)="activateUser(u)"
+                    title="Activate user"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="20" y1="8" x2="20" y2="14" />
+                      <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -407,7 +436,7 @@
       </span>
       <div>
         <h2>{{ editingUser ? 'Edit User' : 'Add User' }}</h2>
-        <p class="modal-lead">Fill in the user's details below.</p>
+        <p class="modal-lead">Fill in the user's details below. A secure password reset email will be sent automatically.</p>
       </div>
     </div>
 

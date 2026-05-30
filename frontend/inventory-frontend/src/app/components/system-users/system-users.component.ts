@@ -30,6 +30,7 @@ export class SystemUsersComponent implements OnInit {
   editingUser: SystemUserDto | null = null;
   saving = false;
   modalError: string | null = null;
+  actionMessage: string | null = null;
   fieldErrors: Record<string, string[]> = {};
   showPassword = false;
   showPasswordConfirm = false;
@@ -44,6 +45,8 @@ export class SystemUsersComponent implements OnInit {
   confirmAction: 'deactivate' | 'activate' = 'deactivate';
   confirmTargetUser: SystemUserDto | null = null;
   confirmLoading = false;
+  resendInviteLoading: number | null = null;
+  resendInviteState: Record<number, 'idle' | 'sending' | 'sent' | 'error'> = {};
 
   // Active table pagination
   activePage = 1;
@@ -123,6 +126,7 @@ export class SystemUsersComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = null;
+    this.resendInviteState = {};
     forkJoin({
       users: this.api.list(),
       roles: this.rbac.getRoles(),
@@ -218,6 +222,7 @@ export class SystemUsersComponent implements OnInit {
     this.resetForm();
     this.resetPasswordVisibility();
     this.modalError = null;
+    this.actionMessage = null;
     this.fieldErrors = {};
     this.showModal = true;
   }
@@ -240,6 +245,7 @@ export class SystemUsersComponent implements OnInit {
     };
     this.resetPasswordVisibility();
     this.modalError = null;
+    this.actionMessage = null;
     this.fieldErrors = {};
     this.showModal = true;
   }
@@ -279,6 +285,7 @@ export class SystemUsersComponent implements OnInit {
 
   save(): void {
     this.modalError = null;
+    this.actionMessage = null;
     this.fieldErrors = {};
     this.normalizeUsername();
     this.form.first_name = (this.form.first_name || '').trim();
@@ -301,8 +308,6 @@ export class SystemUsersComponent implements OnInit {
         .create({
           username: this.form.username,
           email: this.form.email,
-          password: undefined as any,
-          password_confirmation: undefined as any,
           first_name: this.form.first_name,
           last_name: this.form.last_name,
           contact_info: contact,
@@ -375,6 +380,36 @@ export class SystemUsersComponent implements OnInit {
         alert(this.httpErr(err, 'Could not update status.'));
       },
     });
+  }
+
+  resendInvite(u: SystemUserDto): void {
+    if (this.resendInviteLoading !== null) return;
+
+    this.resendInviteLoading = u.user_id;
+    this.resendInviteState[u.user_id] = 'sending';
+    this.actionMessage = null;
+    this.api.resendInvite(u.user_id).subscribe({
+      next: (res) => {
+        this.resendInviteLoading = null;
+        this.resendInviteState[u.user_id] = 'sent';
+        this.actionMessage = res.message || 'Password reset email sent.';
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.resendInviteLoading = null;
+        this.resendInviteState[u.user_id] = 'error';
+        this.modalError = this.httpErr(err, 'Could not send password reset email.');
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  resendInviteLabel(u: SystemUserDto): string {
+    const state = this.resendInviteState[u.user_id] || 'idle';
+    if (state === 'sending') return 'Sending...';
+    if (state === 'sent') return 'Sent';
+    if (state === 'error') return 'Retry Reset';
+    return 'Reset Password';
   }
 
   cancelConfirm(): void {

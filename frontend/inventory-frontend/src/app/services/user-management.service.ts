@@ -21,8 +21,6 @@ export interface SystemUserDto {
 export interface CreateUserPayload {
   username: string;
   email: string;
-  password: string;
-  password_confirmation: string;
   first_name: string;
   last_name: string;
   contact_info?: string | null;
@@ -40,6 +38,10 @@ export interface UpdateUserPayload {
   password?: string;
   password_confirmation?: string;
   is_active?: boolean;
+}
+
+export interface UserInviteResponse {
+  message: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -62,7 +64,7 @@ export class UserManagementService {
   }
 
   create(payload: CreateUserPayload): Observable<{ message: string; user: SystemUserDto }> {
-    return this.http.post<{ message: string; user: SystemUserDto }>(this.baseUrl, payload, {
+    return this.http.post<{ message: string; invite_sent?: boolean; user: SystemUserDto }>(this.baseUrl, payload, {
       headers: this.headers(),
     });
   }
@@ -72,6 +74,12 @@ export class UserManagementService {
     payload: UpdateUserPayload
   ): Observable<{ message: string; user: SystemUserDto }> {
     return this.http.put<{ message: string; user: SystemUserDto }>(`${this.baseUrl}/${userId}`, payload, {
+      headers: this.headers(),
+    });
+  }
+
+  resendInvite(userId: number): Observable<UserInviteResponse> {
+    return this.http.post<UserInviteResponse>(`${this.baseUrl}/${userId}/resend-invite`, {}, {
       headers: this.headers(),
     });
   }

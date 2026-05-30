@@ -265,6 +265,14 @@ h1 {
   color: #b91c1c;
 }
 
+.state-success {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
 .table-wrap {
   border: 1px solid $border;
   border-radius: 10px;
@@ -430,6 +438,20 @@ h1 {
   }
 }
 
+.btn-resend {
+  width: auto;
+  min-width: 132px;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.btn-resend-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .btn-edit {
   border-color: rgba(29, 78, 216, 0.35);
   color: $primary;
@@ -456,6 +478,17 @@ h1 {
 
   &:hover:not(:disabled) {
     background: #1e3a8a;
+  }
+}
+
+.btn-resend {
+  border-color: #99f6e4;
+  background: #ecfeff;
+  color: #0f766e;
+
+  &:hover:not(:disabled) {
+    background: #cffafe;
+    border-color: #5eead4;
   }
 }
 
