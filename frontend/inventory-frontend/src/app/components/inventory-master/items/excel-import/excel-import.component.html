@@ -1,0 +1,329 @@
+<div
+  class="import-overlay"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'import-modal-title'"
+  (click)="bounceModal('import-modal')"
+>
+  <div class="import-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="import-header">
+      <h2 class="import-title" id="import-modal-title">Import from Excel / CSV</h2>
+      <button
+        class="import-close"
+        type="button"
+        (click)="close()"
+        aria-label="Close import dialog"
+        [disabled]="importing"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="import-body">
+
+      <!-- Step 1: Upload -->
+      <ng-container *ngIf="step === 'upload'">
+        <div class="step-intro">
+          <p class="step-desc">
+            Upload an <strong>.xlsx</strong>, <strong>.xls</strong>, or <strong>.csv</strong>
+            file. The first row must be a header row matching the expected columns.
+          </p>
+        </div>
+
+        <!-- Category override — shown FIRST so user picks before uploading -->
+        <div *ngIf="categoryOptions.length" class="category-select-wrap">
+          <label class="category-select-label" for="import-category-select">
+            <span class="category-select-title">Category <em>*</em></span>
+            <span class="category-select-hint">All imported items will be assigned to this category.</span>
+          </label>
+          <select
+            id="import-category-select"
+            class="category-select"
+            [(ngModel)]="selectedCategoryId"
+          >
+            <option [ngValue]="null" disabled>— Select a category —</option>
+            <option *ngFor="let cat of categoryOptions" [ngValue]="cat.category_id">
+              {{ cat.category_name }}
+            </option>
+          </select>
+          <div *ngIf="categorySelectError" class="import-alert import-alert--error" style="margin-top:8px;margin-bottom:0">
+            {{ categorySelectError }}
+          </div>
+        </div>
+
+        <div
+          class="drop-zone"
+          [class.drag-over]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="fileInput.click()"
+        >
+          <input
+            #fileInput
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            style="display:none"
+            (change)="onFileSelected($event)"
+          />
+          <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="12" y1="18" x2="12" y2="12" />
+            <line x1="9" y1="15" x2="12" y2="12" />
+            <line x1="15" y1="15" x2="12" y2="12" />
+          </svg>
+          <p class="drop-text">Drag & drop your file here</p>
+          <p class="drop-or">OR</p>
+          <button
+            class="btn-browse"
+            type="button"
+            (click)="$event.stopPropagation(); fileInput.click()"
+          >
+            Browse Files
+          </button>
+          <p class="drop-hint">Supports .xlsx, .xls, and .csv</p>
+        </div>
+
+        <div *ngIf="parseError" class="import-alert import-alert--error">
+          {{ parseError }}
+        </div>
+
+        <!-- Required columns hint -->
+        <div class="columns-hint">
+          <strong>Required columns:</strong>
+          <span *ngFor="let col of columns; let last = last">
+            <em *ngIf="col.required">{{ col.label }}</em
+            ><span *ngIf="!col.required">{{ col.label }}</span
+            ><span *ngIf="!last">, </span>
+          </span>
+        </div>
+      </ng-container>
+
+      <!-- Step 2: Preview -->
+      <ng-container *ngIf="step === 'preview'">
+        <div *ngIf="categoryOptions.length && selectedCategoryId" class="selected-category-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+            <line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+          All items will be imported under: <strong>{{ selectedCategoryName }}</strong>
+        </div>
+
+        <div class="preview-summary">
+          <span class="summary-chip summary-chip--total">{{ rows.length }} rows found</span>
+          <span class="summary-chip summary-chip--valid">{{ validRows.length }} valid</span>
+          <span class="summary-chip summary-chip--error" *ngIf="invalidRows.length">
+            {{ invalidRows.length }} with errors
+          </span>
+        </div>
+
+        <div class="preview-table-wrap">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th class="row-num-col">#</th>
+                <th *ngFor="let col of columns">{{ col.label }}</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let row of rows"
+                [class.row-error]="!!row.error"
+                [class.row-valid]="!row.error"
+              >
+                <td class="row-num-col">{{ row.rowNumber }}</td>
+                <td *ngFor="let col of columns">{{ row.data[col.key] ?? '—' }}</td>
+                <td>
+                  <span class="status-chip status-chip--ok" *ngIf="!row.error">Valid</span>
+                  <span class="status-chip status-chip--err" *ngIf="row.error" [title]="row.error">
+                    {{ row.error }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="invalidRows.length && validRows.length" class="import-alert import-alert--warn">
+          Rows with errors will be skipped. Only {{ validRows.length }} valid row(s) will be imported.
+        </div>
+        <div *ngIf="!validRows.length" class="import-alert import-alert--error">
+          No valid rows to import. Please fix the file and try again.
+        </div>
+      </ng-container>
+
+      <!-- Step 3: Importing -->
+      <ng-container *ngIf="step === 'importing'">
+        <div class="progress-wrap">
+          <p class="progress-label">Importing {{ importedCount }} of {{ validRows.length }}...</p>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" [style.width.%]="progressPercent"></div>
+          </div>
+          <p class="progress-sub">Please wait, do not close this window.</p>
+        </div>
+      </ng-container>
+
+      <!-- Step 4: Results -->
+      <ng-container *ngIf="step === 'results'">
+        <div class="results-summary">
+          <div class="result-stat result-stat--success">
+            <strong>{{ successCount }}</strong>
+            <span>Imported</span>
+          </div>
+          <div class="result-stat result-stat--error">
+            <strong>{{ failCount }}</strong>
+            <span>Failed</span>
+          </div>
+        </div>
+
+        <div class="results-table-wrap" *ngIf="results.length">
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th class="row-num-col">Row</th>
+                <th>Status</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let r of results"
+                [class.row-valid]="r.status === 'success'"
+                [class.row-error]="r.status === 'error'"
+              >
+                <td class="row-num-col">{{ r.rowNumber }}</td>
+                <td>
+                  <span class="status-chip status-chip--ok" *ngIf="r.status === 'success'">Success</span>
+                  <span class="status-chip status-chip--err" *ngIf="r.status === 'error'">Failed</span>
+                </td>
+                <td>{{ r.message }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+
+    </div>
+    <!-- /.import-body -->
+
+    <!-- Conflict resolution overlay — fixed over the full screen, not clipped by import modal -->
+    <div class="conflict-overlay" *ngIf="activeConflict" (click)="$event.stopPropagation()">
+      <div class="conflict-modal" (click)="$event.stopPropagation()">
+        <div class="conflict-header">
+          <h3 class="conflict-title">Import Conflict</h3>
+          <button
+            class="conflict-close"
+            type="button"
+            (click)="dismissConflict()"
+            aria-label="Skip this conflict"
+            title="Skip — keep existing"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="conflict-body">
+          <p class="conflict-desc">
+            This item already exists in the system. Choose which version to keep.
+          </p>
+
+          <div class="conflict-cards">
+            <!-- Existing -->
+            <label class="conflict-card" [class.conflict-card--selected]="conflictChoice === 'keep'">
+              <div class="conflict-card-header">
+                <input type="radio" name="conflict" value="keep" [(ngModel)]="conflictChoice" />
+                <span>Keep existing</span>
+              </div>
+              <div class="conflict-fields">
+                <div class="conflict-field" *ngFor="let f of conflictExistingFields">
+                  <span class="conflict-field-label">{{ f.label }}</span>
+                  <span class="conflict-field-value conflict-field-value--existing">{{ f.value || '—' }}</span>
+                </div>
+              </div>
+            </label>
+
+            <!-- Incoming -->
+            <label class="conflict-card" [class.conflict-card--selected]="conflictChoice === 'replace'">
+              <div class="conflict-card-header">
+                <input type="radio" name="conflict" value="replace" [(ngModel)]="conflictChoice" />
+                <span>Use file values</span>
+              </div>
+              <div class="conflict-fields">
+                <div class="conflict-field" *ngFor="let f of conflictIncomingFields">
+                  <span class="conflict-field-label">{{ f.label }}</span>
+                  <span class="conflict-field-value conflict-field-value--incoming">{{ f.value || '—' }}</span>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Apply to all remaining -->
+          <div class="conflict-bulk">
+            <p class="conflict-bulk-label">Apply to ALL remaining conflicts:</p>
+            <div class="conflict-bulk-options">
+              <label class="conflict-bulk-btn" [class.conflict-bulk-btn--selected]="bulkConflictChoice === 'keep'">
+                <input type="radio" name="bulk" value="keep" [(ngModel)]="bulkConflictChoice" />
+                Keep ALL existing data
+              </label>
+              <label class="conflict-bulk-btn conflict-bulk-btn--replace" [class.conflict-bulk-btn--selected]="bulkConflictChoice === 'replace'">
+                <input type="radio" name="bulk" value="replace" [(ngModel)]="bulkConflictChoice" />
+                Replace ALL with file values
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="conflict-footer">
+          <button class="btn-primary" type="button" (click)="resolveConflict()">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="import-footer">
+      <ng-container *ngIf="step === 'upload'">
+        <button class="btn-cancel" type="button" (click)="close()">Cancel</button>
+        <button
+          *ngIf="rows.length && categoryOptions.length"
+          class="btn-primary"
+          type="button"
+          (click)="proceedToPreview()"
+        >
+          Preview {{ rows.length }} row(s)
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="step === 'preview'">
+        <button class="btn-cancel" type="button" (click)="resetToUpload()">Back</button>
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="!validRows.length"
+          (click)="startImport()"
+        >
+          Import {{ validRows.length }} row(s)
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="step === 'importing'">
+        <button class="btn-cancel" type="button" disabled>Cancel</button>
+      </ng-container>
+
+      <ng-container *ngIf="step === 'results'">
+        <button class="btn-cancel" type="button" (click)="resetToUpload()">Import more</button>
+        <button class="btn-primary" type="button" (click)="close()">Done</button>
+      </ng-container>
+    </div>
+
+  </div>
+</div>
