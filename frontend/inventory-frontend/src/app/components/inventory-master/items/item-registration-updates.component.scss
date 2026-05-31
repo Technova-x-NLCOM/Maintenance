@@ -100,6 +100,37 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 }
 
+.btn-import {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid rgba(5, 150, 105, 0.4);
+  border-radius: $radius-sm;
+  background: rgba(5, 150, 105, 0.08);
+  color: #047857;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba(5, 150, 105, 0.14);
+    border-color: $success;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .btn-cancel {
   padding: 10px 20px;
   border: 1.5px solid #d1d5db;
