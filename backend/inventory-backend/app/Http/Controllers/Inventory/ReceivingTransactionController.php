@@ -81,6 +81,7 @@ class ReceivingTransactionController extends Controller
         }
 
         $data = $request->validate([
+            'operation_type_id' => ['nullable', 'integer', 'exists:operation_types,operation_type_id'],
             'item_id' => ['required', 'integer', 'exists:items,item_id'],
             'location_id' => ['nullable', 'integer'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -98,7 +99,8 @@ class ReceivingTransactionController extends Controller
         $manufacturedDateInput = $data['manufactured_date'] ?? null;
         $supplierInfo = $this->nullIfEmpty($data['supplier_info'] ?? null);
         $batchValue = array_key_exists('batch_value', $data) ? $data['batch_value'] : null;
-        $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? 'Stock Received';
+        $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'IN');
+        $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Received';
         $notes = $this->nullIfEmpty($data['notes'] ?? null);
         $locationId = $this->resolveLocationId($request);
 
@@ -110,8 +112,10 @@ class ReceivingTransactionController extends Controller
         }
 
         try {
-            $line = DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes) {
+            $line = DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes, $operationType) {
                 $data['location_id'] = $locationId;
+                $data['operation_type_id'] = $operationType?->operation_type_id;
+                $data['reason'] = $reason;
                 return $this->createReceivingLine($data);
             });
 
@@ -140,6 +144,7 @@ class ReceivingTransactionController extends Controller
     private function createReceivingBulk(Request $request)
     {
         $data = $request->validate([
+            'operation_type_id' => ['nullable', 'integer', 'exists:operation_types,operation_type_id'],
             'batch_number' => ['required', 'string', 'max:100'],
             'location_id' => ['nullable', 'integer'],
             'items' => ['required', 'array', 'min:1'],
@@ -152,6 +157,7 @@ class ReceivingTransactionController extends Controller
             'items.*.batch_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.reason' => ['nullable', 'string', 'max:255'],
             'items.*.notes' => ['nullable', 'string'],
+            'items.*.location_id' => ['nullable', 'integer'],
         ]);
 
         foreach ($data['items'] as $index => $line) {
@@ -178,6 +184,7 @@ class ReceivingTransactionController extends Controller
 
         $reference = 'RCV-LIST-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
         $locationId = $this->resolveLocationId($request);
+    $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'IN');
 
         if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
             return response()->json([
@@ -187,13 +194,20 @@ class ReceivingTransactionController extends Controller
         }
 
         try {
-            $summary = DB::transaction(function () use ($data, $reference, $locationId) {
+            $summary = DB::transaction(function () use ($data, $reference, $locationId, $operationType) {
                 $receivedLines = [];
                 $totalReceived = 0;
 
                 foreach ($data['items'] as $lineData) {
                     $lineData['batch_number'] = $data['batch_number'];
-                    $lineData['location_id'] = $locationId;
+                    // Prefer per-item provided location_id; fall back to resolved location
+                    if (array_key_exists('location_id', $lineData) && $lineData['location_id'] !== null && $lineData['location_id'] !== '') {
+                        $lineData['location_id'] = (int) $lineData['location_id'];
+                    } else {
+                        $lineData['location_id'] = $locationId;
+                    }
+                    $lineData['operation_type_id'] = $operationType?->operation_type_id;
+                    $lineData['reason'] = $this->nullIfEmpty($lineData['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Received';
                     $createdLine = $this->createReceivingLine($lineData, $reference);
                     $receivedLines[] = $createdLine;
                     $totalReceived += (int) $createdLine['quantity'];
@@ -285,6 +299,7 @@ class ReceivingTransactionController extends Controller
         $transactionInsert = [
             'item_id' => (int) $data['item_id'],
             'batch_id' => $batchId,
+            'operation_type_id' => !empty($data['operation_type_id']) ? (int) $data['operation_type_id'] : null,
             'transaction_type' => 'IN',
             'quantity' => (int) $data['quantity'],
             'reference_number' => $reference,
@@ -341,6 +356,29 @@ class ReceivingTransactionController extends Controller
 
         $trimmed = trim($value);
         return $trimmed === '' ? null : $trimmed;
+    }
+    private function resolveOperationType(mixed $incoming, string $expectedDirection): ?object
+    {
+        if ($incoming === null || $incoming === '') {
+            return null;
+        }
+
+        $operationType = DB::table('operation_types')
+            ->select('operation_type_id', 'operation_name', 'operation_direction', 'is_active')
+            ->where('operation_type_id', (int) $incoming)
+            ->first();
+
+        if (!$operationType) {
+            return null;
+        }
+
+        if (!$operationType->is_active || strtoupper((string) $operationType->operation_direction) !== strtoupper($expectedDirection)) {
+            throw ValidationException::withMessages([
+                'operation_type_id' => ['The selected operation type is not valid for this transaction.'],
+            ]);
+        }
+
+        return $operationType;
     }
 
     private function resolveLocationId(Request $request): ?int

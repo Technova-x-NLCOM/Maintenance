@@ -77,6 +77,7 @@ class IssuanceTransactionController extends Controller
     public function createIssuance(Request $request)
     {
         $data = $request->validate([
+            'operation_type_id' => ['nullable', 'integer', 'exists:operation_types,operation_type_id'],
             'destination' => ['required', 'string', 'max:255'],
             'reason' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
@@ -89,6 +90,8 @@ class IssuanceTransactionController extends Controller
 
         $fromLocationId = $this->resolveLocationId($data['from_location_id'] ?? null);
         $toLocationId = $this->resolveLocationId($data['to_location_id'] ?? null) ?? $fromLocationId;
+    $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'OUT');
+    $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Issuance';
 
         if (Schema::hasColumn('inventory_transactions', 'from_location_id') && $fromLocationId === null) {
             return response()->json([
@@ -151,7 +154,7 @@ class IssuanceTransactionController extends Controller
         $reference = 'ISS-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
 
         try {
-            $summary = DB::transaction(function () use ($data, $performedBy, $reference, $fromLocationId, $toLocationId) {
+            $summary = DB::transaction(function () use ($data, $performedBy, $reference, $fromLocationId, $toLocationId, $operationType, $reason) {
                 $allocationSummary = [];
                 $totalIssued = 0;
 
@@ -195,11 +198,12 @@ class IssuanceTransactionController extends Controller
                         $transactionInsert = [
                             'item_id' => $itemId,
                             'batch_id' => $batch->batch_id,
+                            'operation_type_id' => $operationType?->operation_type_id,
                             'transaction_type' => 'OUT',
                             'quantity' => $deduct,
                             'reference_number' => $reference,
                             'transaction_date' => now(),
-                            'reason' => $data['reason'] ?? 'Stock Issuance',
+                            'reason' => $reason,
                             'notes' => $data['notes'] ?? null,
                             'destination' => $data['destination'],
                             'performed_by' => $performedBy,
@@ -261,6 +265,40 @@ class IssuanceTransactionController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    private function nullIfEmpty(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $trimmed = trim($value);
+        return $trimmed === '' ? null : $trimmed;
+    }
+
+    private function resolveOperationType(mixed $incoming, string $expectedDirection): ?object
+    {
+        if ($incoming === null || $incoming === '') {
+            return null;
+        }
+
+        $operationType = DB::table('operation_types')
+            ->select('operation_type_id', 'operation_name', 'operation_direction', 'is_active')
+            ->where('operation_type_id', (int) $incoming)
+            ->first();
+
+        if (!$operationType) {
+            return null;
+        }
+
+        if (!$operationType->is_active || strtoupper((string) $operationType->operation_direction) !== strtoupper($expectedDirection)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'operation_type_id' => ['The selected operation type is not valid for this transaction.'],
+            ]);
+        }
+
+        return $operationType;
     }
 
     private function resolveLocationId(mixed $incoming): ?int
