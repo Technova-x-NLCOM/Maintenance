@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -25,6 +25,9 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   assigningItem = false;
   deletingCategoryId: number | null = null;
   removingItemId: number | null = null;
+  showDeleteConfirm = false;
+  deleteTarget: InventoryCategory | null = null;
+  deleteLoading = false;
   categories: InventoryCategory[] = [];
   parentOptions: InventoryCategory[] = [];
   categoryItems: CategoryItem[] = [];
@@ -78,6 +81,13 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCategories();
+  }
+
+  @HostListener('document:keydown.escape')
+  handleEscapeKey(): void {
+    if (this.showDeleteConfirm && !this.deleteLoading) {
+      this.cancelDeleteConfirm();
+    }
   }
 
   ngOnDestroy(): void {
@@ -330,23 +340,38 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteCategory(category: InventoryCategory): void {
-    const confirmed = confirm(`Delete category "${category.category_name}"?`);
-    if (!confirmed) {
-      return;
-    }
+  openDeleteConfirm(category: InventoryCategory): void {
+    this.deleteTarget = category;
+    this.showDeleteConfirm = true;
+    this.deleteLoading = false;
+    this.cdr.detectChanges();
+  }
 
+  cancelDeleteConfirm(): void {
+    if (this.deleteLoading) return;
+    this.showDeleteConfirm = false;
+    this.deleteTarget = null;
+    this.cdr.detectChanges();
+  }
+
+  confirmDelete(): void {
+    if (!this.deleteTarget || this.deleteLoading) return;
+    const target = this.deleteTarget;
+    this.deleteLoading = true;
+    this.deletingCategoryId = target.category_id;
     this.errorMessage = '';
-    this.successMessage = '';
-    this.deletingCategoryId = category.category_id;
 
-    this.categoryService.delete(category.category_id).subscribe({
+    this.categoryService.delete(target.category_id).subscribe({
       next: (response) => {
+        this.deleteLoading = false;
         this.deletingCategoryId = null;
+        this.showDeleteConfirm = false;
+        this.deleteTarget = null;
         this.toast.success(response.message);
         this.loadCategories();
       },
       error: (err) => {
+        this.deleteLoading = false;
         this.deletingCategoryId = null;
         this.toast.error(this.extractError(err));
         this.cdr.detectChanges();

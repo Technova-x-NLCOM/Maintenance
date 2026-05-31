@@ -245,6 +245,90 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   max-height: calc(100vh - 48px);
 }
 
+// ── Delete Confirmation Modal ──────────────────────────────
+.modal-confirm {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.22),
+    0 4px 16px rgba(2, 6, 23, 0.08);
+  max-width: 420px;
+  width: 100%;
+  padding: 28px;
+  text-align: center;
+  animation: modalIn 0.22s ease;
+}
+
+.confirm-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+
+  svg {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.confirm-icon-danger {
+  background: #fef2f2;
+  color: $danger;
+
+  svg {
+    stroke: $danger;
+  }
+}
+
+.confirm-title {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.confirm-body {
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  color: $text-muted;
+  line-height: 1.55;
+
+  strong {
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+.confirm-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-danger {
+  padding: 10px 22px;
+  border: none;
+  border-radius: $radius-sm;
+  background: $danger;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 // Non-modal panel (page inline)
 .panel {
   background: white;

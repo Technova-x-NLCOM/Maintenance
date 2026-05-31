@@ -420,7 +420,10 @@ export class InventoryItemService {
   }
 
   update(itemId: number, payload: FormData): Observable<ItemSingleResponse> {
-    return this.http.put<ItemSingleResponse>(`${this.baseUrl}/${itemId}`, payload, {
+    // Laravel does not parse multipart/form-data on PUT requests.
+    // Use POST with _method=PUT spoofing so file uploads work correctly.
+    payload.append('_method', 'PUT');
+    return this.http.post<ItemSingleResponse>(`${this.baseUrl}/${itemId}`, payload, {
       headers: this.getHeaders(false)
     });
   }

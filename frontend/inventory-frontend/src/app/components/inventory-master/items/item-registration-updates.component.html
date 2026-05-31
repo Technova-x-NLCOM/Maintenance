@@ -131,11 +131,11 @@
           </div>
 
           <label>
-            <span>Unit of measure</span>
+            <span>Particular</span>
             <input
               type="text"
               [(ngModel)]="formData.measurement_unit"
-              placeholder="e.g. pieces, kg, box, liter"
+              placeholder="e.g. pcs, kg, box, liter"
               maxlength="30"
             />
           </label>
@@ -283,6 +283,15 @@
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           Add new item
+        </button>
+
+        <button class="btn-import" type="button" (click)="openImportModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Import File
         </button>
         
         <div class="view-toggle" role="group" aria-label="Item view mode">
@@ -546,3 +555,15 @@
     </div>
   </section>
 
+  <!-- Excel Import Modal -->
+  <app-excel-import
+    #importModal
+    *ngIf="showImportModal"
+    [columns]="importColumns"
+    [categoryOptions]="importCategoryOptions"
+    templateName="items-import-template"
+    (closed)="onImportClosed($event)"
+    (importRow)="onImportRow($event)"
+  ></app-excel-import>
+
+</div>

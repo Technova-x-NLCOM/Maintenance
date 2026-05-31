@@ -8,6 +8,38 @@
 
   <app-toast></app-toast>
 
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
+    <div
+      class="modal-confirm"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-category-title"
+    >
+      <div class="confirm-icon-wrap confirm-icon-danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <line x1="12" y1="7" x2="12" y2="13" />
+          <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+      <h2 class="confirm-title" id="delete-category-title">Confirm Deletion</h2>
+      <p class="confirm-body">
+        Are you sure you want to delete this category
+        <strong *ngIf="deleteTarget">"{{ deleteTarget.category_name }}"</strong>?
+      </p>
+      <div class="confirm-footer">
+        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">
+          Cancel
+        </button>
+        <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleteLoading">
+          {{ deleteLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <section class="panel list-panel">
     <div class="list-toolbar">
       <h2 class="panel-title">
@@ -111,7 +143,7 @@
                 class="btn-sm btn-delete"
                 type="button"
                 [disabled]="deletingCategoryId === category.category_id"
-                (click)="deleteCategory(category)"
+                (click)="openDeleteConfirm(category)"
               >
                 {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
               </button>
@@ -150,7 +182,7 @@
             class="btn-sm btn-delete"
             type="button"
             [disabled]="deletingCategoryId === category.category_id"
-            (click)="deleteCategory(category)"
+            (click)="openDeleteConfirm(category)"
           >
             {{ deletingCategoryId === category.category_id ? 'Deleting...' : 'Delete' }}
           </button>
