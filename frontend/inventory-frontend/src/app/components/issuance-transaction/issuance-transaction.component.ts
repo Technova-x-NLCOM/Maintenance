@@ -13,6 +13,15 @@ import {
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
 
+interface OperationTypeOption {
+  operation_type_id: number;
+  operation_name: string;
+  operation_direction: 'IN' | 'OUT';
+  description: string | null;
+  is_active: boolean;
+  display_name?: string;
+}
+
 interface IssuanceCartLine {
   item_id: number;
   item_code: string;
@@ -33,6 +42,7 @@ interface IssuanceCartLine {
 export class IssuanceTransactionComponent implements OnInit {
   items: IssuanceItem[] = [];
   locations: LocationOption[] = [];
+  operationTypes: OperationTypeOption[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
 
   currentPage = 1;
@@ -48,6 +58,8 @@ export class IssuanceTransactionComponent implements OnInit {
 
   selectedItem: IssuanceItem | null = null;
   transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
+  selectedOperationTypeId: number | null = null;
+  selectedOperationTypeLabel = 'Select operation type';
 
   // Mobile FAB state for issuance list sidebar
   isIssuanceListSidebarOpen = false;
@@ -121,6 +133,8 @@ export class IssuanceTransactionComponent implements OnInit {
   openCartModal(item: IssuanceItem): void {
     this.selectItem(item);
     this.transactionMode = 'issuance';
+    this.applyDefaultOperationType();
+    this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
     this.adjustConfirmExpiration = false;
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
@@ -155,8 +169,48 @@ export class IssuanceTransactionComponent implements OnInit {
   ngOnInit(): void {
     this.updateMobileView();
     this.loadLocationOptions();
+    this.loadOperationTypeOptions();
     this.loadItems(1);
     this.loadCategoryOptions();
+  }
+
+  loadOperationTypeOptions(): void {
+    this.itemService.getOperationTypeOptions('OUT').subscribe({
+      next: (response) => {
+        this.operationTypes = (response.data || []).filter((option) => option.is_active);
+        this.applyDefaultOperationType();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.operationTypes = [];
+        this.selectedOperationTypeId = null;
+        this.selectedOperationTypeLabel = 'Select operation type';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private applyDefaultOperationType(): void {
+    if (!this.operationTypes.length) {
+      this.selectedOperationTypeId = null;
+      this.selectedOperationTypeLabel = 'Select operation type';
+      return;
+    }
+
+    if (this.selectedOperationTypeId === null || !this.operationTypes.some((option) => option.operation_type_id === this.selectedOperationTypeId)) {
+      this.selectedOperationTypeId = this.operationTypes[0].operation_type_id;
+    }
+
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+  }
+
+  onOperationTypeChange(): void {
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+    if (selected?.operation_name && this.transactionMode === 'issuance') {
+      this.reason = selected.operation_name;
+    }
   }
 
   loadLocationOptions(): void {
@@ -312,6 +366,10 @@ export class IssuanceTransactionComponent implements OnInit {
     if (this.locations.length > 0 && !this.selectedLocationId) {
       return false;
     }
+
+    if (!this.selectedOperationTypeId) {
+      return false;
+    }
     
     if (!this.destination.trim() || this.destination.length > 150) {
       return false;
@@ -374,10 +432,11 @@ export class IssuanceTransactionComponent implements OnInit {
 
     this.itemService
       .createIssuanceTransaction({
+        operation_type_id: this.selectedOperationTypeId,
         destination: this.destination.trim(),
         from_location_id: this.selectedLocationId,
         to_location_id: this.selectedLocationId,
-        reason: this.reason.trim() || 'Stock Issuance',
+        reason: this.reason.trim() || this.selectedOperationTypeLabel || 'Stock Issuance',
         notes: this.notes.trim() || '',
         items: this.cartLines.map((line) => ({ item_id: line.item_id, quantity: line.quantity }))
       })
@@ -388,7 +447,8 @@ export class IssuanceTransactionComponent implements OnInit {
           this.selectedItem = null;
           this.issueQuantity = 1;
           this.destination = '';
-          this.reason = 'Stock Issuance';
+          this.applyDefaultOperationType();
+          this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
           this.notes = '';
           this.showListModal = false;
           this.loadItems(this.currentPage);
