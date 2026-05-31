@@ -1,59 +1,77 @@
-<div class="audit-container">
-  <div class="audit-header">
-    <h1 class="audit-title">Activity Timeline</h1>
-    <p class="audit-subtitle">Clear, easy-to-read history of important system changes.</p>
+<div class="audit-page">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-text">
+      <h1>Activity Timeline</h1>
+      <p class="subtitle">A clear, searchable history of all system changes and actions.</p>
+    </div>
   </div>
 
-  <div class="loading-state" *ngIf="loading">
+  <!-- Loading -->
+  <div class="state-card state-loading" *ngIf="loading">
     <div class="spinner"></div>
-    <p>Loading recent activity...</p>
+    <p>Loading activity...</p>
   </div>
 
-  <div class="error-state" *ngIf="error && !loading">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-    <p>{{ error }}</p>
-    <button class="retry-btn" (click)="loadLogs()">Try Again</button>
+  <!-- Error -->
+  <div class="state-card state-error" *ngIf="error && !loading">
+    <div class="state-icon error-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    </div>
+    <p class="state-message">{{ error }}</p>
+    <button class="btn-retry" (click)="loadLogs()">Try Again</button>
   </div>
 
+  <!-- Main Content -->
   <div class="audit-content" *ngIf="!loading && !error">
+
+    <!-- Filter Panel -->
     <div class="filter-panel">
-      <div class="filter-row-inline">
-        <div class="search-bar">
-        <div class="search-input-group">
-          <svg class="search-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="filter-row">
+
+        <!-- Search -->
+        <div class="search-wrap">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
           </svg>
           <input
             type="text"
             class="search-input"
-            placeholder="Search by person, activity, or item"
+            placeholder="Search by person, action, or item…"
             [(ngModel)]="search"
             (keyup.enter)="onSearch()"
             aria-label="Search activity timeline"
           />
-          <button *ngIf="search" class="clear-btn" (click)="clearSearch()" title="Clear search">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
+          <button *ngIf="search" class="btn-clear-input" (click)="clearSearch()" title="Clear search" type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
-        </div>
 
-        <div class="filter-field">
-          <select id="filter-sort" [(ngModel)]="sortOrder" (change)="currentPage = 1; loadLogs()">
+        <!-- Sort -->
+        <div class="filter-select-wrap">
+          <svg class="select-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/>
+          </svg>
+          <select [(ngModel)]="sortOrder" (change)="currentPage = 1; loadLogs()" aria-label="Sort order">
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
           </select>
         </div>
 
-        <div class="filter-field">
-          <select id="filter-action" [(ngModel)]="filterActionType">
+        <!-- Action filter -->
+        <div class="filter-select-wrap">
+          <svg class="select-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <select [(ngModel)]="filterActionType" aria-label="Filter by action">
             <option value="ALL">All Actions</option>
             <option value="ADD">Created</option>
             <option value="UPDATE">Edited</option>
@@ -61,8 +79,12 @@
           </select>
         </div>
 
-        <div class="filter-field">
-          <select id="filter-module" [(ngModel)]="filterModule">
+        <!-- Module filter -->
+        <div class="filter-select-wrap">
+          <svg class="select-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <select [(ngModel)]="filterModule" aria-label="Filter by module">
             <option value="ALL">All Modules</option>
             <option value="Category">Category</option>
             <option value="Inventory">Inventory</option>
@@ -70,22 +92,27 @@
           </select>
         </div>
 
-        <button class="clear-filters-btn" (click)="clearAdvancedFilters()" type="button">Clear filters</button>
+        <button class="btn-clear-filters" (click)="clearAdvancedFilters()" type="button">
+          Reset
+        </button>
       </div>
     </div>
 
+    <!-- Stats Bar -->
     <div class="stats-bar">
-      <div class="stat">
-        <span class="stat-label">Total activity entries</span>
+      <div class="stat-item">
+        <span class="stat-label">Total entries</span>
         <span class="stat-value">{{ total }}</span>
       </div>
-      <div class="stat">
-        <span class="stat-label">Matching on this page</span>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <span class="stat-label">On this page</span>
         <span class="stat-value">{{ filteredLogs.length }}</span>
       </div>
-      <div class="stat">
-        <label class="stat-label" for="per-page">Entries per page</label>
-        <select id="per-page" [(ngModel)]="perPage" (change)="currentPage = 1; loadLogs()" class="stat-select">
+      <div class="stat-divider"></div>
+      <div class="stat-item stat-item--select">
+        <label class="stat-label" for="per-page">Per page</label>
+        <select id="per-page" [(ngModel)]="perPage" (change)="currentPage = 1; loadLogs()" class="per-page-select">
           <option [value]="10">10</option>
           <option [value]="25">25</option>
           <option [value]="50">50</option>
@@ -94,130 +121,163 @@
       </div>
     </div>
 
-    <div class="empty-state" *ngIf="!hasAnyLogs">
-      <h3>No activity found</h3>
-      <p>There are no activity records that match your search and filters.</p>
+    <!-- Empty State -->
+    <div class="state-card state-empty" *ngIf="!hasAnyLogs">
+      <div class="state-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </div>
+      <p class="state-message">No activity found</p>
+      <p class="state-hint">Try adjusting your search or filters.</p>
     </div>
 
-    <div class="activity-feed" *ngIf="hasAnyLogs">
-      <article class="activity-card card shadow-sm border-0 mb-3" *ngFor="let log of filteredLogs" [class.expanded]="expandedLogId === log.log_id" [attr.aria-label]="getActivitySentence(log)">
-          <div class="timeline-icon" aria-hidden="true">
-            <ng-container [ngSwitch]="getModuleIcon(log)">
-              <svg *ngSwitchCase="'folder'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              </svg>
-              <svg *ngSwitchCase="'box'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="m21 8-9-5-9 5 9 5 9-5Z" />
-                <path d="m3 8 9 5 9-5" />
-                <path d="M12 13v8" />
-              </svg>
-              <svg *ngSwitchCase="'users'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <svg *ngSwitchDefault width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </ng-container>
+    <!-- Timeline Feed -->
+    <div class="timeline" *ngIf="hasAnyLogs">
+      <div class="timeline-track"></div>
+
+      <article
+        class="log-card"
+        *ngFor="let log of filteredLogs"
+        [class.log-card--expanded]="expandedLogId === log.log_id"
+        [attr.aria-label]="getActivitySentence(log)"
+      >
+        <!-- Timeline dot -->
+        <div class="log-dot" [ngClass]="'dot-' + getModuleIcon(log)" aria-hidden="true">
+          <ng-container [ngSwitch]="getModuleIcon(log)">
+            <svg *ngSwitchCase="'folder'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            <svg *ngSwitchCase="'box'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/>
+            </svg>
+            <svg *ngSwitchCase="'users'" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <svg *ngSwitchDefault width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="4"/>
+            </svg>
+          </ng-container>
+        </div>
+
+        <!-- Card Body -->
+        <div class="log-body">
+
+          <!-- Top row: actor + badges + object -->
+          <div class="log-headline">
+            <span class="actor-name">{{ getActorName(log) }}</span>
+            <span class="badge badge-role" [ngClass]="getActorRoleClass(log)">{{ getActorRoleLabel(log) }}</span>
+            <span class="badge" [ngClass]="getActionBadgeClassForLog(log)">{{ getActionLabelForLog(log) }}</span>
+            <span class="log-object">{{ getFriendlyTableName(log.table_name) }}</span>
           </div>
-          <div class="activity-main">
-            <p class="activity-headline">
-              <span class="actor-name fw-bold">{{ getActorName(log) }}</span>
-              <span class="badge badge-role" [ngClass]="getActorRoleClass(log)">
-                {{ getActorRoleLabel(log) }}
-              </span>
-              <span class="action-badge badge" [ngClass]="getActionBadgeClass(log)">
-                {{ getActionLabel(log.action) }}
-              </span>
-              <span class="activity-object">{{ getFriendlyTableName(log.table_name) }}</span>
-            </p>
-            <p class="activity-meta">
-              <span>{{ formatDate(log.created_at) }}</span>
-              <span class="meta-separator" aria-hidden="true">•</span>
-              <span class="ip-meta">IP {{ log.ip_address || 'Unknown location' }}</span>
-            </p>
-            <p class="activity-summary">{{ getChangeSummary(log) }}</p>
 
-            <button
-              class="details-toggle btn btn-link"
-              (click)="toggleExpanded(log.log_id)"
-              [attr.aria-expanded]="expandedLogId === log.log_id"
-              [attr.aria-controls]="'detail-' + log.log_id"
-              type="button"
-            >
-              <span>{{ expandedLogId === log.log_id ? 'Hide details' : 'View details' }}</span>
-              <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </button>
+          <!-- Meta row -->
+          <div class="log-meta">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>{{ formatDate(log.created_at) }}</span>
+            <span class="meta-dot" aria-hidden="true">·</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span class="ip-text">{{ log.ip_address || 'Unknown IP' }}</span>
+          </div>
 
-            <section *ngIf="expandedLogId === log.log_id" [id]="'detail-' + log.log_id" class="detail-panel">
-              <h3 class="detail-title">{{ getDetailHeading(log) }}</h3>
+          <!-- Summary -->
+          <p class="log-summary">{{ getChangeSummary(log) }}</p>
 
-              <div class="update-list" *ngIf="log.action === 'UPDATE' && getUpdateFields(log).length > 0; else genericDetails">
-                <p class="detail-intro">These are the details that were changed:</p>
-                <div class="update-diff-card" *ngFor="let field of getUpdateFields(log)">
-                  <h4 class="field-name">{{ field.label }}</h4>
-                  <p class="change-sentence">{{ getUpdateChangeSentence(field) }}</p>
-                  <div class="update-diff-grid">
-                    <div class="diff-col old-col">
-                      <p class="diff-label">Before</p>
-                      <p class="diff-value">{{ field.beforeValue }}</p>
-                    </div>
-                    <div class="diff-col new-col">
-                      <p class="diff-label">After</p>
-                      <p class="diff-value">{{ field.afterValue }}</p>
-                    </div>
+          <!-- Expand toggle -->
+          <button
+            class="btn-details"
+            (click)="toggleExpanded(log.log_id)"
+            [attr.aria-expanded]="expandedLogId === log.log_id"
+            [attr.aria-controls]="'detail-' + log.log_id"
+            type="button"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            {{ expandedLogId === log.log_id ? 'Hide details' : 'View details' }}
+            <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          <!-- Detail Panel -->
+          <section
+            *ngIf="expandedLogId === log.log_id"
+            [id]="'detail-' + log.log_id"
+            class="detail-panel"
+          >
+            <h3 class="detail-heading">{{ getDetailHeading(log) }}</h3>
+
+            <!-- UPDATE diff view -->
+            <div class="diff-list" *ngIf="log.action === 'UPDATE' && log.table_name !== 'export_log' && getUpdateFields(log).length > 0; else genericView">
+              <p class="detail-intro">Fields that were changed:</p>
+              <div class="diff-card" *ngFor="let field of getUpdateFields(log)">
+                <p class="diff-field-name">{{ field.label }}</p>
+                <div class="diff-cols">
+                  <div class="diff-col diff-before">
+                    <span class="diff-label">Before</span>
+                    <span class="diff-value">{{ field.beforeValue }}</span>
+                  </div>
+                  <div class="diff-arrow" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  </div>
+                  <div class="diff-col diff-after">
+                    <span class="diff-label">After</span>
+                    <span class="diff-value">{{ field.afterValue }}</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <ng-template #genericDetails>
-                <p class="detail-intro" *ngIf="getDetailFields(log).length > 0">
-                  <ng-container *ngIf="log.action === 'INSERT'">Key information recorded for this new record:</ng-container>
-                  <ng-container *ngIf="log.action === 'DELETE'">Key information from the removed record:</ng-container>
-                  <ng-container *ngIf="log.action !== 'INSERT' && log.action !== 'DELETE'">Recorded details:</ng-container>
+            <!-- Generic / INSERT / DELETE / export view -->
+            <ng-template #genericView>
+              <ng-container *ngIf="getDetailFields(log).length > 0; else noDetails">
+                <p class="detail-intro">
+                  <ng-container *ngIf="log.table_name === 'export_log'">Details of this export:</ng-container>
+                  <ng-container *ngIf="log.action === 'INSERT' && log.table_name !== 'export_log'">Key information recorded:</ng-container>
+                  <ng-container *ngIf="log.action === 'DELETE'">Information from the removed record:</ng-container>
+                  <ng-container *ngIf="log.action !== 'INSERT' && log.action !== 'DELETE' && log.table_name !== 'export_log'">Recorded details:</ng-container>
                 </p>
-                <div class="detail-grid" *ngIf="getDetailFields(log).length > 0; else noDetails">
-                  <div class="detail-card" *ngFor="let field of getDetailFields(log)">
-                    <span class="field-name">{{ field.label }}</span>
-                    <span class="field-value">{{ field.value }}</span>
+                <div class="detail-grid">
+                  <div class="detail-chip" *ngFor="let field of getDetailFields(log)">
+                    <span class="chip-label">{{ field.label }}</span>
+                    <span class="chip-value">{{ field.value }}</span>
                   </div>
                 </div>
-              </ng-template>
-
+              </ng-container>
               <ng-template #noDetails>
-                <p class="no-details">No additional details are available for this activity.</p>
+                <p class="no-details">No additional details available for this activity.</p>
               </ng-template>
-            </section>
-          </div>
-        </article>
+            </ng-template>
+          </section>
+
+        </div>
+      </article>
     </div>
 
+    <!-- Pagination -->
     <div class="pagination-bar" *ngIf="hasAnyLogs">
-      <button
-        class="pagination-btn"
-        (click)="prevPage()"
-        [disabled]="currentPage === 1"
-        title="Previous page"
-        type="button"
-      >
+      <button class="btn-page" (click)="prevPage()" [disabled]="currentPage === 1" type="button" title="Previous page">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
         Previous
       </button>
-
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-
-      <button
-        class="pagination-btn"
-        (click)="nextPage()"
-        [disabled]="currentPage >= totalPages"
-        title="Next page"
-        type="button"
-      >
+      <span class="page-info">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+      <button class="btn-page" (click)="nextPage()" [disabled]="currentPage >= totalPages" type="button" title="Next page">
         Next
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
       </button>
     </div>
+
   </div>
 </div>

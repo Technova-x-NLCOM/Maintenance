@@ -59,6 +59,7 @@ const HIDDEN_DETAIL_FIELDS = new Set([
   'qr_payload',
   'qr_label',
   'record_id',
+  'report_type',
   'role_id',
   'table_name',
   'template_id',
@@ -93,6 +94,8 @@ const TABLE_IMPORTANT_FIELDS: Record<string, string[]> = {
   users: ['username', 'email', 'first_name', 'last_name', 'contact_info', 'is_active'],
   roles: ['role_name', 'display_name', 'description', 'is_system_role'],
   permissions: ['permission_name', 'display_name', 'module', 'description'],
+  export_log: ['report_label', 'format', 'row_count'],
+
 };
 
 const FRIENDLY_FIELD_LABELS: Record<string, string> = {
@@ -127,6 +130,9 @@ const FRIENDLY_FIELD_LABELS: Record<string, string> = {
   template_name: 'Template name',
   unit_value: 'Unit value',
   username: 'Username',
+  report_label: 'Report',
+  format: 'File Format',
+  row_count: 'Rows Exported',
 };
 
 const VALUE_MAPPERS: Record<string, (value: unknown) => string> = {
@@ -153,7 +159,7 @@ export class AuditLogComponent implements OnInit {
   loading = true;
   error = '';
   currentPage = 1;
-  perPage = 25;
+  perPage = 10;
   total = 0;
   search = '';
   expandedLogId: number | null = null;
@@ -261,9 +267,21 @@ export class AuditLogComponent implements OnInit {
         return 'Edited';
       case 'DELETE':
         return 'Removed';
+      case 'EXPORT':
+        return 'Exported';
       default:
         return action;
     }
+  }
+
+  getActionLabelForLog(log: AuditLogEntry): string {
+    if (log.table_name === 'export_log') return 'Exported';
+    return this.getActionLabel(log.action);
+  }
+
+  getActionBadgeClassForLog(log: AuditLogEntry): string {
+    if (log.table_name === 'export_log') return 'badge-export';
+    return this.getActionBadgeClass(log);
   }
 
   getNormalizedActionType(log: AuditLogEntry): ActionType {
@@ -324,6 +342,7 @@ export class AuditLogComponent implements OnInit {
       inventory_snapshots: 'Inventory Snapshot',
       expiry_alerts: 'Expiry Alert',
       system_settings: 'System Setting',
+      export_log: 'Report Export',
     };
 
     if (lookup[tableName]) {
@@ -368,6 +387,12 @@ export class AuditLogComponent implements OnInit {
   }
 
   getActivitySentence(log: AuditLogEntry): string {
+    if (log.table_name === 'export_log') {
+      const values = this.parseStoredValues(log.new_values);
+      const label = values['report_label'] ?? 'Report';
+      const format = values['format'] ?? '';
+      return `${this.getActorName(log)} exported ${label}${format ? ' as ' + format : ''}.`;
+    }
     return `${this.getActorName(log)} ${this.getActionPhrase(log.action)} ${this.getFriendlyTableName(log.table_name)}.`;
   }
 
@@ -378,7 +403,7 @@ export class AuditLogComponent implements OnInit {
       return 'Category';
     }
 
-    if (table.includes('inventory') || table === 'items' || table === 'expiry_alerts') {
+    if (table.includes('inventory') || table === 'items' || table === 'expiry_alerts' || table === 'export_log') {
       return 'Inventory';
     }
 
@@ -665,6 +690,10 @@ export class AuditLogComponent implements OnInit {
   }
 
   getDetailHeading(log: AuditLogEntry): string {
+    if (log.table_name === 'export_log') {
+      return 'Export Details';
+    }
+
     if (log.action === 'INSERT') {
       return 'What Was Created';
     }
@@ -677,6 +706,15 @@ export class AuditLogComponent implements OnInit {
   }
 
   getChangeSummary(log: AuditLogEntry): string {
+    if (log.table_name === 'export_log') {
+      const values = this.parseStoredValues(log.new_values);
+      const label = values['report_label'] ?? 'Report';
+      const format = values['format'] ?? '';
+      const rowCount = values['row_count'];
+      const rowPart = rowCount != null ? ` (${rowCount} row${rowCount === 1 ? '' : 's'})` : '';
+      return `Downloaded ${label}${format ? ' as ' + format : ''}${rowPart}.`;
+    }
+
     const itemName = this.getFriendlyTableName(log.table_name);
 
     if (log.action === 'INSERT') {
