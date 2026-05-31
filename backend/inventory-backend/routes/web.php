@@ -205,6 +205,7 @@ Route::middleware('throttle:system-api')->group(function () {
         ->group(function () {
             Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
                 Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
+                Route::get('source-locations', [IssuanceTransactionController::class, 'getSourceLocations']);
                 Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
             });
         });

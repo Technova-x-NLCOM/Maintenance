@@ -442,9 +442,13 @@ class ReceivingTransactionController extends Controller
             return null;
         }
 
+        $normalized = mb_strtolower($locationName);
+
         $location = DB::table('locations')
             ->select('location_id')
-            ->where('location_name', $locationName)
+            ->whereRaw('LOWER(location_name) = ?', [$normalized])
+            ->orWhereRaw('LOWER(location_code) = ?', [$normalized])
+            ->orderBy('location_id')
             ->first();
 
         if ($location) {

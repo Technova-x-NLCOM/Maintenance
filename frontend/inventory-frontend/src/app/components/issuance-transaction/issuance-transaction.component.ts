@@ -135,6 +135,7 @@ export class IssuanceTransactionComponent implements OnInit {
     this.transactionMode = 'issuance';
     this.applyDefaultOperationType();
     this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
+    this.loadSourceLocationOptions();
     this.adjustConfirmExpiration = false;
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
@@ -168,7 +169,6 @@ export class IssuanceTransactionComponent implements OnInit {
 
   ngOnInit(): void {
     this.updateMobileView();
-    this.loadLocationOptions();
     this.loadOperationTypeOptions();
     this.loadItems(1);
     this.loadCategoryOptions();
@@ -213,8 +213,27 @@ export class IssuanceTransactionComponent implements OnInit {
     }
   }
 
-  loadLocationOptions(): void {
-    this.itemService.getLocationOptions().subscribe({
+  private getSourceLocationItemIds(): number[] {
+    const cartItemIds = this.cartLines.map((line) => line.item_id);
+    if (cartItemIds.length > 0) {
+      return cartItemIds;
+    }
+
+    return this.selectedItem ? [this.selectedItem.item_id] : [];
+  }
+
+  loadSourceLocationOptions(): void {
+    const itemIds = this.getSourceLocationItemIds();
+
+    if (itemIds.length === 0) {
+      this.locations = [];
+      this.selectedLocationName = null;
+      this.selectedLocationLabel = 'Select source storage';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.itemService.getIssuanceSourceLocations(itemIds).subscribe({
       next: (response) => {
         this.locations = (response.data || []).slice().sort((a, b) =>
           a.location_name.localeCompare(b.location_name),
@@ -337,6 +356,8 @@ export class IssuanceTransactionComponent implements OnInit {
       });
     }
 
+    this.loadSourceLocationOptions();
+
     this.errorMessage = '';
     this.showToast(`${this.selectedItem.item_description} added to list.`);
   }
@@ -352,6 +373,7 @@ export class IssuanceTransactionComponent implements OnInit {
 
   removeLine(line: IssuanceCartLine): void {
     this.cartLines = this.cartLines.filter((x) => x.item_id !== line.item_id);
+    this.loadSourceLocationOptions();
   }
 
   getTotalRequestedQuantity(): number {

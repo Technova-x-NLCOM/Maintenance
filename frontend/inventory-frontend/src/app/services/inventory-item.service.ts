@@ -557,6 +557,18 @@ export class InventoryItemService {
     );
   }
 
+  getIssuanceSourceLocations(itemIds: number[]): Observable<LocationOptionsResponse> {
+    let params = new HttpParams();
+    itemIds.forEach((itemId) => {
+      params = params.append('item_ids[]', String(itemId));
+    });
+
+    return this.http.get<LocationOptionsResponse>(
+      `${getApiBaseUrl()}/inventory/issuance/source-locations`,
+      { headers: this.getHeaders(), params }
+    );
+  }
+
   createIssuanceTransaction(data: IssuanceTransactionRequest): Observable<IssuanceTransactionResponse> {
     return this.http.post<IssuanceTransactionResponse>(
       `${getApiBaseUrl()}/inventory/issuance/create`,

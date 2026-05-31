@@ -74,6 +74,63 @@ class IssuanceTransactionController extends Controller
         ]);
     }
 
+    public function getSourceLocations(Request $request)
+    {
+        $data = $request->validate([
+            'item_ids' => ['nullable', 'array', 'min:1'],
+            'item_ids.*' => ['integer', 'distinct', 'exists:items,item_id'],
+        ]);
+
+        $itemIds = collect($data['item_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($itemIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Source locations retrieved successfully.',
+                'data' => [],
+            ]);
+        }
+
+        $locations = DB::table('inventory_batches as b')
+            ->join('locations as l', 'b.location_id', '=', 'l.location_id')
+            ->where('b.status', 'active')
+            ->where('b.quantity', '>', 0)
+            ->whereNotNull('b.location_id')
+            ->whereIn('b.item_id', $itemIds->all())
+            ->groupBy('l.location_id', 'l.location_code', 'l.location_name', 'l.location_type')
+            ->havingRaw('COUNT(DISTINCT b.item_id) = ?', [$itemIds->count()])
+            ->orderBy('l.location_name')
+            ->get([
+                'l.location_id',
+                'l.location_code',
+                'l.location_name',
+                'l.location_type',
+                DB::raw('l.location_name as display_name'),
+                DB::raw('1 as is_active'),
+            ])
+            ->map(function ($location) {
+                return [
+                    'location_id' => (int) $location->location_id,
+                    'location_code' => (string) $location->location_code,
+                    'location_name' => (string) $location->location_name,
+                    'location_type' => $location->location_type ? (string) $location->location_type : null,
+                    'display_name' => (string) $location->display_name,
+                    'is_active' => true,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Source locations retrieved successfully.',
+            'data' => $locations,
+        ]);
+    }
+
     public function createIssuance(Request $request)
     {
         $data = $request->validate([
@@ -347,9 +404,13 @@ class IssuanceTransactionController extends Controller
             return null;
         }
 
+        $normalized = mb_strtolower($locationName);
+
         $location = DB::table('locations')
             ->select('location_id')
-            ->where('location_name', $locationName)
+            ->whereRaw('LOWER(location_name) = ?', [$normalized])
+            ->orWhereRaw('LOWER(location_code) = ?', [$normalized])
+            ->orderBy('location_id')
             ->first();
 
         if ($location) {
