@@ -158,6 +158,7 @@ interface ReceivingTransactionRequest {
   operation_type_id?: number | null;
   item_id?: number;
   location_id?: number | null;
+  location_name?: string | null;
   quantity?: number;
   batch_number?: string;
   purchase_date?: string;
@@ -224,6 +225,7 @@ interface IssuanceTransactionRequest {
   destination: string;
   from_location_id?: number | null;
   to_location_id?: number | null;
+  location_name?: string | null;
   reason?: string;
   notes?: string;
   items: IssuanceLineInput[];

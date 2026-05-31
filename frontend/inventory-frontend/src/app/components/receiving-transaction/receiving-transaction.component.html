@@ -258,9 +258,9 @@
               <div class="line-desc">{{ line.item_description }}</div>
             </td>
             <td>
-              <select class="form-control" [(ngModel)]="line.location_id" [disabled]="saving">
+              <select class="form-control" [(ngModel)]="line.location_name" [disabled]="saving">
                 <option [ngValue]="null">Select storage location</option>
-                <option *ngFor="let location of locations" [ngValue]="location.location_id">
+                <option *ngFor="let location of locations" [ngValue]="location.location_name">
                   {{ location.location_name }}
                 </option>
               </select>
@@ -290,9 +290,9 @@
 
     <div class="form-group" *ngIf="receivingLines.length > 0">
       <label class="form-label">Default Storage Location (used when adding new lines)</label>
-      <select class="form-control" [(ngModel)]="selectedLocationId" [disabled]="saving">
+      <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
         <option [ngValue]="null">Select storage location</option>
-        <option *ngFor="let location of locations" [ngValue]="location.location_id">
+        <option *ngFor="let location of locations" [ngValue]="location.location_name">
           {{ location.location_name }}
         </option>
       </select>
@@ -393,13 +393,13 @@
           </div>
           <div class="form-group" *ngIf="transactionMode === 'receive'">
             <label class="form-label">Storage Location *</label>
-            <select class="form-control" [(ngModel)]="selectedLocationId" [disabled]="saving">
+            <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
               <option [ngValue]="null">Select storage location</option>
-              <option *ngFor="let location of locations" [ngValue]="location.location_id">
+              <option *ngFor="let location of locations" [ngValue]="location.location_name">
                 {{ location.location_name }}
               </option>
             </select>
-            <div class="hint" *ngIf="attemptedAddToList && !selectedLocationId">Storage location is required.</div>
+            <div class="hint" *ngIf="attemptedAddToList && !selectedLocationName">Storage location is required.</div>
           </div>
         </div>
       </div>

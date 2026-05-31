@@ -81,15 +81,14 @@ class IssuanceTransactionController extends Controller
             'destination' => ['required', 'string', 'max:255'],
             'reason' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
-            'from_location_id' => ['nullable', 'integer'],
-            'to_location_id' => ['nullable', 'integer'],
+            'location_name' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:items,item_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        $fromLocationId = $this->resolveLocationId($data['from_location_id'] ?? null);
-        $toLocationId = $this->resolveLocationId($data['to_location_id'] ?? null) ?? $fromLocationId;
+        $fromLocationId = $this->resolveLocationId($data['location_name'] ?? null);
+        $toLocationId = $fromLocationId;
     $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'OUT');
     $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Issuance';
 
@@ -304,7 +303,11 @@ class IssuanceTransactionController extends Controller
     private function resolveLocationId(mixed $incoming): ?int
     {
         if ($incoming !== null && $incoming !== '') {
-            return (int) $incoming;
+            if (is_numeric($incoming)) {
+                return (int) $incoming;
+            }
+
+            return $this->resolveLocationIdByName((string) $incoming);
         }
 
         $bootstrapped = $this->ensureDefaultLocation();
@@ -332,6 +335,25 @@ class IssuanceTransactionController extends Controller
             if ($id !== null) {
                 return (int) $id;
             }
+        }
+
+        return null;
+    }
+
+    private function resolveLocationIdByName(string $locationName): ?int
+    {
+        $locationName = trim($locationName);
+        if ($locationName === '') {
+            return null;
+        }
+
+        $location = DB::table('locations')
+            ->select('location_id')
+            ->where('location_name', $locationName)
+            ->first();
+
+        if ($location) {
+            return (int) $location->location_id;
         }
 
         return null;

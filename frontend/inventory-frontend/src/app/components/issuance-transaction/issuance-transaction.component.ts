@@ -87,7 +87,7 @@ export class IssuanceTransactionComponent implements OnInit {
   onWindowResize(): void {
     this.updateMobileView();
   }
-  selectedLocationId: number | null = null;
+  selectedLocationName: string | null = null;
   selectedLocationLabel = 'Select source storage';
   issueQuantity = 1;
   adjustConfirmExpiration = false;
@@ -220,19 +220,19 @@ export class IssuanceTransactionComponent implements OnInit {
           a.location_name.localeCompare(b.location_name),
         );
 
-        if (this.locations.length > 0 && this.selectedLocationId === null) {
-          this.selectedLocationId = this.locations[0].location_id;
-          this.selectedLocationLabel = this.locations[0].display_name || this.locations[0].location_name;
-        } else if (this.selectedLocationId !== null) {
-          const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
-          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select source storage';
+        if (this.locations.length > 0 && this.selectedLocationName === null) {
+          this.selectedLocationName = this.locations[0].location_name;
+          this.selectedLocationLabel = this.locations[0].location_name;
+        } else if (this.selectedLocationName !== null) {
+          const selected = this.locations.find((location) => location.location_name === this.selectedLocationName);
+          this.selectedLocationLabel = selected?.location_name || 'Select source storage';
         }
 
         this.cdr.detectChanges();
       },
       error: () => {
         this.locations = [];
-        this.selectedLocationId = null;
+        this.selectedLocationName = null;
         this.selectedLocationLabel = 'Select source storage';
         this.cdr.detectChanges();
       },
@@ -363,7 +363,7 @@ export class IssuanceTransactionComponent implements OnInit {
       return false;
     }
 
-    if (this.locations.length > 0 && !this.selectedLocationId) {
+    if (this.locations.length > 0 && !this.selectedLocationName) {
       return false;
     }
 
@@ -434,8 +434,7 @@ export class IssuanceTransactionComponent implements OnInit {
       .createIssuanceTransaction({
         operation_type_id: this.selectedOperationTypeId,
         destination: this.destination.trim(),
-        from_location_id: this.selectedLocationId,
-        to_location_id: this.selectedLocationId,
+        location_name: this.selectedLocationName,
         reason: this.reason.trim() || this.selectedOperationTypeLabel || 'Stock Issuance',
         notes: this.notes.trim() || '',
         items: this.cartLines.map((line) => ({ item_id: line.item_id, quantity: line.quantity }))
