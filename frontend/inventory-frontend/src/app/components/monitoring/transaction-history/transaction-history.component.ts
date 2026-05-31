@@ -10,6 +10,7 @@ import { TransactionRecord, Paginated } from '../monitoring.models';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { getApiBaseUrl } from '../../../services/api-base';
+import { AuditExportService } from '../../../services/audit-export.service';
 
 @Component({
   selector: 'app-transaction-history',
@@ -50,6 +51,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private toast: ToastService,
+    private auditExport: AuditExportService,
   ) {}
 
   ngOnInit(): void {
@@ -222,6 +224,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Transaction History');
     XLSX.writeFile(wb, 'transaction_history.xlsx');
+    this.auditExport.log('transaction_history', 'excel', this.transactions.length);
   }
 
   exportPdf(): void {
@@ -284,6 +287,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
       },
     });
     doc.save('transaction_history.pdf');
+    this.auditExport.log('transaction_history', 'pdf', this.transactions.length);
   }
 
   private authHeaders(): HttpHeaders {

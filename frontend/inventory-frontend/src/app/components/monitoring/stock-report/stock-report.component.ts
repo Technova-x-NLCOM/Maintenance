@@ -12,6 +12,7 @@ import { InventoryCategoryService } from '../../../services/inventory-category.s
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { getApiBaseUrl } from '../../../services/api-base';
+import { AuditExportService } from '../../../services/audit-export.service';
 
 @Component({
   selector: 'app-stock-report',
@@ -60,6 +61,7 @@ export class StockReportComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private toast: ToastService,
+    private auditExport: AuditExportService,
   ) {}
 
   ngOnInit(): void {
@@ -526,6 +528,7 @@ export class StockReportComponent implements OnInit {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Stock Report');
     XLSX.writeFile(wb, 'stock_report.xlsx');
+    this.auditExport.log('stock_report', 'excel', this.items.length);
   }
 
   exportPdf(): void {
@@ -567,6 +570,7 @@ export class StockReportComponent implements OnInit {
       },
     });
     doc.save('stock_report.pdf');
+    this.auditExport.log('stock_report', 'pdf', this.items.length);
   }
 
   private authHeaders(): HttpHeaders {
