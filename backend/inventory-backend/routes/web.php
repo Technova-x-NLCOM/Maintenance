@@ -251,6 +251,15 @@ Route::middleware('throttle:system-api')->group(function () {
             });
         });
 
+    // Export audit log route
+    Route::prefix('api/audit')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::post('export', [\App\Http\Controllers\AuditExportController::class, 'log']);
+            });
+        });
+
     // System Settings API routes (super admin only)
     Route::prefix('api/settings')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
