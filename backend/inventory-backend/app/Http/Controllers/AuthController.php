@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Services\PasswordResetLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -17,6 +16,10 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
+    public function __construct(private PasswordResetLinkService $passwordResetLinkService)
+    {
+    }
+
     /**
      * Check if a user's password has been set (public endpoint)
      */
@@ -575,33 +578,8 @@ class AuthController extends Controller
             ], 200);
         }
 
-        // Generate reset token
-        $token = \Str::random(60);
-        $hashedToken = hash('sha256', $token);
-
-        // Delete any existing reset tokens for this email
-        DB::table('password_reset_tokens')
-            ->where('email', $email)
-            ->delete();
-
-        // Create new reset token record
-        DB::table('password_reset_tokens')->insert([
-            'email' => $email,
-            'token' => $hashedToken,
-            'created_at' => now(),
-        ]);
-
-        // Build reset URL for frontend from config so cached production config keeps working.
-        $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:4200'), '/');
-        $resetUrl = $frontendUrl . '/reset-password?token=' . $token . '&email=' . urlencode($email);
-
         try {
-            // Send reset email
-            \Mail::to($email)->send(new \App\Mail\ResetPasswordMail(
-                $email,
-                $resetUrl,
-                $user->first_name ?? $user->username
-            ));
+            $this->passwordResetLinkService->sendToUser($user);
 
             return response()->json([
                 'success' => true,

@@ -33,7 +33,7 @@ class ResetPasswordMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Password Reset Request - NLCOM Inventory System',
+            subject: 'Set Your Password - NLCOM Inventory System',
         );
     }
 

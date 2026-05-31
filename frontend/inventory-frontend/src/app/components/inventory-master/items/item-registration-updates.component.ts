@@ -2,9 +2,6 @@ import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import * as QRCode from 'qrcode';
-import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
-import { NotFoundException } from '@zxing/library';
 import {
   InventoryItem,
   InventoryItemService,
@@ -62,15 +59,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
   isDraggingOver = false;
-  showQrModal = false;
-  qrModalTitle = '';
-  qrLabel = '';
-  qrPayload = '';
-  qrImageDataUrl: string | null = null;
-  showScanModal = false;
-  scanErrorMessage = '';
-  private itemScanner = new BrowserMultiFormatReader();
-  private itemScannerControls?: IScannerControls;
+  // QR UI and scanner removed.
 
   formData: {
     item_code: string;
@@ -147,7 +136,6 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cancelSearchDebounce();
     this.loadItemsSub?.unsubscribe();
-    this.stopItemScanner();
   }
 
   loadItems(page: number = 1): void {
@@ -772,212 +760,49 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   }
 
   openItemQr(item: InventoryItem): void {
-    this.errorMessage = '';
-    this.qrModalTitle = `Item QR: ${item.item_code}`;
-    this.qrLabel = item.qr_label || `ITEM:${item.item_code}`;
-    this.qrPayload =
-      item.qr_payload ||
-      JSON.stringify({
-        entity: 'item',
-        item_id: item.item_id,
-        item_code: item.item_code,
-        item_description: item.item_description,
-      });
-    this.showQrModal = true;
-    this.qrImageDataUrl = null;
-
-    QRCode.toDataURL(this.qrPayload, { width: 280, margin: 2 })
-      .then((url: string) => {
-        this.qrImageDataUrl = url;
-        this.cdr.detectChanges();
-      })
-      .catch(() => {
-        this.showQrModal = false;
-        this.errorMessage = 'Unable to generate QR code for this item.';
-        this.cdr.detectChanges();
-      });
+    // QR generation removed.
   }
 
   // QR Code Download Methods
   downloadQrCode(item?: InventoryItem): void {
-    if (!this.qrImageDataUrl) {
-      this.toast.error('QR code not ready for download');
-      return;
-    }
-
-    try {
-      const itemCode = item?.item_code || this.qrLabel.replace('ITEM:', '') || 'item';
-      const filename = `QR_${itemCode}_${new Date().toISOString().slice(0, 10)}.png`;
-      
-      // Create download link
-      const link = document.createElement('a');
-      link.href = this.qrImageDataUrl;
-      link.download = filename;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      this.toast.success(`QR code downloaded: ${filename}`);
-    } catch (error) {
-      console.error('Download failed:', error);
-      this.toast.error('Failed to download QR code');
-    }
+    // QR download removed.
   }
 
   openItemQrScanner(): void {
-    this.showScanModal = true;
-    this.scanErrorMessage = '';
-
-    setTimeout(() => {
-      this.startItemScanner();
-    }, 0);
+    // QR scanner removed.
   }
 
   closeItemQrScanner(): void {
-    this.stopItemScanner();
-    this.showScanModal = false;
-    this.scanErrorMessage = '';
+    // QR scanner removed.
   }
 
   private async startItemScanner(): Promise<void> {
-    const video = document.getElementById('itemQrVideo') as HTMLVideoElement | null;
-    if (!video) {
-      this.scanErrorMessage = 'Scanner preview is not ready.';
-      return;
-    }
-
-    try {
-      // Request camera permission explicitly
-      this.scanErrorMessage = 'Requesting camera access...';
-      this.cdr.detectChanges();
-
-      const cameraPermission = await this.requestCameraPermission();
-      if (!cameraPermission) {
-        this.scanErrorMessage =
-          'Camera permission denied. Enable camera access in your browser settings to use QR scanner.';
-        this.cdr.detectChanges();
-        return;
-      }
-
-      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
-      const deviceId = devices[0]?.deviceId;
-
-      if (!deviceId) {
-        this.scanErrorMessage = 'No camera detected on this device.';
-        return;
-      }
-
-      this.scanErrorMessage = ''; // Clear loading message once camera access is granted
-      this.itemScannerControls = await this.itemScanner.decodeFromVideoDevice(
-        deviceId,
-        video,
-        (result: any, error: any) => {
-          if (result) {
-            this.handleScannedItemQr(result.getText());
-            this.closeItemQrScanner();
-            this.cdr.detectChanges();
-            return;
-          }
-
-          if (error && !(error instanceof NotFoundException)) {
-            this.scanErrorMessage = 'Unable to read QR. Please hold it steady and try again.';
-            this.cdr.detectChanges();
-          }
-        },
-      );
-    } catch (error) {
-      if ((error as Error).name === 'NotAllowedError') {
-        this.scanErrorMessage =
-          'Camera permission denied. Enable camera access in your browser settings.';
-      } else if ((error as Error).name === 'NotFoundError') {
-        this.scanErrorMessage = 'No camera device found on this device.';
-      } else {
-        this.scanErrorMessage = 'Unable to access camera. Check permissions and try again.';
-      }
-      this.cdr.detectChanges();
-    }
+    // QR scanner removed.
   }
 
   private async requestCameraPermission(): Promise<boolean> {
-    try {
-      // Use the Permissions API to request camera access
-      const permissionResult = await navigator.permissions.query({
-        name: 'camera' as PermissionName,
-      });
-
-      if (permissionResult.state === 'denied') {
-        return false;
-      }
-
-      if (permissionResult.state === 'granted') {
-        return true;
-      }
-
-      // If 'prompt', user will be asked when trying to access the camera
-      // Attempt accessing the camera directly, which will trigger the browser permission prompt
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
-      });
-
-      // Immediately stop the stream as we only needed to verify permission
-      mediaStream.getTracks().forEach((track) => track.stop());
-
-      return true;
-    } catch {
-      // If Permissions API fails or getUserMedia fails, permission was denied
-      return false;
-    }
+    // QR scanner removed.
+    return false;
   }
 
   private stopItemScanner(): void {
-    this.itemScannerControls?.stop();
-    this.itemScannerControls = undefined;
+    // QR scanner removed.
   }
 
   private handleScannedItemQr(rawText: string): void {
-    const parsed = this.tryParseQrPayload(rawText);
-    const itemCode =
-      parsed?.['item_code'] || this.extractCodeFromLabel(rawText, 'ITEM:') || rawText.trim();
-
-    if (!itemCode) {
-      this.errorMessage = 'QR scanned, but no item code was found.';
-      return;
-    }
-
-    this.search = itemCode;
-    this.onSearch();
-    this.successMessage = `QR scanned successfully. Filtered items by: ${itemCode}`;
+    // QR scanner removed.
   }
 
   private tryParseQrPayload(rawText: string): Record<string, string> | null {
-    try {
-      const parsed = JSON.parse(rawText) as Record<string, string>;
-      if (parsed && typeof parsed === 'object') {
-        return parsed;
-      }
-      return null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 
   private extractCodeFromLabel(value: string, prefix: string): string | null {
-    if (!value.startsWith(prefix)) {
-      return null;
-    }
-
-    const code = value.slice(prefix.length).trim();
-    return code ? code : null;
+    return null;
   }
 
   closeQrModal(): void {
-    this.showQrModal = false;
-    this.qrModalTitle = '';
-    this.qrLabel = '';
-    this.qrPayload = '';
-    this.qrImageDataUrl = null;
+    // QR modal removed.
   }
 
   firstPage(): void {

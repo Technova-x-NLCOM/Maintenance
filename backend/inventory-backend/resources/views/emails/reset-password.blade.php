@@ -113,7 +113,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Password Reset Request</h1>
+            <h1>Set Your Password</h1>
         </div>
         
         <div class="content">
@@ -122,15 +122,15 @@
             </div>
             
             <div class="message">
-                <p>We received a request to reset the password for your NLCOM Inventory System account. If you did not make this request, you can safely ignore this email.</p>
+                <p>Your NLCOM Inventory System account is ready. Use the secure link below to set your password and activate your access.</p>
             </div>
             
             <div class="cta-section">
-                <p><strong>Click the button below to reset your password:</strong></p>
+                <p><strong>Click the button below to set your password:</strong></p>
                 <table role="presentation" class="cta-table" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="cta-button" align="center">
-                            <a href="{{ $resetUrl }}" target="_blank" rel="noopener">Reset Password</a>
+                            <a href="{{ $resetUrl }}" target="_blank" rel="noopener">Set Password</a>
                         </td>
                     </tr>
                 </table>
@@ -142,11 +142,11 @@
             </div>
             
             <div class="warning">
-                <strong>Important:</strong> This password reset link will expire in 60 minutes. If the link expires, you can request a new password reset.
+                <strong>Important:</strong> This secure link will expire in 60 minutes. If the link expires, you can request a new one.
             </div>
             
             <div class="message">
-                <p>If you did not request this password reset, please ignore this email. Your password will remain unchanged.</p>
+                <p>If you were not expecting this email, you can safely ignore it and no changes will be made.</p>
             </div>
         </div>
         

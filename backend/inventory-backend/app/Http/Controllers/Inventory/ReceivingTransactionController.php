@@ -202,8 +202,7 @@ class ReceivingTransactionController extends Controller
                 return [
                     'reference_number' => $reference,
                     'batch_number' => $data['batch_number'],
-                    'qr_payload' => $this->buildBatchTransactionQrPayload($reference, $data['batch_number']),
-                    'qr_label' => 'BATCH:' . $data['batch_number'],
+                    // QR payload/label removed per feature removal request.
                     'line_count' => count($receivedLines),
                     'total_received_quantity' => $totalReceived,
                     'received_lines' => $receivedLines,
@@ -314,8 +313,7 @@ class ReceivingTransactionController extends Controller
             'item_description' => $item->item_description,
             'reference_number' => $reference,
             'batch_number' => $data['batch_number'],
-            'qr_payload' => $this->buildBatchLineQrPayload($batchId, $item, $reference, (string) $data['batch_number']),
-            'qr_label' => 'BATCH:' . $data['batch_number'],
+            // QR payload/label removed per feature removal request.
             'quantity' => (int) $data['quantity'],
             'purchase_date' => $purchaseDate->toDateString(),
             'expiry_date' => $expiryDate ? $expiryDate->toDateString() : null,

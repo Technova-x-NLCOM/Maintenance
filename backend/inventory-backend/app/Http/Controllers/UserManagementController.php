@@ -4,16 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PasswordResetLinkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class UserManagementController extends Controller
 {
+    public function __construct(private PasswordResetLinkService $passwordResetLinkService)
+    {
+    }
+
     private function authorizeAdmin(Request $request): ?JsonResponse
     {
         $user = $request->user();
@@ -90,18 +94,6 @@ class UserManagementController extends Controller
                     'max:100',
                     Rule::unique('users', 'email'),
                 ],
-                'password' => [
-                    'nullable',
-                    'string',
-                    'min:8',
-                    'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
-                ],
-                'password_confirmation' => [
-                    'nullable',
-                    'required_with:password',
-                    'same:password',
-                ],
                 'first_name' => [
                     'required',
                     'string',
@@ -140,7 +132,7 @@ class UserManagementController extends Controller
             $user = new User();
             $user->username = $data['username'];
             $user->email = $data['email'];
-            $user->password_hash = isset($data['password']) ? Hash::make($data['password']) : null;
+            $user->password_hash = null;
             $user->first_name = $data['first_name'];
             $user->last_name = $data['last_name'];
             $user->contact_info = $data['contact_info'] ?? null;
@@ -159,8 +151,22 @@ class UserManagementController extends Controller
             $user->load('primaryRole');
             $pr = $user->primaryRole->first();
 
+            $inviteSent = true;
+            try {
+                $this->passwordResetLinkService->sendToUser($user);
+            } catch (\Throwable $e) {
+                $inviteSent = false;
+                \Log::warning('Set-password invite email failed for new user: ' . $e->getMessage(), [
+                    'user_id' => $user->user_id,
+                    'email' => $user->email,
+                ]);
+            }
+
             return response()->json([
-                'message' => 'User created successfully.',
+                'message' => $inviteSent
+                    ? 'User created successfully. A set-password email has been sent.'
+                    : 'User created successfully, but the set-password email could not be sent automatically.',
+                'invite_sent' => $inviteSent,
                 'user' => [
                     'user_id' => $user->user_id,
                     'username' => $user->username,
@@ -312,6 +318,37 @@ class UserManagementController extends Controller
             return response()->json([
                 'message' => 'Failed to update user.',
                 'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function resendInvite(Request $request, int $userId): JsonResponse
+    {
+        if ($deny = $this->authorizeAdmin($request)) {
+            return $deny;
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        try {
+            $this->passwordResetLinkService->sendToUser($user);
+
+            return response()->json([
+                'message' => $user->password_hash
+                    ? 'Password reset email sent successfully.'
+                    : 'Password reset email sent successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Failed to resend invite/reset link: ' . $e->getMessage(), [
+                'user_id' => $user->user_id,
+                'email' => $user->email,
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to send email. Please try again.',
             ], 500);
         }
     }
