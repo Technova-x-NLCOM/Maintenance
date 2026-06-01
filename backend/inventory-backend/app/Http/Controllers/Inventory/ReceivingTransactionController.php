@@ -81,8 +81,9 @@ class ReceivingTransactionController extends Controller
         }
 
         $data = $request->validate([
+            'operation_type_id' => ['nullable', 'integer', 'exists:operation_types,operation_type_id'],
             'item_id' => ['required', 'integer', 'exists:items,item_id'],
-            'location_id' => ['nullable', 'integer'],
+            'location_name' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'batch_number' => ['required', 'string', 'max:100'],
             'purchase_date' => ['required', 'date'],
@@ -98,7 +99,8 @@ class ReceivingTransactionController extends Controller
         $manufacturedDateInput = $data['manufactured_date'] ?? null;
         $supplierInfo = $this->nullIfEmpty($data['supplier_info'] ?? null);
         $batchValue = array_key_exists('batch_value', $data) ? $data['batch_value'] : null;
-        $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? 'Stock Received';
+        $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'IN');
+        $reason = $this->nullIfEmpty($data['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Received';
         $notes = $this->nullIfEmpty($data['notes'] ?? null);
         $locationId = $this->resolveLocationId($request);
 
@@ -110,8 +112,10 @@ class ReceivingTransactionController extends Controller
         }
 
         try {
-            $line = DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes) {
+            $line = DB::transaction(function () use ($data, $locationId, $expiryDateInput, $manufacturedDateInput, $supplierInfo, $batchValue, $reason, $notes, $operationType) {
                 $data['location_id'] = $locationId;
+                $data['operation_type_id'] = $operationType?->operation_type_id;
+                $data['reason'] = $reason;
                 return $this->createReceivingLine($data);
             });
 
@@ -140,8 +144,9 @@ class ReceivingTransactionController extends Controller
     private function createReceivingBulk(Request $request)
     {
         $data = $request->validate([
+            'operation_type_id' => ['nullable', 'integer', 'exists:operation_types,operation_type_id'],
             'batch_number' => ['required', 'string', 'max:100'],
-            'location_id' => ['nullable', 'integer'],
+            'location_name' => ['nullable', 'string', 'max:255'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'exists:items,item_id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -152,6 +157,7 @@ class ReceivingTransactionController extends Controller
             'items.*.batch_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.reason' => ['nullable', 'string', 'max:255'],
             'items.*.notes' => ['nullable', 'string'],
+            'items.*.location_name' => ['nullable', 'string', 'max:255'],
         ]);
 
         foreach ($data['items'] as $index => $line) {
@@ -178,22 +184,26 @@ class ReceivingTransactionController extends Controller
 
         $reference = 'RCV-LIST-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
         $locationId = $this->resolveLocationId($request);
-
-        if (Schema::hasColumn('inventory_batches', 'location_id') && $locationId === null) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to create receiving transaction: no valid location is configured for inventory batches.',
-            ], 422);
-        }
+    $operationType = $this->resolveOperationType($data['operation_type_id'] ?? null, 'IN');
 
         try {
-            $summary = DB::transaction(function () use ($data, $reference, $locationId) {
+            $summary = DB::transaction(function () use ($data, $reference, $locationId, $operationType) {
                 $receivedLines = [];
                 $totalReceived = 0;
 
                 foreach ($data['items'] as $lineData) {
                     $lineData['batch_number'] = $data['batch_number'];
-                    $lineData['location_id'] = $locationId;
+                    // Prefer per-item provided location_name; fall back to resolved location name from request.
+                    if (array_key_exists('location_name', $lineData) && $lineData['location_name'] !== null && $lineData['location_name'] !== '') {
+                        $lineData['location_name'] = $this->nullIfEmpty((string) $lineData['location_name']);
+                    } elseif ($locationId !== null) {
+                        $resolvedLocation = $this->resolveLocationById($locationId);
+                        $lineData['location_name'] = $resolvedLocation?->location_name;
+                    } else {
+                        $lineData['location_name'] = null;
+                    }
+                    $lineData['operation_type_id'] = $operationType?->operation_type_id;
+                    $lineData['reason'] = $this->nullIfEmpty($lineData['reason'] ?? null) ?? $operationType?->operation_name ?? 'Stock Received';
                     $createdLine = $this->createReceivingLine($lineData, $reference);
                     $receivedLines[] = $createdLine;
                     $totalReceived += (int) $createdLine['quantity'];
@@ -257,6 +267,8 @@ class ReceivingTransactionController extends Controller
         }
 
         // Create the batch
+        $resolvedLocationId = $this->resolveLocationIdFromData($data);
+
         $batchInsert = [
             'item_id' => (int) $data['item_id'],
             'batch_number' => $data['batch_number'],
@@ -271,8 +283,9 @@ class ReceivingTransactionController extends Controller
         ];
 
         // Add location_id if the column exists and is provided
-        if (Schema::hasColumn('inventory_batches', 'location_id') && !empty($data['location_id'])) {
-            $batchInsert['location_id'] = (int) $data['location_id'];
+        $resolvedLocationId = $this->resolveLocationIdFromData($data);
+        if (Schema::hasColumn('inventory_batches', 'location_id') && $resolvedLocationId !== null) {
+            $batchInsert['location_id'] = $resolvedLocationId;
         }
 
         $batchId = DB::table('inventory_batches')->insertGetId($batchInsert);
@@ -285,6 +298,7 @@ class ReceivingTransactionController extends Controller
         $transactionInsert = [
             'item_id' => (int) $data['item_id'],
             'batch_id' => $batchId,
+            'operation_type_id' => !empty($data['operation_type_id']) ? (int) $data['operation_type_id'] : null,
             'transaction_type' => 'IN',
             'quantity' => (int) $data['quantity'],
             'reference_number' => $reference,
@@ -296,11 +310,11 @@ class ReceivingTransactionController extends Controller
         ];
 
         // Add location fields if they exist
-        if (Schema::hasColumn('inventory_transactions', 'from_location_id') && !empty($data['location_id'])) {
-            $transactionInsert['from_location_id'] = (int) $data['location_id'];
+        if (Schema::hasColumn('inventory_transactions', 'from_location_id') && $resolvedLocationId !== null) {
+            $transactionInsert['from_location_id'] = $resolvedLocationId;
         }
-        if (Schema::hasColumn('inventory_transactions', 'to_location_id') && !empty($data['location_id'])) {
-            $transactionInsert['to_location_id'] = (int) $data['location_id'];
+        if (Schema::hasColumn('inventory_transactions', 'to_location_id') && $resolvedLocationId !== null) {
+            $transactionInsert['to_location_id'] = $resolvedLocationId;
         }
 
         DB::table('inventory_transactions')->insert($transactionInsert);
@@ -342,12 +356,40 @@ class ReceivingTransactionController extends Controller
         $trimmed = trim($value);
         return $trimmed === '' ? null : $trimmed;
     }
+    private function resolveOperationType(mixed $incoming, string $expectedDirection): ?object
+    {
+        if ($incoming === null || $incoming === '') {
+            return null;
+        }
+
+        $operationType = DB::table('operation_types')
+            ->select('operation_type_id', 'operation_name', 'operation_direction', 'is_active')
+            ->where('operation_type_id', (int) $incoming)
+            ->first();
+
+        if (!$operationType) {
+            return null;
+        }
+
+        if (!$operationType->is_active || strtoupper((string) $operationType->operation_direction) !== strtoupper($expectedDirection)) {
+            throw ValidationException::withMessages([
+                'operation_type_id' => ['The selected operation type is not valid for this transaction.'],
+            ]);
+        }
+
+        return $operationType;
+    }
 
     private function resolveLocationId(Request $request): ?int
     {
         $incoming = $request->input('location_id');
         if ($incoming !== null && $incoming !== '') {
             return (int) $incoming;
+        }
+
+        $locationName = $request->input('location_name');
+        if ($locationName !== null && $locationName !== '') {
+            return $this->resolveLocationIdByName((string) $locationName);
         }
 
         $bootstrapped = $this->ensureDefaultLocation();
@@ -378,6 +420,50 @@ class ReceivingTransactionController extends Controller
         }
 
         return null;
+    }
+
+    private function resolveLocationIdFromData(array $data): ?int
+    {
+        if (!empty($data['location_id'])) {
+            return (int) $data['location_id'];
+        }
+
+        if (!empty($data['location_name'])) {
+            return $this->resolveLocationIdByName((string) $data['location_name']);
+        }
+
+        return null;
+    }
+
+    private function resolveLocationIdByName(string $locationName): ?int
+    {
+        $locationName = trim($locationName);
+        if ($locationName === '') {
+            return null;
+        }
+
+        $normalized = mb_strtolower($locationName);
+
+        $location = DB::table('locations')
+            ->select('location_id')
+            ->whereRaw('LOWER(location_name) = ?', [$normalized])
+            ->orWhereRaw('LOWER(location_code) = ?', [$normalized])
+            ->orderBy('location_id')
+            ->first();
+
+        if ($location) {
+            return (int) $location->location_id;
+        }
+
+        return null;
+    }
+
+    private function resolveLocationById(int $locationId): ?object
+    {
+        return DB::table('locations')
+            ->select('location_id', 'location_name')
+            ->where('location_id', $locationId)
+            ->first();
     }
 
     private function ensureDefaultLocation(): ?int

@@ -205,7 +205,8 @@ export class SidebarComponent implements OnInit {
 
     if (
       url.includes('/dashboard/inventory/items') ||
-      url.includes('/dashboard/inventory/categories')
+      url.includes('/dashboard/inventory/categories') ||
+      url.includes('/dashboard/inventory/operation-types')
     ) {
       this.openGroups.add('inventory-master-data');
       return;

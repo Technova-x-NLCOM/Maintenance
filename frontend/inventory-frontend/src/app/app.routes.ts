@@ -14,6 +14,7 @@ import { SettingsComponent } from './components/settings/settings.component';
 import { CategoryManagementComponent } from './components/inventory-master/categories/category-management.component';
 import { StorageManagementComponent } from './components/inventory-master/storage-management/storage-management.component';
 import { ItemRegistrationUpdatesComponent } from './components/inventory-master/items/item-registration-updates.component';
+import { OperationTypeManagementComponent } from './components/inventory-master/operations-type/operation-type-management.component';
 import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
@@ -44,6 +45,7 @@ export const routes: Routes = [
       { path: 'inventory/storage-management', component: StorageManagementComponent },
       { path: 'inventory/locations', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
+      { path: 'inventory/operation-types', component: OperationTypeManagementComponent },
       { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },

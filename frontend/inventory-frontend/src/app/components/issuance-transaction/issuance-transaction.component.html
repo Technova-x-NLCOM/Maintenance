@@ -168,14 +168,24 @@
         </select>
       </label>
       <label *ngIf="transactionMode === 'issuance'">
-        <span>Source Storage Location *</span>
-        <select class="form-control" [(ngModel)]="selectedLocationId" [disabled]="saving">
-          <option [ngValue]="null">Select source storage</option>
-          <option *ngFor="let location of locations" [ngValue]="location.location_id">
-            {{ location.display_name || location.location_name }}
+        <span>Operation Type *</span>
+        <select class="form-control" [(ngModel)]="selectedOperationTypeId" (ngModelChange)="onOperationTypeChange()" [disabled]="saving">
+          <option [ngValue]="null">Select operation type</option>
+          <option *ngFor="let operationType of operationTypes" [ngValue]="operationType.operation_type_id">
+            {{ operationType.display_name || operationType.operation_name }}
           </option>
         </select>
-        <p class="empty-hint" *ngIf="selectedLocationId === null">Source storage location is required.</p>
+        <p class="empty-hint" *ngIf="attemptedSubmit && !selectedOperationTypeId">Operation type is required.</p>
+      </label>
+      <label *ngIf="transactionMode === 'issuance'">
+        <span>Source Storage Location *</span>
+        <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
+          <option [ngValue]="null">Select source storage</option>
+          <option *ngFor="let location of locations" [ngValue]="location.location_name">
+            {{ location.location_name }}
+          </option>
+        </select>
+        <p class="empty-hint" *ngIf="selectedLocationName === null">Source storage location is required.</p>
       </label>
     </div>
 
@@ -305,14 +315,24 @@
         </select>
       </label>
       <label *ngIf="transactionMode === 'issuance'">
-        <span>Source Storage Location *</span>
-        <select class="form-control" [(ngModel)]="selectedLocationId" [disabled]="saving">
-          <option [ngValue]="null">Select source storage</option>
-          <option *ngFor="let location of locations" [ngValue]="location.location_id">
-            {{ location.display_name || location.location_name }}
+        <span>Operation Type *</span>
+        <select class="form-control" [(ngModel)]="selectedOperationTypeId" (ngModelChange)="onOperationTypeChange()" [disabled]="saving">
+          <option [ngValue]="null">Select operation type</option>
+          <option *ngFor="let operationType of operationTypes" [ngValue]="operationType.operation_type_id">
+            {{ operationType.display_name || operationType.operation_name }}
           </option>
         </select>
-        <p class="empty-hint" *ngIf="selectedLocationId === null">Source storage location is required.</p>
+        <p class="empty-hint" *ngIf="attemptedSubmit && !selectedOperationTypeId">Operation type is required.</p>
+      </label>
+      <label *ngIf="transactionMode === 'issuance'">
+        <span>Source Storage Location *</span>
+        <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
+          <option [ngValue]="null">Select source storage</option>
+          <option *ngFor="let location of locations" [ngValue]="location.location_name">
+            {{ location.location_name }}
+          </option>
+        </select>
+        <p class="empty-hint" *ngIf="selectedLocationName === null">Source storage location is required.</p>
       </label>
     </div>
 

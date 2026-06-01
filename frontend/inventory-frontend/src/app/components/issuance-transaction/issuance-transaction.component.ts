@@ -13,6 +13,15 @@ import {
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
 
+interface OperationTypeOption {
+  operation_type_id: number;
+  operation_name: string;
+  operation_direction: 'IN' | 'OUT';
+  description: string | null;
+  is_active: boolean;
+  display_name?: string;
+}
+
 interface IssuanceCartLine {
   item_id: number;
   item_code: string;
@@ -33,6 +42,7 @@ interface IssuanceCartLine {
 export class IssuanceTransactionComponent implements OnInit {
   items: IssuanceItem[] = [];
   locations: LocationOption[] = [];
+  operationTypes: OperationTypeOption[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
 
   currentPage = 1;
@@ -48,6 +58,8 @@ export class IssuanceTransactionComponent implements OnInit {
 
   selectedItem: IssuanceItem | null = null;
   transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
+  selectedOperationTypeId: number | null = null;
+  selectedOperationTypeLabel = 'Select operation type';
 
   // Mobile FAB state for issuance list sidebar
   isIssuanceListSidebarOpen = false;
@@ -75,7 +87,7 @@ export class IssuanceTransactionComponent implements OnInit {
   onWindowResize(): void {
     this.updateMobileView();
   }
-  selectedLocationId: number | null = null;
+  selectedLocationName: string | null = null;
   selectedLocationLabel = 'Select source storage';
   issueQuantity = 1;
   adjustConfirmExpiration = false;
@@ -121,6 +133,9 @@ export class IssuanceTransactionComponent implements OnInit {
   openCartModal(item: IssuanceItem): void {
     this.selectItem(item);
     this.transactionMode = 'issuance';
+    this.applyDefaultOperationType();
+    this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
+    this.loadSourceLocationOptions();
     this.adjustConfirmExpiration = false;
     this.adjustReason = 'Stock Adjustment (Decrease)';
     this.adjustNotes = '';
@@ -154,31 +169,89 @@ export class IssuanceTransactionComponent implements OnInit {
 
   ngOnInit(): void {
     this.updateMobileView();
-    this.loadLocationOptions();
+    this.loadOperationTypeOptions();
     this.loadItems(1);
     this.loadCategoryOptions();
   }
 
-  loadLocationOptions(): void {
-    this.itemService.getLocationOptions().subscribe({
+  loadOperationTypeOptions(): void {
+    this.itemService.getOperationTypeOptions('OUT').subscribe({
+      next: (response) => {
+        this.operationTypes = (response.data || []).filter((option) => option.is_active);
+        this.applyDefaultOperationType();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.operationTypes = [];
+        this.selectedOperationTypeId = null;
+        this.selectedOperationTypeLabel = 'Select operation type';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private applyDefaultOperationType(): void {
+    if (!this.operationTypes.length) {
+      this.selectedOperationTypeId = null;
+      this.selectedOperationTypeLabel = 'Select operation type';
+      return;
+    }
+
+    if (this.selectedOperationTypeId === null || !this.operationTypes.some((option) => option.operation_type_id === this.selectedOperationTypeId)) {
+      this.selectedOperationTypeId = this.operationTypes[0].operation_type_id;
+    }
+
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+  }
+
+  onOperationTypeChange(): void {
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+    if (selected?.operation_name && this.transactionMode === 'issuance') {
+      this.reason = selected.operation_name;
+    }
+  }
+
+  private getSourceLocationItemIds(): number[] {
+    const cartItemIds = this.cartLines.map((line) => line.item_id);
+    if (cartItemIds.length > 0) {
+      return cartItemIds;
+    }
+
+    return this.selectedItem ? [this.selectedItem.item_id] : [];
+  }
+
+  loadSourceLocationOptions(): void {
+    const itemIds = this.getSourceLocationItemIds();
+
+    if (itemIds.length === 0) {
+      this.locations = [];
+      this.selectedLocationName = null;
+      this.selectedLocationLabel = 'Select source storage';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.itemService.getIssuanceSourceLocations(itemIds).subscribe({
       next: (response) => {
         this.locations = (response.data || []).slice().sort((a, b) =>
           a.location_name.localeCompare(b.location_name),
         );
 
-        if (this.locations.length > 0 && this.selectedLocationId === null) {
-          this.selectedLocationId = this.locations[0].location_id;
-          this.selectedLocationLabel = this.locations[0].display_name || this.locations[0].location_name;
-        } else if (this.selectedLocationId !== null) {
-          const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
-          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select source storage';
+        if (this.locations.length > 0 && this.selectedLocationName === null) {
+          this.selectedLocationName = this.locations[0].location_name;
+          this.selectedLocationLabel = this.locations[0].location_name;
+        } else if (this.selectedLocationName !== null) {
+          const selected = this.locations.find((location) => location.location_name === this.selectedLocationName);
+          this.selectedLocationLabel = selected?.location_name || 'Select source storage';
         }
 
         this.cdr.detectChanges();
       },
       error: () => {
         this.locations = [];
-        this.selectedLocationId = null;
+        this.selectedLocationName = null;
         this.selectedLocationLabel = 'Select source storage';
         this.cdr.detectChanges();
       },
@@ -283,6 +356,8 @@ export class IssuanceTransactionComponent implements OnInit {
       });
     }
 
+    this.loadSourceLocationOptions();
+
     this.errorMessage = '';
     this.showToast(`${this.selectedItem.item_description} added to list.`);
   }
@@ -298,6 +373,7 @@ export class IssuanceTransactionComponent implements OnInit {
 
   removeLine(line: IssuanceCartLine): void {
     this.cartLines = this.cartLines.filter((x) => x.item_id !== line.item_id);
+    this.loadSourceLocationOptions();
   }
 
   getTotalRequestedQuantity(): number {
@@ -309,7 +385,11 @@ export class IssuanceTransactionComponent implements OnInit {
       return false;
     }
 
-    if (this.locations.length > 0 && !this.selectedLocationId) {
+    if (this.locations.length > 0 && !this.selectedLocationName) {
+      return false;
+    }
+
+    if (!this.selectedOperationTypeId) {
       return false;
     }
     
@@ -374,10 +454,10 @@ export class IssuanceTransactionComponent implements OnInit {
 
     this.itemService
       .createIssuanceTransaction({
+        operation_type_id: this.selectedOperationTypeId,
         destination: this.destination.trim(),
-        from_location_id: this.selectedLocationId,
-        to_location_id: this.selectedLocationId,
-        reason: this.reason.trim() || 'Stock Issuance',
+        location_name: this.selectedLocationName,
+        reason: this.reason.trim() || this.selectedOperationTypeLabel || 'Stock Issuance',
         notes: this.notes.trim() || '',
         items: this.cartLines.map((line) => ({ item_id: line.item_id, quantity: line.quantity }))
       })
@@ -388,7 +468,8 @@ export class IssuanceTransactionComponent implements OnInit {
           this.selectedItem = null;
           this.issueQuantity = 1;
           this.destination = '';
-          this.reason = 'Stock Issuance';
+          this.applyDefaultOperationType();
+          this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
           this.notes = '';
           this.showListModal = false;
           this.loadItems(this.currentPage);

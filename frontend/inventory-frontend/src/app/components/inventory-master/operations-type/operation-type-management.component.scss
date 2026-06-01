@@ -1,0 +1,249 @@
+.operation-type-management-page {
+  padding: 28px 24px 0;
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.page-title,
+.panel-title,
+.confirm-title {
+  margin: 0;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  padding: 20px;
+}
+
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.search-box input {
+  border: 0;
+  outline: 0;
+  min-width: 240px;
+}
+
+.btn-primary,
+.btn-cancel,
+.btn-ghost,
+.btn-danger,
+.page-btn,
+.btn-sm {
+  border-radius: 10px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: #2563eb;
+  color: #fff;
+}
+
+.btn-primary svg { width: 18px; height: 18px; }
+
+.btn-sm {
+  padding: 8px 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.btn-danger {
+  padding: 10px 16px;
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-cancel,
+.btn-ghost,
+.page-btn {
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.state-loading,
+.state-error,
+.empty-state {
+  padding: 18px;
+  text-align: center;
+  color: #475569;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+th {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.direction-badge,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.in-badge { background: #dcfce7; color: #166534; }
+.out-badge { background: #ffedd5; color: #9a3412; }
+.status-badge { background: #dbeafe; color: #1d4ed8; }
+.status-badge.inactive { background: #e2e8f0; color: #475569; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-content,
+.modal-confirm {
+  width: min(760px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
+}
+
+.form-panel-header {
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #fff;
+}
+
+.modal-body-scroll {
+  padding: 20px 22px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.full-width { grid-column: 1 / -1; }
+
+label span {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+input[type='text'], select, textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: #fff;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-actions,
+.confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 22px 22px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.modal-confirm {
+  padding: 22px;
+  width: min(520px, 100%);
+}
+
+.confirm-body {
+  margin: 12px 0 0;
+  color: #475569;
+}

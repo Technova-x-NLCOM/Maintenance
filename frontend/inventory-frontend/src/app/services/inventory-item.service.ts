@@ -155,8 +155,10 @@ interface PaginatedReceivingItemsResponse {
 }
 
 interface ReceivingTransactionRequest {
+  operation_type_id?: number | null;
   item_id?: number;
   location_id?: number | null;
+  location_name?: string | null;
   quantity?: number;
   batch_number?: string;
   purchase_date?: string;
@@ -176,6 +178,7 @@ interface ReceivingTransactionRequest {
     batch_value?: number | null;
     reason?: string | null;
     notes?: string | null;
+    location_id?: number | null;
   }>;
 }
 
@@ -218,9 +221,11 @@ interface IssuanceLineInput {
 }
 
 interface IssuanceTransactionRequest {
+  operation_type_id?: number | null;
   destination: string;
   from_location_id?: number | null;
   to_location_id?: number | null;
+  location_name?: string | null;
   reason?: string;
   notes?: string;
   items: IssuanceLineInput[];
@@ -295,6 +300,21 @@ interface AdjustmentTransactionResponse {
     expiry_date?: string | null;
     manufactured_date?: string | null;
   };
+}
+
+interface OperationTypeOption {
+  operation_type_id: number;
+  operation_name: string;
+  operation_direction: 'IN' | 'OUT';
+  description: string | null;
+  is_active: boolean;
+  display_name?: string;
+}
+
+interface OperationTypeOptionsResponse {
+  success: boolean;
+  message: string;
+  data: OperationTypeOption[];
 }
 
 export type {
@@ -378,6 +398,15 @@ export class InventoryItemService {
     }
 
     return this.http.get<LocationOptionsResponse>(`${getApiBaseUrl()}/inventory/locations/options`, {
+      headers: this.getHeaders(),
+      params,
+    });
+  }
+
+  getOperationTypeOptions(direction: 'IN' | 'OUT'): Observable<OperationTypeOptionsResponse> {
+    const params = new HttpParams().set('direction', direction);
+
+    return this.http.get<OperationTypeOptionsResponse>(`${getApiBaseUrl()}/inventory/operation-types/options`, {
       headers: this.getHeaders(),
       params,
     });
@@ -525,6 +554,18 @@ export class InventoryItemService {
     return this.http.get<PaginatedIssuanceItemsResponse>(
       `${getApiBaseUrl()}/inventory/issuance/items`,
       { params: httpParams, headers: this.getHeaders() }
+    );
+  }
+
+  getIssuanceSourceLocations(itemIds: number[]): Observable<LocationOptionsResponse> {
+    let params = new HttpParams();
+    itemIds.forEach((itemId) => {
+      params = params.append('item_ids[]', String(itemId));
+    });
+
+    return this.http.get<LocationOptionsResponse>(
+      `${getApiBaseUrl()}/inventory/issuance/source-locations`,
+      { headers: this.getHeaders(), params }
     );
   }
 

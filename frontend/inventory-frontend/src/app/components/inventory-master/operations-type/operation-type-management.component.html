@@ -1,0 +1,140 @@
+<div class="operation-type-management-page">
+  <header class="page-header header-condensed">
+    <div class="header-text">
+      <div class="eyebrow">Inventory Creation</div>
+      <h1 class="page-title">Operations Type</h1>
+      <p class="subtitle">
+        Define the in and out operation labels used by receiving and issuance workflows.
+        Click <strong>Add new operation type</strong> to create one, or <strong>Edit</strong> on a row to update.
+      </p>
+    </div>
+  </header>
+
+  <app-toast></app-toast>
+
+  <div class="modal-overlay" *ngIf="showForm">
+    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
+      <div class="form-panel-header">
+        <h2 class="panel-title">{{ editingOperationTypeId ? 'Edit operation type' : 'Add new operation type' }}</h2>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="form-grid">
+          <label class="full-width">
+            <span>Operation name <em>*</em></span>
+            <input type="text" [(ngModel)]="formData.operation_name" placeholder="e.g. Receiving, Issuance, Stock Adjustment" maxlength="100" />
+          </label>
+
+          <label>
+            <span>Direction <em>*</em></span>
+            <select [(ngModel)]="formData.operation_direction">
+              <option value="IN">IN</option>
+              <option value="OUT">OUT</option>
+            </select>
+          </label>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="formData.is_active" />
+            <span>Mark as active</span>
+          </label>
+
+          <label class="full-width">
+            <span>Description (optional)</span>
+            <textarea rows="3" [(ngModel)]="formData.description" placeholder="Short note about this operation type" maxlength="500"></textarea>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" type="button" (click)="closeForm()">Cancel</button>
+        <button class="btn-primary" type="button" (click)="saveOperationType()" [disabled]="saving || !formData.operation_name.trim()">
+          {{ saving ? 'Saving...' : editingOperationTypeId ? 'Save changes' : 'Add operation type' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
+    <div class="modal-confirm" (click)="$event.stopPropagation()">
+      <h2 class="confirm-title">Confirm Deletion</h2>
+      <p class="confirm-body">
+        Are you sure you want to delete
+        <strong *ngIf="deleteTarget">"{{ deleteTarget.operation_name }}"</strong>?
+      </p>
+      <div class="confirm-footer">
+        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">Cancel</button>
+        <button type="button" class="btn-danger" (click)="confirmDeleteOperationType()" [disabled]="deleteLoading">
+          {{ deleteLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">
+        Operation Types <span class="count">({{ totalRecords }})</span>
+      </h2>
+      <div class="toolbar-actions">
+        <button class="btn-primary" (click)="startNew()" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add new operation type
+        </button>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput()" placeholder="Search by name or direction" />
+          <button *ngIf="search" type="button" class="clear-btn" (click)="clearSearch()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="state-error">{{ error }}</div>
+    <div *ngIf="loading" class="state-loading">Loading operation types...</div>
+
+    <div class="table-wrap" *ngIf="!loading && operationTypes.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Direction</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of operationTypes; trackBy: trackByOperationType">
+            <td>{{ row.operation_name }}</td>
+            <td>
+              <span class="direction-badge" [class.in-badge]="row.operation_direction === 'IN'" [class.out-badge]="row.operation_direction === 'OUT'">
+                {{ row.operation_direction }}
+              </span>
+            </td>
+            <td>{{ row.description || '—' }}</td>
+            <td><span class="status-badge" [class.inactive]="!row.is_active">{{ row.is_active ? 'Active' : 'Inactive' }}</span></td>
+            <td class="actions">
+              <button type="button" class="btn-sm btn-edit" (click)="editOperationType(row)">Edit</button>
+              <button type="button" class="btn-sm btn-danger" (click)="openDeleteConfirm(row)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && !operationTypes.length && !error" class="empty-state">
+      No operation types found. Add one to define your IN and OUT labels.
+    </div>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button type="button" class="page-btn" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button type="button" class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </section>
+</div>

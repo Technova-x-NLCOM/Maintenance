@@ -8,6 +8,7 @@ use App\Http\Controllers\Inventory\BatchDistributionController;
 use App\Http\Controllers\Inventory\IssuanceTransactionController;
 use App\Http\Controllers\Inventory\LocationController;
 use App\Http\Controllers\Inventory\ItemController;
+use App\Http\Controllers\Inventory\OperationTypeController;
 use App\Http\Controllers\Inventory\DistributionPlanController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
 use App\Http\Controllers\Inventory\StockAdjustmentController;
@@ -164,6 +165,19 @@ Route::middleware('throttle:system-api')->group(function () {
             });
         });
 
+    Route::prefix('api/inventory/operation-types')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('options', [OperationTypeController::class, 'options']);
+                Route::get('/', [OperationTypeController::class, 'index']);
+                Route::get('{operationTypeId}', [OperationTypeController::class, 'show']);
+                Route::post('/', [OperationTypeController::class, 'store']);
+                Route::put('{operationTypeId}', [OperationTypeController::class, 'update']);
+                Route::delete('{operationTypeId}', [OperationTypeController::class, 'destroy']);
+            });
+        });
+
     // Inventory Transactions - Monitor (IN/OUT history)
     Route::prefix('api/inventory/transactions')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
@@ -191,6 +205,7 @@ Route::middleware('throttle:system-api')->group(function () {
         ->group(function () {
             Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
                 Route::get('items', [IssuanceTransactionController::class, 'getIssuableItems']);
+                Route::get('source-locations', [IssuanceTransactionController::class, 'getSourceLocations']);
                 Route::post('create', [IssuanceTransactionController::class, 'createIssuance']);
             });
         });

@@ -11,6 +11,15 @@ import {
   LocationOption,
 } from '../../services/inventory-item.service';
 
+interface OperationTypeOption {
+  operation_type_id: number;
+  operation_name: string;
+  operation_direction: 'IN' | 'OUT';
+  description: string | null;
+  is_active: boolean;
+  display_name?: string;
+}
+
 interface ReceivingCartLine {
   item_id: number;
   item_code: string;
@@ -25,6 +34,7 @@ interface ReceivingCartLine {
   reason: string | null;
   notes: string | null;
   batch_number?: string | null;
+  location_name?: string | null;
 }
 
 @Component({
@@ -38,14 +48,17 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   // Items catalog and pagination
   receivingItems: ReceivingItem[] = [];
   locations: LocationOption[] = [];
+  operationTypes: OperationTypeOption[] = [];
   categories: Array<{ category_id: number; category_name: string }> = [];
 
   currentPage = 1;
   lastPage = 1;
   perPage = 10;
   searchQuery = '';
-  selectedLocationId: number | null = null;
+  selectedLocationName: string | null = null;
   selectedLocationLabel = 'Select storage location';
+  selectedOperationTypeId: number | null = null;
+  selectedOperationTypeLabel = 'Select operation type';
   
   // Mobile FAB state for receiving list sidebar
   isReceivingListSidebarOpen = false;
@@ -103,7 +116,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   openReceivingModal(item: ReceivingItem): void {
     this.selectItem(item);
     this.transactionMode = 'receive';
-    this.reason = 'Stock Received';
+    this.applyDefaultOperationType();
+    this.reason = this.selectedOperationTypeLabel || 'Stock Received';
     this.attemptedAddToList = false;
     this.showReceivingModal = true;
   }
@@ -166,6 +180,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     const today = new Date();
     this.purchaseDate = today.toISOString().split('T')[0];
     this.loadLocationOptions();
+    this.loadOperationTypeOptions();
     this.loadReceivingItems(1);
     this.loadCategoryOptions();
   }
@@ -223,23 +238,62 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
           a.location_name.localeCompare(b.location_name),
         );
 
-        if (this.locations.length > 0 && this.selectedLocationId === null) {
-          this.selectedLocationId = this.locations[0].location_id;
-          this.selectedLocationLabel = this.locations[0].display_name || this.locations[0].location_name;
-        } else if (this.selectedLocationId !== null) {
-          const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
-          this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select storage location';
+        if (this.locations.length > 0 && this.selectedLocationName === null) {
+          this.selectedLocationName = this.locations[0].location_name;
+          this.selectedLocationLabel = this.locations[0].location_name;
+        } else if (this.selectedLocationName !== null) {
+          const selected = this.locations.find((location) => location.location_name === this.selectedLocationName);
+          this.selectedLocationLabel = selected?.location_name || 'Select storage location';
         }
 
         this.cdr.detectChanges();
       },
       error: () => {
         this.locations = [];
-        this.selectedLocationId = null;
+        this.selectedLocationName = null;
         this.selectedLocationLabel = 'Select storage location';
         this.cdr.detectChanges();
       },
     });
+  }
+
+  loadOperationTypeOptions(): void {
+    this.itemService.getOperationTypeOptions('IN').subscribe({
+      next: (response) => {
+        this.operationTypes = (response.data || []).filter((option) => option.is_active);
+        this.applyDefaultOperationType();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.operationTypes = [];
+        this.selectedOperationTypeId = null;
+        this.selectedOperationTypeLabel = 'Select operation type';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private applyDefaultOperationType(): void {
+    if (!this.operationTypes.length) {
+      this.selectedOperationTypeId = null;
+      this.selectedOperationTypeLabel = 'Select operation type';
+      return;
+    }
+
+    if (this.selectedOperationTypeId === null || !this.operationTypes.some((option) => option.operation_type_id === this.selectedOperationTypeId)) {
+      this.selectedOperationTypeId = this.operationTypes[0].operation_type_id;
+    }
+
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+  }
+
+  onOperationTypeChange(): void {
+    const selected = this.operationTypes.find((option) => option.operation_type_id === this.selectedOperationTypeId);
+    this.selectedOperationTypeLabel = selected?.display_name || selected?.operation_name || 'Select operation type';
+    if (selected?.operation_name && this.transactionMode === 'receive') {
+      this.reason = selected.operation_name;
+    }
   }
 
   loadReceivingItems(page: number = 1): void {
@@ -398,7 +452,11 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       return false;
     }
 
-    if (this.transactionMode === 'receive' && this.locations.length > 0 && !this.selectedLocationId) {
+    if (this.transactionMode === 'receive' && this.locations.length > 0 && !this.selectedLocationName) {
+      return false;
+    }
+
+    if (this.transactionMode === 'receive' && !this.selectedOperationTypeId) {
       return false;
     }
 
@@ -480,9 +538,10 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       manufactured_date: this.manufacturedDate || null,
       supplier_info: this.supplierInfo?.trim() || null,
       batch_value: this.batchValue || null,
-      reason: this.reason?.trim() || 'Stock Received',
+      reason: this.reason?.trim() || this.selectedOperationTypeLabel || 'Stock Received',
       notes: this.notes?.trim() || null,
       batch_number: this.confirmBatchNumber?.trim() || null,
+      location_name: this.selectedLocationName,
     };
 
     const existingIndex = this.receivingLines.findIndex((entry) => entry.item_id === line.item_id);
@@ -497,6 +556,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
       this.receivingLines[existingIndex].reason = line.reason;
       this.receivingLines[existingIndex].notes = line.notes;
       this.receivingLines[existingIndex].batch_number = line.batch_number;
+      this.receivingLines[existingIndex].location_name = line.location_name;
     } else {
       this.receivingLines.push(line);
     }
@@ -518,11 +578,19 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     return this.receivingLines.reduce((sum, line) => sum + line.quantity, 0);
   }
 
+  hasReceivingLinesMissingLocation(): boolean {
+    return this.receivingLines.some((line) => !line.location_name);
+  }
+
   canSubmitList(): boolean {
     if (this.receivingLines.length === 0 || this.saving) {
       return false;
     }
     
+    if (this.receivingLines.some((line) => !line.location_name)) {
+      return false;
+    }
+
     if (!this.confirmBatchNumber.trim() || this.confirmBatchNumber.length > 50) {
       return false;
     }
@@ -554,8 +622,8 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.showErrorMessage = false;
 
     const payload = {
+      operation_type_id: this.selectedOperationTypeId,
       batch_number: this.confirmBatchNumber.trim(),
-      location_id: this.selectedLocationId,
       items: this.receivingLines.map((line) => ({
         item_id: line.item_id,
         quantity: line.quantity,
@@ -566,6 +634,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
         batch_value: line.batch_value,
         reason: line.reason,
         notes: line.notes,
+        location_name: line.location_name,
       })),
     };
 
@@ -648,17 +717,20 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
     this.manufacturedDate = null;
     this.supplierInfo = '';
     this.batchValue = null;
-    this.reason = 'Stock Received';
+    this.applyDefaultOperationType();
+    this.reason = this.selectedOperationTypeLabel || 'Stock Received';
     this.notes = '';
     this.expiryDateOverride = false;
     this.computedExpiryDate = null;
     this.computedExpiryMessage = '';
     this.attemptedAddToList = false;
     if (this.locations.length > 0) {
-      this.selectedLocationId = this.selectedLocationId ?? this.locations[0].location_id;
-      const selected = this.locations.find((location) => location.location_id === this.selectedLocationId);
-      this.selectedLocationLabel = selected?.display_name || selected?.location_name || 'Select storage location';
+      this.selectedLocationName = this.selectedLocationName ?? this.locations[0].location_name;
+      const selected = this.locations.find((location) => location.location_name === this.selectedLocationName);
+      this.selectedLocationLabel = selected?.location_name || 'Select storage location';
     }
+
+    this.applyDefaultOperationType();
   }
 
   showError(message: string): void {
