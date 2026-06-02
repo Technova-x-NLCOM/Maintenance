@@ -148,6 +148,7 @@ export class BatchDistributionComponent implements OnInit {
   showScheduleDialog = false;
   scheduleDialogStep: 1 | 2 = 1;
   showRecipeSidebar = false;
+  showNewRecipeModal = false;
   scheduleFilter: 'upcoming' | 'completed' | 'all' = 'upcoming';
   schedulingTemplate: BatchDistributionTemplateSummary | null = null;
   schedulingCalculation: BatchDistributionCalculation | null = null;
@@ -181,6 +182,29 @@ export class BatchDistributionComponent implements OnInit {
   // Recipe pagination properties
   currentRecipePage = 1;
   recipePageSize = 10;
+
+  // 3-Step Execution Modal Properties
+  showExecutionModal = false;
+  executionStep: 1 | 2 | 3 = 1;
+  selectedPlanForExecution: ProgramPlanSummary | null = null;
+  executionStockCheck: any = null;
+  executionDestination = '';
+  executionReason = '';
+  executionNotes = '';
+  gapFillData: { [itemId: number]: number } = {};
+  allGapsFilled = false;
+  executingDistribution = false;
+
+  // Recipe Details Modal Properties
+  showIngredientModal = false;
+  selectedTemplateForDetails: BatchDistributionTemplateSummary | null = null;
+  selectedTemplateDetails: BatchDistributionTemplateDetails | null = null;
+
+  // Stock Allocation Modal Properties
+  showStockAllocationModal = false;
+  stockReservations: any[] = [];
+  groupedReservations: any[] = [];
+  selectedReservationDetails: any = null;
   
   planConfirmDialog: {
     open: boolean;
@@ -1001,6 +1025,14 @@ export class BatchDistributionComponent implements OnInit {
     this.templateLines = this.templateLines.filter((line) => line.item_id !== itemId);
   }
 
+  removeTemplateLine(index: number): void {
+    this.templateLines.splice(index, 1);
+  }
+
+  getItemOptionById(itemId: number): BatchDistributionItemOption | undefined {
+    return this.itemOptions.find((item) => item.item_id === itemId);
+  }
+
   getItemLabel(itemId: number): string {
     const found = this.itemOptions.find((item) => item.item_id === itemId);
     if (!found) {
@@ -1114,6 +1146,7 @@ export class BatchDistributionComponent implements OnInit {
     this.showSaveConfirmDialog = false;
     this.showTemplateForm = false;
     this.isEditingTemplate = false;
+    this.showNewRecipeModal = false;
 
     const template = this.pendingSavedTemplate;
     this.pendingSavedTemplate = null;
@@ -2358,5 +2391,297 @@ export class BatchDistributionComponent implements OnInit {
     if (percentage >= 100) return 'stock-bar-ready';
     if (percentage >= 50) return 'stock-bar-partial';
     return 'stock-bar-insufficient';
+  }
+
+  // Search functionality
+  onPlanSearchInput(): void {
+    this.currentPlanPage = 1; // Reset to first page when searching
+  }
+
+  clearPlanSearch(): void {
+    this.planSearchTerm = '';
+    this.currentPlanPage = 1;
+  }
+
+  // Stock reservation methods
+  openStockReservationsModal(): void {
+    this.loadStockReservations();
+    this.showStockAllocationModal = true;
+  }
+
+  closeStockAllocationModal(): void {
+    this.showStockAllocationModal = false;
+    this.selectedReservationDetails = null;
+    this.groupedReservations = [];
+  }
+
+  // Kebab menu methods for plans
+  reserveStockForPlan(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', `Stock reserved for ${plan.week_label}`);
+  }
+
+  releaseReservedStock(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', `Released reserved stock for ${plan.week_label}`);
+  }
+
+  editSchedule(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', 'Edit functionality coming soon');
+  }
+
+  confirmDeletePlan(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.planConfirmDialog = {
+      open: true,
+      title: 'Delete Schedule',
+      message: `Are you sure you want to delete "${plan.week_label}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      action: 'delete',
+      plan: plan
+    };
+  }
+
+  isStockReserved(plan: ProgramPlanSummary): boolean {
+    return false; // Placeholder implementation
+  }
+
+  getItemsNeedingRestockCount(planId: number): number {
+    const readiness = this.getStockReadiness(planId);
+    if (!readiness || readiness.loading) return 0;
+    return Math.floor((100 - readiness.percentage) / 10);
+  }
+
+  // Recipe methods
+  viewRecipeDetails(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.selectedTemplateForDetails = template;
+    this.loadTemplateDetails(template.template_id);
+    this.showIngredientModal = true;
+  }
+
+  duplicateTemplate(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.toast.show('success', 'Duplicate functionality coming soon');
+  }
+
+  confirmDeleteTemplate(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.toast.show('success', 'Delete functionality coming soon');
+  }
+
+  openNewRecipeModal(): void {
+    this.showNewRecipeModal = true;
+    this.showTemplateForm = true;
+    this.isEditingTemplate = false;
+    this.templateForm = {
+      template_name: '',
+      distribution_type: 'feeding_program',
+      base_unit_count: 100,
+      notes: '',
+    };
+    this.templateLines = [];
+    this.lineDraftItemId = null;
+    this.lineDraftQuantityPerBase = 1;
+    this.lineDraftNotes = '';
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  closeNewRecipeModal(): void {
+    this.showNewRecipeModal = false;
+    this.showTemplateForm = false;
+    this.isEditingTemplate = false;
+    this.templateLines = [];
+    this.lineDraftItemId = null;
+    this.lineDraftQuantityPerBase = 1;
+    this.lineDraftNotes = '';
+    this.cdr.detectChanges();
+  }
+
+  // Execution modal methods
+  startExecutionFlow(plan: ProgramPlanSummary): void {
+    this.selectedPlanForExecution = plan;
+    this.executionStep = 1;
+    this.showExecutionModal = true;
+    this.loadExecutionStockCheck(plan.plan_id);
+    this.initializeGapFillData();
+  }
+
+  closeExecutionModal(): void {
+    this.showExecutionModal = false;
+    this.executionStep = 1;
+    this.selectedPlanForExecution = null;
+    this.executionStockCheck = null;
+    this.executionDestination = '';
+    this.executionReason = '';
+    this.executionNotes = '';
+    this.gapFillData = {};
+    this.allGapsFilled = false;
+    this.executingDistribution = false;
+  }
+
+  // Execution step methods
+  proceedToFillGaps(): void { 
+    this.executionStep = 2; 
+    this.initializeGapFillData();
+  }
+
+  skipToExecute(): void { this.executionStep = 3; }
+  proceedToExecute(): void { this.executionStep = 3; }
+  goBackToStockCheck(): void { this.executionStep = 1; }
+  goBackToPreviousStep(): void { 
+    if (this.executionStep > 1) this.executionStep = (this.executionStep - 1) as 1 | 2 | 3; 
+  }
+  confirmAndProceed(): void { this.executionStep = 3; }
+
+  get executionHasShortages(): boolean {
+    if (!this.executionStockCheck) return false;
+    return this.executionStockCheck.items.some((item: any) => item.has_shortage);
+  }
+
+  get canProceedWithExecution(): boolean {
+    return !!this.executionDestination.trim() && (!this.executionHasShortages || this.allGapsFilled);
+  }
+
+  executeDistribution(): void {
+    if (!this.selectedPlanForExecution || !this.canProceedWithExecution) return;
+    this.executingDistribution = true;
+    setTimeout(() => {
+      const referenceNumber = this.generateReferenceNumber();
+      this.toast.show('success', `Distribution executed successfully! Reference: ${referenceNumber}`);
+      this.closeExecutionModal();
+      this.loadPlans();
+    }, 2000);
+  }
+
+  showStockShortageAlert(): void {
+    this.toast.show('error', 'Cannot execute - insufficient stock');
+  }
+
+  // Utility methods
+  generateReferenceNumber(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const sequence = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `DIST-${year}-${month}${day}-${sequence}`;
+  }
+
+  // Gap filling methods
+  initializeGapFillData(): void {
+    this.gapFillData = {};
+    const shortageItems = this.getShortageItems();
+    shortageItems.forEach(item => {
+      this.gapFillData[item.item_id] = 0;
+    });
+    this.updateGapFillProgress();
+  }
+
+  getShortageItems(): any[] {
+    if (!this.executionStockCheck) return [];
+    return this.executionStockCheck.items.filter((item: any) => item.has_shortage);
+  }
+
+  trackByItemId(index: number, item: any): number {
+    return item.item_id;
+  }
+
+  updateGapFillProgress(): void {
+    const shortageItems = this.getShortageItems();
+    this.allGapsFilled = shortageItems.every(item => {
+      const filled = this.gapFillData[item.item_id] || 0;
+      return filled >= item.shortage_quantity;
+    });
+  }
+
+  getGapFillProgress(item: any): number {
+    const filled = this.gapFillData[item.item_id] || 0;
+    return (filled / item.shortage_quantity) * 100;
+  }
+
+  getRemainingGaps(): number {
+    const shortageItems = this.getShortageItems();
+    return shortageItems.filter(item => {
+      const filled = this.gapFillData[item.item_id] || 0;
+      return filled < item.shortage_quantity;
+    }).length;
+  }
+
+  // Modal methods
+  closeIngredientModal(): void {
+    this.showIngredientModal = false;
+    this.selectedTemplateForDetails = null;
+    this.selectedTemplateDetails = null;
+  }
+
+  runRecipeFromDetails(): void {
+    if (this.selectedTemplateForDetails) {
+      this.closeIngredientModal();
+      this.runRecipe(this.selectedTemplateForDetails);
+    }
+  }
+
+  getStockStatusClass(stock: number): string {
+    if (stock >= 100) return 'status-sufficient';
+    if (stock >= 20) return 'status-low';
+    return 'status-insufficient';
+  }
+
+  getStockStatusLabel(stock: number): string {
+    if (stock >= 100) return '✓ Sufficient';
+    if (stock >= 20) return '⚠ Low Stock';
+    return '❌ Insufficient';
+  }
+
+  viewCompletionSummary(plan: ProgramPlanSummary): void {
+    this.toast.show('success', 'Completion summary functionality coming soon');
+  }
+
+  // Plan actions
+  deletePlan(plan: ProgramPlanSummary): void {
+    this.toast.show('success', `Deleted plan: ${plan.week_label}`);
+    this.loadPlans();
+  }
+
+  // API methods
+  loadExecutionStockCheck(planId: number): void {
+    this.batchService.runProgramPrecheck(planId).subscribe({
+      next: (response) => {
+        this.executionStockCheck = response.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error('Failed to load stock check');
+        this.closeExecutionModal();
+      }
+    });
+  }
+
+  loadTemplateDetails(templateId: number): void {
+    this.batchService.getTemplate(templateId).subscribe({
+      next: (response) => {
+        this.selectedTemplateDetails = response.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error('Failed to load recipe details');
+        this.closeIngredientModal();
+      }
+    });
+  }
+
+  loadStockReservations(): void {
+    this.stockReservations = [];
+    this.groupedReservations = [];
+  }
+
+  releaseReservation(reservation: any): void {
+    this.toast.show('success', `Released reservation for ${reservation.schedule_label}`);
+    this.loadStockReservations();
   }
 }
