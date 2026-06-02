@@ -101,6 +101,10 @@
           <span class="sub-dot"></span>
           <span class="label">Operations Type</span>
         </a>
+        <a *ngIf="hasPermission('manage_inventory')" routerLink="/dashboard/inventory/recipe-types" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+          <span class="sub-dot"></span>
+          <span class="label">Recipe Types</span>
+        </a>
       </div>
     </div>
 
