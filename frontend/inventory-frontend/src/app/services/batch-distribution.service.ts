@@ -16,6 +16,8 @@ export interface BatchDistributionTemplateSummary {
   created_at: string;
   updated_at: string;
   item_count: number;
+  recipe_type_id: number | null;
+  recipe_type_name: string | null;
 }
 
 export interface BatchDistributionItemOption {
@@ -37,6 +39,7 @@ export interface BatchDistributionTemplatePayload {
   distribution_type: DistributionType;
   base_unit_count: number;
   notes?: string;
+  recipe_type_id?: number | null;
   items: BatchDistributionTemplateItemInput[];
 }
 
@@ -51,6 +54,8 @@ export interface BatchDistributionTemplateDetails {
     is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    recipe_type_id: number | null;
+    recipe_type_name: string | null;
   };
   items: Array<{
     item_id: number;
