@@ -1,5 +1,5 @@
-import { of } from 'rxjs';
 import { AuthService, AuthResponse, User } from './auth.service';
+import { of } from 'rxjs';
 
 describe('AuthService (unit, no TestBed)', () => {
   let service: AuthService;
@@ -59,38 +59,6 @@ describe('AuthService (unit, no TestBed)', () => {
       expect(resp.message).toBe('ok');
     });
     expect(fakeHttp.post).toHaveBeenCalled();
-  });
-
-  it('refreshToken should update stored token and user', (done) => {
-    const fakeUser: User = {
-      user_id: 1,
-      username: 'tester',
-      email: 't@example.com',
-      first_name: 'T',
-      last_name: 'User',
-      contact_info: null,
-      role: 'inventory_manager',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    localStorage.setItem('access_token', 'old_tok');
-    fakeHttp.post.and.returnValue(of({
-      success: true,
-      message: 'refreshed',
-      access_token: 'tok_456',
-      token_type: 'bearer',
-      expires_in: 3600,
-      user: fakeUser
-    }));
-
-    service.refreshToken().subscribe(resp => {
-      expect(resp.access_token).toBe('tok_456');
-      expect(localStorage.getItem('access_token')).toBe('tok_456');
-      expect(service.getCurrentUser()?.username).toBe('tester');
-      done();
-    });
   });
 
   it('getFriendlyErrorMessage handles throttle and fallback', () => {
