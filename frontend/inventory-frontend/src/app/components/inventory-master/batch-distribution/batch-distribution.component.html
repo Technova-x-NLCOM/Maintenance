@@ -80,8 +80,8 @@
         <p class="empty" *ngIf="loadingPlans">Loading scheduled batches...</p>
         <div class="scheduled-list-wrapper" *ngIf="!loadingPlans">
           <div class="plans-table-wrap" *ngIf="planViewMode === 'list'">
-            <div class="list-wrap templates-list" *ngIf="displayedPlans.length > 0">
-              <div class="template-card template-tile" *ngFor="let plan of displayedPlans">
+            <div class="list-wrap schedules-grid" *ngIf="displayedPlans.length > 0">
+              <div class="template-card template-tile schedule-card" *ngFor="let plan of displayedPlans">
                 <div class="template-card-top">
                   <strong>{{ plan.week_label }}</strong>
                   <span class="status-badge" [ngClass]="getPlanBadge(plan).className" *ngIf="getPlanBadge(plan) as badge">
@@ -186,16 +186,37 @@
         <h2>Recipes</h2>
         <button type="button" class="btn-close drawer-close" (click)="closeRecipeSidebarPanel()" aria-label="Close">×</button>
       </div>
+      
+      <!-- Loading state -->
       <p class="empty" *ngIf="loadingTemplates">Loading recipes...</p>
-      <div class="list-wrap templates-list" *ngIf="!loadingTemplates">
-        <div class="template-card template-tile" *ngFor="let template of templates">
-          <div class="template-card-top">
-            <strong>{{ template.template_name }}</strong>
-            <span class="tag">Recipe</span>
+      
+      <!-- Recipes list with pagination -->
+      <div class="recipes-container" *ngIf="!loadingTemplates">
+        <div class="list-wrap recipes-list" *ngIf="templates.length > 0">
+          <div class="template-card template-tile" *ngFor="let template of paginatedRecipes">
+            <div class="template-card-top">
+              <strong>{{ template.template_name }}</strong>
+              <span class="tag">Recipe</span>
+            </div>
+            <div class="template-meta">Base: {{ template.base_unit_count }} • Ingredients: {{ template.item_count }}</div>
+            <button class="btn btn-primary btn-sm" type="button" (click)="runRecipe(template)">Run</button>
           </div>
-          <div class="template-meta">Base: {{ template.base_unit_count }} • Ingredients: {{ template.item_count }}</div>
-          <button class="btn btn-primary btn-sm" type="button" (click)="runRecipe(template)">Run</button>
         </div>
+        
+        <!-- Recipe pagination -->
+        <div class="pagination-row" *ngIf="totalRecipePages > 1">
+          <div class="pagination-controls">
+            <button class="btn btn-secondary btn-sm" type="button" (click)="goToPreviousRecipePage()" [disabled]="currentRecipePage <= 1">
+              ‹ Prev
+            </button>
+            <span class="page-info">{{ currentRecipePage }} / {{ totalRecipePages }}</span>
+            <button class="btn btn-secondary btn-sm" type="button" (click)="goToNextRecipePage()" [disabled]="currentRecipePage >= totalRecipePages">
+              Next ›
+            </button>
+          </div>
+        </div>
+        
+        <p class="empty" *ngIf="templates.length === 0">No recipes found.</p>
       </div>
     </section>
   </aside>

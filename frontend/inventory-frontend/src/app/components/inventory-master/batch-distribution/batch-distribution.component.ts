@@ -178,6 +178,10 @@ export class BatchDistributionComponent implements OnInit {
   planPageSize = 10;
   readonly planPageSizeOptions = [5, 10, 25, 50];
   
+  // Recipe pagination properties
+  currentRecipePage = 1;
+  recipePageSize = 10;
+  
   planConfirmDialog: {
     open: boolean;
     title: string;
@@ -384,6 +388,15 @@ export class BatchDistributionComponent implements OnInit {
 
   get totalTemplatePages(): number {
     return Math.max(1, Math.ceil(this.templates.length / this.templatePageSize));
+  }
+
+  get totalRecipePages(): number {
+    return Math.max(1, Math.ceil(this.templates.length / this.recipePageSize));
+  }
+
+  get paginatedRecipes(): BatchDistributionTemplateSummary[] {
+    const start = (this.currentRecipePage - 1) * this.recipePageSize;
+    return this.templates.slice(start, start + this.recipePageSize);
   }
 
   get paginatedTemplates(): BatchDistributionTemplateSummary[] {
@@ -722,6 +735,23 @@ export class BatchDistributionComponent implements OnInit {
   goToTemplatePage(page: number): void {
     const safePage = Math.min(Math.max(Math.floor(Number(page)) || 1, 1), this.totalTemplatePages);
     this.templatePage = safePage;
+  }
+
+  goToRecipePage(page: number): void {
+    const safePage = Math.min(Math.max(Math.floor(Number(page)) || 1, 1), this.totalRecipePages);
+    this.currentRecipePage = safePage;
+  }
+
+  goToNextRecipePage(): void {
+    if (this.currentRecipePage < this.totalRecipePages) {
+      this.currentRecipePage += 1;
+    }
+  }
+
+  goToPreviousRecipePage(): void {
+    if (this.currentRecipePage > 1) {
+      this.currentRecipePage -= 1;
+    }
   }
 
   goToNextTemplatePage(): void {
@@ -1353,6 +1383,7 @@ export class BatchDistributionComponent implements OnInit {
 
   openRecipeSidebarPanel(): void {
     this.showRecipeSidebar = true;
+    this.currentRecipePage = 1; // Reset to first page when opening
   }
 
   closeRecipeSidebarPanel(): void {
