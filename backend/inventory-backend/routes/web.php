@@ -13,6 +13,7 @@ use App\Http\Controllers\Inventory\DistributionPlanController;
 use App\Http\Controllers\Inventory\ReceivingTransactionController;
 use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\TransactionMonitorController;
+use App\Http\Controllers\Inventory\RecipeTypeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -175,6 +176,20 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::post('/', [OperationTypeController::class, 'store']);
                 Route::put('{operationTypeId}', [OperationTypeController::class, 'update']);
                 Route::delete('{operationTypeId}', [OperationTypeController::class, 'destroy']);
+            });
+        });
+
+    // Inventory Master Data - Recipe Types (for batches)
+    Route::prefix('api/inventory/recipe-types')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('options', [RecipeTypeController::class, 'options']);
+                Route::get('/', [RecipeTypeController::class, 'index']);
+                Route::get('{id}', [RecipeTypeController::class, 'show']);
+                Route::post('/', [RecipeTypeController::class, 'store']);
+                Route::put('{id}', [RecipeTypeController::class, 'update']);
+                Route::delete('{id}', [RecipeTypeController::class, 'destroy']);
             });
         });
 
