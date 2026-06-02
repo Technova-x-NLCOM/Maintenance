@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, catchError, mergeMap, throwError, shareReplay, finalize } from 'rxjs';
 import { getApiBaseUrl } from './api-base';
 
 export interface User {
@@ -22,6 +22,15 @@ export interface AuthResponse {
   token_type: string;
   expires_in: number;
   user: User;
+}
+
+export interface AuthRefreshResponse {
+  success?: boolean;
+  message: string;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: User | null;
 }
 
 export interface LoginRequest {
@@ -64,6 +73,7 @@ export class AuthService {
   private readonly API_URL = `${getApiBaseUrl()}/auth`;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private refreshRequest$: Observable<AuthRefreshResponse> | null = null;
 
   constructor(private http: HttpClient) {
     this.loadCurrentUser();
@@ -87,32 +97,77 @@ export class AuthService {
     return fallback;
   }
 
-    private getAuthHeaders(): HttpHeaders {
-      const token = this.getToken();
-      return new HttpHeaders({
-        'Authorization': token ? `Bearer ${token}` : '',
-        'Content-Type': 'application/json'
-      });
+  private getAuthHeaders(): HttpHeaders {
+    const token = this.getToken();
+    return new HttpHeaders({
+      Authorization: token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json'
+    });
+  }
+
+  private getToken(): string | null {
+    return localStorage.getItem('access_token');
+  }
+
+  private setToken(token: string): void {
+    localStorage.setItem('access_token', token);
+  }
+
+  private removeToken(): void {
+    localStorage.removeItem('access_token');
+  }
+
+  private setCurrentUser(user: User): void {
+    this.currentUserSubject.next(user);
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  clearSession(): void {
+    this.currentUserSubject.next(null);
+    this.removeToken();
+    localStorage.removeItem('user');
+  }
+
+  refreshToken(): Observable<AuthRefreshResponse> {
+    const token = this.getToken();
+
+    if (!token) {
+      return throwError(() => new Error('No authentication token found.'));
     }
 
-    private getToken(): string | null {
-      return localStorage.getItem('access_token');
+    if (!this.refreshRequest$) {
+      this.refreshRequest$ = this.http.post<AuthRefreshResponse>(
+        `${this.API_URL}/refresh`,
+        {},
+        { headers: this.getAuthHeaders() }
+      ).pipe(
+        tap(response => {
+          this.setToken(response.access_token);
+
+          if (response.user) {
+            this.setCurrentUser(response.user);
+          }
+        }),
+        shareReplay(1),
+        finalize(() => {
+          this.refreshRequest$ = null;
+        }),
+        catchError(error => {
+          this.clearSession();
+          return throwError(() => error);
+        })
+      );
     }
 
-    private setToken(token: string): void {
-      localStorage.setItem('access_token', token);
-    }
-
-    private removeToken(): void {
-      localStorage.removeItem('access_token');
-    }
+    return this.refreshRequest$;
+  }
 
   private loadCurrentUser(): void {
     const token = this.getToken();
     if (!token) {
-        this.currentUserSubject.next(null);
-        return;
-      }
+      this.currentUserSubject.next(null);
+      return;
+    }
 
     // Optimistic restore from localStorage to avoid guard redirect on refresh
     const cachedUser = localStorage.getItem('user');
@@ -125,8 +180,7 @@ export class AuthService {
     // Validate token and refresh user in background
     this.me().pipe(
       catchError(() => {
-        this.currentUserSubject.next(null);
-          this.removeToken();
+        this.clearSession();
         return of(null);
       })
     ).subscribe();
@@ -149,8 +203,7 @@ export class AuthService {
       mergeMap(response => {
         // Token is only returned if role validation passed on backend
         this.setToken(response.access_token);
-        this.currentUserSubject.next(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        this.setCurrentUser(response.user);
         return of(response);
       }),
       catchError(error => {
@@ -166,8 +219,7 @@ export class AuthService {
     ).pipe(
       tap(response => {
           this.setToken(response.access_token);
-        this.currentUserSubject.next(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
+          this.setCurrentUser(response.user);
       }),
       catchError(error => {
         throw error;
@@ -182,14 +234,10 @@ export class AuthService {
         { headers: this.getAuthHeaders() }
     ).pipe(
       tap(() => {
-        this.currentUserSubject.next(null);
-          this.removeToken();
-        localStorage.removeItem('user');
+        this.clearSession();
       }),
       catchError(error => {
-        this.currentUserSubject.next(null);
-          this.removeToken();
-        localStorage.removeItem('user');
+        this.clearSession();
         throw error;
       })
     );
@@ -201,8 +249,7 @@ export class AuthService {
         { headers: this.getAuthHeaders() }
     ).pipe(
       tap(response => {
-        this.currentUserSubject.next(response.user);
-        localStorage.setItem('user', JSON.stringify(response.user));
+        this.setCurrentUser(response.user);
       })
     );
   }

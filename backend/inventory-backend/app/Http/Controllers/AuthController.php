@@ -514,6 +514,11 @@ class AuthController extends Controller
             }
             
             $newToken = JWTAuth::refresh($token);
+            $user = JWTAuth::setToken($newToken)->authenticate();
+
+            if ($user) {
+                $user->load('primaryRole');
+            }
             
             return response()->json([
                 'success' => true,
@@ -521,6 +526,18 @@ class AuthController extends Controller
                 'access_token' => $newToken,
                 'token_type' => 'bearer',
                 'expires_in' => config('jwt.ttl') * 60,
+                'user' => $user ? [
+                    'user_id' => $user->user_id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'contact_info' => $user->contact_info,
+                    'role' => $user->role,
+                    'is_active' => $user->is_active,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                ] : null,
             ], 200);
             
         } catch (JWTException $e) {

@@ -24,6 +24,8 @@ Route::middleware('throttle:system-api')->group(function () {
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('login', [AuthController::class, 'login'])
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        Route::post('refresh', [AuthController::class, 'refresh'])
+            ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('check-password-set', [AuthController::class, 'checkPasswordSet'])
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('set-initial-password', [AuthController::class, 'setInitialPassword'])
@@ -34,16 +36,14 @@ Route::middleware('throttle:system-api')->group(function () {
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
         Route::post('reset-password', [AuthController::class, 'resetPassword'])
             ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-    
-            // Protected routes with JWT middleware
-            Route::middleware(['auth:api'])->group(function () {
-                Route::get('me', [AuthController::class, 'me'])
-                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-                Route::post('logout', [AuthController::class, 'logout'])
-                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-                Route::post('refresh', [AuthController::class, 'refresh'])
-                    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
-            });
+
+        // Protected routes with JWT middleware
+        Route::middleware(['auth:api'])->group(function () {
+            Route::get('me', [AuthController::class, 'me'])
+                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+            Route::post('logout', [AuthController::class, 'logout'])
+                ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+        });
     });
 
     Route::prefix('api/rbac')
