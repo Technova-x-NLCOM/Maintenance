@@ -388,6 +388,13 @@ export class BatchDistributionService {
     );
   }
 
+  deleteProgramPlan(planId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/program-plans/${planId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   completeProgramPlan(planId: number, payload: ProgramPlanCompletePayload): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
     return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
       `${this.baseUrl}/program-plans/${planId}/complete`,

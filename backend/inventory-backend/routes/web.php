@@ -244,6 +244,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::post('program-plans/{planId}/final-check', [DistributionPlanController::class, 'runFinalCheck']);
                 Route::post('program-plans/{planId}/issue-only', [DistributionPlanController::class, 'update']);
                 Route::post('program-plans/{planId}/complete', [DistributionPlanController::class, 'complete']);
+                Route::delete('program-plans/{planId}', [DistributionPlanController::class, 'destroy']);
             });
         });
 

@@ -1678,8 +1678,7 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (action === 'delete') {
-      this.removePlanLocal(plan.plan_id);
-      this.toast.success('Plan deleted.');
+      this.deletePlan(plan);
       this.closePlanConfirm();
       return;
     }
@@ -2644,8 +2643,25 @@ export class BatchDistributionComponent implements OnInit {
 
   // Plan actions
   deletePlan(plan: ProgramPlanSummary): void {
-    this.toast.show('success', `Deleted plan: ${plan.week_label}`);
-    this.loadPlans();
+    if (this.executingPlanId) {
+      return;
+    }
+
+    this.executingPlanId = plan.plan_id;
+    this.batchService.deleteProgramPlan(plan.plan_id).subscribe({
+      next: (response) => {
+        this.executingPlanId = null;
+        this.toast.success(response.message || `Deleted plan: ${plan.week_label}`);
+        this.removePlanLocal(plan.plan_id);
+        this.loadPlans();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.executingPlanId = null;
+        this.toast.error(err?.error?.message || 'Failed to delete plan.');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // API methods
