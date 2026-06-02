@@ -210,6 +210,71 @@ class DistributionPlanController extends Controller
         ]);
     }
 
+    public function reserve(Request $request, int $planId)
+    {
+        $plan = $this->getPlanWithTemplate($planId);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        if ((string) $plan->status !== 'planned') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only upcoming planned batches can be reserved.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'destination' => ['nullable', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $checkData = $this->buildInventoryCheckData($plan);
+        if (!$checkData['summary']['can_proceed']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot reserve inventory. Stock readiness must be 100%.',
+                'error_type' => 'insufficient_stock',
+                'data' => [
+                    'check_result' => $checkData,
+                ],
+            ], 422);
+        }
+
+        $performedBy = auth('api')->user()?->user_id ?? auth()->id() ?? 1;
+        $issuanceSummary = null;
+
+        DB::transaction(function () use ($planId, $plan, $checkData, $performedBy, $validated, &$issuanceSummary) {
+            $issuanceSummary = $this->issuePlanItems(
+                $plan,
+                $checkData,
+                (int) $performedBy,
+                trim((string) ($validated['destination'] ?? ('Reserved for ' . $plan->week_label))),
+                $validated['reason'] ?? 'Inventory Reservation',
+                $validated['notes'] ?? 'Reserved from Recipe & Distribution'
+            );
+
+            DB::table('distribution_plan_schedules')
+                ->where('plan_id', $planId)
+                ->update([
+                    'status' => 'ready',
+                    'final_check_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $response = $this->show($planId);
+        $payload = $response->getData(true);
+        $payload['data']['issuance'] = $issuanceSummary;
+        $payload['message'] = 'Inventory reserved successfully using FIFO allocation.';
+
+        return response()->json($payload, $response->status());
+    }
+
     public function runPrecheck(Request $request, int $planId)
     {
         $plan = $this->getPlanWithTemplate($planId);

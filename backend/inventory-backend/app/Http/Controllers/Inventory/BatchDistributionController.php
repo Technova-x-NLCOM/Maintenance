@@ -262,7 +262,7 @@ class BatchDistributionController extends Controller
                 'success' => true,
                 'message' => 'Distribution template deleted successfully.',
             ]);
-        } catch (	hrowable $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete distribution template.',

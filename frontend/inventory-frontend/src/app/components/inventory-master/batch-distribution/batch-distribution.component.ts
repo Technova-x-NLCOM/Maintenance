@@ -147,6 +147,15 @@ export class BatchDistributionComponent implements OnInit {
   pendingSavedTemplate: BatchDistributionTemplateSummary | null = null;
   showScheduleDialog = false;
   scheduleDialogStep: 1 | 2 = 1;
+  showRecipeSidebar = false;
+  scheduleFilter: 'upcoming' | 'completed' | 'all' = 'upcoming';
+  schedulingTemplate: BatchDistributionTemplateSummary | null = null;
+  schedulingCalculation: BatchDistributionCalculation | null = null;
+  scheduleDestination = '';
+  scheduleReason = '';
+  scheduleNotes = '';
+  schedulePlannedDate = '';
+  reservingPlanId: number | null = null;
   planStatusFilter: 'all' | ProgramPlanStatus = 'all';
   planSortDirection: 'desc' | 'asc' = 'desc';
   planDialogMode: 'create' | 'edit' = 'create';
@@ -425,6 +434,20 @@ export class BatchDistributionComponent implements OnInit {
       const bDate = new Date(b.planned_date).getTime();
       return this.planSortDirection === 'desc' ? bDate - aDate : aDate - bDate;
     });
+  }
+
+  get displayedPlans(): ProgramPlanSummary[] {
+    let filtered = this.filteredPlans;
+    if (this.scheduleFilter === 'upcoming') {
+      filtered = filtered.filter((plan) => plan.status !== 'completed' && plan.status !== 'cancelled');
+    } else if (this.scheduleFilter === 'completed') {
+      filtered = filtered.filter((plan) => plan.status === 'completed');
+    }
+    return filtered;
+  }
+
+  get scheduleHasWarning(): boolean {
+    return !!this.schedulingCalculation?.items.some((row) => this.getRowShortageQuantity(row) > 0);
   }
 
   get calendarMonthName(): string {
@@ -1328,6 +1351,32 @@ export class BatchDistributionComponent implements OnInit {
     this.resetPlanForm();
   }
 
+  openRecipeSidebarPanel(): void {
+    this.showRecipeSidebar = true;
+  }
+
+  closeRecipeSidebarPanel(): void {
+    this.showRecipeSidebar = false;
+  }
+
+  runRecipe(template: BatchDistributionTemplateSummary): void {
+    this.schedulingTemplate = template;
+    this.showScheduleDialog = true;
+    this.scheduleDialogStep = 1;
+    this.scheduleDestination = '';
+    this.scheduleReason = '';
+    this.scheduleNotes = '';
+    this.schedulePlannedDate = this.formatDateForApi(new Date());
+    this.schedulingCalculation = null;
+    this.planForm = {
+      template_id: template.template_id,
+      week_label: `${template.template_name} Batch`,
+      planned_date: this.formatDateForApi(new Date()),
+      target_unit_count: template.base_unit_count,
+      notes: '',
+    };
+  }
+
   closeScheduleDialog(): void {
     this.showScheduleDialog = false;
     this.savingPlan = false;
@@ -1335,20 +1384,112 @@ export class BatchDistributionComponent implements OnInit {
     this.editingPlanId = null;
     this.scheduleDialogStep = 1;
     this.planFinalCheckAttempted = false;
+    this.schedulingCalculation = null;
+    this.schedulingTemplate = null;
     this.resetPlanForm();
   }
 
   submitPlanDialog(): void {
+    if (this.scheduleDialogStep === 1) {
+      this.validateScheduleStep();
+      return;
+    }
     if (this.scheduleDialogStep === 2) {
-      this.closeScheduleDialog();
+      this.createScheduleFromRecipe();
       return;
     }
-    if (this.isPlanDialogEditing) {
-      this.updatePlanLocal();
-      return;
-    }
+  }
 
-    this.createPlan();
+  validateScheduleStep(): void {
+    if (!this.planForm.template_id) {
+      this.toast.error('Please select a recipe.');
+      return;
+    }
+    if (!this.schedulePlannedDate) {
+      this.toast.error('Please select a planned date.');
+      return;
+    }
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    if (!Number.isFinite(targetCount) || targetCount <= 0) {
+      this.toast.error('Target servings must be greater than zero.');
+      return;
+    }
+    this.calculating = true;
+    this.batchService.calculate(this.planForm.template_id, targetCount).subscribe({
+      next: (response) => {
+        this.calculating = false;
+        this.schedulingCalculation = response.data;
+        this.scheduleDialogStep = 2;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.calculating = false;
+        this.toast.error(err?.error?.message || 'Failed to validate schedule requirements.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  createScheduleFromRecipe(): void {
+    if (!this.planForm.template_id) {
+      return;
+    }
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    this.savingPlan = true;
+    const weekLabel = (this.scheduleDestination || this.schedulingTemplate?.template_name || 'Scheduled Batch').trim();
+    const stitchedNotes = [
+      this.scheduleReason ? `Reason: ${this.scheduleReason}` : '',
+      this.scheduleNotes ? `Notes: ${this.scheduleNotes}` : '',
+      this.scheduleDestination ? `Destination: ${this.scheduleDestination}` : '',
+    ].filter(Boolean).join(' | ');
+    this.batchService.createProgramPlan({
+      template_id: this.planForm.template_id,
+      week_label: weekLabel.slice(0, 50),
+      planned_date: this.schedulePlannedDate,
+      target_unit_count: targetCount,
+      notes: stitchedNotes || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingPlan = false;
+        this.toast.success('Schedule created successfully.');
+        this.closeScheduleDialog();
+        this.closeRecipeSidebarPanel();
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.savingPlan = false;
+        this.toast.error(err?.error?.message || 'Failed to create schedule.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  reservePlan(plan: ProgramPlanSummary): void {
+    if (this.reservingPlanId) {
+      return;
+    }
+    const readiness = this.getStockReadiness(plan.plan_id);
+    if (!readiness || readiness.loading || readiness.percentage < 100) {
+      this.toast.error('Cannot reserve until stock readiness is 100%.');
+      return;
+    }
+    this.reservingPlanId = plan.plan_id;
+    this.batchService.reserveProgramPlan(plan.plan_id, {
+      destination: `Reserved for ${plan.week_label}`,
+      reason: 'Inventory Reservation',
+      notes: 'Reserved from Recipe & Distribution',
+    }).subscribe({
+      next: () => {
+        this.reservingPlanId = null;
+        this.toast.success('Inventory reserved successfully.');
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.reservingPlanId = null;
+        this.toast.error(err?.error?.message || 'Failed to reserve inventory.');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   togglePlanSortDirection(): void {

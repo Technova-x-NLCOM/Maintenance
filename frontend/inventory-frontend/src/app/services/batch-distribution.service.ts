@@ -402,4 +402,15 @@ export class BatchDistributionService {
       { headers: this.getHeaders() }
     );
   }
+
+  reserveProgramPlan(
+    planId: number,
+    payload?: { destination?: string; reason?: string; notes?: string },
+  ): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
+    return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
+      `${this.baseUrl}/program-plans/${planId}/reserve`,
+      payload ?? {},
+      { headers: this.getHeaders() }
+    );
+  }
 }
