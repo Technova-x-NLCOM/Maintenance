@@ -851,7 +851,7 @@ class DistributionPlanController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Scheduled plan marked deleted (soft-deleted).',
+            'message' => 'Scheduled plan deleted successfully.',
         ]);
     }
 
