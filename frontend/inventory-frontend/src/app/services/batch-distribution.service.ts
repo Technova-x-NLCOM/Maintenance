@@ -117,6 +117,35 @@ export interface BatchDistributionIssueResponse {
 
 export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'ready' | 'completed' | 'cancelled';
 
+export interface LocationBatchBreakdown {
+  batch_id: number;
+  batch_number: string | null;
+  quantity: number;
+  pull: number;
+  expiry_date: string | null;
+}
+
+export interface LocationPullRow {
+  location_id: number | null;
+  location_name: string;
+  location_code: string | null;
+  pull_quantity: number;
+  available: number;
+  is_preferred: boolean;
+  is_spillover: boolean;
+  batches: LocationBatchBreakdown[];
+}
+
+export interface LocationBreakdownItem {
+  item_id: number;
+  item_code: string;
+  item_description: string;
+  measurement_unit: string | null;
+  required: number;
+  unfulfilled: number;
+  locations: LocationPullRow[];
+}
+
 export interface ProgramPlanSummary {
   plan_id: number;
   week_label: string;
@@ -133,6 +162,18 @@ export interface ProgramPlanSummary {
   template_name: string;
   distribution_type: DistributionType;
   base_unit_count: number;
+  // new location fields
+  preferred_location_id: number | null;
+  preferred_location_name: string | null;
+  preferred_location_code: string | null;
+  // completed snapshot fields
+  completed_reference: string | null;
+  completed_issued_qty: number | null;
+  completed_target_people: number | null;
+  completed_notes: string | null;
+  // auto-allocation fields
+  auto_allocated_at: string | null;
+  auto_allocation_ref: string | null;
 }
 
 export interface ProgramPlanCheckItem {
@@ -144,6 +185,8 @@ export interface ProgramPlanCheckItem {
   required_quantity_exact: number;
   required_quantity_for_issuance: number;
   current_stock: number;
+  preferred_location_stock: number | null;
+  spillover_needed: number | null;
   shortage_quantity: number;
   has_shortage: boolean;
 }
@@ -173,6 +216,7 @@ export interface ProgramPlanRemainingItem {
 export interface ProgramPlanDetailsResponse {
   plan: ProgramPlanSummary;
   inventory_check: ProgramPlanCheckResult;
+  location_breakdown: LocationBreakdownItem[];
   remaining_items: ProgramPlanRemainingItem[];
   issuance?: {
     reference_number: string;
@@ -183,10 +227,12 @@ export interface ProgramPlanDetailsResponse {
     target_unit_count: number;
     destination: string;
     total_issued_quantity: number;
+    preferred_location_id: number | null;
     issued_lines: Array<{
       item_id: number;
       item_code: string;
       item_description: string;
+      measurement_unit: string | null;
       required_quantity_for_issuance: number;
       issued_quantity: number;
     }>;
@@ -198,12 +244,13 @@ export interface ProgramPlanCreatePayload {
   week_label: string;
   planned_date: string;
   target_unit_count: number;
+  preferred_location_id?: number | null;
   notes?: string;
 }
 
 export interface ProgramPlanUpdatePayload {
   issue_destination?: string;
-  issue_reason: string;
+  issue_reason?: string;
   issue_notes?: string;
 }
 
@@ -212,6 +259,7 @@ export interface ProgramPlanScheduleUpdatePayload {
   week_label: string;
   planned_date: string;
   target_unit_count: number;
+  preferred_location_id?: number | null;
   notes?: string;
 }
 
@@ -222,7 +270,7 @@ export interface ProgramPlanFinalCheckPayload {
     notes?: string;
   }>;
   issue_destination?: string;
-  issue_reason: string;
+  issue_reason?: string;
   issue_notes?: string;
 }
 
