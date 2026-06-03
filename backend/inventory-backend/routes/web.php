@@ -16,6 +16,7 @@ use App\Http\Controllers\Inventory\TransactionMonitorController;
 use App\Http\Controllers\Inventory\RecipeTypeController;
 use App\Http\Controllers\Inventory\DiscrepancyController;
 use App\Http\Controllers\Inventory\ItemTransferController;
+use App\Http\Controllers\Inventory\StorageMaintenanceController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -256,6 +257,21 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('items', [ItemTransferController::class, 'getTransferableItems']);
                 Route::get('destinations', [ItemTransferController::class, 'getDestinationLocations']);
                 Route::post('create', [ItemTransferController::class, 'createTransfer']);
+            });
+        });
+
+    // Inventory — Storage Location Maintenance
+    Route::prefix('api/inventory/storage-maintenance')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('/',                              [StorageMaintenanceController::class, 'index']);
+                Route::post('/',                             [StorageMaintenanceController::class, 'store']);
+                Route::get('{id}',                           [StorageMaintenanceController::class, 'show']);
+                Route::put('{id}',                           [StorageMaintenanceController::class, 'update']);
+                Route::post('{id}/start',                    [StorageMaintenanceController::class, 'start']);
+                Route::post('{id}/restore',                  [StorageMaintenanceController::class, 'restore']);
+                Route::post('{id}/cancel',                   [StorageMaintenanceController::class, 'cancel']);
             });
         });
 
