@@ -39,6 +39,7 @@
           <option value="IN">Stock IN</option>
           <option value="OUT">Stock OUT</option>
           <option value="ADJUSTMENT">Stock Adjustment</option>
+          <option value="DISCREPANCY">Discrepancy</option>
         </select>
 
         <input class="filter-input" type="date" [(ngModel)]="dateFrom" (change)="apply()" />
@@ -75,8 +76,9 @@
               <span class="type-badge"
                 [class.badge-in]="tx.transaction_type === 'IN'"
                 [class.badge-out]="tx.transaction_type === 'OUT'"
-                [class.badge-adjustment]="tx.transaction_type === 'ADJUSTMENT'">
-                {{ tx.transaction_type === 'IN' ? '▲ IN' : (tx.transaction_type === 'OUT' ? '▼ OUT' : '△ ADJ') }}
+                [class.badge-adjustment]="tx.transaction_type === 'ADJUSTMENT'"
+                [class.badge-discrepancy]="tx.transaction_type === 'DISCREPANCY'">
+                {{ tx.transaction_type === 'IN' ? '▲ IN' : tx.transaction_type === 'OUT' ? '▼ OUT' : tx.transaction_type === 'ADJUSTMENT' ? '△ ADJ' : '⚠ DISC' }}
               </span>
             </td>
             <td class="cell-code" data-label="Reference">{{ tx.reference_number }}</td>

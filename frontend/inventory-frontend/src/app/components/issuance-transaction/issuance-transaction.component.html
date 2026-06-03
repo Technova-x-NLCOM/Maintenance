@@ -15,62 +15,33 @@
         <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">×</button>
       </div>
       <div class="category-filter-combobox" (keydown)="onCategoryComboboxKeydown($event)">
-        <button
-          type="button"
-          class="category-filter-trigger"
-          (click)="toggleCategoryDropdown()"
-          [attr.aria-expanded]="categoryDropdownOpen"
-          aria-haspopup="listbox"
-          aria-label="Filter by category"
-        >
+        <button type="button" class="category-filter-trigger" (click)="toggleCategoryDropdown()"
+          [attr.aria-expanded]="categoryDropdownOpen" aria-haspopup="listbox" aria-label="Filter by category">
           <span class="trigger-label">Category:</span>
           <span class="trigger-value">{{ selectedCategoryLabel }}</span>
           <svg class="trigger-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
-
-        <button
-          *ngIf="selectedCategoryId !== null"
-          class="clear-category-filter"
-          type="button"
-          (click)="clearCategoryFilter($event)"
-          aria-label="Clear category filter"
-          title="Clear category filter"
-        >
+        <button *ngIf="selectedCategoryId !== null" class="clear-category-filter" type="button"
+          (click)="clearCategoryFilter($event)" aria-label="Clear category filter" title="Clear category filter">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
-
         <div class="category-filter-dropdown" *ngIf="categoryDropdownOpen">
           <div class="category-filter-search">
-            <input
-              type="text"
-              [(ngModel)]="categorySearchQuery"
-              (ngModelChange)="onCategorySearchChange()"
-              placeholder="Search categories"
-              aria-label="Search categories"
-            />
+            <input type="text" [(ngModel)]="categorySearchQuery" (ngModelChange)="onCategorySearchChange()"
+              placeholder="Search categories" aria-label="Search categories" />
           </div>
-
           <div class="category-filter-options" role="listbox" aria-label="Category options">
-            <button
-              *ngFor="let category of filteredCategories; let i = index"
-              type="button"
-              class="category-option"
-              [class.active]="i === activeCategoryIndex"
-              [class.selected]="category.category_id === selectedCategoryId"
-              (mouseenter)="onCategoryOptionHover(i)"
-              (click)="selectCategory(category)"
-            >
+            <button *ngFor="let category of filteredCategories; let i = index" type="button" class="category-option"
+              [class.active]="i === activeCategoryIndex" [class.selected]="category.category_id === selectedCategoryId"
+              (mouseenter)="onCategoryOptionHover(i)" (click)="selectCategory(category)">
               {{ category.category_name }}
             </button>
-
-            <div *ngIf="filteredCategories.length === 0" class="category-filter-empty">
-              No matching categories
-            </div>
+            <div *ngIf="filteredCategories.length === 0" class="category-filter-empty">No matching categories</div>
           </div>
         </div>
       </div>
@@ -95,7 +66,6 @@
           </div>
         </div>
       </button>
-
       <div class="empty-state" *ngIf="items.length === 0">
         <p>No issuable items found.</p>
         <button class="btn btn-register" type="button" (click)="goToItemRegistration()">Register New Item</button>
@@ -112,15 +82,9 @@
         <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="nextPage()" type="button">&rsaquo;</button>
         <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage" (click)="currentPage = lastPage; loadItems(lastPage)" type="button">&raquo;</button>
       </div>
-
       <div class="page-size-wrap">
         <label for="issuance-rows-per-page">Rows per page</label>
-        <select
-          class="rows-per-page"
-          id="issuance-rows-per-page"
-          [(ngModel)]="perPage"
-          (change)="loadItems(1)"
-        >
+        <select class="rows-per-page" id="issuance-rows-per-page" [(ngModel)]="perPage" (change)="loadItems(1)">
           <option [value]="10">10</option>
           <option [value]="25">25</option>
           <option [value]="50">50</option>
@@ -130,21 +94,13 @@
     </div>
   </section>
 
-  <!-- Mobile backdrop (only visible on mobile when drawer is open) -->
-  <div 
-    class="mobile-drawer-backdrop" 
-    [class.is-open]="showListModal && isMobileView()"
-    (click)="toggleListDrawer()"
-    *ngIf="isMobileView()"
-  ></div>
+  <!-- Mobile backdrop -->
+  <div class="mobile-drawer-backdrop" [class.is-open]="showListModal && isMobileView()"
+    (click)="toggleListDrawer()" *ngIf="isMobileView()"></div>
 </div>
 
-<!-- Mobile Full-Screen Modal (only on mobile) -->
-<div 
-  class="mobile-list-modal" 
-  [class.is-open]="showListModal && isMobileView()"
-  *ngIf="isMobileView()"
->
+<!-- Mobile Full-Screen Modal -->
+<div class="mobile-list-modal" [class.is-open]="showListModal && isMobileView()" *ngIf="isMobileView()">
   <div class="mobile-modal-header">
     <h2>Issuance List</h2>
     <div class="header-actions">
@@ -161,13 +117,6 @@
   <div class="mobile-modal-content">
     <div class="details-section">
       <label>
-        <span>Transaction Mode</span>
-        <select class="form-control" [(ngModel)]="transactionMode" [disabled]="saving">
-          <option value="issuance">Stock Issuance (OUT)</option>
-          <option value="adjust-decrease">Stock Adjustment (-)</option>
-        </select>
-      </label>
-      <label *ngIf="transactionMode === 'issuance'">
         <span>Operation Type *</span>
         <select class="form-control" [(ngModel)]="selectedOperationTypeId" (ngModelChange)="onOperationTypeChange()" [disabled]="saving">
           <option [ngValue]="null">Select operation type</option>
@@ -177,7 +126,7 @@
         </select>
         <p class="empty-hint" *ngIf="attemptedSubmit && !selectedOperationTypeId">Operation type is required.</p>
       </label>
-      <label *ngIf="transactionMode === 'issuance'">
+      <label>
         <span>Source Storage Location *</span>
         <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
           <option [ngValue]="null">Select source storage</option>
@@ -192,20 +141,16 @@
     <div class="selected-block" *ngIf="selectedItem">
       <div class="selected-name">{{ selectedItem.item_code }} — {{ selectedItem.item_description }}</div>
       <div class="selected-meta">Available: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</div>
-      <div class="selected-meta" *ngIf="transactionMode === 'adjust-decrease' && (selectedItem.expired_stock || 0) > 0">
-        Expired Available: {{ selectedItem.expired_stock }}
-      </div>
       <div class="add-row">
         <input type="number" class="form-control qty-input" min="1"
           [max]="selectedItem.current_stock" [(ngModel)]="issueQuantity" />
-        <button class="btn btn-primary" type="button" *ngIf="transactionMode === 'issuance'" (click)="addSelectedToCart()">Add</button>
+        <button class="btn btn-primary" type="button" (click)="addSelectedToCart()">Add</button>
       </div>
     </div>
 
-    <p class="empty-hint" *ngIf="transactionMode === 'issuance' && issuanceLines.length === 0">Click an item from the catalog to add it here.</p>
-    <p class="empty-hint" *ngIf="transactionMode === 'adjust-decrease' && !selectedItem">Click an item from the catalog to adjust stock down.</p>
+    <p class="empty-hint" *ngIf="issuanceLines.length === 0">Click an item from the catalog to add it here.</p>
 
-    <div class="cart-lines" *ngIf="transactionMode === 'issuance' && issuanceLines.length > 0">
+    <div class="cart-lines" *ngIf="issuanceLines.length > 0">
       <div class="cart-line" *ngFor="let line of issuanceLines">
         <div class="line-info">
           <span class="line-code">{{ line.item_code }}</span>
@@ -221,12 +166,12 @@
       </div>
     </div>
 
-    <div class="summary-row" *ngIf="transactionMode === 'issuance' && issuanceLines.length > 0">
+    <div class="summary-row" *ngIf="issuanceLines.length > 0">
       <span>Total Items: <strong>{{ issuanceLines.length }}</strong></span>
       <span>Total Qty: <strong>{{ getTotalRequestedQuantity() }}</strong></span>
     </div>
 
-    <div class="details-section" *ngIf="transactionMode === 'issuance'">
+    <div class="details-section">
       <label>
         <span>Destination *</span>
         <input type="text" class="form-control" [(ngModel)]="destination"
@@ -240,63 +185,34 @@
       </label>
       <label>
         <span>Notes</span>
-        <textarea class="form-control" rows="2" [(ngModel)]="notes"
-          placeholder="Optional notes" maxlength="500"></textarea>
-        <div class="character-counter">
-          {{ (notes || '').length }} / 500
-        </div>
-      </label>
-    </div>
-
-    <div class="details-section" *ngIf="transactionMode === 'adjust-decrease'">
-      <label>
-        <span>Adjustment Reason *</span>
-        <input type="text" class="form-control" [(ngModel)]="adjustReason"
-          placeholder="e.g. Physical count correction" maxlength="250" />
-      </label>
-      <label>
-        <span>Adjustment Notes</span>
-        <textarea class="form-control" rows="2" [(ngModel)]="adjustNotes"
-          placeholder="Optional details for audit trail" maxlength="500"></textarea>
-        <div class="character-counter">
-          {{ (adjustNotes || '').length }} / 500
-        </div>
-      </label>
-      <label>
-        <span class="selected-meta">
-          <input type="checkbox" [(ngModel)]="adjustConfirmExpiration" />
-          Confirm expiration (deduct only from expired stock)
-        </span>
+        <textarea class="form-control" rows="2" [(ngModel)]="notes" placeholder="Optional notes" maxlength="500"></textarea>
+        <div class="character-counter">{{ (notes || '').length }} / 500</div>
       </label>
     </div>
   </div>
 
   <div class="mobile-modal-footer">
     <div class="footer-actions">
-      <button class="btn btn-primary" type="button"
-        [disabled]="!canSubmitPrimaryAction()" (click)="confirmAndSubmit()">
-        {{ saving ? 'Processing...' : (transactionMode === 'issuance' ? 'Confirm Issuance' : 'Record Adjustment (-)') }}
+      <button class="btn btn-primary" type="button" [disabled]="!canConfirmIssuance()" (click)="confirmAndSubmit()">
+        {{ saving ? 'Processing...' : 'Confirm Issuance' }}
       </button>
       <button class="btn btn-secondary" type="button" (click)="toggleListDrawer()" [disabled]="saving">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Slide-in Drawer (Desktop only - hidden on mobile) -->
+<!-- Slide-in Drawer (Desktop) -->
 <div class="issuance-drawer" [class.drawer-open]="showListModal" *ngIf="!isMobileView()">
-
-  <!-- Toggle tab button on the left edge of the drawer -->
-  <button class="drawer-tab" type="button" (click)="toggleListDrawer()" [attr.aria-label]="showListModal ? 'Hide issuance list' : 'Show issuance list'">
+  <button class="drawer-tab" type="button" (click)="toggleListDrawer()"
+    [attr.aria-label]="showListModal ? 'Hide issuance list' : 'Show issuance list'">
     <span class="drawer-tab-label">Issuance List</span>
     <span class="cart-badge" *ngIf="issuanceLines.length > 0">{{ issuanceLines.length }}</span>
-    <!-- Arrow icon -->
     <svg class="tab-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
       <polyline *ngIf="!showListModal" points="15 18 9 12 15 6"/>
       <polyline *ngIf="showListModal"  points="9 18 15 12 9 6"/>
     </svg>
   </button>
 
-  <!-- Drawer content -->
   <div class="drawer-content">
     <div class="panel-header">
       <h2>Issuance List</h2>
@@ -308,13 +224,6 @@
 
     <div class="details-section">
       <label>
-        <span>Transaction Mode</span>
-        <select class="form-control" [(ngModel)]="transactionMode" [disabled]="saving">
-          <option value="issuance">Stock Issuance (OUT)</option>
-          <option value="adjust-decrease">Stock Adjustment (-)</option>
-        </select>
-      </label>
-      <label *ngIf="transactionMode === 'issuance'">
         <span>Operation Type *</span>
         <select class="form-control" [(ngModel)]="selectedOperationTypeId" (ngModelChange)="onOperationTypeChange()" [disabled]="saving">
           <option [ngValue]="null">Select operation type</option>
@@ -324,7 +233,7 @@
         </select>
         <p class="empty-hint" *ngIf="attemptedSubmit && !selectedOperationTypeId">Operation type is required.</p>
       </label>
-      <label *ngIf="transactionMode === 'issuance'">
+      <label>
         <span>Source Storage Location *</span>
         <select class="form-control" [(ngModel)]="selectedLocationName" [disabled]="saving">
           <option [ngValue]="null">Select source storage</option>
@@ -339,20 +248,16 @@
     <div class="selected-block" *ngIf="selectedItem">
       <div class="selected-name">{{ selectedItem.item_code }} — {{ selectedItem.item_description }}</div>
       <div class="selected-meta">Available: {{ selectedItem.current_stock }} {{ selectedItem.measurement_unit || '' }}</div>
-      <div class="selected-meta" *ngIf="transactionMode === 'adjust-decrease' && (selectedItem.expired_stock || 0) > 0">
-        Expired Available: {{ selectedItem.expired_stock }}
-      </div>
       <div class="add-row">
         <input type="number" class="form-control qty-input" min="1"
           [max]="selectedItem.current_stock" [(ngModel)]="issueQuantity" />
-        <button class="btn btn-primary" type="button" *ngIf="transactionMode === 'issuance'" (click)="addSelectedToCart()">Add</button>
+        <button class="btn btn-primary" type="button" (click)="addSelectedToCart()">Add</button>
       </div>
     </div>
 
-    <p class="empty-hint" *ngIf="transactionMode === 'issuance' && issuanceLines.length === 0">Click an item from the catalog to add it here.</p>
-    <p class="empty-hint" *ngIf="transactionMode === 'adjust-decrease' && !selectedItem">Click an item from the catalog to adjust stock down.</p>
+    <p class="empty-hint" *ngIf="issuanceLines.length === 0">Click an item from the catalog to add it here.</p>
 
-    <div class="cart-lines" *ngIf="transactionMode === 'issuance' && issuanceLines.length > 0">
+    <div class="cart-lines" *ngIf="issuanceLines.length > 0">
       <div class="cart-line" *ngFor="let line of issuanceLines">
         <div class="line-info">
           <span class="line-code">{{ line.item_code }}</span>
@@ -368,12 +273,12 @@
       </div>
     </div>
 
-    <div class="summary-row" *ngIf="transactionMode === 'issuance' && issuanceLines.length > 0">
+    <div class="summary-row" *ngIf="issuanceLines.length > 0">
       <span>Total Items: <strong>{{ issuanceLines.length }}</strong></span>
       <span>Total Qty: <strong>{{ getTotalRequestedQuantity() }}</strong></span>
     </div>
 
-    <div class="details-section" *ngIf="transactionMode === 'issuance'">
+    <div class="details-section">
       <label>
         <span>Destination *</span>
         <input type="text" class="form-control" [(ngModel)]="destination"
@@ -387,53 +292,24 @@
       </label>
       <label>
         <span>Notes</span>
-        <textarea class="form-control" rows="2" [(ngModel)]="notes"
-          placeholder="Optional notes" maxlength="500"></textarea>
-        <div class="character-counter">
-          {{ (notes || '').length }} / 500
-        </div>
-      </label>
-    </div>
-
-    <div class="details-section" *ngIf="transactionMode === 'adjust-decrease'">
-      <label>
-        <span>Adjustment Reason *</span>
-        <input type="text" class="form-control" [(ngModel)]="adjustReason"
-          placeholder="e.g. Physical count correction" maxlength="250" />
-      </label>
-      <label>
-        <span>Adjustment Notes</span>
-        <textarea class="form-control" rows="2" [(ngModel)]="adjustNotes"
-          placeholder="Optional details for audit trail" maxlength="500"></textarea>
-        <div class="character-counter">
-          {{ (adjustNotes || '').length }} / 500
-        </div>
-      </label>
-      <label>
-        <span class="selected-meta">
-          <input type="checkbox" [(ngModel)]="adjustConfirmExpiration" />
-          Confirm expiration (deduct only from expired stock)
-        </span>
+        <textarea class="form-control" rows="2" [(ngModel)]="notes" placeholder="Optional notes" maxlength="500"></textarea>
+        <div class="character-counter">{{ (notes || '').length }} / 500</div>
       </label>
     </div>
 
     <div class="drawer-footer">
       <button class="btn btn-secondary" type="button" (click)="toggleIssuanceModal()" [disabled]="saving">Cancel</button>
       <button class="btn btn-primary btn-confirm" type="button"
-        [disabled]="!canSubmitPrimaryAction()" (click)="confirmAndSubmit()">
-        {{ saving ? 'Processing...' : (transactionMode === 'issuance' ? 'Confirm Issuance' : 'Record Adjustment (-)') }}
+        [disabled]="!canConfirmIssuance()" (click)="confirmAndSubmit()">
+        {{ saving ? 'Processing...' : 'Confirm Issuance' }}
       </button>
     </div>
   </div>
 </div>
-<!-- Mobile FAB for Issuance List Sidebar (Mobile S & M: ≤ 425px) -->
-<button 
-  class="mobile-fab"
-  *ngIf="shouldShowIssuanceListFab()"
-  (click)="toggleIssuanceListSidebar()"
-  [attr.aria-label]="isIssuanceListSidebarOpen ? 'Close issuance list' : 'Open issuance list'"
->
-  <!-- 2x2 Grid Icon -->
+
+<!-- Mobile FAB -->
+<button class="mobile-fab" *ngIf="shouldShowIssuanceListFab()" (click)="toggleIssuanceListSidebar()"
+  [attr.aria-label]="isIssuanceListSidebarOpen ? 'Close issuance list' : 'Open issuance list'">
   <svg viewBox="0 0 24 24" width="24" height="24">
     <rect x="3" y="3" width="7" height="7" rx="1"/>
     <rect x="14" y="3" width="7" height="7" rx="1"/>

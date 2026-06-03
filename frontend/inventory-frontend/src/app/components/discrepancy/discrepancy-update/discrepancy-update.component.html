@@ -1,0 +1,224 @@
+<div class="discrepancy-page">
+  <div class="page-header header-condensed">
+    <h1>Discrepancy Update</h1>
+    <p class="subtitle">
+      Recount physical stock per location and record any discrepancy found.
+    </p>
+  </div>
+
+  <!-- Catalog -->
+  <section class="catalog-panel">
+    <div class="catalog-toolbar">
+      <div class="search-wrap">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by item code or description"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearch()"
+        />
+        <button class="btn-clear-input" type="button" *ngIf="searchQuery" (click)="clearSearch()">
+          ×
+        </button>
+      </div>
+
+      <select class="form-control category-select"
+        [(ngModel)]="selectedLocationFilterId" (change)="onFilterChange()">
+        <option [ngValue]="null">All Locations</option>
+        <option *ngFor="let loc of locations" [ngValue]="loc.location_id">{{ loc.location_name }}</option>
+      </select>
+
+      <select class="form-control category-select"
+        [(ngModel)]="selectedCategoryId" (change)="onFilterChange()">
+        <option [ngValue]="null">All Categories</option>
+        <option *ngFor="let cat of categories" [ngValue]="cat.category_id">{{ cat.category_name }}</option>
+      </select>
+
+      <button class="btn btn-register" type="button" (click)="goToItemRegistration()">
+        Register New Item
+      </button>
+    </div>
+
+    <app-toast></app-toast>
+
+    <div class="catalog-grid" *ngIf="!loading">
+      <button
+        type="button"
+        class="item-card"
+        *ngFor="let item of items"
+        [class.selected]="selectedItem?.item_id === item.item_id"
+        (click)="openModal(item)"
+      >
+        <div class="card-image">
+          <img *ngIf="item.image_url" [src]="item.image_url" [alt]="item.item_description" />
+          <span *ngIf="!item.image_url">No Image</span>
+        </div>
+        <div class="card-content">
+          <p class="code">{{ item.item_code }}</p>
+          <p class="desc">{{ item.item_description }}</p>
+          <p class="meta">{{ item.category_name || 'Uncategorized' }}</p>
+          <div class="stats-row">
+            <span class="pill">Total: {{ item.total_stock }} {{ item.measurement_unit || '' }}</span>
+          </div>
+          <div class="loc-rows" *ngIf="item.locations.length > 0">
+            <div class="loc-row" *ngFor="let loc of item.locations">
+              <span class="loc-name">{{ loc.location_name }}</span>
+              <span class="loc-stock">{{ loc.recorded_stock }}</span>
+            </div>
+          </div>
+        </div>
+      </button>
+
+      <div class="empty-state" *ngIf="items.length === 0">
+        <p>No matching items found.</p>
+        <button class="btn btn-register" type="button" (click)="goToItemRegistration()">
+          Register New Item
+        </button>
+      </div>
+    </div>
+
+    <div class="state-loading" *ngIf="loading">Loading items...</div>
+
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1"
+          (click)="currentPage = 1; loadItems(1)" type="button">&laquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage <= 1"
+          (click)="previousPage()" type="button">&lsaquo;</button>
+        <span class="page-info">Page {{ currentPage }} of {{ lastPage }}</span>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage"
+          (click)="nextPage()" type="button">&rsaquo;</button>
+        <button class="btn-ghost page-btn" [disabled]="currentPage >= lastPage"
+          (click)="currentPage = lastPage; loadItems(lastPage)" type="button">&raquo;</button>
+      </div>
+      <div class="page-size-wrap">
+        <label for="disc-rows-per-page">Rows per page</label>
+        <select class="rows-per-page" id="disc-rows-per-page"
+          [(ngModel)]="perPage" (change)="loadItems(1)">
+          <option [value]="12">12</option>
+          <option [value]="24">24</option>
+          <option [value]="48">48</option>
+        </select>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Discrepancy Details Modal (mirrors receiving modal pattern) -->
+<div class="modal-overlay" *ngIf="showModal" (click)="bounceModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Record Discrepancy</h2>
+      <button class="modal-close app-modal-close" (click)="closeModal()"
+        [disabled]="saving" aria-label="Close">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="selectedItem">
+
+      <!-- Selected item summary -->
+      <div class="selected-item-box">
+        <img *ngIf="selectedItem.image_url" [src]="selectedItem.image_url"
+          alt="selected" class="selected-item-image" />
+        <span *ngIf="!selectedItem.image_url" class="selected-no-image">No Image</span>
+        <div class="selected-item-info">
+          <div class="selected-code">{{ selectedItem.item_code }}</div>
+          <div class="selected-desc">{{ selectedItem.item_description }}</div>
+          <div class="selected-meta">
+            <span *ngIf="selectedItem.category_name">{{ selectedItem.category_name }}</span>
+            <span class="stock-badge">Total Stock: {{ selectedItem.total_stock }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock per location -->
+      <div class="form-section">
+        <h3 class="section-title">Stock per Location</h3>
+        <div class="location-stock-table">
+          <div class="location-stock-row"
+            *ngFor="let loc of selectedItem.locations"
+            [class.active-loc]="loc.location_id === selectedLocationId">
+            <span class="loc-label">{{ loc.location_name }}</span>
+            <span class="loc-qty">{{ loc.recorded_stock }} <span class="loc-unit">{{ selectedItem.measurement_unit || 'units' }}</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location selector + physical count -->
+      <div class="form-section">
+        <h3 class="section-title">Discrepancy Details</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Storage Location to Update *</label>
+            <select class="form-control" [(ngModel)]="selectedLocationId"
+              (ngModelChange)="onLocationChange()" [disabled]="saving">
+              <option *ngFor="let loc of selectedItem.locations" [ngValue]="loc.location_id">
+                {{ loc.location_name }} — Recorded: {{ loc.recorded_stock }} {{ selectedItem.measurement_unit || '' }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Physical Count (Actual) *</label>
+            <input type="number" class="form-control" min="0"
+              [(ngModel)]="physicalCount" [disabled]="saving"
+              placeholder="Enter actual counted quantity" />
+          </div>
+        </div>
+
+        <!-- Variance display -->
+        <div class="variance-box" *ngIf="selectedLocation">
+          <div class="variance-row">
+            <span>Recorded Stock</span>
+            <span>{{ selectedLocation.recorded_stock }} {{ selectedItem.measurement_unit || '' }}</span>
+          </div>
+          <div class="variance-row">
+            <span>Physical Count</span>
+            <span>{{ physicalCount }} {{ selectedItem.measurement_unit || '' }}</span>
+          </div>
+          <hr class="variance-hr" />
+          <div class="variance-row variance-result"
+            [class.surplus]="variance > 0"
+            [class.shortage]="variance < 0"
+            [class.match]="variance === 0">
+            <span>Variance</span>
+            <span class="variance-badge">
+              <ng-container *ngIf="variance > 0">▲ Surplus (+{{ variance }})</ng-container>
+              <ng-container *ngIf="variance < 0">▼ Shortage ({{ variance }})</ng-container>
+              <ng-container *ngIf="variance === 0">✓ No discrepancy</ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reason + notes -->
+      <div class="form-section">
+        <h3 class="section-title">Additional Information</h3>
+        <div class="form-group">
+          <label class="form-label">Reason *</label>
+          <input type="text" class="form-control" [(ngModel)]="reason"
+            placeholder="e.g. Physical count verification, Spoilage, Entry error"
+            maxlength="255" [disabled]="saving" />
+          <div class="hint" *ngIf="attemptedSubmit && !reason.trim()">
+            Reason is required.
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control textarea" rows="3" [(ngModel)]="notes"
+            placeholder="Any additional notes for audit trail..."
+            maxlength="1000" [disabled]="saving"></textarea>
+          <div class="character-counter">{{ (notes || '').length }} / 1000</div>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" type="button"
+        (click)="closeModal()" [disabled]="saving">Cancel</button>
+      <button class="btn btn-primary" type="button"
+        [disabled]="!canSubmit() || saving" (click)="submit()">
+        {{ saving ? 'Recording...' : 'Record Discrepancy' }}
+      </button>
+    </div>
+  </div>
+</div>

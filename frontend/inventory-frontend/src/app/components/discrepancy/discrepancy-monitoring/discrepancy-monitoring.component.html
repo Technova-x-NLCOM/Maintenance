@@ -1,0 +1,123 @@
+<div class="report-page">
+  <div class="page-header header-condensed">
+    <div class="header-title">
+      <div>
+        <h1>Discrepancy Monitoring</h1>
+        <p class="subtitle">History of all recorded stock discrepancies (surpluses and shortages).</p>
+      </div>
+    </div>
+    <div class="export-actions">
+      <button class="btn-primary btn-export" (click)="exportExcel()" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="8" y1="13" x2="16" y2="13"/>
+          <line x1="8" y1="17" x2="16" y2="17"/>
+        </svg>
+        Export Excel
+      </button>
+      <button class="btn-ghost btn-export" (click)="exportPdf()" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Export PDF
+      </button>
+    </div>
+  </div>
+
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">Discrepancy Records <span class="count">({{ total }})</span></h2>
+
+      <div class="filters-bar">
+        <div class="search-wrap">
+          <input class="filter-input search-input" type="text"
+            placeholder="Search item, reference, location..."
+            [(ngModel)]="search" (ngModelChange)="onSearchInput()" (keyup.enter)="apply()" />
+          <button *ngIf="search" class="btn-clear-input" type="button" (click)="clearSearch()" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <select class="filter-input" [(ngModel)]="discrepancyType" (change)="apply()">
+          <option value="">All Types</option>
+          <option value="surplus">Surplus (Over)</option>
+          <option value="shortage">Shortage (Under)</option>
+        </select>
+
+        <input class="filter-input" type="date" [(ngModel)]="dateFrom" (change)="apply()" />
+        <input class="filter-input" type="date" [(ngModel)]="dateTo" (change)="apply()" />
+
+        <button class="btn-primary btn-apply" type="button" (click)="apply()">Apply</button>
+        <button class="btn-ghost" type="button" (click)="clear()">Clear</button>
+      </div>
+    </div>
+
+    <app-toast></app-toast>
+    <div class="state-loading" *ngIf="loading">Loading discrepancy records...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table class="data-table" *ngIf="records.length > 0; else empty">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Reference</th>
+            <th>Item Code</th>
+            <th>Description</th>
+            <th>Location</th>
+            <th class="num-col">Variance</th>
+            <th>UoM</th>
+            <th>Reason</th>
+            <th>Performed By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of records">
+            <td data-label="Type">
+              <span class="type-badge" [class.badge-surplus]="r.quantity > 0" [class.badge-shortage]="r.quantity < 0">
+                {{ r.quantity > 0 ? '▲ Surplus' : '▼ Shortage' }}
+              </span>
+            </td>
+            <td class="cell-code" data-label="Reference">{{ r.reference_number }}</td>
+            <td data-label="Item Code">{{ r.item_code }}</td>
+            <td data-label="Description">{{ r.item_description }}</td>
+            <td data-label="Location">{{ r.batch_location_name ?? r.from_location_name ?? '—' }}</td>
+            <td class="num-col variance-col" data-label="Variance"
+              [class.positive]="r.quantity > 0" [class.negative]="r.quantity < 0">
+              {{ r.quantity > 0 ? '+' : '' }}{{ r.quantity }}
+            </td>
+            <td data-label="UoM">{{ r.measurement_unit || '—' }}</td>
+            <td data-label="Reason">{{ r.reason || '—' }}</td>
+            <td data-label="Performed By">{{ r.performed_by_name }}</td>
+            <td class="date-cell" data-label="Date">{{ r.transaction_date | date:'MMM d, y, h:mm a' }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #empty>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+            <rect x="9" y="3" width="6" height="4" rx="1"/>
+            <path d="M9 12h6M9 16h4"/>
+          </svg>
+          <p>No discrepancy records found.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn-ghost page-btn" (click)="load(1)" [disabled]="page === 1">&laquo;</button>
+        <button class="btn-ghost page-btn" (click)="load(page - 1)" [disabled]="page === 1">&lsaquo;</button>
+        <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
+        <button class="btn-ghost page-btn" (click)="load(page + 1)" [disabled]="page === lastPage">&rsaquo;</button>
+        <button class="btn-ghost page-btn" (click)="load(lastPage)" [disabled]="page === lastPage">&raquo;</button>
+      </div>
+    </div>
+  </section>
+</div>
