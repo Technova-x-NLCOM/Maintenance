@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Services\DistributionPlanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -10,10 +11,13 @@ use Illuminate\Validation\Rule;
 
 class DistributionPlanController extends Controller
 {
+    public function __construct(private DistributionPlanService $planService) {}
+
     public function index(Request $request)
     {
         $query = DB::table('distribution_plan_schedules as dps')
             ->join('distribution_templates as dt', 'dps.template_id', '=', 'dt.template_id')
+            ->leftJoin('locations as pl', 'dps.preferred_location_id', '=', 'pl.location_id')
             ->select(
                 'dps.plan_id',
                 'dps.week_label',
@@ -34,9 +38,27 @@ class DistributionPlanController extends Controller
             ->orderBy('dps.planned_date')
             ->orderBy('dps.plan_id');
 
-            if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
-                $query->where('dps.is_deleted', false);
-            }
+        // Include new location + snapshot columns if migration ran
+        if (Schema::hasColumn('distribution_plan_schedules', 'preferred_location_id')) {
+            $query->addSelect(
+                'dps.preferred_location_id',
+                'pl.location_name as preferred_location_name',
+                'pl.location_code as preferred_location_code'
+            );
+        }
+
+        if (Schema::hasColumn('distribution_plan_schedules', 'completed_reference')) {
+            $query->addSelect(
+                'dps.completed_reference',
+                'dps.completed_issued_qty',
+                'dps.completed_target_people',
+                'dps.completed_notes'
+            );
+        }
+
+        if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+            $query->where('dps.is_deleted', false);
+        }
 
         if ($request->filled('status')) {
             $query->where('dps.status', (string) $request->input('status'));
@@ -55,18 +77,19 @@ class DistributionPlanController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Scheduled distribution plans retrieved successfully.',
-            'data' => $plans,
+            'data'    => $plans,
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'template_id' => ['required', 'integer', 'exists:distribution_templates,template_id'],
-            'week_label' => ['required', 'string', 'max:50'],
-            'planned_date' => ['required', 'date'],
-            'target_unit_count' => ['required', 'integer', 'min:1'],
-            'notes' => ['nullable', 'string'],
+            'template_id'          => ['required', 'integer', 'exists:distribution_templates,template_id'],
+            'week_label'           => ['required', 'string', 'max:50'],
+            'planned_date'         => ['required', 'date', 'after_or_equal:today'],
+            'target_unit_count'    => ['required', 'integer', 'min:1'],
+            'preferred_location_id'=> ['nullable', 'integer', 'exists:locations,location_id'],
+            'notes'                => ['nullable', 'string'],
         ]);
 
         $template = DB::table('distribution_templates')
@@ -85,15 +108,16 @@ class DistributionPlanController extends Controller
         $createdBy = $user?->user_id ?? auth()->id();
 
         $planId = DB::table('distribution_plan_schedules')->insertGetId([
-            'template_id' => (int) $validated['template_id'],
-            'week_label' => trim((string) $validated['week_label']),
-            'planned_date' => $validated['planned_date'],
-            'target_unit_count' => (int) $validated['target_unit_count'],
-            'status' => 'planned',
-            'notes' => $this->nullIfEmpty($validated['notes'] ?? null),
-            'created_by' => $createdBy,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'template_id'           => (int) $validated['template_id'],
+            'week_label'            => trim((string) $validated['week_label']),
+            'planned_date'          => $validated['planned_date'],
+            'target_unit_count'     => (int) $validated['target_unit_count'],
+            'preferred_location_id' => isset($validated['preferred_location_id']) ? (int) $validated['preferred_location_id'] : null,
+            'status'                => 'planned',
+            'notes'                 => $this->nullIfEmpty($validated['notes'] ?? null),
+            'created_by'            => $createdBy,
+            'created_at'            => now(),
+            'updated_at'            => now(),
         ]);
 
         // ensure backward compatibility when migration not yet run
@@ -116,7 +140,9 @@ class DistributionPlanController extends Controller
             ], 404);
         }
 
-        $checkData = $this->buildInventoryCheckData($plan);
+        $checkData      = $this->buildInventoryCheckData($plan);
+        $locationBreakdown = $this->buildLocationBreakdown($plan, $checkData['items']);
+
         $remainingItems = DB::table('distribution_plan_remaining_items as dpri')
             ->join('items as i', 'dpri.item_id', '=', 'i.item_id')
             ->where('dpri.plan_id', $planId)
@@ -136,10 +162,11 @@ class DistributionPlanController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Scheduled plan retrieved successfully.',
-            'data' => [
-                'plan' => $plan,
-                'inventory_check' => $checkData,
-                'remaining_items' => $remainingItems,
+            'data'    => [
+                'plan'               => $plan,
+                'inventory_check'    => $checkData,
+                'location_breakdown' => $locationBreakdown,
+                'remaining_items'    => $remainingItems,
             ],
         ]);
     }
@@ -325,7 +352,7 @@ class DistributionPlanController extends Controller
             'procured_items.*.quantity_brought' => ['required_with:procured_items', 'integer', 'min:1'],
             'procured_items.*.notes' => ['nullable', 'string'],
             'issue_destination' => ['nullable', 'string', 'max:255'],
-            'issue_reason' => ['required', 'string', 'max:255'],
+            'issue_reason' => ['nullable', 'string', 'max:255'],
             'issue_notes' => ['nullable', 'string'],
         ]);
 
@@ -571,33 +598,6 @@ class DistributionPlanController extends Controller
         return implode(' | ', $parts);
     }
 
-    private function resolveInventoryLocationId(): ?int
-    {
-        $candidates = [
-            ['table' => 'locations', 'column' => 'location_id'],
-            ['table' => 'inventory_locations', 'column' => 'location_id'],
-            ['table' => 'stock_locations', 'column' => 'location_id'],
-            ['table' => 'warehouses', 'column' => 'warehouse_id'],
-        ];
-
-        foreach ($candidates as $candidate) {
-            if (!Schema::hasTable($candidate['table']) || !Schema::hasColumn($candidate['table'], $candidate['column'])) {
-                continue;
-            }
-
-            $id = DB::table($candidate['table'])
-                ->whereNotNull($candidate['column'])
-                ->orderBy($candidate['column'])
-                ->value($candidate['column']);
-
-            if ($id !== null) {
-                return (int) $id;
-            }
-        }
-
-        return null;
-    }
-
     public function complete(Request $request, int $planId)
     {
         $plan = $this->getPlanWithTemplate($planId);
@@ -750,7 +750,7 @@ class DistributionPlanController extends Controller
 
         $validated = $request->validate([
             'issue_destination' => ['nullable', 'string', 'max:255'],
-            'issue_reason' => ['required', 'string', 'max:255'],
+            'issue_reason' => ['nullable', 'string', 'max:255'],
             'issue_notes' => ['nullable', 'string'],
         ]);
 
@@ -815,11 +815,12 @@ class DistributionPlanController extends Controller
         }
 
         $validated = $request->validate([
-            'template_id' => ['required', 'integer', 'exists:distribution_templates,template_id'],
-            'week_label' => ['required', 'string', 'max:50'],
-            'planned_date' => ['required', 'date'],
-            'target_unit_count' => ['required', 'integer', 'min:1'],
-            'notes' => ['nullable', 'string'],
+            'template_id'           => ['required', 'integer', 'exists:distribution_templates,template_id'],
+            'week_label'            => ['required', 'string', 'max:50'],
+            'planned_date'          => ['required', 'date', 'after_or_equal:today'],
+            'target_unit_count'     => ['required', 'integer', 'min:1'],
+            'preferred_location_id' => ['nullable', 'integer', 'exists:locations,location_id'],
+            'notes'                 => ['nullable', 'string'],
         ]);
 
         $template = DB::table('distribution_templates')
@@ -837,12 +838,13 @@ class DistributionPlanController extends Controller
         DB::table('distribution_plan_schedules')
             ->where('plan_id', $planId)
             ->update([
-                'template_id' => (int) $validated['template_id'],
-                'week_label' => trim((string) $validated['week_label']),
-                'planned_date' => $validated['planned_date'],
-                'target_unit_count' => (int) $validated['target_unit_count'],
-                'notes' => $this->nullIfEmpty($validated['notes'] ?? null),
-                'updated_at' => now(),
+                'template_id'           => (int) $validated['template_id'],
+                'week_label'            => trim((string) $validated['week_label']),
+                'planned_date'          => $validated['planned_date'],
+                'target_unit_count'     => (int) $validated['target_unit_count'],
+                'preferred_location_id' => isset($validated['preferred_location_id']) ? (int) $validated['preferred_location_id'] : null,
+                'notes'                 => $this->nullIfEmpty($validated['notes'] ?? null),
+                'updated_at'            => now(),
             ]);
 
         $response = $this->show($planId);
@@ -906,104 +908,12 @@ class DistributionPlanController extends Controller
         ?string $reason,
         ?string $notes
     ): array {
-        $reference = 'PLAN-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
-        $issuedLines = [];
-        $totalIssued = 0;
-
-        foreach ($checkData['items'] as $line) {
-            $itemId = (int) $line['item_id'];
-            $required = (int) $line['required_quantity_for_issuance'];
-            $remaining = $required;
-
-            $batches = DB::table('inventory_batches')
-                ->select('batch_id', 'quantity', 'expiry_date')
-                ->where('item_id', $itemId)
-                ->where('status', 'active')
-                ->where('quantity', '>', 0)
-                ->orderByRaw('expiry_date IS NULL, expiry_date ASC')
-                ->orderBy('created_at')
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($batches as $batch) {
-                if ($remaining <= 0) {
-                    break;
-                }
-
-                $deduct = min($remaining, (int) $batch->quantity);
-                if ($deduct <= 0) {
-                    continue;
-                }
-
-                $newQty = ((int) $batch->quantity) - $deduct;
-
-                DB::table('inventory_batches')
-                    ->where('batch_id', $batch->batch_id)
-                    ->update([
-                        'quantity' => $newQty,
-                        'status' => $newQty <= 0 ? 'depleted' : 'active',
-                        'updated_at' => now(),
-                    ]);
-
-                DB::table('inventory_transactions')->insert([
-                    'item_id' => $itemId,
-                    'batch_id' => $batch->batch_id,
-                    'transaction_type' => 'OUT',
-                    'quantity' => $deduct,
-                    'reference_number' => $reference,
-                    'transaction_date' => now(),
-                    'reason' => $reason ?: 'Scheduled Feeding Program Issuance',
-                    'notes' => $this->buildIssuanceNotes($plan, $notes),
-                    'destination' => $destination,
-                    'performed_by' => $performedBy,
-                    'created_at' => now(),
-                ]);
-
-                $remaining -= $deduct;
-                $totalIssued += $deduct;
-            }
-
-            if ($remaining > 0) {
-                throw new \RuntimeException('Insufficient stock detected during issuance. Transaction cancelled.');
-            }
-
-            $issuedLines[] = [
-                'item_id' => $itemId,
-                'item_code' => $line['item_code'],
-                'item_description' => $line['item_description'],
-                'required_quantity_for_issuance' => $required,
-                'issued_quantity' => $required,
-            ];
-        }
-
-        return [
-            'reference_number' => $reference,
-            'plan_id' => (int) $plan->plan_id,
-            'week_label' => (string) $plan->week_label,
-            'template_id' => (int) $plan->template_id,
-            'template_name' => (string) $plan->template_name,
-            'target_unit_count' => (int) $plan->target_unit_count,
-            'destination' => $destination,
-            'total_issued_quantity' => $totalIssued,
-            'issued_lines' => $issuedLines,
-        ];
+        return $this->planService->issuePlanItems($plan, $checkData, $performedBy, $destination, $reason, $notes);
     }
 
     private function buildIssuanceNotes(object $plan, ?string $userNotes): string
     {
-        $parts = [
-            'Scheduled Plan: ' . $plan->week_label,
-            'Template: ' . $plan->template_name,
-            'Planned Date: ' . $plan->planned_date,
-            'Target Units: ' . $plan->target_unit_count,
-        ];
-
-        $userNotes = $this->nullIfEmpty($userNotes);
-        if ($userNotes) {
-            $parts[] = 'Notes: ' . $userNotes;
-        }
-
-        return implode(' | ', $parts);
+        return $this->planService->buildIssuanceNotes($plan, $userNotes);
     }
 
     private function recordRemainderItems(object $plan, array $remainingItems, int $performedBy): array
@@ -1098,133 +1008,31 @@ class DistributionPlanController extends Controller
 
     private function getPlanWithTemplate(int $planId): ?object
     {
-        $query = DB::table('distribution_plan_schedules as dps')
-            ->join('distribution_templates as dt', 'dps.template_id', '=', 'dt.template_id')
-            ->where('dps.plan_id', $planId)
-            ->select(
-                'dps.plan_id',
-                'dps.template_id',
-                'dps.week_label',
-                'dps.planned_date',
-                'dps.target_unit_count',
-                'dps.status',
-                'dps.notes',
-                'dps.precheck_at',
-                'dps.final_check_at',
-                'dps.completed_at',
-                'dps.created_at',
-                'dps.updated_at',
-                'dt.template_name',
-                'dt.distribution_type',
-                'dt.base_unit_count'
-            )
-        ;
-
-        if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
-            $query->where('dps.is_deleted', false);
-        }
-
-        return $query->first();
+        return $this->planService->getPlanWithTemplate($planId);
     }
 
     private function buildInventoryCheckData(object $plan): array
     {
-        $items = $this->loadTemplateItems((int) $plan->template_id);
-        $baseUnitCount = (int) $plan->base_unit_count;
-        $targetUnitCount = (int) $plan->target_unit_count;
+        return $this->planService->buildInventoryCheckData($plan);
+    }
 
-        if ($baseUnitCount <= 0) {
-            return [
-                'items' => [],
-                'summary' => [
-                    'line_count' => 0,
-                    'insufficient_items_count' => 0,
-                    'can_proceed' => false,
-                    'error' => 'Template base unit count must be greater than zero.',
-                ],
-            ];
-        }
-
-        $multiplier = $targetUnitCount / $baseUnitCount;
-        $insufficientCount = 0;
-
-        $calculatedItems = array_map(function ($line) use ($multiplier, &$insufficientCount) {
-            $requiredExact = round(((float) $line['quantity_per_base']) * $multiplier, 4);
-            $requiredForIssuance = (int) ceil($requiredExact);
-            $available = (int) $line['current_stock'];
-            $shortage = max(0, $requiredForIssuance - $available);
-
-            if ($shortage > 0) {
-                $insufficientCount++;
-            }
-
-            return [
-                'item_id' => (int) $line['item_id'],
-                'item_code' => (string) $line['item_code'],
-                'item_description' => (string) $line['item_description'],
-                'measurement_unit' => $line['measurement_unit'] ? (string) $line['measurement_unit'] : null,
-                'quantity_per_base' => (float) $line['quantity_per_base'],
-                'required_quantity_exact' => $requiredExact,
-                'required_quantity_for_issuance' => $requiredForIssuance,
-                'current_stock' => $available,
-                'shortage_quantity' => $shortage,
-                'has_shortage' => $shortage > 0,
-            ];
-        }, $items);
-
-        return [
-            'items' => $calculatedItems,
-            'summary' => [
-                'line_count' => count($calculatedItems),
-                'insufficient_items_count' => $insufficientCount,
-                'can_proceed' => $insufficientCount === 0,
-            ],
-        ];
+    private function buildLocationBreakdown(object $plan, array $checkItems): array
+    {
+        return $this->planService->buildLocationBreakdown($plan, $checkItems);
     }
 
     private function loadTemplateItems(int $templateId): array
     {
-        $stockSubquery = DB::table('inventory_batches')
-            ->select('item_id', DB::raw('COALESCE(SUM(quantity), 0) as current_stock'))
-            ->where('status', 'active')
-            ->groupBy('item_id');
+        return $this->planService->loadTemplateItems($templateId);
+    }
 
-        return DB::table('distribution_template_items as dti')
-            ->join('items as i', 'dti.item_id', '=', 'i.item_id')
-            ->leftJoinSub($stockSubquery, 's', function ($join) {
-                $join->on('dti.item_id', '=', 's.item_id');
-            })
-            ->where('dti.template_id', $templateId)
-            ->orderBy('i.item_description')
-            ->get([
-                'dti.item_id',
-                'i.item_code',
-                'i.item_description',
-                'i.measurement_unit',
-                'dti.quantity_per_base',
-                DB::raw('COALESCE(s.current_stock, 0) as current_stock'),
-            ])
-            ->map(function ($line) {
-                return [
-                    'item_id' => (int) $line->item_id,
-                    'item_code' => (string) $line->item_code,
-                    'item_description' => (string) $line->item_description,
-                    'measurement_unit' => $line->measurement_unit ? (string) $line->measurement_unit : null,
-                    'quantity_per_base' => (float) $line->quantity_per_base,
-                    'current_stock' => (int) $line->current_stock,
-                ];
-            })
-            ->values()
-            ->all();
+    private function resolveInventoryLocationId(): ?int
+    {
+        return $this->planService->resolveInventoryLocationId();
     }
 
     private function nullIfEmpty(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $trimmed = trim($value);
-        return $trimmed === '' ? null : $trimmed;
+        return $this->planService->nullIfEmpty($value);
     }
 }
