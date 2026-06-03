@@ -1,0 +1,332 @@
+<div class="sm-page">
+  <div class="page-header header-condensed">
+    <div>
+      <h1>Storage Maintenance</h1>
+      <p class="subtitle">Schedule location maintenance, move items to temp storage, and restore them when done.</p>
+    </div>
+    <button class="btn btn-primary" type="button" (click)="openCreate()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      New Maintenance
+    </button>
+  </div>
+
+  <app-toast></app-toast>
+
+  <!-- Filters -->
+  <section class="list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">Maintenance Records <span class="count">({{ total }})</span></h2>
+      <div class="filters-bar">
+        <div class="search-wrap">
+          <input class="filter-input" type="text" placeholder="Search title or location..."
+            [(ngModel)]="search" (keyup.enter)="apply()" />
+          <button *ngIf="search" class="btn-clear-input" type="button" (click)="search = ''; apply()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <select class="filter-input" [(ngModel)]="filterStatus" (change)="apply()">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <select class="filter-input" [(ngModel)]="filterLocationId" (change)="apply()">
+          <option [ngValue]="null">All Locations</option>
+          <option *ngFor="let loc of locations" [ngValue]="loc.location_id">{{ loc.location_name }}</option>
+        </select>
+        <button class="btn btn-primary btn-apply" type="button" (click)="apply()">Apply</button>
+        <button class="btn btn-ghost" type="button" (click)="clear()">Clear</button>
+      </div>
+    </div>
+
+    <div class="state-loading" *ngIf="loading">Loading records...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table class="data-table" *ngIf="records.length > 0; else empty">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Location</th>
+            <th>Temp Storage</th>
+            <th>Status</th>
+            <th>Scheduled</th>
+            <th class="num-col">Moved Out</th>
+            <th class="num-col">Moved Back</th>
+            <th class="num-col">Consumed</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of records">
+            <td data-label="Title"><strong>{{ r.title }}</strong><br><span class="cell-sub">{{ r.reason || '' }}</span></td>
+            <td data-label="Location">{{ r.location_name }}</td>
+            <td data-label="Temp Storage">{{ r.temp_location_name }}</td>
+            <td data-label="Status">
+              <span class="status-badge" [ngClass]="'badge-' + r.status">{{ statusLabel(r.status) }}</span>
+            </td>
+            <td data-label="Scheduled" class="date-cell">
+              <span *ngIf="r.scheduled_start">{{ r.scheduled_start | date:'MMM d, y' }}</span>
+              <span *ngIf="!r.scheduled_start" class="muted">—</span>
+            </td>
+            <td class="num-col" data-label="Moved Out">{{ r.moved_out_quantity || '—' }}</td>
+            <td class="num-col" data-label="Moved Back">{{ r.moved_back_quantity || '—' }}</td>
+            <td class="num-col" data-label="Consumed">
+              <span *ngIf="r.status === 'completed'" [class.warn-text]="consumed(r) > 0">
+                {{ consumed(r) }}
+              </span>
+              <span *ngIf="r.status !== 'completed'" class="muted">—</span>
+            </td>
+            <td data-label="Action">
+              <button class="btn btn-sm btn-view" type="button" (click)="openDetail(r)">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #empty>
+        <div class="empty-state"><p>No maintenance records found.</p></div>
+      </ng-template>
+    </div>
+
+    <div class="pagination" *ngIf="!loading">
+      <div class="pagination-nav">
+        <button class="btn btn-ghost page-btn" (click)="load(1)" [disabled]="page === 1">&laquo;</button>
+        <button class="btn btn-ghost page-btn" (click)="previousPage()" [disabled]="page === 1">&lsaquo;</button>
+        <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
+        <button class="btn btn-ghost page-btn" (click)="nextPage()" [disabled]="page === lastPage">&rsaquo;</button>
+        <button class="btn btn-ghost page-btn" (click)="load(lastPage)" [disabled]="page === lastPage">&raquo;</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ── Create Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showCreateModal" (click)="closeCreate()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Schedule Maintenance</h2>
+      <button class="modal-close" (click)="closeCreate()" [disabled]="saving">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Location to Maintain *</label>
+          <select class="form-control" [(ngModel)]="form.location_id" [disabled]="saving">
+            <option [ngValue]="null">Select location</option>
+            <option *ngFor="let loc of locations" [ngValue]="loc.location_id">{{ loc.location_name }}</option>
+          </select>
+          <div class="hint" *ngIf="attemptedSave && !form.location_id">Required.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Temp Holding Location *</label>
+          <select class="form-control" [(ngModel)]="form.temp_location_id" [disabled]="saving">
+            <option [ngValue]="null">Select temp location</option>
+            <option *ngFor="let loc of tempLocationOptions" [ngValue]="loc.location_id">{{ loc.location_name }}</option>
+          </select>
+          <div class="hint" *ngIf="attemptedSave && !form.temp_location_id">Required.</div>
+        </div>
+      </div>
+
+      <!-- Transfer arrow -->
+      <div class="transfer-arrow" *ngIf="form.location_id && form.temp_location_id">
+        <span class="arrow-pill">{{ locationName }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
+          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+        </svg>
+        <span class="arrow-pill">{{ tempLocationName }}</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" class="form-control" [(ngModel)]="form.title"
+          placeholder="e.g. Annual Deep Clean, Pest Treatment" maxlength="255" [disabled]="saving" />
+        <div class="hint" *ngIf="attemptedSave && !form.title.trim()">Required.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason</label>
+        <input type="text" class="form-control" [(ngModel)]="form.reason"
+          placeholder="e.g. Cleaning, Repair, Inspection" maxlength="255" [disabled]="saving" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Scheduled Start</label>
+          <input type="datetime-local" class="form-control" [(ngModel)]="form.scheduled_start" [disabled]="saving" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Scheduled End</label>
+          <input type="datetime-local" class="form-control" [(ngModel)]="form.scheduled_end" [disabled]="saving" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" rows="3" [(ngModel)]="form.notes"
+          placeholder="Additional details..." maxlength="1000" [disabled]="saving"></textarea>
+        <div class="char-counter">{{ (form.notes || '').length }} / 1000</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeCreate()" [disabled]="saving">Cancel</button>
+      <button class="btn btn-primary" [disabled]="saving" (click)="submitCreate()">
+        {{ saving ? 'Scheduling...' : 'Schedule Maintenance' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Detail Modal ─────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showDetailModal" (click)="closeDetail()">
+  <div class="modal-box modal-box-lg" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ detailRecord?.title }}</h2>
+      <button class="modal-close" (click)="closeDetail()" [disabled]="actionSaving">×</button>
+    </div>
+
+    <div class="modal-body" *ngIf="detailRecord && !detailLoading">
+
+      <!-- Status + meta row -->
+      <div class="detail-meta">
+        <span class="status-badge" [ngClass]="'badge-' + detailRecord.status">{{ statusLabel(detailRecord.status) }}</span>
+        <span class="meta-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ detailRecord.location_name }}
+        </span>
+        <span class="meta-chip meta-arrow">→</span>
+        <span class="meta-chip temp-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ detailRecord.temp_location_name }}
+        </span>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="stats-row" *ngIf="detailRecord.status !== 'pending' && detailRecord.status !== 'cancelled'">
+        <div class="stat-box">
+          <div class="stat-val">{{ detailRecord.moved_out_quantity }}</div>
+          <div class="stat-label">Moved Out</div>
+        </div>
+        <div class="stat-box stat-box-green" *ngIf="detailRecord.status === 'completed'">
+          <div class="stat-val">{{ detailRecord.moved_back_quantity }}</div>
+          <div class="stat-label">Moved Back</div>
+        </div>
+        <div class="stat-box stat-box-amber" *ngIf="detailRecord.status === 'completed' && consumed(detailRecord) > 0">
+          <div class="stat-val">{{ consumed(detailRecord) }}</div>
+          <div class="stat-label">Consumed During</div>
+        </div>
+      </div>
+
+      <!-- Preview items (pending) -->
+      <div class="form-section" *ngIf="detailRecord.status === 'pending' && detailRecord.preview_items && detailRecord.preview_items.length > 0">
+        <h3 class="section-title">Items at this location (will be moved out on Start)</h3>
+        <div class="items-table-wrap">
+          <table class="items-table">
+            <thead><tr><th>Item Code</th><th>Description</th><th class="num-col">Stock</th><th>UoM</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let item of detailRecord.preview_items">
+                <td class="cell-code">{{ item.item_code }}</td>
+                <td>{{ item.item_description }}</td>
+                <td class="num-col">{{ item.stock }}</td>
+                <td>{{ item.measurement_unit || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-section empty-preview" *ngIf="detailRecord.status === 'pending' && (!detailRecord.preview_items || detailRecord.preview_items.length === 0)">
+        <p class="muted">No stock currently at this location.</p>
+      </div>
+
+      <!-- Tracked batches (active/completed) -->
+      <div class="form-section" *ngIf="detailRecord.tracked_batches && detailRecord.tracked_batches.length > 0">
+        <h3 class="section-title">
+          {{ detailRecord.status === 'active' ? 'Items in temp storage' : 'Transfer Summary' }}
+        </h3>
+        <div class="items-table-wrap">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Item Code</th>
+                <th>Description</th>
+                <th class="num-col">Moved Out</th>
+                <th class="num-col">Remaining</th>
+                <th class="num-col">Consumed</th>
+                <th>UoM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let b of detailRecord.tracked_batches">
+                <td class="cell-code">{{ b.item_code }}</td>
+                <td>{{ b.item_description }}</td>
+                <td class="num-col">{{ b.original_quantity }}</td>
+                <td class="num-col">{{ b.current_quantity }}</td>
+                <td class="num-col" [class.warn-text]="b.consumed > 0">{{ b.consumed }}</td>
+                <td>{{ b.measurement_unit || '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-section" *ngIf="detailRecord.notes">
+        <h3 class="section-title">Notes</h3>
+        <p class="notes-text">{{ detailRecord.notes }}</p>
+      </div>
+
+      <!-- Confirm action panel -->
+      <div class="confirm-panel" *ngIf="confirmAction">
+        <div class="confirm-panel-body">
+          <ng-container *ngIf="confirmAction === 'start'">
+            <strong>Start Maintenance?</strong>
+            <p>All stock at <em>{{ detailRecord.location_name }}</em> will be moved to <em>{{ detailRecord.temp_location_name }}</em>. Items can still be issued from temp storage during maintenance.</p>
+          </ng-container>
+          <ng-container *ngIf="confirmAction === 'restore'">
+            <strong>Restore Items?</strong>
+            <p>Only items remaining in temp storage will be moved back to <em>{{ detailRecord.location_name }}</em>. Items consumed during maintenance are automatically accounted for.</p>
+          </ng-container>
+          <ng-container *ngIf="confirmAction === 'cancel'">
+            <strong>Cancel Maintenance?</strong>
+            <p>This will cancel the maintenance schedule. No items will be moved.</p>
+          </ng-container>
+          <div class="confirm-actions">
+            <button class="btn btn-ghost" type="button" (click)="cancelConfirm()" [disabled]="actionSaving">Go Back</button>
+            <button class="btn"
+              [class.btn-primary]="confirmAction !== 'cancel'"
+              [class.btn-danger]="confirmAction === 'cancel'"
+              type="button" [disabled]="actionSaving" (click)="runAction()">
+              {{ actionSaving ? 'Processing...' :
+                 confirmAction === 'start'   ? 'Yes, Start Maintenance' :
+                 confirmAction === 'restore' ? 'Yes, Restore Items' :
+                 'Yes, Cancel' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="state-loading" *ngIf="detailLoading">Loading details...</div>
+
+    <div class="modal-footer" *ngIf="detailRecord && !detailLoading && !confirmAction">
+      <button class="btn btn-ghost" type="button" (click)="closeDetail()">Close</button>
+
+      <button class="btn btn-danger" type="button"
+        *ngIf="detailRecord.status === 'pending'"
+        [disabled]="actionSaving" (click)="setConfirm('cancel')">
+        Cancel Maintenance
+      </button>
+
+      <button class="btn btn-primary" type="button"
+        *ngIf="detailRecord.status === 'pending'"
+        [disabled]="actionSaving" (click)="setConfirm('start')">
+        Start Maintenance
+      </button>
+
+      <button class="btn btn-success" type="button"
+        *ngIf="detailRecord.status === 'active'"
+        [disabled]="actionSaving" (click)="setConfirm('restore')">
+        Restore Items &amp; Complete
+      </button>
+    </div>
+  </div>
+</div>
