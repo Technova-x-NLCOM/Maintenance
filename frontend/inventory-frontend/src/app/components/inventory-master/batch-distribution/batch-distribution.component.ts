@@ -229,6 +229,22 @@ export class BatchDistributionComponent implements OnInit {
     plan: null,
   };
 
+  templateConfirmDialog: {
+    open: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText: string;
+    template: BatchDistributionTemplateSummary | null;
+  } = {
+    open: false,
+    title: '',
+    message: '',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    template: null,
+  };
+
   errorMessage = '';
   successMessage = '';
   toastMessage = '';
@@ -588,7 +604,7 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (action === 'delete') {
-      this.deleteTemplate(template);
+      this.confirmDeleteTemplate(template);
     }
   }
 
@@ -859,6 +875,7 @@ export class BatchDistributionComponent implements OnInit {
     this.batchService.getTemplate(summary.template_id).subscribe({
       next: (response) => {
         const details = response.data;
+        this.showNewRecipeModal = true;
         this.showTemplateForm = true;
         this.isEditingTemplate = true;
         this.selectedTemplateId = details.template.template_id;
@@ -1477,6 +1494,11 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   submitPlanDialog(): void {
+    if (this.isPlanDialogEditing) {
+      this.updatePlanLocal();
+      return;
+    }
+
     if (this.scheduleDialogStep === 1) {
       this.validateScheduleStep();
       return;
@@ -1628,8 +1650,12 @@ export class BatchDistributionComponent implements OnInit {
     if (this.isPlanLocked(plan)) {
       return;
     }
+    this.closePlanMenu();
     this.planDialogMode = 'edit';
     this.editingPlanId = plan.plan_id;
+    this.scheduleDialogStep = 1;
+    this.schedulingTemplate = this.templates.find((t) => t.template_id === plan.template_id) ?? null;
+    this.schedulingCalculation = null;
     this.planForm = {
       template_id: plan.template_id,
       week_label: plan.week_label,
@@ -1637,6 +1663,7 @@ export class BatchDistributionComponent implements OnInit {
       target_unit_count: plan.target_unit_count,
       notes: plan.notes ?? '',
     };
+    this.schedulePlannedDate = plan.planned_date;
     this.showScheduleDialog = true;
   }
 
@@ -2075,11 +2102,6 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   private deleteTemplate(summary: BatchDistributionTemplateSummary): void {
-    const ok = confirm(`Delete template "${summary.template_name}"?`);
-    if (!ok) {
-      return;
-    }
-
     this.batchService.deleteTemplate(summary.template_id).subscribe({
       next: (response: { success: boolean; message: string }) => {
         this.toast.success(response.message || 'Template deleted.');
@@ -2132,8 +2154,6 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    this.savingPlan = true;
-
     if (!this.planForm.template_id) {
       this.toast.error('Please fill out all required fields (*)');
       return;
@@ -2154,6 +2174,8 @@ export class BatchDistributionComponent implements OnInit {
       this.toast.error('Target count must be greater than zero.');
       return;
     }
+
+    this.savingPlan = true;
 
     const template = this.templates.find((t) => t.template_id === this.planForm.template_id);
     this.plans = this.plans.map((plan) => {
@@ -2191,8 +2213,9 @@ export class BatchDistributionComponent implements OnInit {
       };
     }
 
-    this.toast.success('Plan updated locally.');
+    this.toast.success('Schedule updated successfully.');
     this.savingPlan = false;
+    this.buildCalendar();
     this.closeScheduleDialog();
     this.cdr.detectChanges();
   }
@@ -2451,8 +2474,7 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   editSchedule(plan: ProgramPlanSummary): void {
-    this.closePlanMenu();
-    this.toast.show('success', 'Edit functionality coming soon');
+    this.openEditPlan(plan);
   }
 
   confirmDeletePlan(plan: ProgramPlanSummary): void {
@@ -2488,12 +2510,86 @@ export class BatchDistributionComponent implements OnInit {
 
   duplicateTemplate(template: BatchDistributionTemplateSummary): void {
     this.closeTemplateMenu();
-    this.toast.show('success', 'Duplicate functionality coming soon');
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.batchService.getTemplate(template.template_id).subscribe({
+      next: (response) => {
+        const details = response.data;
+        this.showNewRecipeModal = true;
+        this.showTemplateForm = true;
+        this.isEditingTemplate = false; // This is a new template (duplicate)
+        this.selectedTemplateId = null; // Clear the selected ID since this is a new template
+        this.selectedTemplateName = '';
+
+        // Add "(copy)" to the template name
+        const originalName = details.template.template_name;
+        const copyName = originalName.includes('(copy)') 
+          ? originalName 
+          : `${originalName} (copy)`;
+
+        this.templateForm = {
+          template_name: copyName,
+          distribution_type: details.template.distribution_type,
+          base_unit_count: details.template.base_unit_count,
+          notes: details.template.notes ?? '',
+          recipe_type_id: details.template.recipe_type_id ?? null,
+        };
+
+        this.templateLines = details.items.map((item) => ({
+          item_id: item.item_id,
+          quantity_per_base: item.quantity_per_base,
+          notes: '',
+          current_stock: item.current_stock,
+        }));
+
+        this.targetUnitCount = details.template.base_unit_count;
+        this.lineDraftItemId = null;
+        this.lineDraftQuantityPerBase = 1;
+        this.lineDraftNotes = '';
+
+        this.toast.success('Template duplicated. You can now modify and save it.');
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error(err?.error?.message || 'Failed to duplicate template.');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   confirmDeleteTemplate(template: BatchDistributionTemplateSummary): void {
     this.closeTemplateMenu();
-    this.toast.show('success', 'Delete functionality coming soon');
+    this.templateConfirmDialog = {
+      open: true,
+      title: 'Delete Recipe',
+      message: `Are you sure you want to delete "${template.template_name}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      template,
+    };
+  }
+
+  closeTemplateConfirm(): void {
+    this.templateConfirmDialog = {
+      open: false,
+      title: '',
+      message: '',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      template: null,
+    };
+  }
+
+  confirmTemplateDeleteAction(): void {
+    const template = this.templateConfirmDialog.template;
+    if (!template) {
+      this.closeTemplateConfirm();
+      return;
+    }
+
+    this.closeTemplateConfirm();
+    this.deleteTemplate(template);
   }
 
   openNewRecipeModal(): void {
