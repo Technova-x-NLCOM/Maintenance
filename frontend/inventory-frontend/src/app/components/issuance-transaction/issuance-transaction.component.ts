@@ -7,7 +7,6 @@ import {
   IssuanceItem,
   PaginatedIssuanceItemsResponse,
   IssuanceTransactionResponse,
-  AdjustmentTransactionResponse,
   LocationOption,
 } from '../../services/inventory-item.service';
 import { ToastService } from '../../services/toast.service';
@@ -57,7 +56,7 @@ export class IssuanceTransactionComponent implements OnInit {
   filteredCategories: Array<{ category_id: number; category_name: string }> = [];
 
   selectedItem: IssuanceItem | null = null;
-  transactionMode: 'issuance' | 'adjust-decrease' = 'issuance';
+  transactionMode: 'issuance' = 'issuance';
   selectedOperationTypeId: number | null = null;
   selectedOperationTypeLabel = 'Select operation type';
 
@@ -90,9 +89,6 @@ export class IssuanceTransactionComponent implements OnInit {
   selectedLocationName: string | null = null;
   selectedLocationLabel = 'Select source storage';
   issueQuantity = 1;
-  adjustConfirmExpiration = false;
-  adjustReason = 'Stock Adjustment (Decrease)';
-  adjustNotes = '';
 
   destination = '';
   reason = 'Stock Issuance';
@@ -136,9 +132,6 @@ export class IssuanceTransactionComponent implements OnInit {
     this.applyDefaultOperationType();
     this.reason = this.selectedOperationTypeLabel || 'Stock Issuance';
     this.loadSourceLocationOptions();
-    this.adjustConfirmExpiration = false;
-    this.adjustReason = 'Stock Adjustment (Decrease)';
-    this.adjustNotes = '';
     // Open drawer if not already open; don't close it if already open
     if (!this.showListModal) {
       this.showListModal = true;
@@ -408,39 +401,11 @@ export class IssuanceTransactionComponent implements OnInit {
     return true;
   }
 
-  canSubmitDecreaseAdjustment(): boolean {
-    if (!this.selectedItem || this.saving) {
-      return false;
-    }
-
-    const quantity = Math.max(1, Math.floor(this.issueQuantity || 1));
-    if (quantity > this.selectedItem.current_stock) {
-      return false;
-    }
-
-    if (!this.adjustReason.trim() || this.adjustReason.length > 250) {
-      return false;
-    }
-    
-    if (this.adjustNotes && this.adjustNotes.length > 500) {
-      return false;
-    }
-
-    return true;
-  }
-
   canSubmitPrimaryAction(): boolean {
-    return this.transactionMode === 'issuance'
-      ? this.canConfirmIssuance()
-      : this.canSubmitDecreaseAdjustment();
+    return this.canConfirmIssuance();
   }
 
   confirmAndSubmit(): void {
-    if (this.transactionMode === 'adjust-decrease') {
-      this.submitDecreaseAdjustment();
-      return;
-    }
-
     if (!this.canConfirmIssuance()) {
       this.attemptedSubmit = true;
       this.toast.error('Please fill out all required fields (*)');
@@ -480,47 +445,6 @@ export class IssuanceTransactionComponent implements OnInit {
         error: (err: any) => {
           this.saving = false;
           this.toast.error(err?.error?.message || 'Failed to complete issuance.');
-        }
-      });
-  }
-
-  private submitDecreaseAdjustment(): void {
-    if (!this.selectedItem || !this.canSubmitDecreaseAdjustment()) {
-      this.toast.error('Please fill out all required fields (*)');
-      return;
-    }
-
-    const quantity = Math.max(1, Math.floor(this.issueQuantity || 1));
-
-    this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    this.itemService
-      .createAdjustmentTransaction({
-        item_id: this.selectedItem.item_id,
-        adjustment_mode: 'decrease',
-        quantity,
-        reason: this.adjustReason.trim(),
-        notes: this.adjustNotes.trim() || undefined,
-        confirm_expiration: this.adjustConfirmExpiration,
-      })
-      .subscribe({
-        next: (response: AdjustmentTransactionResponse) => {
-          this.saving = false;
-          this.adjustConfirmExpiration = false;
-          this.adjustReason = 'Stock Adjustment (Decrease)';
-          this.adjustNotes = '';
-          this.issueQuantity = 1;
-          this.selectedItem = null;
-          this.loadItems(this.currentPage);
-
-          this.toast.success(`Stock Adjustment recorded. Reference: ${response.data.reference_number}.`);
-          this.cdr.detectChanges();
-        },
-        error: (err: any) => {
-          this.saving = false;
-          this.toast.error(err?.error?.message || 'Failed to complete stock adjustment.');
         }
       });
   }
