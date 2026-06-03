@@ -253,6 +253,7 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('program-plans', [DistributionPlanController::class, 'index']);
                 Route::post('program-plans', [DistributionPlanController::class, 'store']);
                 Route::get('program-plans/{planId}', [DistributionPlanController::class, 'show']);
+                Route::put('program-plans/{planId}', [DistributionPlanController::class, 'updateSchedule']);
                 Route::get('program-plans/{planId}/stock-readiness', [DistributionPlanController::class, 'stockReadiness']);
                 Route::post('program-plans/{planId}/reserve', [DistributionPlanController::class, 'reserve']);
                 Route::post('program-plans/{planId}/precheck', [DistributionPlanController::class, 'runPrecheck']);

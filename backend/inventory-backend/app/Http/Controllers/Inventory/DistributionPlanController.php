@@ -809,6 +809,68 @@ class DistributionPlanController extends Controller
         return response()->json($payload, $response->status());
     }
 
+    public function updateSchedule(Request $request, int $planId)
+    {
+        $plan = $this->getPlanWithTemplate($planId);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        if ($plan->status !== 'planned') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only planned schedules can be edited.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'template_id' => ['required', 'integer', 'exists:distribution_templates,template_id'],
+            'week_label' => ['required', 'string', 'max:50'],
+            'planned_date' => ['required', 'date'],
+            'target_unit_count' => ['required', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $template = DB::table('distribution_templates')
+            ->select('template_id', 'distribution_type', 'is_active')
+            ->where('template_id', (int) $validated['template_id'])
+            ->first();
+
+        if (!$template || !$template->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected template is inactive or not found.',
+            ], 422);
+        }
+
+        if ($template->distribution_type !== 'feeding_program') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only feeding program templates are allowed for weekly plan scheduling.',
+            ], 422);
+        }
+
+        DB::table('distribution_plan_schedules')
+            ->where('plan_id', $planId)
+            ->update([
+                'template_id' => (int) $validated['template_id'],
+                'week_label' => trim((string) $validated['week_label']),
+                'planned_date' => $validated['planned_date'],
+                'target_unit_count' => (int) $validated['target_unit_count'],
+                'notes' => $this->nullIfEmpty($validated['notes'] ?? null),
+                'updated_at' => now(),
+            ]);
+
+        $response = $this->show($planId);
+        $payload = $response->getData(true);
+        $payload['message'] = 'Schedule updated successfully.';
+
+        return response()->json($payload, $response->status());
+    }
+
     public function destroy(int $planId)
     {
         $plan = DB::table('distribution_plan_schedules')

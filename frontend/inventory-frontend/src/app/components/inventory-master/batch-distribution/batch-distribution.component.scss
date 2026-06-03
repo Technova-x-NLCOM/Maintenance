@@ -1629,71 +1629,424 @@ label span {
   overflow: auto;
 }
 
-.btn-cancel {
-  border: 1.5px solid #d1d5db;
-  border-radius: 10px;
-  background: #fff;
-  color: #374151;
-  padding: 9px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    color 0.15s;
 
-  &:hover:not(:disabled) {
-    border-color: #9ca3af;
-    background: #f9fafb;
-    color: #111827;
-  }
 
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-}
 
-.btn {
+
+// ================================
+// UNIFIED BUTTON SYSTEM
+// ================================
+
+// Base button styles
+.btn, 
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.btn-ghost,
+.btn-cancel,
+.btn-warning,
+.btn-danger,
+.btn-disabled {
   border: none;
   border-radius: 10px;
-  padding: 9px 12px;
+  padding: 9px 16px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.btn-primary {
-  background: #2563eb;
-  color: #fff;
-
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  
   &:disabled {
-    background: #93c5fd;
     cursor: not-allowed;
+    opacity: 0.6;
+    transform: none !important;
+    animation: none !important;
+  }
+  
+  // Size variations
+  &.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  &.btn-lg {
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 12px;
+    
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+  
+  &.btn-xl {
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 12px;
+    
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
+  // Icon sizing
+  svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
   }
 }
 
+// Primary buttons - Blue theme
+.btn-primary {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 50%, #1e3a8a 100%);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(37, 99, 235, 0.4);
+  }
+
+  &:disabled {
+    background: #93c5fd !important;
+    box-shadow: none;
+  }
+}
+
+// Secondary buttons - Gray theme
+.btn-secondary {
+  background: linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(100, 116, 139, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #475569 0%, #334155 50%, #1e293b 100%);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(100, 116, 139, 0.4);
+  }
+}
+
+// Success/Run buttons - Green theme
+.btn-success,
+.btn-run-recipe,
+.btn-run-this-recipe {
+  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #047857 0%, #065f46 50%, #064e3b 100%);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(5, 150, 105, 0.4);
+  }
+}
+
+// Warning buttons - Amber theme
+.btn-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(245, 158, 11, 0.4);
+  }
+}
+
+// Danger/Delete buttons - Red theme
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 50%, #7f1d1d 100%);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
+  }
+}
+
+// Creative/New buttons - Purple theme
+.btn-creative,
+.btn-new-recipe {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #5b21b6 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 50%, #4c1d95 100%);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(124, 58, 237, 0.4);
+  }
+}
+
+// Outline buttons
 .btn-outline {
   background: #ffffff;
   color: #1d4ed8;
-  border: 1.5px solid #93c5fd;
+  border: 2px solid #93c5fd;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.1);
 
   &:hover:not(:disabled) {
     background: #eff6ff;
     border-color: #60a5fa;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: #dbeafe;
   }
 
   &:disabled {
     color: #93c5fd;
     border-color: #dbeafe;
-    cursor: not-allowed;
+    background: #f8fafc;
   }
 }
 
-.btn-secondary {
-  background: #e2e8f0;
-  color: #334155;
+// Ghost buttons
+.btn-ghost {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  &:hover:not(:disabled) {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #1e293b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: #cbd5e1;
+  }
+}
+
+// Cancel buttons
+.btn-cancel {
+  background: #ffffff;
+  color: #374151;
+  border: 2px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  &:hover:not(:disabled) {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #111827;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: #f3f4f6;
+  }
+}
+
+// Edit buttons
+.btn-edit {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+
+  &:hover:not(:disabled) {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    box-shadow: 0 2px 4px rgba(29, 78, 216, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+// Special enhanced buttons for key actions
+.btn-create-schedule {
+  @extend .btn-primary;
+  @extend .btn-xl;
+  
+  // Extra prominence
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3), 0 2px 4px rgba(37, 99, 235, 0.2);
+  animation: buttonPulse 3s ease-in-out infinite;
+  
+  &:hover {
+    animation: none;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4), 0 3px 6px rgba(37, 99, 235, 0.3);
+    transform: translateY(-2px);
+  }
+}
+
+.btn-run-recipe {
+  @extend .btn-success;
+  @extend .btn-lg;
+  min-width: 140px;
+  animation: runButtonPulse 4s ease-in-out infinite;
+  
+  &:hover {
+    animation: none;
+  }
+}
+
+.btn-new-recipe {
+  @extend .btn-creative;
+  @extend .btn-xl;
+  width: 100%;
+}
+
+.btn-run-this-recipe {
+  @extend .btn-success;
+  @extend .btn-lg;
+}
+
+.btn-execute {
+  @extend .btn-danger;
+  @extend .btn-lg;
+  min-width: 160px;
+}
+
+// Disabled state
+.btn-disabled {
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border: 1px solid #e5e7eb !important;
+  animation: none !important;
+}
+
+// Animation keyframes
+@keyframes buttonPulse {
+  0% {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3), 0 2px 4px rgba(37, 99, 235, 0.2);
+  }
+  50% {
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4), 0 3px 6px rgba(37, 99, 235, 0.3);
+  }
+  100% {
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3), 0 2px 4px rgba(37, 99, 235, 0.2);
+  }
+}
+
+@keyframes runButtonPulse {
+  0% {
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3), 0 1px 3px rgba(5, 150, 105, 0.2);
+  }
+  50% {
+    box-shadow: 0 5px 14px rgba(5, 150, 105, 0.4), 0 2px 5px rgba(5, 150, 105, 0.3);
+  }
+  100% {
+    box-shadow: 0 3px 10px rgba(5, 150, 105, 0.3), 0 1px 3px rgba(5, 150, 105, 0.2);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .btn-xl {
+    padding: 12px 20px;
+    font-size: 14px;
+    
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .btn-lg {
+    padding: 10px 16px;
+    font-size: 13px;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .btn-run-recipe,
+  .btn-run-this-recipe {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-xl {
+    padding: 10px 16px;
+    font-size: 13px;
+    
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .btn-lg {
+    padding: 8px 12px;
+    font-size: 12px;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  .btn-run-recipe,
+  .btn-run-this-recipe {
+    min-width: 100px;
+  }
 }
 
 .btn-mini {
@@ -2086,17 +2439,54 @@ label span {
   top: 0;
   bottom: 0;
   width: min(520px, 92vw);
-  padding: 16px;
+  padding: 0;
   background: #f8fafc;
   border-left: 1px solid #e2e8f0;
   box-shadow: -16px 0 28px rgba(2, 6, 23, 0.14);
   transform: translateX(100%);
   transition: transform 0.2s ease;
   z-index: 950;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 
   &.open {
     transform: translateX(0);
+  }
+
+  .panel-header {
+    padding: 16px 16px 0 16px;
+    flex-shrink: 0;
+  }
+
+  .recipes-controls {
+    padding: 16px;
+    flex-shrink: 0;
+  }
+
+  .recipes-list-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 16px 16px;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+  }
+
+  .recipe-row {
+    margin-bottom: 12px;
+  }
+
+  .pagination-row {
+    margin-top: 16px;
+    flex-shrink: 0;
   }
 
   .calculator-panel {
@@ -2751,6 +3141,7 @@ label span {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 // Execution Modal Styles
