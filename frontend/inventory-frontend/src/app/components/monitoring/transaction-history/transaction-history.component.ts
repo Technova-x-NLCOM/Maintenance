@@ -26,7 +26,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
   lastPage = 1;
   total = 0;
   search = '';
-  type: '' | 'IN' | 'OUT' | 'ADJUSTMENT' | 'DISCREPANCY' = '';
+  type: '' | 'IN' | 'OUT' | 'ADJUSTMENT' | 'DISCREPANCY' | 'TRANSFER' = '';
   dateFrom = '';
   dateTo = '';
   loading = false;
@@ -39,7 +39,7 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
     items: TransactionRecord[];
     lastPage: number;
     total: number;
-    type: '' | 'IN' | 'OUT' | 'ADJUSTMENT' | 'DISCREPANCY';
+    type: '' | 'IN' | 'OUT' | 'ADJUSTMENT' | 'DISCREPANCY' | 'TRANSFER';
     dateFrom: string;
     dateTo: string;
   } | null = null;
@@ -281,6 +281,8 @@ export class TransactionHistoryComponent implements OnInit, OnDestroy {
             data.cell.styles.textColor = [30, 64, 175];
           } else if (txType === 'DISCREPANCY') {
             data.cell.styles.textColor = [180, 83, 9];
+          } else if (txType === 'TRANSFER') {
+            data.cell.styles.textColor = [30, 64, 175];
           } else {
             data.cell.styles.textColor = [220, 38, 38];
           }

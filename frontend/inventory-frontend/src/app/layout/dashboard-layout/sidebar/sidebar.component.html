@@ -70,6 +70,10 @@
           <span class="sub-dot"></span>
           <span class="label">Stock Issuance (OUT)</span>
         </a>
+        <a routerLink="/dashboard/inventory/transfer" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+          <span class="sub-dot"></span>
+          <span class="label">Item Transfer</span>
+        </a>
         <a routerLink="/dashboard/inventory/discrepancy" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Discrepancy Update</span>
