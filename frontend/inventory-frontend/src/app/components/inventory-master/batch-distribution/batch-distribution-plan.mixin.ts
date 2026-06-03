@@ -359,9 +359,7 @@ export abstract class BatchDistributionPlanMixin {
     if (!this.planForm.template_id) { this.toast.error('Please select a recipe.'); return; }
     if (!this.schedulePlannedDate) { this.toast.error('Please select a planned date.'); return; }
     const target = Math.floor(Number(this.planForm.target_unit_count));
-    if (!Number.isFinite(target) || target <= 0) { this.toast.error('Target servings must be greater than zero.'); return; }
-    if (this.scheduleReason.length > 250) { this.toast.error('Reason must be 250 characters or less.'); return; }
-    if (this.scheduleDestination.length > 150) { this.toast.error('Destination must be 150 characters or less.'); return; }
+    if (!Number.isFinite(target) || target <= 0) { this.toast.error('Target people must be greater than zero.'); return; }
     this.calculating = true;
     this.batchService.calculate(this.planForm.template_id, target).subscribe({
       next: (response) => { this.calculating = false; this.schedulingCalculation = response.data; this.scheduleDialogStep = 2; this.cdr.detectChanges(); },
@@ -713,6 +711,9 @@ export abstract class BatchDistributionPlanMixin {
   }
 
   buildCalendar(): void {
+    if (!this.calendarCurrentDate || !(this.calendarCurrentDate instanceof Date)) {
+      this.calendarCurrentDate = new Date();
+    }
     const year = this.calendarCurrentDate.getFullYear();
     const month = this.calendarCurrentDate.getMonth();
     const firstDayOfWeek = new Date(year, month, 1).getDay();
