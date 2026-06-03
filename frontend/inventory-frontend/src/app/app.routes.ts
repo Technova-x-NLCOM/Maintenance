@@ -21,6 +21,8 @@ import { ReceivingTransactionComponent } from './components/receiving-transactio
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './components/monitoring/transaction-history/transaction-history.component';
+import { DiscrepancyUpdateComponent } from './components/discrepancy/discrepancy-update/discrepancy-update.component';
+import { DiscrepancyMonitoringComponent } from './components/discrepancy/discrepancy-monitoring/discrepancy-monitoring.component';
 import { SystemUsersComponent } from './components/system-users/system-users.component';
 import { AuditLogComponent } from './components/audit-log/audit-log.component';
 import { permissionGuard } from './guards/auth.guard';
@@ -52,10 +54,12 @@ export const routes: Routes = [
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
+      { path: 'inventory/discrepancy', component: DiscrepancyUpdateComponent },
       { path: 'monitoring', redirectTo: 'monitoring/stock-report', pathMatch: 'full' },
       { path: 'monitoring/stock-report', component: StockReportComponent },
       { path: 'monitoring/storage-inventory', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
+      { path: 'monitoring/discrepancy', component: DiscrepancyMonitoringComponent },
       { path: 'monitoring/scheduled-batches', redirectTo: 'inventory/batch-distribution', pathMatch: 'full' },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
       { path: 'maintenance', component: MaintenanceComponent },

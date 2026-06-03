@@ -1,6 +1,6 @@
 export interface TransactionRecord {
   transaction_id: number;
-  transaction_type: 'IN' | 'OUT' | 'ADJUSTMENT';
+  transaction_type: 'IN' | 'OUT' | 'ADJUSTMENT' | 'DISCREPANCY';
   quantity: number;
   reference_number: string;
   transaction_date: string;
