@@ -1,4 +1,4 @@
-/* ─── Base: mirrors receiving-transaction styles exactly ──────────────────── */
+/* ── mirrors receiving-transaction.component.scss exactly ── */
 
 .discrepancy-page {
   padding: 24px;
@@ -22,6 +22,7 @@
   }
 }
 
+/* ── Catalog panel ─────────────────────────────────────────── */
 .catalog-panel {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -91,6 +92,7 @@
   }
 }
 
+/* ── Card grid ─────────────────────────────────────────────── */
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -128,8 +130,8 @@
   margin-bottom: 8px;
   overflow: hidden;
 
-  img { width: 100%; height: 100%; object-fit: cover; }
-  span { color: #94a3b8; font-size: 12px; }
+  img   { width: 100%; height: 100%; object-fit: cover; }
+  span  { color: #94a3b8; font-size: 12px; }
 }
 
 .card-content {
@@ -170,7 +172,7 @@
   color: #1e3a8a;
 }
 
-/* Per-location breakdown inside each card */
+/* Per-location mini-rows inside each card */
 .loc-rows {
   display: flex;
   flex-direction: column;
@@ -186,7 +188,7 @@
   align-items: center;
   font-size: 11px;
 
-  .loc-name { color: #64748b; }
+  .loc-name  { color: #64748b; }
   .loc-stock { font-weight: 700; color: #0f172a; }
 }
 
@@ -197,7 +199,7 @@
   padding: 18px;
 }
 
-/* ─── Pagination ────────────────────────────────────────────────────────────── */
+/* ── Pagination ─────────────────────────────────────────────── */
 .pagination {
   display: flex;
   justify-content: space-between;
@@ -237,6 +239,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #334155;
 
   &:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
   &:disabled {
@@ -265,10 +268,10 @@
   color: #334155;
   cursor: pointer;
 
-  &:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.12); }
+  &:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
 }
 
-/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+/* ── Shared buttons ─────────────────────────────────────────── */
 .btn {
   border: none;
   border-radius: 10px;
@@ -276,11 +279,13 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .btn-primary {
   background: #2563eb;
   color: #fff;
+
   &:hover:not(:disabled) { background: #1d4ed8; }
   &:disabled { background: #93c5fd; cursor: not-allowed; }
 }
@@ -288,6 +293,7 @@
 .btn-secondary {
   background: #e2e8f0;
   color: #334155;
+
   &:hover:not(:disabled) { background: #cbd5e1; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
@@ -298,7 +304,7 @@
   white-space: nowrap;
 }
 
-/* ─── Modal (identical structure to receiving modal) ─────────────────────────── */
+/* ── Modal ──────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -339,8 +345,14 @@
   justify-content: space-between;
   padding: 1.25rem 1.5rem 1rem;
   border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
 
-  h2 { margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700; }
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #0f172a;
+    font-weight: 700;
+  }
 
   .modal-close {
     background: none;
@@ -350,6 +362,7 @@
     color: #94a3b8;
     cursor: pointer;
     padding: 0 4px;
+
     &:hover { color: #334155; }
     &:disabled { cursor: not-allowed; opacity: 0.5; }
   }
@@ -367,9 +380,10 @@
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
-/* Selected item box — same as receiving */
+/* ── Selected item box ──────────────────────────────────────── */
 .selected-item-box {
   display: grid;
   grid-template-columns: 64px 1fr;
@@ -380,46 +394,66 @@
   border: 1px solid #dbe4ef;
   border-radius: 12px;
   margin-bottom: 16px;
+}
 
-  .selected-item-image,
-  .selected-no-image {
-    width: 64px;
-    height: 64px;
-    border-radius: 10px;
-    background: #fff;
-  }
+.selected-item-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #fff;
+}
 
-  .selected-item-image { object-fit: cover; }
+.selected-no-image {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #94a3b8;
+}
 
-  .selected-no-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.selected-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selected-code {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.selected-desc {
+  font-size: 12px;
+  color: #475569;
+  margin: 2px 0 6px;
+}
+
+.selected-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  span {
     font-size: 11px;
-    color: #94a3b8;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #e2e8f0;
+    color: #334155;
   }
 
-  .selected-code { font-size: 13px; font-weight: 700; color: #0f172a; }
-  .selected-desc { font-size: 12px; color: #475569; margin: 3px 0 6px; }
-
-  .selected-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-
-    span {
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 6px;
-      background: #e2e8f0;
-      color: #334155;
-    }
-
-    .stock-badge { background: #dcfce7; color: #166534; }
+  .stock-badge {
+    background: #dcfce7;
+    color: #166534;
   }
 }
 
-/* Form sections — same as receiving */
+/* ── Form sections ──────────────────────────────────────────── */
 .form-section {
   margin-bottom: 18px;
 
@@ -434,7 +468,7 @@
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 14px;
 }
 
@@ -463,7 +497,12 @@
   margin-top: 4px;
 }
 
-/* ─── Location stock table (inside modal) ────────────────────────────────────── */
+textarea.form-control {
+  resize: vertical;
+  min-height: 72px;
+}
+
+/* ── Location stock table ───────────────────────────────────── */
 .location-stock-table {
   display: flex;
   flex-direction: column;
@@ -487,19 +526,27 @@
     background: #eff6ff;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
   }
-
-  .loc-label { font-weight: 600; color: #0f172a; }
-
-  .loc-qty {
-    font-weight: 700;
-    color: #0f172a;
-    font-size: 14px;
-
-    .loc-unit { font-size: 11px; font-weight: 400; color: #64748b; margin-left: 2px; }
-  }
 }
 
-/* ─── Variance box ────────────────────────────────────────────────────────────── */
+.loc-label {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.loc-qty {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.loc-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+  margin-left: 2px;
+}
+
+/* ── Variance box ───────────────────────────────────────────── */
 .variance-box {
   padding: 12px 14px;
   border-radius: 10px;
@@ -520,7 +567,8 @@
   color: #64748b;
   font-weight: 500;
 
-  span:last-child { font-weight: 600; color: #0f172a; }
+  > span:first-child { color: #64748b; }
+  > span:last-child  { font-weight: 600; color: #0f172a; }
 }
 
 .variance-hr {
@@ -529,15 +577,24 @@
   margin: 2px 0;
 }
 
+/* The result row overrides the last-child colour via the badge */
 .variance-result {
-  font-weight: 700;
-
-  &.surplus  .variance-badge { background: #dcfce7; color: #15803d; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
-  &.shortage .variance-badge { background: #fee2e2; color: #dc2626; padding: 3px 10px; border-radius: 999px; font-size: 12px; }
-  &.match    .variance-badge { background: #f1f5f9; color: #64748b;  padding: 3px 10px; border-radius: 999px; font-size: 12px; }
+  > span:last-child { font-weight: 700; color: inherit; }
 }
 
-/* ─── Responsive ─────────────────────────────────────────────────────────────── */
+.variance-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.variance-result.surplus  .variance-badge { background: #dcfce7; color: #15803d; }
+.variance-result.shortage .variance-badge { background: #fee2e2; color: #dc2626; }
+.variance-result.match    .variance-badge { background: #f1f5f9; color: #64748b; }
+
+/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 425px) {
   .discrepancy-page { padding: 16px; }
 
@@ -558,10 +615,8 @@
     gap: 10px;
   }
 
-  .item-card { padding: 8px; }
-  .card-image { height: 70px; }
-  .card-content .code { font-size: 11px; }
-  .card-content .desc { font-size: 12px; min-height: 30px; }
-  .card-content .meta { font-size: 10px; }
-  .pill { font-size: 10px; padding: 2px 6px; }
+  .item-card    { padding: 8px; }
+  .card-image   { height: 70px; }
+  .form-row     { grid-template-columns: 1fr; }
+  .modal-box    { max-height: 95vh; }
 }
