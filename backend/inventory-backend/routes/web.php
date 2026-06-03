@@ -14,6 +14,7 @@ use App\Http\Controllers\Inventory\ReceivingTransactionController;
 use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\TransactionMonitorController;
 use App\Http\Controllers\Inventory\RecipeTypeController;
+use App\Http\Controllers\Inventory\DiscrepancyController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -232,6 +233,17 @@ Route::middleware('throttle:system-api')->group(function () {
             Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
                 Route::get('items', [StockAdjustmentController::class, 'getAdjustableItems']);
                 Route::post('create', [StockAdjustmentController::class, 'createAdjustment']);
+            });
+        });
+
+    // Inventory Transactions - Discrepancy Monitoring
+    Route::prefix('api/inventory/discrepancy')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items', [DiscrepancyController::class, 'getItems']);
+                Route::post('create', [DiscrepancyController::class, 'createDiscrepancy']);
+                Route::get('/', [DiscrepancyController::class, 'index']);
             });
         });
 
