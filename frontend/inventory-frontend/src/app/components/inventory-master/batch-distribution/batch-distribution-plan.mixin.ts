@@ -183,9 +183,11 @@ export abstract class BatchDistributionPlanMixin {
   isStockReserved(plan: ProgramPlanSummary): boolean { return this.isStockAllocated(plan); }
 
   hasPlanFullStockReadiness(plan: ProgramPlanSummary): boolean {
+    // Already allocated — no need to check
+    if (plan.status === 'ready') return true;
     const r = this.getStockReadiness(plan.plan_id);
     if (!r || r.loading) return false;
-    return r.can_proceed || r.percentage >= 100;
+    return r.can_proceed === true || r.percentage >= 100;
   }
 
   canAllocateStock(plan: ProgramPlanSummary): boolean {
@@ -208,22 +210,31 @@ export abstract class BatchDistributionPlanMixin {
   showRunBatchAction(plan: ProgramPlanSummary): boolean {
     if (plan.status === 'completed' || plan.status === 'cancelled') return false;
     if (!['planned', 'checked_pre', 'ready'].includes(plan.status)) return false;
+    // Stock-allocated plans can be run at any time (stock was already reserved early)
+    if (this.isStockAllocated(plan)) return true;
+    // Otherwise only show Run Batch on or after the planned date
     return this.isPlanRunDateReached(plan);
   }
 
   canRunBatch(plan: ProgramPlanSummary): boolean {
     if (!this.showRunBatchAction(plan)) return false;
+    // Already allocated — always runnable regardless of date
     if (this.isStockAllocated(plan)) return true;
+    // On the run date with full stock readiness
     return this.hasPlanFullStockReadiness(plan);
   }
 
   getRunBatchDisabledReason(plan: ProgramPlanSummary): string {
     if (!this.showRunBatchAction(plan) || this.canRunBatch(plan)) return '';
+    const r = this.getStockReadiness(plan.plan_id);
+    if (!r || r.loading) return 'Checking stock readiness…';
     if (!this.hasPlanFullStockReadiness(plan)) return 'Stock readiness must be 100% before you can run this batch.';
     return '';
   }
 
   planBlocksRunAndAllocate(plan: ProgramPlanSummary): boolean {
+    const r = this.getStockReadiness(plan.plan_id);
+    if (!r || r.loading) return false; // don't show warning while still loading
     return plan.status === 'planned' && !this.hasPlanFullStockReadiness(plan);
   }
 
@@ -769,13 +780,59 @@ export abstract class BatchDistributionPlanMixin {
 
   loadStockReadinessForPlans(): void {
     const plannedPlans = this.plans.filter((p) => p.status === 'planned');
+    if (plannedPlans.length === 0) return;
+
+    // Mark all as loading first
     plannedPlans.forEach((plan) => {
-      this.planStockReadiness.set(plan.plan_id, { required: 0, available: 0, line_count: 0, ready_line_count: 0, insufficient_items_count: 0, percentage: 0, can_proceed: false, status: 'loading', loading: true });
-      this.batchService.getStockReadiness(plan.plan_id).subscribe({
-        next: (response) => { this.planStockReadiness.set(plan.plan_id, { ...response.data, loading: false }); this.cdr.detectChanges(); },
-        error: () => { this.planStockReadiness.set(plan.plan_id, { required: 0, available: 0, line_count: 0, ready_line_count: 0, insufficient_items_count: 0, percentage: 0, can_proceed: false, status: 'error', loading: false }); this.cdr.detectChanges(); },
+      this.planStockReadiness.set(plan.plan_id, {
+        required: 0, available: 0, line_count: 0, ready_line_count: 0,
+        insufficient_items_count: 0, percentage: 0, can_proceed: false,
+        status: 'loading', loading: true,
       });
     });
+    this.cdr.detectChanges();
+
+    // Fire requests in batches of 3 to avoid flooding the rate limiter.
+    // detectChanges() is called per result so buttons enable as soon as each plan's data arrives.
+    const BATCH_SIZE = 3;
+    const chunks: ProgramPlanSummary[][] = [];
+    for (let i = 0; i < plannedPlans.length; i += BATCH_SIZE) {
+      chunks.push(plannedPlans.slice(i, i + BATCH_SIZE));
+    }
+
+    const processChunk = (index: number): void => {
+      if (index >= chunks.length) return;
+      const chunk = chunks[index];
+      let completed = 0;
+
+      chunk.forEach((plan) => {
+        this.batchService.getStockReadiness(plan.plan_id).subscribe({
+          next: (response) => {
+            this.planStockReadiness.set(plan.plan_id, { ...response.data, loading: false });
+            // Detect per result so buttons enable immediately when data arrives
+            this.cdr.detectChanges();
+            completed++;
+            if (completed === chunk.length) {
+              setTimeout(() => processChunk(index + 1), 200);
+            }
+          },
+          error: () => {
+            this.planStockReadiness.set(plan.plan_id, {
+              required: 0, available: 0, line_count: 0, ready_line_count: 0,
+              insufficient_items_count: 0, percentage: 0, can_proceed: false,
+              status: 'error', loading: false,
+            });
+            this.cdr.detectChanges();
+            completed++;
+            if (completed === chunk.length) {
+              setTimeout(() => processChunk(index + 1), 200);
+            }
+          },
+        });
+      });
+    };
+
+    processChunk(0);
   }
 
   getStockReadiness(planId: number): StockReadinessEntry | null { return this.planStockReadiness.get(planId) || null; }

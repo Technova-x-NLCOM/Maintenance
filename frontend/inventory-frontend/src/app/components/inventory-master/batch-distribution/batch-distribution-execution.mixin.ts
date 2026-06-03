@@ -24,7 +24,7 @@ export abstract class BatchDistributionExecutionMixin {
   abstract showRunBatchAction(plan: ProgramPlanSummary): boolean;
   abstract canRunBatch(plan: ProgramPlanSummary): boolean;
   abstract getRunBatchDisabledReason(plan: ProgramPlanSummary): string;
-  protected abstract seedExecutionRemainderLinesFromItems(items: any[]): void;
+  protected applyPlanUpdate(plan: ProgramPlanSummary): void { /* provided by plan mixin via applyMixins */ }
 
   // ── execution modal state ────────────────────────────────────────────────
   showExecutionModal = false;
@@ -237,11 +237,9 @@ export abstract class BatchDistributionExecutionMixin {
         this.executionStockCheck = response.data?.check_result ?? response.data;
         this.applyExecutionPlanUpdate(planId, 'checked_pre');
         this.initializeGapFillData();
-        // If no shortages, auto-issue and jump straight to step 3
-        if (!this.executionHasShortages) {
-          this.issueStockForExecution();
-          this.executionStep = 3;
-        }
+        // Stay on step 1 so the user can review the stock check result.
+        // They click "Issue & Continue →" (no shortages) or "Procure Shortages →" (shortages)
+        // to advance. This keeps manual control explicit.
         this.cdr.detectChanges();
       },
       error: (err) => { this.loadingExecutionDetails = false; this.toast.error(err?.error?.message || 'Failed to load stock check'); this.closeExecutionModal(); },
@@ -271,6 +269,6 @@ export abstract class BatchDistributionExecutionMixin {
 
   protected applyExecutionPlanUpdate(planId: number, status: ProgramPlanStatus): void {
     if (this.selectedPlanForExecution?.plan_id === planId) this.selectedPlanForExecution = { ...this.selectedPlanForExecution, status };
-    (this as any).applyPlanUpdate({ plan_id: planId, status } as ProgramPlanSummary);
+    this.applyPlanUpdate({ plan_id: planId, status } as ProgramPlanSummary);
   }
 }

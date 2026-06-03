@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
 
             // 500 req/min per user — sufficient for normal SPA usage including
             // dashboard + batch distribution loading simultaneously.
-            return Limit::perMinute(500)->by($key);
+            return Limit::perMinute(1000)->by($key);
         });
 
         RateLimiter::for('auth-public', function ($request) {
