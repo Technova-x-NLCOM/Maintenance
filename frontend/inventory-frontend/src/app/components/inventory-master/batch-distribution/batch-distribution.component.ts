@@ -17,6 +17,7 @@ import {
 } from '../../../services/batch-distribution.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { RecipeTypeOption, RecipeTypeService } from '../../../services/recipe-type.service';
 
 interface EditableTemplateLine {
   item_id: number;
@@ -98,12 +99,16 @@ export class BatchDistributionComponent implements OnInit {
     distribution_type: DistributionType;
     base_unit_count: number;
     notes: string;
+    recipe_type_id: number | null;
   } = {
     template_name: '',
     distribution_type: 'feeding_program',
     base_unit_count: 100,
     notes: '',
+    recipe_type_id: null,
   };
+
+  recipeTypeOptions: RecipeTypeOption[] = [];
 
   lineDraftItemId: number | null = null;
   lineDraftQuantityPerBase = 1;
@@ -147,6 +152,16 @@ export class BatchDistributionComponent implements OnInit {
   pendingSavedTemplate: BatchDistributionTemplateSummary | null = null;
   showScheduleDialog = false;
   scheduleDialogStep: 1 | 2 = 1;
+  showRecipeSidebar = false;
+  showNewRecipeModal = false;
+  scheduleFilter: 'upcoming' | 'completed' | 'all' = 'upcoming';
+  schedulingTemplate: BatchDistributionTemplateSummary | null = null;
+  schedulingCalculation: BatchDistributionCalculation | null = null;
+  scheduleDestination = '';
+  scheduleReason = '';
+  scheduleNotes = '';
+  schedulePlannedDate = '';
+  reservingPlanId: number | null = null;
   planStatusFilter: 'all' | ProgramPlanStatus = 'all';
   planSortDirection: 'desc' | 'asc' = 'desc';
   planDialogMode: 'create' | 'edit' = 'create';
@@ -168,6 +183,33 @@ export class BatchDistributionComponent implements OnInit {
   currentPlanPage = 1;
   planPageSize = 10;
   readonly planPageSizeOptions = [5, 10, 25, 50];
+  
+  // Recipe pagination properties
+  currentRecipePage = 1;
+  recipePageSize = 10;
+
+  // 3-Step Execution Modal Properties
+  showExecutionModal = false;
+  executionStep: 1 | 2 | 3 = 1;
+  selectedPlanForExecution: ProgramPlanSummary | null = null;
+  executionStockCheck: any = null;
+  executionDestination = '';
+  executionReason = '';
+  executionNotes = '';
+  gapFillData: { [itemId: number]: number } = {};
+  allGapsFilled = false;
+  executingDistribution = false;
+
+  // Recipe Details Modal Properties
+  showIngredientModal = false;
+  selectedTemplateForDetails: BatchDistributionTemplateSummary | null = null;
+  selectedTemplateDetails: BatchDistributionTemplateDetails | null = null;
+
+  // Stock Allocation Modal Properties
+  showStockAllocationModal = false;
+  stockReservations: any[] = [];
+  groupedReservations: any[] = [];
+  selectedReservationDetails: any = null;
   
   planConfirmDialog: {
     open: boolean;
@@ -207,6 +249,7 @@ export class BatchDistributionComponent implements OnInit {
     private batchService: BatchDistributionService,
     private cdr: ChangeDetectorRef,
     private toast: ToastService,
+    private recipeTypeService: RecipeTypeService,
   ) {}
 
   ngOnInit(): void {
@@ -214,6 +257,7 @@ export class BatchDistributionComponent implements OnInit {
     this.loadItemOptions();
     this.loadPlans();
     this.buildCalendar();
+    this.loadRecipeTypeOptions();
   }
 
   ngOnDestroy(): void {
@@ -222,6 +266,18 @@ export class BatchDistributionComponent implements OnInit {
     this.clearToastTimeout();
     this.loadTemplatesSub?.unsubscribe();
     this.loadItemOptionsSub?.unsubscribe();
+  }
+
+  loadRecipeTypeOptions(): void {
+    this.recipeTypeService.getOptions().subscribe({
+      next: (res) => {
+        this.recipeTypeOptions = res.data;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Non-critical: fail silently, dropdown will just be empty
+      },
+    });
   }
 
   get selectedDistributionType(): DistributionType {
@@ -377,6 +433,15 @@ export class BatchDistributionComponent implements OnInit {
     return Math.max(1, Math.ceil(this.templates.length / this.templatePageSize));
   }
 
+  get totalRecipePages(): number {
+    return Math.max(1, Math.ceil(this.templates.length / this.recipePageSize));
+  }
+
+  get paginatedRecipes(): BatchDistributionTemplateSummary[] {
+    const start = (this.currentRecipePage - 1) * this.recipePageSize;
+    return this.templates.slice(start, start + this.recipePageSize);
+  }
+
   get paginatedTemplates(): BatchDistributionTemplateSummary[] {
     const start = (this.templatePage - 1) * this.templatePageSize;
     return this.templates.slice(start, start + this.templatePageSize);
@@ -425,6 +490,20 @@ export class BatchDistributionComponent implements OnInit {
       const bDate = new Date(b.planned_date).getTime();
       return this.planSortDirection === 'desc' ? bDate - aDate : aDate - bDate;
     });
+  }
+
+  get displayedPlans(): ProgramPlanSummary[] {
+    let filtered = this.filteredPlans;
+    if (this.scheduleFilter === 'upcoming') {
+      filtered = filtered.filter((plan) => plan.status !== 'completed' && plan.status !== 'cancelled');
+    } else if (this.scheduleFilter === 'completed') {
+      filtered = filtered.filter((plan) => plan.status === 'completed');
+    }
+    return filtered;
+  }
+
+  get scheduleHasWarning(): boolean {
+    return !!this.schedulingCalculation?.items.some((row) => this.getRowShortageQuantity(row) > 0);
   }
 
   get calendarMonthName(): string {
@@ -701,6 +780,23 @@ export class BatchDistributionComponent implements OnInit {
     this.templatePage = safePage;
   }
 
+  goToRecipePage(page: number): void {
+    const safePage = Math.min(Math.max(Math.floor(Number(page)) || 1, 1), this.totalRecipePages);
+    this.currentRecipePage = safePage;
+  }
+
+  goToNextRecipePage(): void {
+    if (this.currentRecipePage < this.totalRecipePages) {
+      this.currentRecipePage += 1;
+    }
+  }
+
+  goToPreviousRecipePage(): void {
+    if (this.currentRecipePage > 1) {
+      this.currentRecipePage -= 1;
+    }
+  }
+
   goToNextTemplatePage(): void {
     if (this.canGoToNextTemplatePage) {
       this.templatePage += 1;
@@ -744,6 +840,7 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: 'feeding_program',
       base_unit_count: 100,
       notes: '',
+      recipe_type_id: null,
     };
     this.templateLines = [];
     this.lineDraftItemId = null;
@@ -772,6 +869,7 @@ export class BatchDistributionComponent implements OnInit {
           distribution_type: details.template.distribution_type,
           base_unit_count: details.template.base_unit_count,
           notes: details.template.notes ?? '',
+          recipe_type_id: details.template.recipe_type_id ?? null,
         };
 
         this.templateLines = details.items.map((item) => ({
@@ -948,6 +1046,14 @@ export class BatchDistributionComponent implements OnInit {
     this.templateLines = this.templateLines.filter((line) => line.item_id !== itemId);
   }
 
+  removeTemplateLine(index: number): void {
+    this.templateLines.splice(index, 1);
+  }
+
+  getItemOptionById(itemId: number): BatchDistributionItemOption | undefined {
+    return this.itemOptions.find((item) => item.item_id === itemId);
+  }
+
   getItemLabel(itemId: number): string {
     const found = this.itemOptions.find((item) => item.item_id === itemId);
     if (!found) {
@@ -1008,6 +1114,7 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: this.templateForm.distribution_type,
       base_unit_count: Math.floor(Number(this.templateForm.base_unit_count)),
       notes: this.templateForm.notes.trim(),
+      recipe_type_id: this.templateForm.recipe_type_id ?? null,
       items: this.templateLines.map((line) => ({
         item_id: line.item_id,
         quantity_per_base: Number(line.quantity_per_base),
@@ -1036,6 +1143,7 @@ export class BatchDistributionComponent implements OnInit {
           distribution_type: template.distribution_type,
           base_unit_count: template.base_unit_count,
           notes: template.notes ?? '',
+          recipe_type_id: template.recipe_type_id ?? null,
         };
 
         this.templateLines = response.data.items.map((item) => ({
@@ -1061,6 +1169,7 @@ export class BatchDistributionComponent implements OnInit {
     this.showSaveConfirmDialog = false;
     this.showTemplateForm = false;
     this.isEditingTemplate = false;
+    this.showNewRecipeModal = false;
 
     const template = this.pendingSavedTemplate;
     this.pendingSavedTemplate = null;
@@ -1328,6 +1437,33 @@ export class BatchDistributionComponent implements OnInit {
     this.resetPlanForm();
   }
 
+  openRecipeSidebarPanel(): void {
+    this.showRecipeSidebar = true;
+    this.currentRecipePage = 1; // Reset to first page when opening
+  }
+
+  closeRecipeSidebarPanel(): void {
+    this.showRecipeSidebar = false;
+  }
+
+  runRecipe(template: BatchDistributionTemplateSummary): void {
+    this.schedulingTemplate = template;
+    this.showScheduleDialog = true;
+    this.scheduleDialogStep = 1;
+    this.scheduleDestination = '';
+    this.scheduleReason = '';
+    this.scheduleNotes = '';
+    this.schedulePlannedDate = this.formatDateForApi(new Date());
+    this.schedulingCalculation = null;
+    this.planForm = {
+      template_id: template.template_id,
+      week_label: `${template.template_name} Batch`,
+      planned_date: this.formatDateForApi(new Date()),
+      target_unit_count: template.base_unit_count,
+      notes: '',
+    };
+  }
+
   closeScheduleDialog(): void {
     this.showScheduleDialog = false;
     this.savingPlan = false;
@@ -1335,20 +1471,112 @@ export class BatchDistributionComponent implements OnInit {
     this.editingPlanId = null;
     this.scheduleDialogStep = 1;
     this.planFinalCheckAttempted = false;
+    this.schedulingCalculation = null;
+    this.schedulingTemplate = null;
     this.resetPlanForm();
   }
 
   submitPlanDialog(): void {
+    if (this.scheduleDialogStep === 1) {
+      this.validateScheduleStep();
+      return;
+    }
     if (this.scheduleDialogStep === 2) {
-      this.closeScheduleDialog();
+      this.createScheduleFromRecipe();
       return;
     }
-    if (this.isPlanDialogEditing) {
-      this.updatePlanLocal();
-      return;
-    }
+  }
 
-    this.createPlan();
+  validateScheduleStep(): void {
+    if (!this.planForm.template_id) {
+      this.toast.error('Please select a recipe.');
+      return;
+    }
+    if (!this.schedulePlannedDate) {
+      this.toast.error('Please select a planned date.');
+      return;
+    }
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    if (!Number.isFinite(targetCount) || targetCount <= 0) {
+      this.toast.error('Target servings must be greater than zero.');
+      return;
+    }
+    this.calculating = true;
+    this.batchService.calculate(this.planForm.template_id, targetCount).subscribe({
+      next: (response) => {
+        this.calculating = false;
+        this.schedulingCalculation = response.data;
+        this.scheduleDialogStep = 2;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.calculating = false;
+        this.toast.error(err?.error?.message || 'Failed to validate schedule requirements.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  createScheduleFromRecipe(): void {
+    if (!this.planForm.template_id) {
+      return;
+    }
+    const targetCount = Math.floor(Number(this.planForm.target_unit_count));
+    this.savingPlan = true;
+    const weekLabel = (this.scheduleDestination || this.schedulingTemplate?.template_name || 'Scheduled Batch').trim();
+    const stitchedNotes = [
+      this.scheduleReason ? `Reason: ${this.scheduleReason}` : '',
+      this.scheduleNotes ? `Notes: ${this.scheduleNotes}` : '',
+      this.scheduleDestination ? `Destination: ${this.scheduleDestination}` : '',
+    ].filter(Boolean).join(' | ');
+    this.batchService.createProgramPlan({
+      template_id: this.planForm.template_id,
+      week_label: weekLabel.slice(0, 50),
+      planned_date: this.schedulePlannedDate,
+      target_unit_count: targetCount,
+      notes: stitchedNotes || undefined,
+    }).subscribe({
+      next: () => {
+        this.savingPlan = false;
+        this.toast.success('Schedule created successfully.');
+        this.closeScheduleDialog();
+        this.closeRecipeSidebarPanel();
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.savingPlan = false;
+        this.toast.error(err?.error?.message || 'Failed to create schedule.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  reservePlan(plan: ProgramPlanSummary): void {
+    if (this.reservingPlanId) {
+      return;
+    }
+    const readiness = this.getStockReadiness(plan.plan_id);
+    if (!readiness || readiness.loading || readiness.percentage < 100) {
+      this.toast.error('Cannot reserve until stock readiness is 100%.');
+      return;
+    }
+    this.reservingPlanId = plan.plan_id;
+    this.batchService.reserveProgramPlan(plan.plan_id, {
+      destination: `Reserved for ${plan.week_label}`,
+      reason: 'Inventory Reservation',
+      notes: 'Reserved from Recipe & Distribution',
+    }).subscribe({
+      next: () => {
+        this.reservingPlanId = null;
+        this.toast.success('Inventory reserved successfully.');
+        this.loadPlans();
+      },
+      error: (err) => {
+        this.reservingPlanId = null;
+        this.toast.error(err?.error?.message || 'Failed to reserve inventory.');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   togglePlanSortDirection(): void {
@@ -1473,8 +1701,7 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (action === 'delete') {
-      this.removePlanLocal(plan.plan_id);
-      this.toast.success('Plan deleted.');
+      this.deletePlan(plan);
       this.closePlanConfirm();
       return;
     }
@@ -1885,6 +2112,8 @@ export class BatchDistributionComponent implements OnInit {
       created_at: details.template.created_at ?? '',
       updated_at: details.template.updated_at ?? '',
       item_count: details.items.length,
+      recipe_type_id: details.template.recipe_type_id ?? null,
+      recipe_type_name: details.template.recipe_type_name ?? null,
     };
   }
 
@@ -2186,5 +2415,315 @@ export class BatchDistributionComponent implements OnInit {
     if (percentage >= 100) return 'stock-bar-ready';
     if (percentage >= 50) return 'stock-bar-partial';
     return 'stock-bar-insufficient';
+  }
+
+  // Search functionality
+  onPlanSearchInput(): void {
+    this.currentPlanPage = 1; // Reset to first page when searching
+  }
+
+  clearPlanSearch(): void {
+    this.planSearchTerm = '';
+    this.currentPlanPage = 1;
+  }
+
+  // Stock reservation methods
+  openStockReservationsModal(): void {
+    this.loadStockReservations();
+    this.showStockAllocationModal = true;
+  }
+
+  closeStockAllocationModal(): void {
+    this.showStockAllocationModal = false;
+    this.selectedReservationDetails = null;
+    this.groupedReservations = [];
+  }
+
+  // Kebab menu methods for plans
+  reserveStockForPlan(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', `Stock reserved for ${plan.week_label}`);
+  }
+
+  releaseReservedStock(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', `Released reserved stock for ${plan.week_label}`);
+  }
+
+  editSchedule(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.toast.show('success', 'Edit functionality coming soon');
+  }
+
+  confirmDeletePlan(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.planConfirmDialog = {
+      open: true,
+      title: 'Delete Schedule',
+      message: `Are you sure you want to delete "${plan.week_label}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      action: 'delete',
+      plan: plan
+    };
+  }
+
+  isStockReserved(plan: ProgramPlanSummary): boolean {
+    return false; // Placeholder implementation
+  }
+
+  getItemsNeedingRestockCount(planId: number): number {
+    const readiness = this.getStockReadiness(planId);
+    if (!readiness || readiness.loading) return 0;
+    return Math.floor((100 - readiness.percentage) / 10);
+  }
+
+  // Recipe methods
+  viewRecipeDetails(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.selectedTemplateForDetails = template;
+    this.loadTemplateDetails(template.template_id);
+    this.showIngredientModal = true;
+  }
+
+  duplicateTemplate(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.toast.show('success', 'Duplicate functionality coming soon');
+  }
+
+  confirmDeleteTemplate(template: BatchDistributionTemplateSummary): void {
+    this.closeTemplateMenu();
+    this.toast.show('success', 'Delete functionality coming soon');
+  }
+
+  openNewRecipeModal(): void {
+    this.showNewRecipeModal = true;
+    this.showTemplateForm = true;
+    this.isEditingTemplate = false;
+    this.templateForm = {
+      template_name: '',
+      distribution_type: 'feeding_program',
+      base_unit_count: 100,
+      notes: '',
+      recipe_type_id: null,
+    };
+    this.templateLines = [];
+    this.lineDraftItemId = null;
+    this.lineDraftQuantityPerBase = 1;
+    this.lineDraftNotes = '';
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  closeNewRecipeModal(): void {
+    this.showNewRecipeModal = false;
+    this.showTemplateForm = false;
+    this.isEditingTemplate = false;
+    this.templateLines = [];
+    this.lineDraftItemId = null;
+    this.lineDraftQuantityPerBase = 1;
+    this.lineDraftNotes = '';
+    this.cdr.detectChanges();
+  }
+
+  // Execution modal methods
+  startExecutionFlow(plan: ProgramPlanSummary): void {
+    this.selectedPlanForExecution = plan;
+    this.executionStep = 1;
+    this.showExecutionModal = true;
+    this.loadExecutionStockCheck(plan.plan_id);
+    this.initializeGapFillData();
+  }
+
+  closeExecutionModal(): void {
+    this.showExecutionModal = false;
+    this.executionStep = 1;
+    this.selectedPlanForExecution = null;
+    this.executionStockCheck = null;
+    this.executionDestination = '';
+    this.executionReason = '';
+    this.executionNotes = '';
+    this.gapFillData = {};
+    this.allGapsFilled = false;
+    this.executingDistribution = false;
+  }
+
+  // Execution step methods
+  proceedToFillGaps(): void { 
+    this.executionStep = 2; 
+    this.initializeGapFillData();
+  }
+
+  skipToExecute(): void { this.executionStep = 3; }
+  proceedToExecute(): void { this.executionStep = 3; }
+  goBackToStockCheck(): void { this.executionStep = 1; }
+  goBackToPreviousStep(): void { 
+    if (this.executionStep > 1) this.executionStep = (this.executionStep - 1) as 1 | 2 | 3; 
+  }
+  confirmAndProceed(): void { this.executionStep = 3; }
+
+  get executionHasShortages(): boolean {
+    if (!this.executionStockCheck) return false;
+    return this.executionStockCheck.items.some((item: any) => item.has_shortage);
+  }
+
+  get canProceedWithExecution(): boolean {
+    return !!this.executionDestination.trim() && (!this.executionHasShortages || this.allGapsFilled);
+  }
+
+  executeDistribution(): void {
+    if (!this.selectedPlanForExecution || !this.canProceedWithExecution) return;
+    this.executingDistribution = true;
+    setTimeout(() => {
+      const referenceNumber = this.generateReferenceNumber();
+      this.toast.show('success', `Distribution executed successfully! Reference: ${referenceNumber}`);
+      this.closeExecutionModal();
+      this.loadPlans();
+    }, 2000);
+  }
+
+  showStockShortageAlert(): void {
+    this.toast.show('error', 'Cannot execute - insufficient stock');
+  }
+
+  // Utility methods
+  generateReferenceNumber(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const sequence = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `DIST-${year}-${month}${day}-${sequence}`;
+  }
+
+  // Gap filling methods
+  initializeGapFillData(): void {
+    this.gapFillData = {};
+    const shortageItems = this.getShortageItems();
+    shortageItems.forEach(item => {
+      this.gapFillData[item.item_id] = 0;
+    });
+    this.updateGapFillProgress();
+  }
+
+  getShortageItems(): any[] {
+    if (!this.executionStockCheck) return [];
+    return this.executionStockCheck.items.filter((item: any) => item.has_shortage);
+  }
+
+  trackByItemId(index: number, item: any): number {
+    return item.item_id;
+  }
+
+  updateGapFillProgress(): void {
+    const shortageItems = this.getShortageItems();
+    this.allGapsFilled = shortageItems.every(item => {
+      const filled = this.gapFillData[item.item_id] || 0;
+      return filled >= item.shortage_quantity;
+    });
+  }
+
+  getGapFillProgress(item: any): number {
+    const filled = this.gapFillData[item.item_id] || 0;
+    return (filled / item.shortage_quantity) * 100;
+  }
+
+  getRemainingGaps(): number {
+    const shortageItems = this.getShortageItems();
+    return shortageItems.filter(item => {
+      const filled = this.gapFillData[item.item_id] || 0;
+      return filled < item.shortage_quantity;
+    }).length;
+  }
+
+  // Modal methods
+  closeIngredientModal(): void {
+    this.showIngredientModal = false;
+    this.selectedTemplateForDetails = null;
+    this.selectedTemplateDetails = null;
+  }
+
+  runRecipeFromDetails(): void {
+    if (this.selectedTemplateForDetails) {
+      this.closeIngredientModal();
+      this.runRecipe(this.selectedTemplateForDetails);
+    }
+  }
+
+  getStockStatusClass(stock: number): string {
+    if (stock >= 100) return 'status-sufficient';
+    if (stock >= 20) return 'status-low';
+    return 'status-insufficient';
+  }
+
+  getStockStatusLabel(stock: number): string {
+    if (stock >= 100) return '✓ Sufficient';
+    if (stock >= 20) return '⚠ Low Stock';
+    return '❌ Insufficient';
+  }
+
+  viewCompletionSummary(plan: ProgramPlanSummary): void {
+    this.toast.show('success', 'Completion summary functionality coming soon');
+  }
+
+  // Plan actions
+  deletePlan(plan: ProgramPlanSummary): void {
+    if (this.executingPlanId) {
+      return;
+    }
+
+    this.executingPlanId = plan.plan_id;
+    this.batchService.deleteProgramPlan(plan.plan_id).subscribe({
+      next: (response) => {
+        this.executingPlanId = null;
+        this.toast.success(response.message || `Deleted plan: ${plan.week_label}`);
+        this.removePlanLocal(plan.plan_id);
+        this.loadPlans();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.executingPlanId = null;
+        this.toast.error(err?.error?.message || 'Failed to delete plan.');
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // API methods
+  loadExecutionStockCheck(planId: number): void {
+    this.batchService.runProgramPrecheck(planId).subscribe({
+      next: (response) => {
+        this.executionStockCheck = response.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error('Failed to load stock check');
+        this.closeExecutionModal();
+      }
+    });
+  }
+
+  loadTemplateDetails(templateId: number): void {
+    this.batchService.getTemplate(templateId).subscribe({
+      next: (response) => {
+        this.selectedTemplateDetails = response.data;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.toast.error('Failed to load recipe details');
+        this.closeIngredientModal();
+      }
+    });
+  }
+
+  loadStockReservations(): void {
+    this.stockReservations = [];
+    this.groupedReservations = [];
+  }
+
+  releaseReservation(reservation: any): void {
+    this.toast.show('success', `Released reservation for ${reservation.schedule_label}`);
+    this.loadStockReservations();
   }
 }

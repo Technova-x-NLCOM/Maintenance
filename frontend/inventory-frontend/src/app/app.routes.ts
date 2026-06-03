@@ -15,6 +15,7 @@ import { CategoryManagementComponent } from './components/inventory-master/categ
 import { StorageManagementComponent } from './components/inventory-master/storage-management/storage-management.component';
 import { ItemRegistrationUpdatesComponent } from './components/inventory-master/items/item-registration-updates.component';
 import { OperationTypeManagementComponent } from './components/inventory-master/operations-type/operation-type-management.component';
+import { RecipeTypeManagementComponent } from './components/inventory-master/recipe-types/recipe-type-management.component';
 import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
@@ -46,6 +47,7 @@ export const routes: Routes = [
       { path: 'inventory/locations', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'inventory/items', component: ItemRegistrationUpdatesComponent },
       { path: 'inventory/operation-types', component: OperationTypeManagementComponent },
+      { path: 'inventory/recipe-types', component: RecipeTypeManagementComponent },
       { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },

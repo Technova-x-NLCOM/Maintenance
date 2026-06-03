@@ -86,6 +86,7 @@ class ReceivingTransactionController extends Controller
             'location_name' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
             'batch_number' => ['required', 'string', 'max:100'],
+            'recipe_type_id' => ['nullable', 'integer', 'exists:recipe_types,recipe_type_id'],
             'purchase_date' => ['required', 'date'],
             'expiry_date' => ['nullable', 'date', 'after:purchase_date'],
             'manufactured_date' => ['nullable', 'date', 'before_or_equal:purchase_date'],
@@ -158,6 +159,7 @@ class ReceivingTransactionController extends Controller
             'items.*.reason' => ['nullable', 'string', 'max:255'],
             'items.*.notes' => ['nullable', 'string'],
             'items.*.location_name' => ['nullable', 'string', 'max:255'],
+            'items.*.recipe_type_id' => ['nullable', 'integer', 'exists:recipe_types,recipe_type_id'],
         ]);
 
         foreach ($data['items'] as $index => $line) {
@@ -277,6 +279,7 @@ class ReceivingTransactionController extends Controller
             'manufactured_date' => !empty($data['manufactured_date']) ? Carbon::parse($data['manufactured_date'])->toDateString() : null,
             'supplier_info' => $data['supplier_info'] ?? null,
             'batch_value' => $data['batch_value'] ?? null,
+            'recipe_type_id' => null,
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now(),
@@ -286,6 +289,10 @@ class ReceivingTransactionController extends Controller
         $resolvedLocationId = $this->resolveLocationIdFromData($data);
         if (Schema::hasColumn('inventory_batches', 'location_id') && $resolvedLocationId !== null) {
             $batchInsert['location_id'] = $resolvedLocationId;
+        }
+
+        if (Schema::hasColumn('inventory_batches', 'recipe_type_id') && !empty($data['recipe_type_id'])) {
+            $batchInsert['recipe_type_id'] = (int) $data['recipe_type_id'];
         }
 
         $batchId = DB::table('inventory_batches')->insertGetId($batchInsert);
@@ -334,6 +341,7 @@ class ReceivingTransactionController extends Controller
             'manufactured_date' => $data['manufactured_date'] ?? null,
             'supplier_info' => $data['supplier_info'] ?? null,
             'batch_value' => $data['batch_value'] ?? null,
+            'recipe_type_id' => $data['recipe_type_id'] ?? null,
         ];
 
         // Include shelf life info if available

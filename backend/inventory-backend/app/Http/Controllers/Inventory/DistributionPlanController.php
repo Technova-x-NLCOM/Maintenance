@@ -34,6 +34,10 @@ class DistributionPlanController extends Controller
             ->orderBy('dps.planned_date')
             ->orderBy('dps.plan_id');
 
+            if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+                $query->where('dps.is_deleted', false);
+            }
+
         if ($request->filled('status')) {
             $query->where('dps.status', (string) $request->input('status'));
         }
@@ -98,6 +102,13 @@ class DistributionPlanController extends Controller
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // ensure backward compatibility when migration not yet run
+        if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+            DB::table('distribution_plan_schedules')
+                ->where('plan_id', $planId)
+                ->update(['is_deleted' => false]);
+        }
 
         return $this->show((int) $planId);
     }
@@ -208,6 +219,71 @@ class DistributionPlanController extends Controller
                 'status' => $percentage >= 100 ? 'ready' : ($percentage >= 50 ? 'partial' : 'insufficient'),
             ],
         ]);
+    }
+
+    public function reserve(Request $request, int $planId)
+    {
+        $plan = $this->getPlanWithTemplate($planId);
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        if ((string) $plan->status !== 'planned') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only upcoming planned batches can be reserved.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'destination' => ['nullable', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $checkData = $this->buildInventoryCheckData($plan);
+        if (!$checkData['summary']['can_proceed']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot reserve inventory. Stock readiness must be 100%.',
+                'error_type' => 'insufficient_stock',
+                'data' => [
+                    'check_result' => $checkData,
+                ],
+            ], 422);
+        }
+
+        $performedBy = auth('api')->user()?->user_id ?? auth()->id() ?? 1;
+        $issuanceSummary = null;
+
+        DB::transaction(function () use ($planId, $plan, $checkData, $performedBy, $validated, &$issuanceSummary) {
+            $issuanceSummary = $this->issuePlanItems(
+                $plan,
+                $checkData,
+                (int) $performedBy,
+                trim((string) ($validated['destination'] ?? ('Reserved for ' . $plan->week_label))),
+                $validated['reason'] ?? 'Inventory Reservation',
+                $validated['notes'] ?? 'Reserved from Recipe & Distribution'
+            );
+
+            DB::table('distribution_plan_schedules')
+                ->where('plan_id', $planId)
+                ->update([
+                    'status' => 'ready',
+                    'final_check_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $response = $this->show($planId);
+        $payload = $response->getData(true);
+        $payload['data']['issuance'] = $issuanceSummary;
+        $payload['message'] = 'Inventory reserved successfully using FIFO allocation.';
+
+        return response()->json($payload, $response->status());
     }
 
     public function runPrecheck(Request $request, int $planId)
@@ -733,6 +809,52 @@ class DistributionPlanController extends Controller
         return response()->json($payload, $response->status());
     }
 
+    public function destroy(int $planId)
+    {
+        $plan = DB::table('distribution_plan_schedules')
+            ->where('plan_id', $planId)
+            ->first();
+
+        if (!$plan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Scheduled plan not found.',
+            ], 404);
+        }
+
+        if (in_array($plan->status, ['ready', 'completed'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only planned or cancelled schedules can be deleted.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($planId) {
+            if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+                DB::table('distribution_plan_schedules')
+                    ->where('plan_id', $planId)
+                    ->update([
+                        'is_deleted' => true,
+                        'status' => 'cancelled',
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('distribution_plan_remaining_items')
+                    ->where('plan_id', $planId)
+                    ->delete();
+
+                DB::table('distribution_plan_schedules')
+                    ->where('plan_id', $planId)
+                    ->delete();
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Scheduled plan deleted successfully.',
+        ]);
+    }
+
     private function issuePlanItems(
         object $plan,
         array $checkData,
@@ -933,7 +1055,7 @@ class DistributionPlanController extends Controller
 
     private function getPlanWithTemplate(int $planId): ?object
     {
-        return DB::table('distribution_plan_schedules as dps')
+        $query = DB::table('distribution_plan_schedules as dps')
             ->join('distribution_templates as dt', 'dps.template_id', '=', 'dt.template_id')
             ->where('dps.plan_id', $planId)
             ->select(
@@ -953,7 +1075,13 @@ class DistributionPlanController extends Controller
                 'dt.distribution_type',
                 'dt.base_unit_count'
             )
-            ->first();
+        ;
+
+        if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+            $query->where('dps.is_deleted', false);
+        }
+
+        return $query->first();
     }
 
     private function buildInventoryCheckData(object $plan): array

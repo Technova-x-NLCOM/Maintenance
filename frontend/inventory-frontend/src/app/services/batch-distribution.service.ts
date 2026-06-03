@@ -16,6 +16,8 @@ export interface BatchDistributionTemplateSummary {
   created_at: string;
   updated_at: string;
   item_count: number;
+  recipe_type_id: number | null;
+  recipe_type_name: string | null;
 }
 
 export interface BatchDistributionItemOption {
@@ -37,6 +39,7 @@ export interface BatchDistributionTemplatePayload {
   distribution_type: DistributionType;
   base_unit_count: number;
   notes?: string;
+  recipe_type_id?: number | null;
   items: BatchDistributionTemplateItemInput[];
 }
 
@@ -51,6 +54,8 @@ export interface BatchDistributionTemplateDetails {
     is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    recipe_type_id: number | null;
+    recipe_type_name: string | null;
   };
   items: Array<{
     item_id: number;
@@ -388,6 +393,13 @@ export class BatchDistributionService {
     );
   }
 
+  deleteProgramPlan(planId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/program-plans/${planId}`,
+      { headers: this.getHeaders() }
+    );
+  }
+
   completeProgramPlan(planId: number, payload: ProgramPlanCompletePayload): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
     return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
       `${this.baseUrl}/program-plans/${planId}/complete`,
@@ -399,6 +411,17 @@ export class BatchDistributionService {
   getStockReadiness(planId: number): Observable<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }> {
     return this.http.get<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }>(
       `${this.baseUrl}/program-plans/${planId}/stock-readiness`,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  reserveProgramPlan(
+    planId: number,
+    payload?: { destination?: string; reason?: string; notes?: string },
+  ): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
+    return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
+      `${this.baseUrl}/program-plans/${planId}/reserve`,
+      payload ?? {},
       { headers: this.getHeaders() }
     );
   }

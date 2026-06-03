@@ -1,0 +1,154 @@
+<div class="recipe-type-management-page">
+
+  <!-- ── Page Header ── -->
+  <header class="page-header header-condensed">
+    <div class="header-text">
+      <div class="eyebrow">Inventory Creation</div>
+      <h1 class="page-title">Recipe Types</h1>
+      <p class="subtitle">
+        Manage the recipe types used when creating batch distributions.
+        Click <strong>Add new recipe type</strong> to create one, or <strong>Edit</strong> on a row to update.
+      </p>
+    </div>
+  </header>
+
+  <app-toast></app-toast>
+
+  <!-- ── Add / Edit Modal ── -->
+  <div class="modal-overlay" *ngIf="showForm">
+    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
+
+      <div class="form-panel-header">
+        <h2 class="panel-title">{{ editingId ? 'Edit recipe type' : 'Add new recipe type' }}</h2>
+      </div>
+
+      <div class="modal-body-scroll">
+        <div class="form-grid">
+
+          <label class="full-width">
+            <span>Name <em>*</em></span>
+            <input
+              type="text"
+              [(ngModel)]="formData.name"
+              placeholder="e.g. Standard Recipe, Custom Blend"
+              maxlength="150"
+            />
+          </label>
+
+          <label class="full-width">
+            <span>Description <em>(optional)</em></span>
+            <textarea
+              rows="4"
+              [(ngModel)]="formData.description"
+              placeholder="Brief description of this recipe type"
+              maxlength="1000"
+            ></textarea>
+          </label>
+
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-cancel" type="button" (click)="closeForm()">Cancel</button>
+        <button
+          class="btn-primary"
+          type="button"
+          (click)="saveRecipeType()"
+          [disabled]="saving || !formData.name.trim()"
+        >
+          {{ saving ? 'Saving...' : editingId ? 'Save changes' : 'Add recipe type' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Delete Confirmation Modal ── -->
+  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
+    <div class="modal-confirm" (click)="$event.stopPropagation()">
+      <h2 class="confirm-title">Confirm Deletion</h2>
+      <p class="confirm-body">
+        Are you sure you want to delete
+        <strong *ngIf="deleteTarget">"{{ deleteTarget.name }}"</strong>?
+        This action cannot be undone.
+      </p>
+      <div class="confirm-footer">
+        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">Cancel</button>
+        <button type="button" class="btn-danger" (click)="confirmDelete()" [disabled]="deleteLoading">
+          {{ deleteLoading ? 'Deleting...' : 'Delete' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── List Panel ── -->
+  <section class="panel list-panel">
+    <div class="list-toolbar">
+      <h2 class="panel-title">
+        Recipe Types <span class="count">({{ totalRecords }})</span>
+      </h2>
+      <div class="toolbar-actions">
+        <button class="btn-primary" (click)="startNew()" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Add new recipe type
+        </button>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            [(ngModel)]="search"
+            (ngModelChange)="onSearchInput()"
+            placeholder="Search by name"
+          />
+          <button *ngIf="search" type="button" class="clear-btn" (click)="clearSearch()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="state-error">{{ error }}</div>
+    <div *ngIf="loading" class="state-loading">Loading recipe types...</div>
+
+    <div class="table-wrap" *ngIf="!loading && recipeTypes.length">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of recipeTypes; let i = index; trackBy: trackByRecipeType">
+            <td class="index-col">{{ (currentPage - 1) * perPage + i + 1 }}</td>
+            <td class="name-col">{{ row.name }}</td>
+            <td class="desc-col">{{ row.description || '—' }}</td>
+            <td class="date-col">{{ row.created_at ? (row.created_at | date:'MMM d, y') : '—' }}</td>
+            <td class="actions">
+              <button type="button" class="btn-sm btn-edit" (click)="editRecipeType(row)">Edit</button>
+              <button type="button" class="btn-sm btn-danger" (click)="openDeleteConfirm(row)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && !recipeTypes.length && !error" class="empty-state">
+      No recipe types found. Add one to start classifying your batch distributions.
+    </div>
+
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button type="button" class="page-btn" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button type="button" class="page-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+    </div>
+  </section>
+
+</div>
