@@ -15,6 +15,7 @@ use App\Http\Controllers\Inventory\StockAdjustmentController;
 use App\Http\Controllers\Inventory\TransactionMonitorController;
 use App\Http\Controllers\Inventory\RecipeTypeController;
 use App\Http\Controllers\Inventory\DiscrepancyController;
+use App\Http\Controllers\Inventory\ItemTransferController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -244,6 +245,17 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('items', [DiscrepancyController::class, 'getItems']);
                 Route::post('create', [DiscrepancyController::class, 'createDiscrepancy']);
                 Route::get('/', [DiscrepancyController::class, 'index']);
+            });
+        });
+
+    // Inventory Transactions - Item Transfer
+    Route::prefix('api/inventory/transfer')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('items', [ItemTransferController::class, 'getTransferableItems']);
+                Route::get('destinations', [ItemTransferController::class, 'getDestinationLocations']);
+                Route::post('create', [ItemTransferController::class, 'createTransfer']);
             });
         });
 
