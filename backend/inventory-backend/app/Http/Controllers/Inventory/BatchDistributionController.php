@@ -51,6 +51,10 @@ class BatchDistributionController extends Controller
             $query->where('dt.distribution_type', (string) $request->input('distribution_type'));
         }
 
+        if ($request->filled('recipe_type_id')) {
+            $query->where('dt.recipe_type_id', (int) $request->input('recipe_type_id'));
+        }
+
         $templates = $query->get()->map(function ($row) {
             $row->item_count = (int) $row->item_count;
             $row->base_unit_count = (int) $row->base_unit_count;

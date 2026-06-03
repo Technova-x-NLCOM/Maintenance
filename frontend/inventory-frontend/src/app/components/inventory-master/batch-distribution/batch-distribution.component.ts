@@ -11,6 +11,7 @@ import {
   BatchDistributionTemplatePayload,
   BatchDistributionTemplateSummary,
   DistributionType,
+  ProgramPlanCheckItem,
   ProgramPlanDetailsResponse,
   ProgramPlanStatus,
   ProgramPlanSummary,
@@ -85,7 +86,7 @@ export class BatchDistributionComponent implements OnInit {
   openTemplateMenuId: number | null = null;
 
   searchTemplate = '';
-  templateTypeFilter: 'all' | DistributionType = 'all';
+  templateRecipeTypeFilter: 'all' | number = 'all';
   templateViewMode: 'card' | 'list' = 'card';
   templatePage = 1;
   readonly templatePageSize = 10;
@@ -153,6 +154,9 @@ export class BatchDistributionComponent implements OnInit {
   scheduleDialogStep: 1 | 2 = 1;
   showRecipeSidebar = false;
   showNewRecipeModal = false;
+  templateModalMode: 'create' | 'edit' | 'duplicate' = 'create';
+  duplicateSourceTemplateName: string | null = null;
+  loadingRecipeModal = false;
   scheduleFilter: 'upcoming' | 'completed' | 'all' = 'upcoming';
   schedulingTemplate: BatchDistributionTemplateSummary | null = null;
   schedulingCalculation: BatchDistributionCalculation | null = null;
@@ -175,7 +179,20 @@ export class BatchDistributionComponent implements OnInit {
     isCurrentMonth: boolean;
     plans: ProgramPlanSummary[];
   }> = [];
-  planStockReadiness: Map<number, { required: number; available: number; percentage: number; status: string; loading: boolean }> = new Map();
+  planStockReadiness: Map<
+    number,
+    {
+      required: number;
+      available: number;
+      line_count: number;
+      ready_line_count: number;
+      insufficient_items_count: number;
+      percentage: number;
+      can_proceed: boolean;
+      status: string;
+      loading: boolean;
+    }
+  > = new Map();
   planSearchTerm = '';
   
   // Pagination properties
@@ -183,9 +200,9 @@ export class BatchDistributionComponent implements OnInit {
   planPageSize = 10;
   readonly planPageSizeOptions = [5, 10, 25, 50];
   
-  // Recipe pagination properties
-  currentRecipePage = 1;
-  recipePageSize = 10;
+  readonly recipeLazyBatchSize = 10;
+  visibleRecipeCount = 10;
+  loadingMoreRecipes = false;
 
   // 3-Step Execution Modal Properties
   showExecutionModal = false;
@@ -198,6 +215,11 @@ export class BatchDistributionComponent implements OnInit {
   gapFillData: { [itemId: number]: number } = {};
   allGapsFilled = false;
   executingDistribution = false;
+  executionIssuingStock = false;
+  executionIssuanceSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
+  executionPlanDetails: ProgramPlanDetailsResponse | null = null;
+  executionRemainderLines: EditableRemainingLine[] = [];
+  loadingExecutionDetails = false;
 
   // Recipe Details Modal Properties
   showIngredientModal = false;
@@ -216,7 +238,7 @@ export class BatchDistributionComponent implements OnInit {
     message: string;
     confirmText: string;
     cancelText: string;
-    action: 'cancel' | 'delete' | 'execute' | null;
+    action: 'cancel' | 'delete' | 'execute' | 'allocate' | null;
     plan: ProgramPlanSummary | null;
   } = {
     open: false,
@@ -234,6 +256,7 @@ export class BatchDistributionComponent implements OnInit {
     message: string;
     confirmText: string;
     cancelText: string;
+    action: 'delete' | 'save_stock_warning' | null;
     template: BatchDistributionTemplateSummary | null;
   } = {
     open: false,
@@ -241,6 +264,7 @@ export class BatchDistributionComponent implements OnInit {
     message: '',
     confirmText: 'Delete',
     cancelText: 'Cancel',
+    action: null,
     template: null,
   };
 
@@ -317,7 +341,9 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   get planTargetCountLabel(): string {
-    const template = this.templates.find((t) => t.template_id === this.planForm.template_id);
+    const template =
+      this.templates.find((t) => t.template_id === this.planForm.template_id) ??
+      this.schedulingTemplate;
     if (template?.distribution_type === 'relief_goods') {
       return 'Number of Relief Packs';
     }
@@ -333,6 +359,40 @@ export class BatchDistributionComponent implements OnInit {
 
   get targetUnitNounPlural(): string {
     return this.selectedDistributionType === 'relief_goods' ? 'Packs' : 'Attendees';
+  }
+
+  get recipeModalTitle(): string {
+    switch (this.templateModalMode) {
+      case 'edit':
+        return 'Edit Recipe';
+      case 'duplicate':
+        return 'Duplicate Recipe';
+      default:
+        return 'Create New Recipe';
+    }
+  }
+
+  get recipeModalSaveLabel(): string {
+    if (this.savingTemplate) {
+      return 'Saving...';
+    }
+    const warningSuffix = this.templateHasStockWarning ? ' With Warning' : '';
+    switch (this.templateModalMode) {
+      case 'edit':
+        return `Update Recipe${warningSuffix}`;
+      case 'duplicate':
+        return `Save Duplicate${warningSuffix}`;
+      default:
+        return `Create Recipe${warningSuffix}`;
+    }
+  }
+
+  get templateStockWarningCount(): number {
+    return this.templateLines.filter((line) => this.templateLineExceedsStock(line)).length;
+  }
+
+  get templateHasStockWarning(): boolean {
+    return this.templateStockWarningCount > 0;
   }
 
   get normalizedTargetUnitCount(): number {
@@ -448,13 +508,12 @@ export class BatchDistributionComponent implements OnInit {
     return Math.max(1, Math.ceil(this.templates.length / this.templatePageSize));
   }
 
-  get totalRecipePages(): number {
-    return Math.max(1, Math.ceil(this.templates.length / this.recipePageSize));
+  get visibleRecipes(): BatchDistributionTemplateSummary[] {
+    return this.templates.slice(0, this.visibleRecipeCount);
   }
 
-  get paginatedRecipes(): BatchDistributionTemplateSummary[] {
-    const start = (this.currentRecipePage - 1) * this.recipePageSize;
-    return this.templates.slice(start, start + this.recipePageSize);
+  get hasMoreRecipes(): boolean {
+    return this.visibleRecipeCount < this.templates.length;
   }
 
   get paginatedTemplates(): BatchDistributionTemplateSummary[] {
@@ -544,14 +603,105 @@ export class BatchDistributionComponent implements OnInit {
     return this.planDialogMode === 'edit';
   }
 
-  isPlanExecutable(plan: ProgramPlanSummary): boolean {
+  isStockAllocated(plan: ProgramPlanSummary): boolean {
+    return plan.status === 'ready';
+  }
+
+  hasPlanFullStockReadiness(plan: ProgramPlanSummary): boolean {
+    const readiness = this.getStockReadiness(plan.plan_id);
+    if (!readiness || readiness.loading) {
+      return false;
+    }
+    return readiness.can_proceed || readiness.percentage >= 100;
+  }
+
+  canAllocateStock(plan: ProgramPlanSummary): boolean {
     if (plan.status !== 'planned') {
       return false;
     }
+    return this.hasPlanFullStockReadiness(plan);
+  }
 
+  isPlanRunDateReached(plan: ProgramPlanSummary): boolean {
     const planDate = this.normalizeDate(plan.planned_date);
     const today = this.normalizeDate(new Date().toISOString().slice(0, 10));
     return planDate <= today;
+  }
+
+  showRunBatchAction(plan: ProgramPlanSummary): boolean {
+    if (plan.status === 'completed' || plan.status === 'cancelled') {
+      return false;
+    }
+    if (!['planned', 'checked_pre', 'ready'].includes(plan.status)) {
+      return false;
+    }
+    return this.isPlanRunDateReached(plan);
+  }
+
+  isPlanScheduledToday(plan: ProgramPlanSummary): boolean {
+    const planDate = this.normalizeDate(plan.planned_date);
+    const today = this.normalizeDate(new Date().toISOString().slice(0, 10));
+    return planDate === today;
+  }
+
+  /** Early allocation: planned status, full stock readiness, and planned date still in the future. */
+  canAllocateEarly(plan: ProgramPlanSummary): boolean {
+    if (!this.canAllocateStock(plan)) {
+      return false;
+    }
+    const planDate = this.normalizeDate(plan.planned_date);
+    const today = this.normalizeDate(new Date().toISOString().slice(0, 10));
+    return planDate > today;
+  }
+
+  canRunBatch(plan: ProgramPlanSummary): boolean {
+    if (!this.showRunBatchAction(plan)) {
+      return false;
+    }
+    if (this.isStockAllocated(plan)) {
+      return true;
+    }
+    return this.hasPlanFullStockReadiness(plan);
+  }
+
+  getRunBatchDisabledReason(plan: ProgramPlanSummary): string {
+    if (!this.showRunBatchAction(plan)) {
+      return '';
+    }
+    if (this.canRunBatch(plan)) {
+      return '';
+    }
+    if (!this.hasPlanFullStockReadiness(plan)) {
+      return 'Stock readiness must be 100% before you can run this batch.';
+    }
+    return '';
+  }
+
+  planBlocksRunAndAllocate(plan: ProgramPlanSummary): boolean {
+    return plan.status === 'planned' && !this.hasPlanFullStockReadiness(plan);
+  }
+
+  /** @deprecated Use canRunBatch */
+  isPlanExecutable(plan: ProgramPlanSummary): boolean {
+    return this.canRunBatch(plan);
+  }
+
+  getRunBatchButtonLabel(plan: ProgramPlanSummary): string {
+    return this.isStockAllocated(plan) ? 'Mark as complete' : '▶ Run Batch';
+  }
+
+  get executionModalTitle(): string {
+    if (this.selectedPlanForExecution && this.isStockAllocated(this.selectedPlanForExecution)) {
+      return 'Complete Batch';
+    }
+    return 'Run Batch';
+  }
+
+  get executionStockIssued(): boolean {
+    if (this.executionIssuanceSummary) {
+      return true;
+    }
+    return !!this.selectedPlanForExecution && this.isStockAllocated(this.selectedPlanForExecution);
   }
 
   private clearToastTimeout(): void {
@@ -623,12 +773,13 @@ export class BatchDistributionComponent implements OnInit {
     this.loadTemplatesSub = this.batchService
       .listTemplates(
         this.searchTemplate || undefined,
-        this.templateTypeFilter === 'all' ? undefined : this.templateTypeFilter,
+        this.templateRecipeTypeFilter === 'all' ? undefined : this.templateRecipeTypeFilter,
       )
       .subscribe({
         next: (response) => {
           this.templates = response.data;
-          if (!this.searchTemplate.trim() && this.templateTypeFilter === 'all') {
+          this.resetRecipeLazyLoad();
+          if (!this.searchTemplate.trim() && this.templateRecipeTypeFilter === 'all') {
             this.templatesBaseline = response.data.slice();
           }
           this.loadingTemplates = false;
@@ -688,13 +839,14 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   private restoreTemplatesBaseline(): void {
-    if (this.templateTypeFilter !== 'all') {
+    if (this.templateRecipeTypeFilter !== 'all') {
       this.loadTemplates();
       return;
     }
 
     if (this.templatesBaseline) {
       this.templates = this.templatesBaseline.slice();
+      this.resetRecipeLazyLoad();
       this.ensureTemplatePageInRange();
       if (this.selectedTemplateId) {
         const stillExists = this.templates.some((t) => t.template_id === this.selectedTemplateId);
@@ -795,21 +947,31 @@ export class BatchDistributionComponent implements OnInit {
     this.templatePage = safePage;
   }
 
-  goToRecipePage(page: number): void {
-    const safePage = Math.min(Math.max(Math.floor(Number(page)) || 1, 1), this.totalRecipePages);
-    this.currentRecipePage = safePage;
+  onRecipeListScroll(event: Event): void {
+    const el = event.target as HTMLElement;
+    const thresholdPx = 80;
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - thresholdPx) {
+      return;
+    }
+    this.loadMoreRecipes();
   }
 
-  goToNextRecipePage(): void {
-    if (this.currentRecipePage < this.totalRecipePages) {
-      this.currentRecipePage += 1;
+  loadMoreRecipes(): void {
+    if (!this.hasMoreRecipes || this.loadingMoreRecipes || this.loadingTemplates) {
+      return;
     }
+    this.loadingMoreRecipes = true;
+    this.visibleRecipeCount = Math.min(
+      this.visibleRecipeCount + this.recipeLazyBatchSize,
+      this.templates.length,
+    );
+    this.loadingMoreRecipes = false;
+    this.cdr.detectChanges();
   }
 
-  goToPreviousRecipePage(): void {
-    if (this.currentRecipePage > 1) {
-      this.currentRecipePage -= 1;
-    }
+  private resetRecipeLazyLoad(): void {
+    this.visibleRecipeCount = this.recipeLazyBatchSize;
+    this.loadingMoreRecipes = false;
   }
 
   goToNextTemplatePage(): void {
@@ -874,6 +1036,9 @@ export class BatchDistributionComponent implements OnInit {
     this.batchService.getTemplate(summary.template_id).subscribe({
       next: (response) => {
         const details = response.data;
+        this.templateModalMode = 'edit';
+        this.duplicateSourceTemplateName = null;
+        this.loadingRecipeModal = false;
         this.showNewRecipeModal = true;
         this.showTemplateForm = true;
         this.isEditingTemplate = true;
@@ -1079,6 +1244,27 @@ export class BatchDistributionComponent implements OnInit {
     return `${found.item_code} - ${found.item_description}`;
   }
 
+  templateLineRequiredQty(line: EditableTemplateLine): number {
+    return Math.ceil(Number(line.quantity_per_base) || 0);
+  }
+
+  templateLineExceedsStock(line: EditableTemplateLine): boolean {
+    const required = this.templateLineRequiredQty(line);
+    const stock = Number(line.current_stock ?? this.getItemCurrentStock(line.item_id));
+    if (!Number.isFinite(stock)) {
+      return false;
+    }
+    return required > stock;
+  }
+
+  templateLineStockAfter(line: EditableTemplateLine): number {
+    const stock = Number(line.current_stock ?? this.getItemCurrentStock(line.item_id));
+    if (!Number.isFinite(stock)) {
+      return 0;
+    }
+    return stock - this.templateLineRequiredQty(line);
+  }
+
   getItemCurrentStock(itemId: number): number | string {
     const line = this.templateLines.find((entry) => entry.item_id === itemId);
     if (line && Number.isFinite(Number(line.current_stock))) {
@@ -1125,6 +1311,24 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    if (this.templateHasStockWarning) {
+      this.templateConfirmDialog = {
+        open: true,
+        title: 'Save recipe with stock warning?',
+        message: `${this.templateStockWarningCount} ingredient(s) exceed current stock for a standard batch (${this.templateForm.base_unit_count} units). You can save the recipe, but schedules using it cannot be run or allocated until stock is sufficient.`,
+        confirmText: 'Save Anyway',
+        cancelText: 'Go Back',
+        action: 'save_stock_warning',
+        template: null,
+      };
+      return;
+    }
+
+    this.performSaveTemplate();
+  }
+
+  private performSaveTemplate(): void {
+    const hadStockWarning = this.templateHasStockWarning;
     const payload: BatchDistributionTemplatePayload = {
       template_name: this.templateForm.template_name.trim(),
       distribution_type: this.templateForm.distribution_type,
@@ -1168,10 +1372,20 @@ export class BatchDistributionComponent implements OnInit {
           notes: '',
         }));
 
-        this.toast.success('Template saved successfully.');
+        const savedMessage =
+          this.templateModalMode === 'duplicate'
+            ? 'Recipe duplicated successfully.'
+            : this.templateModalMode === 'edit'
+              ? 'Recipe updated successfully.'
+              : 'Recipe created successfully.';
+        this.toast.success(
+          hadStockWarning ? `${savedMessage} Some ingredients exceed current stock.` : savedMessage,
+        );
         this.loadTemplates();
         this.showTemplateForm = false;
         this.isEditingTemplate = false;
+        this.templateModalMode = 'create';
+        this.duplicateSourceTemplateName = null;
         this.showNewRecipeModal = false;
         this.cdr.detectChanges();
       },
@@ -1439,7 +1653,7 @@ export class BatchDistributionComponent implements OnInit {
 
   openRecipeSidebarPanel(): void {
     this.showRecipeSidebar = true;
-    this.currentRecipePage = 1; // Reset to first page when opening
+    this.resetRecipeLazyLoad();
   }
 
   closeRecipeSidebarPanel(): void {
@@ -1506,6 +1720,18 @@ export class BatchDistributionComponent implements OnInit {
       this.toast.error('Target servings must be greater than zero.');
       return;
     }
+    if (!this.scheduleReason.trim()) {
+      this.toast.error('Reason is required.');
+      return;
+    }
+    if (this.scheduleReason.length > 250) {
+      this.toast.error('Reason must be 250 characters or less.');
+      return;
+    }
+    if (this.scheduleDestination.length > 150) {
+      this.toast.error('Destination must be 150 characters or less.');
+      return;
+    }
     this.calculating = true;
     this.batchService.calculate(this.planForm.template_id, targetCount).subscribe({
       next: (response) => {
@@ -1526,13 +1752,17 @@ export class BatchDistributionComponent implements OnInit {
     if (!this.planForm.template_id) {
       return;
     }
+    if (!this.scheduleReason.trim()) {
+      this.toast.error('Reason is required.');
+      return;
+    }
     const targetCount = Math.floor(Number(this.planForm.target_unit_count));
     this.savingPlan = true;
     const weekLabel = (this.scheduleDestination || this.schedulingTemplate?.template_name || 'Scheduled Batch').trim();
     const stitchedNotes = [
-      this.scheduleReason ? `Reason: ${this.scheduleReason}` : '',
+      `Reason: ${this.scheduleReason.trim()}`,
       this.scheduleNotes ? `Notes: ${this.scheduleNotes}` : '',
-      this.scheduleDestination ? `Destination: ${this.scheduleDestination}` : '',
+      this.scheduleDestination.trim() ? `Destination: ${this.scheduleDestination.trim()}` : '',
     ].filter(Boolean).join(' | ');
     this.batchService.createProgramPlan({
       template_id: this.planForm.template_id,
@@ -1560,9 +1790,8 @@ export class BatchDistributionComponent implements OnInit {
     if (this.reservingPlanId) {
       return;
     }
-    const readiness = this.getStockReadiness(plan.plan_id);
-    if (!readiness || readiness.loading || readiness.percentage < 100) {
-      this.toast.error('Cannot reserve until stock readiness is 100%.');
+    if (!this.hasPlanFullStockReadiness(plan)) {
+      this.toast.error('Cannot reserve until all ingredients have sufficient stock for this schedule.');
       return;
     }
     this.reservingPlanId = plan.plan_id;
@@ -1722,6 +1951,12 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    if (action === 'allocate') {
+      this.closePlanConfirm();
+      this.reservePlan(plan);
+      return;
+    }
+
     this.executePlan(plan);
     this.closePlanConfirm();
   }
@@ -1837,9 +2072,17 @@ export class BatchDistributionComponent implements OnInit {
 
     this.planFinalCheckAttempted = true;
 
-    if (!this.planIssueDestination.trim()) {
-      this.toast.error('Issue destination is required.');
+    if (!this.planIssueReason.trim()) {
+      this.toast.error('Reason is required.');
       this.focusFinalCheckFirstInvalidField();
+      return;
+    }
+    if (this.planIssueReason.length > 250) {
+      this.toast.error('Reason must be 250 characters or less.');
+      return;
+    }
+    if (this.planIssueDestination.length > 150) {
+      this.toast.error('Destination must be 150 characters or less.');
       return;
     }
 
@@ -1854,8 +2097,8 @@ export class BatchDistributionComponent implements OnInit {
     this.runningPlanAction = true;
     this.batchService.runProgramFinalCheck(this.selectedPlanId, {
       procured_items,
-      issue_destination: this.planIssueDestination.trim(),
-      issue_reason: this.planIssueReason.trim() || undefined,
+      issue_destination: this.planIssueDestination.trim() || undefined,
+      issue_reason: this.planIssueReason.trim(),
       issue_notes: this.planIssueNotes.trim() || undefined,
     }).subscribe({
       next: (response) => {
@@ -1876,11 +2119,31 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   private focusFinalCheckFirstInvalidField(): void {
-    // Focus the visible "Issue Destination" input in either list view or calendar modal.
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>('input[data-finalcheck-destination="true"]');
+      const el = document.querySelector<HTMLInputElement>('input[data-finalcheck-reason="true"]');
       el?.focus();
     }, 0);
+  }
+
+  private validateExecutionIssueFields(): { destination?: string; reason: string } | null {
+    if (!this.executionReason.trim()) {
+      this.toast.error('Reason is required.');
+      return null;
+    }
+    if (this.executionReason.length > 250) {
+      this.toast.error('Reason must be 250 characters or less.');
+      return null;
+    }
+    if (this.executionDestination.length > 150) {
+      this.toast.error('Destination must be 150 characters or less.');
+      return null;
+    }
+    const reason = this.executionReason.trim();
+    const destination = this.executionDestination.trim();
+    return {
+      reason,
+      ...(destination ? { destination } : {}),
+    };
   }
 
   completePlan(): void {
@@ -1998,18 +2261,22 @@ export class BatchDistributionComponent implements OnInit {
         return { label: 'Cancelled', className: 'status-cancelled', icon: 'ti-ban' };
       case 'completed':
         return { label: 'Completed', className: 'status-completed', icon: 'ti-circle-check' };
+      case 'ready':
+        return { label: 'Stock Allocated', className: 'status-ready', icon: 'ti-package' };
+      case 'checked_pre':
+        return { label: 'Pre-checked', className: 'status-checked-pre', icon: 'ti-clipboard-check' };
       default:
         return { label: 'Planned', className: 'status-planned', icon: 'ti-clock' };
     }
   }
 
   isPlanOverdue(plan: ProgramPlanSummary): boolean {
-    if (plan.status !== 'planned') {
+    if (plan.status === 'completed' || plan.status === 'cancelled') {
       return false;
     }
     const planDate = this.normalizeDate(plan.planned_date);
     const today = this.normalizeDate(new Date().toISOString().slice(0, 10));
-    return planDate < today;
+    return planDate < today && plan.status !== 'ready';
   }
 
   isPlanLocked(plan: ProgramPlanSummary): boolean {
@@ -2020,6 +2287,10 @@ export class BatchDistributionComponent implements OnInit {
     switch (status) {
       case 'planned':
         return 'tag-planned';
+      case 'checked_pre':
+        return 'tag-checked-pre';
+      case 'ready':
+        return 'tag-ready';
       case 'cancelled':
         return 'tag-cancelled';
       case 'completed':
@@ -2381,7 +2652,11 @@ export class BatchDistributionComponent implements OnInit {
       this.planStockReadiness.set(plan.plan_id, {
         required: 0,
         available: 0,
+        line_count: 0,
+        ready_line_count: 0,
+        insufficient_items_count: 0,
         percentage: 0,
+        can_proceed: false,
         status: 'loading',
         loading: true,
       });
@@ -2398,7 +2673,11 @@ export class BatchDistributionComponent implements OnInit {
           this.planStockReadiness.set(plan.plan_id, {
             required: 0,
             available: 0,
+            line_count: 0,
+            ready_line_count: 0,
+            insufficient_items_count: 0,
             percentage: 0,
+            can_proceed: false,
             status: 'error',
             loading: false,
           });
@@ -2408,8 +2687,29 @@ export class BatchDistributionComponent implements OnInit {
     });
   }
 
-  getStockReadiness(planId: number): { required: number; available: number; percentage: number; status: string; loading: boolean } | null {
+  getStockReadiness(planId: number): {
+    required: number;
+    available: number;
+    line_count: number;
+    ready_line_count: number;
+    insufficient_items_count: number;
+    percentage: number;
+    can_proceed: boolean;
+    status: string;
+    loading: boolean;
+  } | null {
     return this.planStockReadiness.get(planId) || null;
+  }
+
+  getStockReadinessLabel(planId: number): string {
+    const readiness = this.getStockReadiness(planId);
+    if (!readiness || readiness.loading) {
+      return 'Loading...';
+    }
+    if (readiness.line_count > 0) {
+      return `${readiness.percentage}% (${readiness.ready_line_count}/${readiness.line_count} ingredients ready)`;
+    }
+    return `${readiness.percentage}%`;
   }
 
   getStockReadinessColor(percentage: number): string {
@@ -2449,12 +2749,23 @@ export class BatchDistributionComponent implements OnInit {
   // Kebab menu methods for plans
   reserveStockForPlan(plan: ProgramPlanSummary): void {
     this.closePlanMenu();
-    this.toast.show('success', `Stock reserved for ${plan.week_label}`);
-  }
-
-  releaseReservedStock(plan: ProgramPlanSummary): void {
-    this.closePlanMenu();
-    this.toast.show('success', `Released reserved stock for ${plan.week_label}`);
+    if (!this.canAllocateEarly(plan)) {
+      if (this.isPlanScheduledToday(plan) && this.canAllocateStock(plan)) {
+        this.toast.error('On the planned date, use Run Batch to issue stock instead of allocating early.');
+      } else {
+        this.toast.error('Allocate stock only when the schedule is planned, stock readiness is 100%, and the planned date is in the future.');
+      }
+      return;
+    }
+    this.planConfirmDialog = {
+      open: true,
+      title: 'Allocate stock early?',
+      message: `Ingredients for "${plan.week_label}" (planned ${plan.planned_date}) will be issued from inventory now. This cannot be undone from this screen. Continue?`,
+      confirmText: 'Allocate Stock',
+      cancelText: 'Cancel',
+      action: 'allocate',
+      plan,
+    };
   }
 
   editSchedule(plan: ProgramPlanSummary): void {
@@ -2475,13 +2786,19 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   isStockReserved(plan: ProgramPlanSummary): boolean {
-    return false; // Placeholder implementation
+    return this.isStockAllocated(plan);
   }
 
   getItemsNeedingRestockCount(planId: number): number {
     const readiness = this.getStockReadiness(planId);
-    if (!readiness || readiness.loading) return 0;
-    return Math.floor((100 - readiness.percentage) / 10);
+    if (!readiness || readiness.loading) {
+      return 0;
+    }
+    return readiness.insufficient_items_count;
+  }
+
+  get allocatedPlans(): ProgramPlanSummary[] {
+    return this.plans.filter((plan) => plan.status === 'ready');
   }
 
   // Recipe methods
@@ -2494,22 +2811,26 @@ export class BatchDistributionComponent implements OnInit {
 
   duplicateTemplate(template: BatchDistributionTemplateSummary): void {
     this.closeTemplateMenu();
+    this.closeRecipeSidebarPanel();
     this.errorMessage = '';
     this.successMessage = '';
+    this.loadingRecipeModal = true;
+    this.templateModalMode = 'duplicate';
+    this.duplicateSourceTemplateName = template.template_name;
+    this.showNewRecipeModal = true;
+    this.showTemplateForm = false;
 
     this.batchService.getTemplate(template.template_id).subscribe({
       next: (response) => {
         const details = response.data;
-        this.showNewRecipeModal = true;
         this.showTemplateForm = true;
-        this.isEditingTemplate = false; // This is a new template (duplicate)
-        this.selectedTemplateId = null; // Clear the selected ID since this is a new template
+        this.isEditingTemplate = false;
+        this.selectedTemplateId = null;
         this.selectedTemplateName = '';
 
-        // Add "(copy)" to the template name
         const originalName = details.template.template_name;
-        const copyName = originalName.includes('(copy)') 
-          ? originalName 
+        const copyName = originalName.includes('(copy)')
+          ? originalName
           : `${originalName} (copy)`;
 
         this.templateForm = {
@@ -2531,12 +2852,16 @@ export class BatchDistributionComponent implements OnInit {
         this.lineDraftItemId = null;
         this.lineDraftQuantityPerBase = 1;
         this.lineDraftNotes = '';
-
-        this.toast.success('Template duplicated. You can now modify and save it.');
+        this.loadingRecipeModal = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.toast.error(err?.error?.message || 'Failed to duplicate template.');
+        this.loadingRecipeModal = false;
+        this.templateModalMode = 'create';
+        this.duplicateSourceTemplateName = null;
+        this.showNewRecipeModal = false;
+        this.showTemplateForm = false;
+        this.toast.error(err?.error?.message || 'Failed to load recipe for duplication.');
         this.cdr.detectChanges();
       },
     });
@@ -2550,6 +2875,7 @@ export class BatchDistributionComponent implements OnInit {
       message: `Are you sure you want to delete "${template.template_name}"? This action cannot be undone.`,
       confirmText: 'Delete',
       cancelText: 'Cancel',
+      action: 'delete',
       template,
     };
   }
@@ -2561,11 +2887,19 @@ export class BatchDistributionComponent implements OnInit {
       message: '',
       confirmText: 'Delete',
       cancelText: 'Cancel',
+      action: null,
       template: null,
     };
   }
 
-  confirmTemplateDeleteAction(): void {
+  confirmTemplateDialogAction(): void {
+    const action = this.templateConfirmDialog.action;
+    if (action === 'save_stock_warning') {
+      this.closeTemplateConfirm();
+      this.performSaveTemplate();
+      return;
+    }
+
     const template = this.templateConfirmDialog.template;
     if (!template) {
       this.closeTemplateConfirm();
@@ -2577,6 +2911,9 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   openNewRecipeModal(): void {
+    this.templateModalMode = 'create';
+    this.duplicateSourceTemplateName = null;
+    this.loadingRecipeModal = false;
     this.showNewRecipeModal = true;
     this.showTemplateForm = true;
     this.isEditingTemplate = false;
@@ -2600,6 +2937,9 @@ export class BatchDistributionComponent implements OnInit {
     this.showNewRecipeModal = false;
     this.showTemplateForm = false;
     this.isEditingTemplate = false;
+    this.templateModalMode = 'create';
+    this.duplicateSourceTemplateName = null;
+    this.loadingRecipeModal = false;
     this.templateLines = [];
     this.lineDraftItemId = null;
     this.lineDraftQuantityPerBase = 1;
@@ -2609,7 +2949,37 @@ export class BatchDistributionComponent implements OnInit {
 
   // Execution modal methods
   startExecutionFlow(plan: ProgramPlanSummary): void {
-    this.selectedPlanForExecution = plan;
+    if (!this.showRunBatchAction(plan)) {
+      this.toast.error('Run batch is available on or after the planned date for active schedules.');
+      return;
+    }
+    if (!this.canRunBatch(plan)) {
+      this.toast.error(
+        this.getRunBatchDisabledReason(plan) ||
+          'Cannot run this batch until stock readiness is 100%.',
+      );
+      return;
+    }
+
+    this.selectedPlanForExecution = { ...plan };
+    this.executionIssuanceSummary = null;
+    this.executionPlanDetails = null;
+    this.executionDestination = '';
+    this.executionReason = '';
+    this.executionNotes = '';
+    this.gapFillData = {};
+    this.allGapsFilled = false;
+    this.executingDistribution = false;
+    this.executionIssuingStock = false;
+    this.loadingExecutionDetails = false;
+
+    if (this.isStockAllocated(plan)) {
+      this.executionStep = 3;
+      this.showExecutionModal = true;
+      this.loadExecutionPlanDetails(plan.plan_id);
+      return;
+    }
+
     this.executionStep = 1;
     this.showExecutionModal = true;
     this.loadExecutionStockCheck(plan.plan_id);
@@ -2621,60 +2991,250 @@ export class BatchDistributionComponent implements OnInit {
     this.executionStep = 1;
     this.selectedPlanForExecution = null;
     this.executionStockCheck = null;
+    this.executionPlanDetails = null;
+    this.executionIssuanceSummary = null;
+    this.executionRemainderLines = [];
     this.executionDestination = '';
     this.executionReason = '';
     this.executionNotes = '';
     this.gapFillData = {};
     this.allGapsFilled = false;
     this.executingDistribution = false;
+    this.executionIssuingStock = false;
+    this.loadingExecutionDetails = false;
   }
 
-  // Execution step methods
-  proceedToFillGaps(): void { 
-    this.executionStep = 2; 
+  proceedToFillGaps(): void {
+    this.executionStep = 2;
     this.initializeGapFillData();
   }
 
-  skipToExecute(): void { this.executionStep = 3; }
-  proceedToExecute(): void { this.executionStep = 3; }
-  goBackToStockCheck(): void { this.executionStep = 1; }
-  goBackToPreviousStep(): void { 
-    if (this.executionStep > 1) this.executionStep = (this.executionStep - 1) as 1 | 2 | 3; 
+  proceedToCompleteStep(): void {
+    this.seedExecutionRemainderLines();
+    this.executionStep = 3;
   }
-  confirmAndProceed(): void { this.executionStep = 3; }
+
+  goBackToStockCheck(): void {
+    this.executionStep = 1;
+  }
+
+  goBackToPreviousStep(): void {
+    if (this.executionStep > 1) {
+      this.executionStep = (this.executionStep - 1) as 1 | 2 | 3;
+    }
+  }
+
+  confirmProcurementAndIssue(): void {
+    const plan = this.selectedPlanForExecution;
+    if (!plan) {
+      return;
+    }
+
+    const issueFields = this.validateExecutionIssueFields();
+    if (!issueFields) {
+      return;
+    }
+
+    if (!this.allGapsFilled) {
+      this.toast.error('Record procured quantities for all shortages before continuing.');
+      return;
+    }
+
+    const procured_items = this.getShortageItems()
+      .map((item) => ({
+        item_id: item.item_id,
+        quantity_brought: Math.floor(Number(this.gapFillData[item.item_id] || 0)),
+        notes: this.executionNotes.trim() || undefined,
+      }))
+      .filter((line) => line.quantity_brought > 0);
+
+    this.executionIssuingStock = true;
+    this.batchService
+      .runProgramFinalCheck(plan.plan_id, {
+        procured_items,
+        issue_destination: issueFields.destination,
+        issue_reason: issueFields.reason,
+        issue_notes: this.executionNotes.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.executionIssuingStock = false;
+          this.executionIssuanceSummary = response.data?.issuance ?? null;
+          if (response.data?.check_result) {
+            this.executionStockCheck = response.data.check_result;
+          }
+          this.applyExecutionPlanUpdate(plan.plan_id, 'ready');
+          this.toast.success(response.message || 'Ingredients received and issued.');
+          this.seedExecutionRemainderLines();
+          this.executionStep = 3;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.executionIssuingStock = false;
+          this.toast.error(err?.error?.message || 'Failed to receive and issue ingredients.');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  issueStockForExecution(): void {
+    const plan = this.selectedPlanForExecution;
+    if (!plan || this.executionStockIssued) {
+      return;
+    }
+
+    const issueFields = this.validateExecutionIssueFields();
+    if (!issueFields) {
+      return;
+    }
+
+    if (this.executionHasShortages) {
+      this.toast.error('Resolve shortages in step 2 before issuing stock.');
+      return;
+    }
+
+    this.executionIssuingStock = true;
+
+    const onSuccess = (response: { message?: string; data?: ProgramPlanDetailsResponse }) => {
+      this.executionIssuingStock = false;
+      this.executionIssuanceSummary = response.data?.issuance ?? null;
+      if (response.data?.inventory_check) {
+        this.executionStockCheck = response.data.inventory_check;
+        this.executionPlanDetails = response.data;
+      }
+      const nextStatus = (response.data?.plan?.status ?? 'ready') as ProgramPlanStatus;
+      this.applyExecutionPlanUpdate(plan.plan_id, nextStatus);
+      this.toast.success(response.message || 'Ingredients issued from inventory.');
+      this.seedExecutionRemainderLines();
+      this.cdr.detectChanges();
+    };
+
+    const onError = (err: { error?: { message?: string } }) => {
+      this.executionIssuingStock = false;
+      this.toast.error(err?.error?.message || 'Failed to issue ingredients.');
+      this.cdr.detectChanges();
+    };
+
+    if (plan.status === 'planned') {
+      this.batchService
+        .reserveProgramPlan(plan.plan_id, {
+          destination: issueFields.destination,
+          reason: issueFields.reason,
+          notes: this.executionNotes.trim() || undefined,
+        })
+        .subscribe({ next: onSuccess, error: onError });
+      return;
+    }
+
+    this.batchService
+      .runProgramFinalCheck(plan.plan_id, {
+        issue_destination: issueFields.destination,
+        issue_reason: issueFields.reason,
+        issue_notes: this.executionNotes.trim() || undefined,
+      })
+      .subscribe({ next: onSuccess, error: onError });
+  }
+
+  completeBatchExecution(): void {
+    const plan = this.selectedPlanForExecution;
+    if (!plan) {
+      return;
+    }
+
+    if (!this.executionStockIssued) {
+      this.toast.error('Issue ingredients before completing the batch.');
+      return;
+    }
+
+    const remaining_items = this.executionRemainderLines.map((line) => ({
+      item_id: line.item_id,
+      remaining_quantity: Number(line.remaining_quantity) || 0,
+      notes: line.notes.trim() || undefined,
+    }));
+
+    this.executingDistribution = true;
+    this.batchService
+      .completeProgramPlan(plan.plan_id, {
+        status: 'completed',
+        remaining_items,
+        issue_now: false,
+      })
+      .subscribe({
+        next: (response) => {
+          this.executingDistribution = false;
+          const ref = this.executionIssuanceSummary?.reference_number;
+          const message = response.message || (ref ? `Batch completed. Issuance: ${ref}` : 'Batch completed successfully.');
+          this.toast.success(message);
+          this.closeExecutionModal();
+          this.loadPlans();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.executingDistribution = false;
+          this.toast.error(err?.error?.message || 'Failed to complete batch.');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private applyExecutionPlanUpdate(planId: number, status: ProgramPlanStatus): void {
+    if (this.selectedPlanForExecution?.plan_id === planId) {
+      this.selectedPlanForExecution = { ...this.selectedPlanForExecution, status };
+    }
+    const index = this.plans.findIndex((p) => p.plan_id === planId);
+    if (index >= 0) {
+      this.plans[index] = { ...this.plans[index], status };
+    }
+  }
+
+  private seedExecutionRemainderLines(): void {
+    const items =
+      this.executionPlanDetails?.inventory_check.items ??
+      this.executionStockCheck?.items ??
+      [];
+
+    this.executionRemainderLines = items.map((line: ProgramPlanCheckItem) => ({
+      item_id: line.item_id,
+      item_code: line.item_code,
+      item_description: line.item_description,
+      remaining_quantity: 0,
+      notes: '',
+    }));
+  }
 
   get executionHasShortages(): boolean {
-    if (!this.executionStockCheck) return false;
-    return this.executionStockCheck.items.some((item: any) => item.has_shortage);
+    if (!this.executionStockCheck?.items) {
+      return false;
+    }
+    return this.executionStockCheck.items.some((item: { has_shortage: boolean }) => item.has_shortage);
   }
 
-  get canProceedWithExecution(): boolean {
-    return !!this.executionDestination.trim() && (!this.executionHasShortages || this.allGapsFilled);
+  get canProceedFromStockCheck(): boolean {
+    return !this.executionHasShortages;
   }
 
-  executeDistribution(): void {
-    if (!this.selectedPlanForExecution || !this.canProceedWithExecution) return;
-    this.executingDistribution = true;
-    setTimeout(() => {
-      const referenceNumber = this.generateReferenceNumber();
-      this.toast.show('success', `Distribution executed successfully! Reference: ${referenceNumber}`);
-      this.closeExecutionModal();
-      this.loadPlans();
-    }, 2000);
+  get canCompleteProcurementStep(): boolean {
+    return (
+      !!this.executionReason.trim() &&
+      this.allGapsFilled &&
+      !this.executionIssuingStock
+    );
+  }
+
+  get canIssueOnCompleteStep(): boolean {
+    return (
+      !!this.executionReason.trim() &&
+      !this.executionHasShortages &&
+      !this.executionIssuingStock
+    );
+  }
+
+  get canSubmitBatchCompletion(): boolean {
+    return this.executionStockIssued && !this.executingDistribution;
   }
 
   showStockShortageAlert(): void {
-    this.toast.show('error', 'Cannot execute - insufficient stock');
-  }
-
-  // Utility methods
-  generateReferenceNumber(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const sequence = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `DIST-${year}-${month}${day}-${sequence}`;
+    this.toast.error('Cannot proceed — resolve stock shortages first.');
   }
 
   // Gap filling methods
@@ -2744,7 +3304,7 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   viewCompletionSummary(plan: ProgramPlanSummary): void {
-    this.toast.show('success', 'Completion summary functionality coming soon');
+    this.viewPlanDetails(plan);
   }
 
   // Plan actions
@@ -2772,15 +3332,38 @@ export class BatchDistributionComponent implements OnInit {
 
   // API methods
   loadExecutionStockCheck(planId: number): void {
+    this.loadingExecutionDetails = true;
     this.batchService.runProgramPrecheck(planId).subscribe({
       next: (response) => {
-        this.executionStockCheck = response.data;
+        this.loadingExecutionDetails = false;
+        this.executionStockCheck = response.data?.check_result ?? response.data;
+        this.applyExecutionPlanUpdate(planId, 'checked_pre');
+        this.initializeGapFillData();
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.toast.error('Failed to load stock check');
+        this.loadingExecutionDetails = false;
+        this.toast.error(err?.error?.message || 'Failed to load stock check');
         this.closeExecutionModal();
-      }
+      },
+    });
+  }
+
+  loadExecutionPlanDetails(planId: number): void {
+    this.loadingExecutionDetails = true;
+    this.batchService.getProgramPlan(planId).subscribe({
+      next: (response) => {
+        this.loadingExecutionDetails = false;
+        this.executionPlanDetails = response.data;
+        this.executionStockCheck = response.data.inventory_check;
+        this.seedExecutionRemainderLines();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loadingExecutionDetails = false;
+        this.toast.error(err?.error?.message || 'Failed to load batch details');
+        this.closeExecutionModal();
+      },
     });
   }
 
@@ -2798,12 +3381,16 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   loadStockReservations(): void {
-    this.stockReservations = [];
+    this.stockReservations = this.allocatedPlans.map((plan) => ({
+      item_code: plan.week_label,
+      item_description: plan.template_name,
+      unit: plan.planned_date,
+      total_stock: plan.target_unit_count,
+      reserved_amount: 'Allocated',
+      available: plan.status,
+      plan_id: plan.plan_id,
+    }));
     this.groupedReservations = [];
-  }
-
-  releaseReservation(reservation: any): void {
-    this.toast.show('success', `Released reservation for ${reservation.schedule_label}`);
-    this.loadStockReservations();
+    this.selectedReservationDetails = null;
   }
 }

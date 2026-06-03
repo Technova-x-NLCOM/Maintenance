@@ -1221,6 +1221,16 @@
   color: #633806;
 }
 
+.status-checked-pre {
+  background: #e8f0fe;
+  color: #1e3a8a;
+}
+
+.status-ready {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .status-cancelled {
   background: #f1efe8;
   color: #5f5e5a;
@@ -2243,6 +2253,35 @@ label span {
   max-height: 92vh;
 }
 
+.recipe-modal-notice {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 13px;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  &.recipe-stock-warning {
+    border-color: #fcd34d;
+    background: #fffbeb;
+    color: #92400e;
+  }
+}
+
+.ingredients-table tr.has-shortage {
+  background: #fff7ed;
+}
+
 .new-recipe-body {
   max-height: 70vh;
   overflow-y: auto;
@@ -2484,9 +2523,16 @@ label span {
     margin-bottom: 12px;
   }
 
-  .pagination-row {
-    margin-top: 16px;
-    flex-shrink: 0;
+  .recipe-list-status {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    padding: 12px 0 4px;
+    margin: 0;
+
+    &.muted {
+      color: #94a3b8;
+    }
   }
 
   .calculator-panel {
@@ -3098,11 +3144,6 @@ label span {
     background: #f8fafc;
     border-color: #cbd5e1;
   }
-}
-
-.recipe-icon {
-  font-size: 20px;
-  flex-shrink: 0;
 }
 
 .recipe-content {
