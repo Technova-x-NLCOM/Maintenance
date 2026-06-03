@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
+  import { ChangeDetectorRef, Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +15,8 @@ import {
   ProgramPlanDetailsResponse,
   ProgramPlanStatus,
   ProgramPlanSummary,
+  StorageAllocation,
+  StorageAllocationRequest,
 } from '../../../services/batch-distribution.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
@@ -198,6 +200,17 @@ export class BatchDistributionComponent implements OnInit {
   // Pagination properties
   currentPlanPage = 1;
   planPageSize = 10;
+
+  // Storage Allocation Modal
+  showStorageAllocationModal = false;
+  loadingStorageAllocation = false;
+  storageAllocationCalculation: BatchDistributionCalculation | null = null;
+  storageAllocationDestination = '';
+  storageAllocationReason = 'Batch Distribution';
+  storageAllocationNotes = '';
+  pendingStorageTemplateId: number | null = null;
+  pendingStorageTargetCount = 0;
+  confirmingStorageAllocation = false;
   readonly planPageSizeOptions = [5, 10, 25, 50];
   
   readonly recipeLazyBatchSize = 10;
@@ -1478,26 +1491,121 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
-    this.issuing = true;
-    const normalizedTarget = Math.floor(Number(this.targetUnitCount));
+    // Open storage allocation modal instead of immediate issue
+    this.openStorageAllocationModal();
+  }
+
+  openStorageAllocationModal(): void {
+    if (!this.selectedTemplateId || !this.calculation) {
+      return;
+    }
+
+    this.pendingStorageTemplateId = this.selectedTemplateId;
+    this.pendingStorageTargetCount = Math.floor(Number(this.targetUnitCount));
+    this.storageAllocationDestination = this.destination.trim();
+    this.storageAllocationReason = this.reason.trim() || 'Batch Distribution';
+    this.storageAllocationNotes = this.issueNotes.trim();
+    
+    this.loadingStorageAllocation = true;
+    this.showStorageAllocationModal = true;
+
+    // Get detailed storage allocation breakdown
+    this.batchService
+      .calculateStorageAllocation(this.selectedTemplateId, this.pendingStorageTargetCount)
+      .subscribe({
+        next: (response) => {
+          this.loadingStorageAllocation = false;
+          this.storageAllocationCalculation = response.data;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.loadingStorageAllocation = false;
+          this.showToast('error', err?.error?.message || 'Failed to calculate storage allocation.');
+          this.closeStorageAllocationModal();
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  closeStorageAllocationModal(): void {
+    this.showStorageAllocationModal = false;
+    this.storageAllocationCalculation = null;
+    this.storageAllocationDestination = '';
+    this.storageAllocationReason = 'Batch Distribution';
+    this.storageAllocationNotes = '';
+    this.pendingStorageTemplateId = null;
+    this.pendingStorageTargetCount = 0;
+    this.confirmingStorageAllocation = false;
+  }
+
+  confirmStorageAllocation(): void {
+    if (!this.pendingStorageTemplateId || !this.storageAllocationCalculation) {
+      return;
+    }
+
+    if (!this.storageAllocationDestination.trim()) {
+      this.toast.error('Destination is required.');
+      return;
+    }
+
+    // Check if all items can be fulfilled
+    const hasInsufficient = this.storageAllocationCalculation.items.some(item => 
+      item.remaining_shortage && item.remaining_shortage > 0
+    );
+
+    if (hasInsufficient) {
+      this.toast.error('Cannot proceed due to insufficient stock in storage locations.');
+      return;
+    }
+
+    // Build storage allocation request
+    const storageAllocations: StorageAllocationRequest[] = [];
+    
+    for (const item of this.storageAllocationCalculation.items) {
+      if (item.storage_allocations && item.storage_allocations.length > 0) {
+        storageAllocations.push({
+          item_id: item.item_id,
+          allocations: item.storage_allocations.map(allocation => ({
+            location_id: allocation.location_id,
+            batch_id: allocation.batch_id,
+            allocated_quantity: allocation.allocated_quantity,
+          })),
+        });
+      }
+    }
+
+    this.confirmingStorageAllocation = true;
 
     this.batchService
-      .issue(
-        this.selectedTemplateId,
-        normalizedTarget,
-        this.destination.trim(),
-        this.reason.trim() || 'Batch Distribution',
-        this.issueNotes.trim() || undefined,
+      .issueWithStorageAllocation(
+        this.pendingStorageTemplateId,
+        this.pendingStorageTargetCount,
+        this.storageAllocationDestination,
+        storageAllocations,
+        this.storageAllocationReason,
+        this.storageAllocationNotes || undefined
       )
       .subscribe({
         next: () => {
-          this.issuing = false;
-          this.showToast('success', 'Distribution recorded successfully');
+          this.confirmingStorageAllocation = false;
+          this.closeStorageAllocationModal();
+          this.showToast('success', 'Distribution issued successfully with storage allocation');
+          
+          // Reset form
           this.destination = '';
           this.issueNotes = '';
           this.reason = 'Batch Distribution';
           this.calculation = null;
           this.loadItemOptions();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.confirmingStorageAllocation = false;
+          this.showToast('error', err?.error?.message || 'Failed to issue batch distribution.');
+          this.cdr.detectChanges();
+        },
+      });
+  }
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -2261,8 +2369,12 @@ export class BatchDistributionComponent implements OnInit {
         return { label: 'Cancelled', className: 'status-cancelled', icon: 'ti-ban' };
       case 'completed':
         return { label: 'Completed', className: 'status-completed', icon: 'ti-circle-check' };
+      case 'in_progress':
+        return { label: 'In Progress', className: 'status-in-progress', icon: 'ti-play' };
       case 'ready':
-        return { label: 'Stock Allocated', className: 'status-ready', icon: 'ti-package' };
+        return { label: 'Ready', className: 'status-ready', icon: 'ti-package' };
+      case 'stock_allocated':
+        return { label: 'Stock Allocated', className: 'status-stock-allocated', icon: 'ti-package-check' };
       case 'checked_pre':
         return { label: 'Pre-checked', className: 'status-checked-pre', icon: 'ti-clipboard-check' };
       default:
@@ -2287,10 +2399,14 @@ export class BatchDistributionComponent implements OnInit {
     switch (status) {
       case 'planned':
         return 'tag-planned';
+      case 'stock_allocated':
+        return 'tag-stock-allocated';
       case 'checked_pre':
         return 'tag-checked-pre';
       case 'ready':
         return 'tag-ready';
+      case 'in_progress':
+        return 'tag-in-progress';
       case 'cancelled':
         return 'tag-cancelled';
       case 'completed':

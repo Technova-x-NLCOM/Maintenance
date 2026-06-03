@@ -69,6 +69,174 @@ class BatchDistributionController extends Controller
         ]);
     }
 
+    /**
+     * Calculate storage allocation breakdown for a template
+     */
+    public function calculateStorageAllocation(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => ['required', 'integer', 'exists:distribution_templates,template_id'],
+            'target_unit_count' => ['required', 'integer', 'min:1'],
+        ]);
+
+        $calcResponse = $this->buildCalculationDataWithStorageBreakdown((int) $validated['template_id'], (int) $validated['target_unit_count']);
+        
+        if (!$calcResponse['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $calcResponse['message'],
+            ], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Storage allocation calculated successfully.',
+            'data' => $calcResponse['data'],
+        ]);
+    }
+
+    /**
+     * Issue batch distribution with confirmed storage allocation
+     */
+    public function issueBatchWithAllocation(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => ['required', 'integer', 'exists:distribution_templates,template_id'],
+            'target_unit_count' => ['required', 'integer', 'min:1'],
+            'destination' => ['required', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string'],
+            'storage_allocations' => ['required', 'array'],
+            'storage_allocations.*.item_id' => ['required', 'integer'],
+            'storage_allocations.*.allocations' => ['required', 'array'],
+            'storage_allocations.*.allocations.*.location_id' => ['required', 'integer'],
+            'storage_allocations.*.allocations.*.batch_id' => ['required', 'integer'],
+            'storage_allocations.*.allocations.*.allocated_quantity' => ['required', 'integer', 'min:1'],
+        ]);
+
+        // Verify the storage allocations match our calculation
+        $calcResponse = $this->buildCalculationDataWithStorageBreakdown((int) $validated['template_id'], (int) $validated['target_unit_count']);
+        if (!$calcResponse['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $calcResponse['message'],
+            ], 422);
+        }
+
+        $calc = $calcResponse['data'];
+
+        if ((float) $calc['summary']['total_shortage_quantity'] > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to issue batch distribution because some items are below required stock.',
+                'error_type' => 'insufficient_stock',
+                'data' => $calc,
+            ], 422);
+        }
+
+        $user = auth('api')->user();
+        $performedBy = $user?->user_id ?? auth()->id() ?? 1;
+        $reference = 'BDT-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
+
+        try {
+            $summary = DB::transaction(function () use ($validated, $performedBy, $reference, $calc) {
+                $issuedLines = [];
+                $totalIssued = 0;
+
+                foreach ($validated['storage_allocations'] as $itemAllocation) {
+                    $itemId = (int) $itemAllocation['item_id'];
+                    
+                    foreach ($itemAllocation['allocations'] as $allocation) {
+                        $batchId = (int) $allocation['batch_id'];
+                        $deduct = (int) $allocation['allocated_quantity'];
+
+                        // Update batch quantity
+                        $batch = DB::table('inventory_batches')
+                            ->where('batch_id', $batchId)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if (!$batch || $batch->quantity < $deduct) {
+                            throw new \Exception("Insufficient stock in batch {$batchId} for item {$itemId}");
+                        }
+
+                        $newQty = $batch->quantity - $deduct;
+
+                        DB::table('inventory_batches')
+                            ->where('batch_id', $batchId)
+                            ->update([
+                                'quantity' => $newQty,
+                                'status' => $newQty <= 0 ? 'depleted' : 'active',
+                                'updated_at' => now(),
+                            ]);
+
+                        // Record transaction with location info
+                        DB::table('inventory_transactions')->insert([
+                            'item_id' => $itemId,
+                            'batch_id' => $batchId,
+                            'location_id' => $allocation['location_id'],
+                            'transaction_type' => 'OUT',
+                            'quantity' => $deduct,
+                            'reference_number' => $reference,
+                            'transaction_date' => now(),
+                            'reason' => $validated['reason'] ?? 'Batch Distribution',
+                            'notes' => $this->buildTransactionNotes($calc, $validated['notes'] ?? null),
+                            'destination' => trim((string) $validated['destination']),
+                            'performed_by' => $performedBy,
+                            'created_at' => now(),
+                        ]);
+
+                        $totalIssued += $deduct;
+                    }
+
+                    // Find item details for summary
+                    $itemLine = collect($calc['items'])->firstWhere('item_id', $itemId);
+                    if ($itemLine) {
+                        $issuedLines[] = [
+                            'item_id' => $itemId,
+                            'item_code' => $itemLine['item_code'],
+                            'item_description' => $itemLine['item_description'],
+                            'required_quantity_for_issuance' => $itemLine['required_quantity_for_issuance'],
+                            'issued_quantity' => $itemLine['required_quantity_for_issuance'],
+                        ];
+                    }
+                }
+
+                return [
+                    'reference_number' => $reference,
+                    'template_id' => $calc['template']['template_id'],
+                    'template_name' => $calc['template']['template_name'],
+                    'distribution_type' => $calc['template']['distribution_type'],
+                    'target_unit_count' => $calc['target_unit_count'],
+                    'destination' => trim((string) $validated['destination']),
+                    'total_issued_quantity' => $totalIssued,
+                    'issued_lines' => $issuedLines,
+                ];
+            });
+
+            AuditLogService::log(
+                'inventory_transactions',
+                0,
+                'UPDATE',
+                null,
+                'Batch distribution issued: ' . $summary['reference_number'],
+                $performedBy
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Batch distribution issued successfully.',
+                'data' => $summary,
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while issuing the batch distribution: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function itemOptions(Request $request)
     {
         $stockSubquery = DB::table('inventory_batches')
@@ -628,6 +796,84 @@ class BatchDistributionController extends Controller
     private function distributionTypeLabel(string $distributionType): string
     {
         return $distributionType === 'relief_goods' ? 'Relief Goods' : 'Feeding Program';
+    }
+
+    /**
+     * Enhanced calculation with storage location breakdown
+     */
+    private function buildCalculationDataWithStorageBreakdown(int $templateId, int $targetUnitCount): array
+    {
+        // Get base calculation first
+        $baseCalc = $this->buildCalculationData($templateId, $targetUnitCount);
+        
+        if (!$baseCalc['success']) {
+            return $baseCalc;
+        }
+
+        $calc = $baseCalc['data'];
+
+        // Enhance each item with storage location breakdown
+        foreach ($calc['items'] as &$item) {
+            $itemId = (int) $item['item_id'];
+            $requiredQuantity = (int) $item['required_quantity_for_issuance'];
+
+            // Get storage locations with stock for this item
+            $storageBreakdown = DB::table('inventory_batches as ib')
+                ->join('locations as l', 'ib.location_id', '=', 'l.location_id')
+                ->select(
+                    'l.location_id',
+                    'l.location_code',
+                    'l.location_name',
+                    'l.location_type',
+                    'ib.batch_id',
+                    'ib.quantity',
+                    'ib.expiry_date',
+                    'ib.batch_number'
+                )
+                ->where('ib.item_id', $itemId)
+                ->where('ib.status', 'active')
+                ->where('ib.quantity', '>', 0)
+                ->where('l.is_active', true)
+                ->orderByRaw('ib.expiry_date IS NULL, ib.expiry_date ASC')
+                ->orderBy('ib.created_at')
+                ->get();
+
+            // Calculate allocation breakdown
+            $allocations = [];
+            $remaining = $requiredQuantity;
+            
+            foreach ($storageBreakdown as $storage) {
+                if ($remaining <= 0) break;
+                
+                $allocatedQty = min($remaining, (int) $storage->quantity);
+                
+                if ($allocatedQty > 0) {
+                    $allocations[] = [
+                        'location_id' => (int) $storage->location_id,
+                        'location_code' => $storage->location_code,
+                        'location_name' => $storage->location_name,
+                        'location_type' => $storage->location_type,
+                        'location_display' => trim(($storage->location_code ? $storage->location_code . ' - ' : '') . $storage->location_name),
+                        'batch_id' => (int) $storage->batch_id,
+                        'batch_number' => $storage->batch_number,
+                        'available_quantity' => (int) $storage->quantity,
+                        'allocated_quantity' => $allocatedQty,
+                        'expiry_date' => $storage->expiry_date,
+                    ];
+                    
+                    $remaining -= $allocatedQty;
+                }
+            }
+
+            $item['storage_allocations'] = $allocations;
+            $item['can_fulfill_from_storage'] = $remaining <= 0;
+            $item['remaining_shortage'] = max(0, $remaining);
+        }
+
+        return [
+            'success' => true,
+            'data' => $calc
+        ];
     }
 
     private function buildTransactionNotes(array $calc, ?string $userNotes): string

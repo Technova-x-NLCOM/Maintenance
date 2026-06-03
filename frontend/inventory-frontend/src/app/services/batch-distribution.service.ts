@@ -89,13 +89,39 @@ export interface BatchDistributionCalculation {
     current_stock: number;
     shortage_quantity: number;
     has_shortage: boolean;
+    storage_allocations?: StorageAllocation[];
+    can_fulfill_from_storage?: boolean;
+    remaining_shortage?: number;
   }>;
   summary: {
     line_count: number;
     total_required_quantity_for_issuance: number;
     insufficient_items_count: number;
     can_issue: boolean;
+    total_shortage_quantity?: number;
   };
+}
+
+export interface StorageAllocation {
+  location_id: number;
+  location_code: string;
+  location_name: string;
+  location_type: string;
+  location_display: string;
+  batch_id: number;
+  batch_number: string;
+  available_quantity: number;
+  allocated_quantity: number;
+  expiry_date: string | null;
+}
+
+export interface StorageAllocationRequest {
+  item_id: number;
+  allocations: Array<{
+    location_id: number;
+    batch_id: number;
+    allocated_quantity: number;
+  }>;
 }
 
 export interface BatchDistributionIssueResponse {
@@ -115,7 +141,7 @@ export interface BatchDistributionIssueResponse {
   }>;
 }
 
-export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'ready' | 'completed' | 'cancelled';
+export type ProgramPlanStatus = 'planned' | 'stock_allocated' | 'checked_pre' | 'ready' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface ProgramPlanSummary {
   plan_id: number;
@@ -325,6 +351,17 @@ export class BatchDistributionService {
     );
   }
 
+  calculateStorageAllocation(templateId: number, targetUnitCount: number): Observable<{ success: boolean; message: string; data: BatchDistributionCalculation }> {
+    return this.http.post<{ success: boolean; message: string; data: BatchDistributionCalculation }>(
+      `${this.baseUrl}/calculate-storage-allocation`,
+      {
+        template_id: templateId,
+        target_unit_count: targetUnitCount
+      },
+      { headers: this.getHeaders() }
+    );
+  }
+
   issue(templateId: number, targetUnitCount: number, destination: string, reason?: string, notes?: string): Observable<{ success: boolean; message: string; data: BatchDistributionIssueResponse }> {
     return this.http.post<{ success: boolean; message: string; data: BatchDistributionIssueResponse }>(
       `${this.baseUrl}/issue`,
@@ -332,6 +369,28 @@ export class BatchDistributionService {
         template_id: templateId,
         target_unit_count: targetUnitCount,
         destination,
+        reason,
+        notes
+      },
+      { headers: this.getHeaders() }
+    );
+  }
+
+  issueWithStorageAllocation(
+    templateId: number,
+    targetUnitCount: number,
+    destination: string,
+    storageAllocations: StorageAllocationRequest[],
+    reason?: string,
+    notes?: string
+  ): Observable<{ success: boolean; message: string; data: BatchDistributionIssueResponse }> {
+    return this.http.post<{ success: boolean; message: string; data: BatchDistributionIssueResponse }>(
+      `${this.baseUrl}/issue-with-allocation`,
+      {
+        template_id: templateId,
+        target_unit_count: targetUnitCount,
+        destination,
+        storage_allocations: storageAllocations,
         reason,
         notes
       },

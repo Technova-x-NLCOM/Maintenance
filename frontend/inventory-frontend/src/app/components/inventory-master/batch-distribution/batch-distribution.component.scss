@@ -1221,6 +1221,11 @@
   color: #633806;
 }
 
+.status-stock-allocated {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 .status-checked-pre {
   background: #e8f0fe;
   color: #1e3a8a;
@@ -1229,6 +1234,11 @@
 .status-ready {
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+.status-in-progress {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .status-cancelled {
@@ -1350,6 +1360,26 @@
 }
 
 .tag-planned {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tag-stock-allocated {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.tag-checked-pre {
+  background: #e8f0fe;
+  color: #1e3a8a;
+}
+
+.tag-ready {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tag-in-progress {
   background: #fef3c7;
   color: #92400e;
 }
@@ -3836,4 +3866,327 @@ label span {
 .calendar-view-wrapper {
   overflow-x: auto;
   overflow-y: hidden;
+}
+
+// Storage Allocation Modal Styles
+.storage-allocation-overlay {
+  z-index: 1050;
+}
+
+.storage-allocation-modal {
+  width: min(1100px, 96vw);
+  max-height: 95vh;
+
+  .modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+}
+
+.storage-allocation-title {
+  .subtitle {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: normal;
+  }
+}
+
+.batch-summary {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 24px;
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #0f172a;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .value {
+        font-size: 14px;
+        color: #0f172a;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.storage-breakdown {
+  margin-bottom: 24px;
+
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #0f172a;
+  }
+}
+
+.ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ingredient-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+
+  .ingredient-header {
+    padding: 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+
+    .ingredient-info {
+      flex: 1;
+      min-width: 0;
+
+      h4 {
+        margin: 0 0 4px 0;
+        font-size: 15px;
+        color: #0f172a;
+        font-weight: 600;
+      }
+
+      .item-code {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+
+    .requirement-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+
+      .required-qty {
+        font-size: 14px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .status-badge {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+
+        &.status-success {
+          background: #d1fae5;
+          color: #047857;
+        }
+
+        &.status-warning {
+          background: #fef3c7;
+          color: #92400e;
+        }
+      }
+    }
+  }
+}
+
+.storage-locations {
+  padding: 16px;
+}
+
+.allocation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .location-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+
+    .location-icon {
+      width: 32px;
+      height: 32px;
+      background: #eef2ff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      svg {
+        color: #4f46e5;
+      }
+    }
+
+    .location-details {
+      flex: 1;
+      min-width: 0;
+
+      .location-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 2px;
+      }
+
+      .batch-info {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 1px;
+      }
+
+      .expiry-info {
+        font-size: 11px;
+        color: #f59e0b;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .allocation-quantity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+
+    .pulling-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .quantity {
+      font-size: 16px;
+      font-weight: 700;
+      color: #059669;
+    }
+
+    .available {
+      font-size: 11px;
+      color: #64748b;
+    }
+  }
+}
+
+.shortage-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin: 16px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+
+  .warning-icon {
+    color: #dc2626;
+    flex-shrink: 0;
+  }
+}
+
+.issue-configuration {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    color: #0f172a;
+  }
+
+  .form-grid {
+    display: grid;
+    gap: 16px;
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+  }
+}
+
+// Mobile responsiveness for storage allocation modal
+@media (max-width: 768px) {
+  .storage-allocation-modal {
+    width: 95vw;
+    max-height: 95vh;
+
+    .modal-body {
+      max-height: 70vh;
+    }
+  }
+
+  .batch-summary .summary-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ingredient-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+
+    .requirement-info {
+      align-items: flex-start !important;
+    }
+  }
+
+  .allocation-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+
+    .allocation-quantity {
+      align-items: flex-start;
+    }
+  }
 }

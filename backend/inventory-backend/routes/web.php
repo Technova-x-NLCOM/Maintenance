@@ -268,10 +268,12 @@ Route::middleware('throttle:system-api')->group(function () {
                 Route::get('templates', [BatchDistributionController::class, 'listTemplates']);
                 Route::post('templates', [BatchDistributionController::class, 'createTemplate']);
                 Route::get('templates/{templateId}', [BatchDistributionController::class, 'showTemplate']);
-                Route::put('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
+                Route::post('templates/{templateId}', [BatchDistributionController::class, 'updateTemplate']);
                 Route::delete('templates/{templateId}', [BatchDistributionController::class, 'deleteTemplate']);
                 Route::post('calculate', [BatchDistributionController::class, 'calculate']);
+                Route::post('calculate-storage-allocation', [BatchDistributionController::class, 'calculateStorageAllocation']);
                 Route::post('issue', [BatchDistributionController::class, 'issue']);
+                Route::post('issue-with-allocation', [BatchDistributionController::class, 'issueBatchWithAllocation']);
 
                 // Scheduled weekly feeding/distribution plans
                 Route::get('program-plans', [DistributionPlanController::class, 'index']);

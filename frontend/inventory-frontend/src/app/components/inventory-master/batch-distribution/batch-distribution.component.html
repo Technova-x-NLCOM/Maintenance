@@ -1253,5 +1253,164 @@
     </div>
   </div>
 
+  <!-- Storage Allocation & Confirmation Modal -->
+  <div class="modal-overlay storage-allocation-overlay" *ngIf="showStorageAllocationModal" (click)="closeStorageAllocationModal()">
+    <div class="modal-card storage-allocation-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="storage-allocation-title">
+          <h2>Storage Allocation & Confirmation</h2>
+          <p class="subtitle">Review where items will be pulled from before issuing the batch</p>
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          (click)="closeStorageAllocationModal()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="empty" *ngIf="loadingStorageAllocation">Loading storage allocation details...</p>
+
+        <div class="storage-allocation-content" *ngIf="!loadingStorageAllocation && storageAllocationCalculation">
+          <!-- Batch Summary -->
+          <div class="batch-summary">
+            <h3>Batch Summary</h3>
+            <div class="summary-grid">
+              <div class="summary-item">
+                <span class="label">Recipe:</span>
+                <span class="value">{{ storageAllocationCalculation.template.template_name }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Target Units:</span>
+                <span class="value">{{ storageAllocationCalculation.target_unit_count }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Destination:</span>
+                <span class="value">{{ storageAllocationDestination }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Storage Breakdown -->
+          <div class="storage-breakdown">
+            <h3>Storage Allocation Breakdown</h3>
+            <div class="ingredients-list">
+              <div class="ingredient-card" *ngFor="let item of storageAllocationCalculation.items">
+                <div class="ingredient-header">
+                  <div class="ingredient-info">
+                    <h4>{{ item.item_description }}</h4>
+                    <span class="item-code">{{ item.item_code }}</span>
+                  </div>
+                  <div class="requirement-info">
+                    <span class="required-qty">{{ item.required_quantity_for_issuance }} {{ item.measurement_unit || 'units' }} needed</span>
+                    <span class="status-badge" [ngClass]="item.can_fulfill_from_storage ? 'status-success' : 'status-warning'">
+                      {{ item.can_fulfill_from_storage ? 'Available' : 'Insufficient' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Storage Locations -->
+                <div class="storage-locations" *ngIf="item.storage_allocations && item.storage_allocations.length > 0">
+                  <div class="allocation-item" *ngFor="let allocation of item.storage_allocations">
+                    <div class="location-info">
+                      <div class="location-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                          <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                      </div>
+                      <div class="location-details">
+                        <div class="location-name">{{ allocation.location_display }}</div>
+                        <div class="batch-info">Batch: {{ allocation.batch_number || 'N/A' }}</div>
+                        <div class="expiry-info" *ngIf="allocation.expiry_date">
+                          Expires: {{ allocation.expiry_date | date:'shortDate' }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="allocation-quantity">
+                      <span class="pulling-label">Pulling</span>
+                      <span class="quantity">{{ allocation.allocated_quantity }}</span>
+                      <span class="available">of {{ allocation.available_quantity }} available</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shortage Warning -->
+                <div class="shortage-warning" *ngIf="item.remaining_shortage && item.remaining_shortage > 0">
+                  <div class="warning-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                      <path d="M12 9v4"></path>
+                      <path d="m12 17 .01 0"></path>
+                    </svg>
+                  </div>
+                  <span>Shortage: {{ item.remaining_shortage }} {{ item.measurement_unit || 'units' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Issue Configuration -->
+          <div class="issue-configuration">
+            <h3>Final Configuration</h3>
+            <div class="form-grid">
+              <label>
+                Destination *
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="storageAllocationDestination"
+                  placeholder="Enter destination"
+                  maxlength="150"
+                >
+              </label>
+              <label>
+                Reason
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  [(ngModel)]="storageAllocationReason"
+                  placeholder="Enter reason"
+                  maxlength="250"
+                >
+              </label>
+              <label>
+                Notes
+                <textarea 
+                  class="form-control" 
+                  [(ngModel)]="storageAllocationNotes"
+                  placeholder="Additional notes (optional)"
+                  rows="3"
+                  maxlength="500"
+                ></textarea>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeStorageAllocationModal()">
+          Cancel
+        </button>
+        <button 
+          class="btn btn-primary" 
+          type="button" 
+          (click)="confirmStorageAllocation()"
+          [disabled]="confirmingStorageAllocation || loadingStorageAllocation || !storageAllocationDestination.trim()"
+        >
+          <span *ngIf="confirmingStorageAllocation" class="spinner"></span>
+          {{ confirmingStorageAllocation ? 'Issuing...' : 'Confirm & Issue Batch' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
