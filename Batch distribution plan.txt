@@ -1,0 +1,442 @@
+BATCH DISTRIBUTION — IMPLEMENTATION PLAN
+=========================================
+Based on full code review as of June 4, 2026
+Last updated by Kiro after reading all relevant backend and frontend files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT IS ALREADY DONE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Backend — DistributionPlanController.php
+  ✅ store() — validates planned_date as after_or_equal:today (no past dates)
+  ✅ store() — reason is NOT required (only notes/week_label are required)
+  ✅ updateSchedule() — same past-date guard, same optional reason
+  ✅ issuePlanItems() — Pass 1: FEFO within preferred_location_id
+                        Pass 2: FEFO spillover across all remaining locations
+                        Each OUT transaction records from_location_id per batch row
+  ✅ issuePlanItems() — writes completed_reference, completed_issued_qty,
+                        completed_target_people, completed_notes snapshot on the plan row
+  ✅ buildInventoryCheckData() — location-aware: per-item preferred + spillover fields
+  ✅ buildLocationBreakdown() — per-ingredient, per-location FEFO view (used by show())
+  ✅ reserve() — allocates stock (FEFO), sets status = 'ready'
+  ✅ runFinalCheck() — can handle procured items + issue in one call
+  ✅ complete() — saves remaining items back to inventory as IN transactions
+
+Migration — 2026_06_06_000001_add_location_fields_to_distribution_plan_schedules.php
+  ✅ preferred_location_id (nullable FK → locations, with index)
+  ✅ completed_reference   (nullable string)
+  ✅ completed_issued_qty  (nullable int)
+  ✅ completed_target_people (nullable int)
+  ✅ completed_notes       (nullable text)
+
+Frontend — BatchDistributionService (batch-distribution.service.ts)
+  ✅ All plan API calls wired: create, get, list, precheck, final-check,
+     reserve, complete, delete, update-schedule, stock-readiness
+  ✅ ProgramPlanSummary interface includes preferred_location_* and completed_* fields
+  ✅ ProgramPlanCheckItem includes preferred_location_stock, spillover_needed
+  ✅ LocationBreakdownItem + LocationPullRow interfaces defined
+
+Frontend — BatchDistributionPlanMixin (batch-distribution-plan.mixin.ts)
+  ✅ planForm includes preferred_location_id field
+  ✅ Past-date prevention exists on backend (frontend needs min=today on date input)
+  ✅ createScheduleFromRecipe() builds week_label + stitched notes correctly
+  ✅ reservePlan() / canAllocateStock() / hasPlanFullStockReadiness() all working
+  ✅ executePlan() / cancelPlan() / completePlan() / deletePlan() all working
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT STILL NEEDS TO BE BUILT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Grouped by area, in build order.
+
+
+──────────────────────────────────────────
+1. AUTO-ALLOCATION — New Backend Command + Mail
+──────────────────────────────────────────
+
+STATUS: NOT STARTED. No Console directory exists yet.
+
+What to build:
+
+  a) Migration (add 2 columns to distribution_plan_schedules):
+     File: database/migrations/2026_06_04_000001_add_auto_allocation_to_distribution_plan_schedules.php
+       + auto_allocated_at   TIMESTAMP NULL
+       + auto_allocation_ref VARCHAR(100) NULL
+
+  b) Artisan command:
+     File: app/Console/Commands/AutoAllocateDistributionPlans.php
+     Signature: schedule:auto-allocate-plans
+     Logic:
+       1. Query all plans WHERE status = 'planned' AND planned_date = today AND is_deleted = 0
+       2. For each plan:
+          a. buildInventoryCheckData($plan) — same method as controller
+          b. IF can_proceed === true:
+               - Call issuePlanItems() (same logic, reference = 'AUTO-...')
+               - Set status = 'ready', auto_allocated_at = now(), auto_allocation_ref = reference
+               - Send DistributionPlanAllocatedMail to admin(s)
+          c. IF can_proceed === false:
+               - Leave status = 'planned'
+               - Send DistributionPlanShortfallMail to admin(s)
+               - Email includes per-item shortage list with quantities
+
+     NOTE: Extract issuePlanItems and buildInventoryCheckData into a shared
+     DistributionPlanService so both the controller and the command can use them
+     without duplicating the logic.
+
+  c) Console Kernel:
+     File: app/Console/Kernel.php
+     Register: $schedule->command('schedule:auto-allocate-plans')->dailyAt('00:01');
+
+  d) Mail classes:
+     File: app/Mail/DistributionPlanAllocatedMail.php
+       - Subject: "Auto-Allocated: [week_label] — [planned_date]"
+       - Body: Plan name, template, target people, reference number, list of items issued
+       - Recipients: all active admin users (role_id = admin/superadmin)
+
+     File: app/Mail/DistributionPlanShortfallMail.php
+       - Subject: "Stock Shortfall: [week_label] — [planned_date] — Action Required"
+       - Body: Plan name, planned date, per-item shortfall table
+                (item code | item name | required | available | shortage | location)
+       - Recipients: all active admin users
+
+  e) Service refactor (to avoid code duplication):
+     File: app/Services/DistributionPlanService.php
+     Methods to extract from controller:
+       - buildInventoryCheckData(object $plan): array
+       - issuePlanItems(object $plan, array $checkData, int $performedBy, ...): array
+       - buildLocationBreakdown(object $plan, array $checkItems): array
+       - resolveInventoryLocationId(): ?int
+     Controller and Command both inject and call this service.
+
+  f) Frontend — Add auto_allocated_at to ProgramPlanSummary interface
+     File: batch-distribution.service.ts
+     Add to ProgramPlanSummary:
+       auto_allocated_at: string | null;
+       auto_allocation_ref: string | null;
+
+  g) Frontend — Show auto-allocation badge on plan card
+     File: batch-distribution.component.html
+     When plan.auto_allocated_at is set and plan.status === 'ready',
+     show a small "Auto-allocated" chip next to the status badge.
+     Tooltip: "Auto-allocated on [date] · Ref: [auto_allocation_ref]"
+
+
+──────────────────────────────────────────
+2. LABEL CHANGES — Template / Recipe
+──────────────────────────────────────────
+
+STATUS: NOT STARTED. These are HTML-only changes (no migration, no backend change).
+
+Changes in batch-distribution.component.html:
+
+  a) "Standard Batch Size" → "Target People"
+     Locations (4 occurrences):
+       - Template form label (line ~1100): <span>Standard Batch Size *</span>
+       - Template form help text: "Number of servings this recipe makes"
+                               → "How many people this recipe serves by default"
+       - Template form stock warning text: "standard batch ({{ templateForm.base_unit_count }} units)"
+                                         → "target ({{ templateForm.base_unit_count }} people)"
+       - Recipe card list view (line ~347): "{{ template.base_unit_count }} batch"
+                                           → "{{ template.base_unit_count }} people"
+       - Template detail modal (line ~919): <strong>Standard Batch Size:</strong>
+                                           → <strong>Target People:</strong>
+
+  b) "Quantity Per Serving" label in tables
+     - Template detail modal table header "Per Serving/Pack" — keep as is (already good)
+     - Template form ingredients table header "{{ perUnitLabel }}" — this is from a getter
+       in the template mixin. Update perUnitLabel getter to say "Qty per Person" or
+       "Quantity per Serving" consistently.
+     - In the form ingredients list: td shows {{ line.quantity_per_base }} — add a UoM column
+
+  c) Add Unit of Measurement column to ingredient tables
+     Three places:
+       1. Template detail modal ingredients table:
+            Add <th>Unit</th> after "Per Serving/Pack"
+            Add <td>{{ item.measurement_unit || '—' }}</td>
+       2. Template form edit ingredients list:
+            Add <th>Unit</th> column
+            Add <td>{{ getItemOptionById(line.item_id)?.measurement_unit || '—' }}</td>
+       3. Schedule creation dialog step 2 (the ingredient preview table):
+            Add measurement_unit column after quantity column
+
+  d) Update perUnitLabel computed getter in batch-distribution-template.mixin.ts:
+     Current: returns something like "Qty / [distribution type unit]"
+     New: "Quantity per Person" (feeding_program) or "Quantity per Pack" (relief_goods)
+
+  BACKEND NOTE: No changes needed. base_unit_count and quantity_per_base column names
+  stay as-is. All renaming is display-label only.
+
+
+──────────────────────────────────────────
+3. REMOVE STEP 2 FROM RUN BATCH MODAL
+──────────────────────────────────────────
+
+STATUS: NOT STARTED.
+
+The execution modal (batch-distribution-execution.mixin.ts + HTML) currently has 3 steps:
+  Step 1 — Stock Check
+  Step 2 — Procure & Issue  (fill gaps, provide destination/reason)
+  Step 3 — Complete
+
+The reason step 2 has destination/reason fields is that the old flow required the user
+to fill them in at run time. Now that we store them at schedule creation time, the
+destination is the plan's week_label and the reason is optional (nullable).
+
+Changes:
+
+  a) BatchDistributionExecutionMixin:
+     - When stock is sufficient (no shortages): skip step 2, go straight from step 1 → step 3
+       i.e. canProceedFromStockCheck === true → proceedToCompleteStep() directly
+     - When there ARE shortages: step 2 still needed for gap fill procured items,
+       BUT remove the destination/reason inputs from step 2 — those come from the plan
+     - issueStockForExecution() and confirmProcurementAndIssue() should pass:
+         destination: plan.week_label
+         reason: 'Scheduled Batch Distribution' (plan notes if present)
+       instead of reading executionReason / executionDestination
+
+  b) HTML — execution modal step 2 (lines ~620–773):
+     - Remove the destination input
+     - Remove the reason input (it's the required field causing the issue)
+     - Remove canCompleteProcurementStep check that depends on executionReason
+     - Keep only the gap-fill quantity inputs for shortage items
+
+  c) HTML — execution modal step 1 (stock check step):
+     - Change "Proceed to Fill Gaps" button (when no shortages):
+       label → "Proceed →" and route straight to step 3 instead of step 2
+     - Only show "Fill Gaps" (step 2) when there actually are shortages
+
+  d) BatchDistributionExecutionMixin — update canCompleteProcurementStep:
+     Remove the executionReason.trim() requirement:
+     OLD: return !!this.executionReason.trim() && this.allGapsFilled && !this.executionIssuingStock;
+     NEW: return this.allGapsFilled && !this.executionIssuingStock;
+
+  e) ProgramPlanFinalCheckPayload in service:
+     Make issue_reason optional (nullable) to match backend change:
+     OLD: issue_reason: string;
+     NEW: issue_reason?: string;
+
+
+──────────────────────────────────────────
+4. COMPLETED BATCH SNAPSHOT — Display
+──────────────────────────────────────────
+
+STATUS: Backend fully built. Frontend display NOT STARTED.
+
+The backend already writes completed_reference, completed_issued_qty,
+completed_target_people, completed_notes to the plan row when issuePlanItems runs.
+The fields are returned in ProgramPlanSummary and the interface is typed.
+
+What's missing:
+  Display these in the frontend on completed plans.
+
+  a) In the expanded plan row (plan list view):
+     When plan.status === 'completed' and plan.completed_reference:
+       Show a "Completion Summary" section:
+         Reference: [completed_reference]
+         Total Issued: [completed_issued_qty] units
+         Target People at Run: [completed_target_people]
+         Notes: [completed_notes]
+
+  b) In the plan detail modal (showPlanDetailsModal):
+     Same completion summary block at the top of the modal body.
+
+  c) In the execution modal step 3 (Complete step) after completeBatchExecution succeeds:
+     Show the reference number from executionIssuanceSummary.reference_number as
+     a confirmation banner: "Batch complete · Issuance Ref: PLAN-20260604-XXXX"
+
+
+──────────────────────────────────────────
+5. LOCATION BREAKDOWN — Frontend Display
+──────────────────────────────────────────
+
+STATUS: Backend fully built (buildLocationBreakdown returns in show() response).
+        Frontend interfaces defined. Display NOT STARTED.
+
+The backend returns location_breakdown in every getProgramPlan() response.
+It's already typed as LocationBreakdownItem[] in the service.
+
+What to build:
+  In the expanded plan detail panel, show a "Stock Pull Plan" section
+  (visible for planned/checked_pre/ready status plans):
+
+  Per ingredient breakdown table:
+  | Ingredient | Required | Location | Available | Pull | Status |
+  |------------|----------|----------|-----------|------|--------|
+  | Rice       | 50       | Warehouse A (preferred) | 80  | 50 | ✅ |
+  | Oil        | 3        | Warehouse B | 2  | 2 | ⚠️ partial |
+  | Oil        | —        | Central Store (spillover) | 5 | 1 | ✅ |
+  | Salt       | 1        | — no stock — | 0 | — | ❌ |
+
+  Color coding:
+    is_preferred = true  → highlight row with preferred location chip
+    is_spillover = true  → "Spillover" chip
+    unfulfilled > 0      → red row, shortage badge
+
+  This gives ops staff a clear view before running the batch.
+
+  Component path: Add a <div class="location-breakdown-section"> inside the
+  expanded plan details, after the inventory_check items table.
+
+
+──────────────────────────────────────────
+6. PREFERRED LOCATION — Form Wire-up
+──────────────────────────────────────────
+
+STATUS: planForm.preferred_location_id exists in the mixin.
+        It is NOT wired up in the schedule creation dialog HTML yet.
+        Backend already accepts it.
+
+What to build:
+  In the schedule creation dialog (showScheduleDialog):
+    Add a dropdown for preferred_location_id after the Target People field:
+
+    <label>
+      <span>Preferred Source Location</span>
+      <select [(ngModel)]="planForm.preferred_location_id">
+        <option [ngValue]="null">— Pull from all locations (FEFO) —</option>
+        <option *ngFor="let loc of locationOptions" [ngValue]="loc.location_id">
+          {{ loc.location_name }} ({{ loc.location_code }})
+        </option>
+      </select>
+      <small class="form-help">
+        Optional. System will try this location first, then spill over if needed.
+      </small>
+    </label>
+
+  Requires:
+    - Load location list in the component (call LocationService or an inline API call)
+    - locationOptions: { location_id, location_name, location_code }[] on the component
+    - Pass preferred_location_id when calling createProgramPlan() and updateProgramPlanSchedule()
+      (already handled in the service payload types)
+
+
+──────────────────────────────────────────
+7. BACKEND — Make issue_reason Nullable
+──────────────────────────────────────────
+
+STATUS: Partially done.
+  - store() and updateSchedule() don't require reason ✅
+  - complete() doesn't require reason ✅
+  - reserve() doesn't require reason ✅
+  - runFinalCheck() STILL HAS 'issue_reason' => ['required', ...] ❌
+  - update() (issue-only) STILL HAS 'issue_reason' => ['required', ...] ❌
+
+Changes needed in DistributionPlanController.php:
+
+  runFinalCheck():
+    Change: 'issue_reason' => ['required', 'string', 'max:255'],
+    To:     'issue_reason' => ['nullable', 'string', 'max:255'],
+
+  update():
+    Change: 'issue_reason' => ['required', 'string', 'max:255'],
+    To:     'issue_reason' => ['nullable', 'string', 'max:255'],
+
+  Also update the issuePlanItems() calls in both methods to pass null fallback:
+    reason: trim((string) ($validated['issue_reason'] ?? 'Scheduled Batch Distribution'))
+    (already handled by the ?: default in issuePlanItems itself, but remove the required rule)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUILD ORDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phase 1 — Backend fixes (small, safe, no new files)
+  1. Make issue_reason nullable in runFinalCheck() and update()  [Area 7]
+  2. Run the 2026_06_06 migration if not yet run (php artisan migrate)
+
+Phase 2 — Backend new (auto-allocation)
+  3. Migration: add auto_allocated_at + auto_allocation_ref columns
+  4. Extract DistributionPlanService (refactor, no behavior change)
+  5. AutoAllocateDistributionPlans artisan command
+  6. Console Kernel registration
+  7. DistributionPlanAllocatedMail
+  8. DistributionPlanShortfallMail
+
+Phase 3 — Frontend label changes (HTML only, zero risk)
+  9.  "Standard Batch Size" → "Target People" (all occurrences)
+  10. Add Unit of Measurement column to all ingredient tables
+  11. Update perUnitLabel getter
+
+Phase 4 — Frontend execution flow
+  12. Remove step 2 destination/reason inputs
+  13. Skip step 2 when no shortages (step 1 → step 3 directly)
+  14. Update canCompleteProcurementStep to not require reason
+  15. Make ProgramPlanFinalCheckPayload.issue_reason optional in service
+
+Phase 5 — Frontend new display
+  16. Preferred location dropdown in schedule creation dialog
+  17. Load locationOptions in component
+  18. Location breakdown display in expanded plan detail
+  19. Completed batch snapshot section in plan list + modal
+  20. Auto-allocation badge/chip on plan cards
+  21. Completion confirmation banner in execution modal step 3
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MIGRATION SUMMARY (remaining)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Already migrated (or will run on next migrate):
+  2026_06_06_000001 — preferred_location_id, completed_reference, completed_issued_qty,
+                      completed_target_people, completed_notes
+
+Still to create:
+  2026_06_04_000001_add_auto_allocation_to_distribution_plan_schedules.php
+    + auto_allocated_at   TIMESTAMP NULL  AFTER completed_notes
+    + auto_allocation_ref VARCHAR(100) NULL AFTER auto_allocated_at
+    + index on auto_allocated_at
+
+  NOTE: Use date 2026_06_04 so it runs AFTER the location migration.
+  No other table changes needed.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COLUMN NAMING CLARITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DB column          → UI label (no migration needed, label-only)
+─────────────────────────────────────────────────────────────
+base_unit_count    → "Target People"
+                     (how many people this recipe serves by default)
+
+quantity_per_base  → "Quantity per Serving" / "Qty per Person"
+                     (how much of this item per person)
+
+target_unit_count  → "Target People (for this batch)"
+                     (already labeled correctly via planTargetCountLabel getter)
+
+completed_target_people → "Target People at Run Time"
+                           (snapshot of target_unit_count when batch was executed)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NEW FILES TO CREATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Backend:
+  app/Services/DistributionPlanService.php
+  app/Console/Kernel.php
+  app/Console/Commands/AutoAllocateDistributionPlans.php
+  app/Mail/DistributionPlanAllocatedMail.php
+  app/Mail/DistributionPlanShortfallMail.php
+  resources/views/mail/distribution-plan-allocated.blade.php
+  resources/views/mail/distribution-plan-shortfall.blade.php
+  database/migrations/2026_06_04_000001_add_auto_allocation_to_distribution_plan_schedules.php
+
+Frontend (no new files, changes to existing):
+  batch-distribution.component.html       — labels, UoM columns, location dropdown,
+                                            execution step changes, breakdown display
+  batch-distribution.component.ts         — load locationOptions
+  batch-distribution-template.mixin.ts    — perUnitLabel getter update
+  batch-distribution-execution.mixin.ts   — skip step 2 when no shortages, remove reason req
+  batch-distribution.service.ts           — add auto_allocation fields to interface,
+                                            make issue_reason optional
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+READY TO BUILD?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Say "start building" and I'll begin with Phase 1 (backend fixes) and work
+through the phases in order. Or tell me which phase to start with.

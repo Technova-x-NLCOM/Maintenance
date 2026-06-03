@@ -31,6 +31,13 @@ class SystemSettingsController extends Controller
                 'updated_by' => null,
                 'updated_at' => $now,
             ],
+            [
+                'setting_key' => 'batch_email_recipients',
+                'setting_value' => '',
+                'description' => 'Comma-separated recipient emails for batch distribution auto-allocation and shortfall notifications. Leave blank to notify all active admins.',
+                'updated_by' => null,
+                'updated_at' => $now,
+            ],
         ];
     }
 
@@ -41,10 +48,8 @@ class SystemSettingsController extends Controller
     {
         DB::table('system_settings')->where('setting_key', 'low_stock_threshold')->delete();
         DB::table('system_settings')->where('setting_key', 'require_approval_for_out')->delete();
-        if (DB::table('system_settings')->exists()) {
-            return;
-        }
 
+        // Insert any missing default settings (idempotent — won't overwrite existing values)
         foreach ($this->defaultSettingsRows() as $row) {
             DB::table('system_settings')->insertOrIgnore($row);
         }

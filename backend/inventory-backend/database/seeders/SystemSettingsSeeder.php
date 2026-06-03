@@ -46,6 +46,14 @@ class SystemSettingsSeeder extends Seeder
                 'updated_by' => null,
                 'updated_at' => '2025-11-18 04:42:48',
             ],
+            [
+                'setting_id' => 5,
+                'setting_key' => 'batch_email_recipients',
+                'setting_value' => '',
+                'description' => 'Comma-separated recipient emails for batch distribution auto-allocation and shortfall notifications. Leave blank to notify all active admins.',
+                'updated_by' => null,
+                'updated_at' => '2025-11-18 04:42:48',
+            ],
         ];
 
         DB::table('system_settings')->insertOrIgnore($settings);

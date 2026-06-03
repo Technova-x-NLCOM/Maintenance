@@ -1,9 +1,13 @@
 <?php
 
+use App\Mail\DistributionPlanAllocatedMail;
+use App\Mail\DistributionPlanShortfallMail;
+use App\Services\DistributionPlanService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -225,3 +229,192 @@ Artisan::command('alerts:send-expiry-email {--days=} {--to=*} {--dry-run}', func
 })
     ->purpose('Send an email list of active items that are near expiry, ordered by nearest expiry date first')
     ->dailyAt('08:00');
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto-allocate scheduled distribution plans
+// Runs daily at 00:01. For each plan where:
+//   status = 'planned', planned_date = today
+// → if all stock is sufficient: issue FEFO, set status = 'ready', email admin
+// → if stock is short: leave status = 'planned', email admin with shortfall list
+// ─────────────────────────────────────────────────────────────────────────────
+Artisan::command('schedule:auto-allocate-plans {--dry-run}', function () {
+
+    /** @var DistributionPlanService $planService */
+    $planService = app(DistributionPlanService::class);
+    $isDryRun    = (bool) $this->option('dry-run');
+    $today       = now()->toDateString();
+
+    // ── Resolve email recipients ─────────────────────────────────────────
+    // Priority: 1) batch_email_recipients system setting
+    //           2) expiry_email_recipients system setting (shared fallback)
+    //           3) all active admin/manager users in the DB
+    $recipients = collect();
+
+    $batchSetting = DB::table('system_settings')
+        ->where('setting_key', 'batch_email_recipients')
+        ->value('setting_value');
+
+    if (is_string($batchSetting) && trim($batchSetting) !== '') {
+        $recipients = collect(preg_split('/[;,]+/', $batchSetting))
+            ->map(fn ($e) => trim((string) $e))
+            ->filter()
+            ->values();
+    }
+
+    if ($recipients->isEmpty()) {
+        $expirySetting = DB::table('system_settings')
+            ->where('setting_key', 'expiry_email_recipients')
+            ->value('setting_value');
+
+        if (is_string($expirySetting) && trim($expirySetting) !== '') {
+            $recipients = collect(preg_split('/[;,]+/', $expirySetting))
+                ->map(fn ($e) => trim((string) $e))
+                ->filter()
+                ->values();
+        }
+    }
+
+    if ($recipients->isEmpty()) {
+        $recipients = DB::table('users as u')
+            ->join('user_roles as ur', 'u.user_id', '=', 'ur.user_id')
+            ->join('roles as r', 'ur.role_id', '=', 'r.role_id')
+            ->where('u.is_active', true)
+            ->whereIn('r.role_name', ['super_admin', 'inventory_manager'])
+            ->distinct()
+            ->pluck('u.email')
+            ->filter()
+            ->values();
+    }
+
+    $recipients = $recipients->all();
+
+    // Fetch all plans due today that are still in 'planned' status
+    $query = DB::table('distribution_plan_schedules as dps')
+        ->join('distribution_templates as dt', 'dps.template_id', '=', 'dt.template_id')
+        ->leftJoin('locations as pl', 'dps.preferred_location_id', '=', 'pl.location_id')
+        ->whereDate('dps.planned_date', $today)
+        ->where('dps.status', 'planned')
+        ->select(
+            'dps.plan_id', 'dps.template_id', 'dps.week_label',
+            'dps.planned_date', 'dps.target_unit_count', 'dps.status',
+            'dps.notes', 'dps.precheck_at', 'dps.final_check_at',
+            'dps.completed_at', 'dps.created_at', 'dps.updated_at',
+            'dt.template_name', 'dt.distribution_type', 'dt.base_unit_count'
+        );
+
+    if (Schema::hasColumn('distribution_plan_schedules', 'preferred_location_id')) {
+        $query->addSelect(
+            'dps.preferred_location_id',
+            'pl.location_name as preferred_location_name',
+            'pl.location_code as preferred_location_code'
+        );
+    }
+
+    if (Schema::hasColumn('distribution_plan_schedules', 'completed_reference')) {
+        $query->addSelect(
+            'dps.completed_reference', 'dps.completed_issued_qty',
+            'dps.completed_target_people', 'dps.completed_notes'
+        );
+    }
+
+    if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+        $query->where('dps.is_deleted', false);
+    }
+
+    $plans = $query->get();
+
+    if ($plans->isEmpty()) {
+        $this->info("No plans due today ({$today}) with status 'planned'. Nothing to do.");
+        return self::SUCCESS;
+    }
+
+    $this->info("Found {$plans->count()} plan(s) due today. Processing...");
+
+    $allocated = 0;
+    $shortfalls = 0;
+    $generatedAt = now()->format('Y-m-d H:i:s');
+
+    foreach ($plans as $plan) {
+        $checkData = $planService->buildInventoryCheckData($plan);
+
+        if ($checkData['summary']['can_proceed']) {
+            // ── Sufficient stock — auto-allocate ──────────────────────────
+            if ($isDryRun) {
+                $this->line("[DRY RUN] Would auto-allocate: {$plan->week_label} (Plan #{$plan->plan_id})");
+                $allocated++;
+                continue;
+            }
+
+            try {
+                $issuanceSummary = null;
+
+                DB::transaction(function () use ($plan, $checkData, $planService, &$issuanceSummary) {
+                    $issuanceSummary = $planService->issuePlanItems(
+                        $plan,
+                        $checkData,
+                        $planService->resolveSystemUserId(), // system-automated actor
+                        'Auto-allocated for ' . $plan->week_label,
+                        'Auto-allocation',
+                        null,
+                        'AUTO'
+                    );
+
+                    $updateData = [
+                        'status'     => 'ready',
+                        'final_check_at' => now(),
+                        'updated_at' => now(),
+                    ];
+
+                    if (Schema::hasColumn('distribution_plan_schedules', 'auto_allocated_at')) {
+                        $updateData['auto_allocated_at']  = now();
+                        $updateData['auto_allocation_ref'] = $issuanceSummary['reference_number'];
+                    }
+
+                    DB::table('distribution_plan_schedules')
+                        ->where('plan_id', $plan->plan_id)
+                        ->update($updateData);
+                });
+
+                $this->info("✓ Auto-allocated: {$plan->week_label} → Ref: {$issuanceSummary['reference_number']}");
+                $allocated++;
+
+                // Send success email
+                if (!empty($recipients) && $issuanceSummary !== null) {
+                    Mail::to($recipients)->send(
+                        new DistributionPlanAllocatedMail($plan, $issuanceSummary, $generatedAt)
+                    );
+                }
+            } catch (\Throwable $e) {
+                $this->error("✗ Failed to auto-allocate plan #{$plan->plan_id} ({$plan->week_label}): " . $e->getMessage());
+            }
+        } else {
+            // ── Insufficient stock — notify admin ────────────────────────
+            $shortfallItems = collect($checkData['items'])
+                ->filter(fn ($item) => $item['has_shortage'])
+                ->values()
+                ->all();
+
+            if ($isDryRun) {
+                $this->warn("[DRY RUN] Shortfall for: {$plan->week_label} (Plan #{$plan->plan_id}) — " . count($shortfallItems) . ' items short');
+                $shortfalls++;
+                continue;
+            }
+
+            $this->warn("⚠ Shortfall: {$plan->week_label} — " . count($shortfallItems) . ' ingredient(s) below required stock.');
+            $shortfalls++;
+
+            if (!empty($recipients)) {
+                Mail::to($recipients)->send(
+                    new DistributionPlanShortfallMail($plan, $checkData['items'], $generatedAt)
+                );
+            }
+        }
+    }
+
+    $this->line('');
+    $this->info("Done. Allocated: {$allocated} | Shortfalls notified: {$shortfalls}");
+
+    return self::SUCCESS;
+})
+    ->purpose('Auto-allocate stock for scheduled distribution plans due today. Emails admin on success or shortfall.')
+    ->dailyAt('00:01');
