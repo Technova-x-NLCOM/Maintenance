@@ -244,32 +244,49 @@ Artisan::command('schedule:auto-allocate-plans {--dry-run}', function () {
     $isDryRun    = (bool) $this->option('dry-run');
     $today       = now()->toDateString();
 
-    // Resolve admin recipients from users table
-    $recipients = DB::table('users as u')
-        ->join('user_roles as ur', 'u.user_id', '=', 'ur.user_id')
-        ->join('roles as r', 'ur.role_id', '=', 'r.role_id')
-        ->where('u.is_active', true)
-        ->whereIn('r.role_name', ['super_admin', 'inventory_manager'])
-        ->distinct()
-        ->pluck('u.email')
-        ->filter()
-        ->values()
-        ->all();
+    // ── Resolve email recipients ─────────────────────────────────────────
+    // Priority: 1) batch_email_recipients system setting
+    //           2) expiry_email_recipients system setting (shared fallback)
+    //           3) all active admin/manager users in the DB
+    $recipients = collect();
 
-    // Fallback to system setting if no users found
-    if (empty($recipients)) {
-        $settingRecipients = DB::table('system_settings')
+    $batchSetting = DB::table('system_settings')
+        ->where('setting_key', 'batch_email_recipients')
+        ->value('setting_value');
+
+    if (is_string($batchSetting) && trim($batchSetting) !== '') {
+        $recipients = collect(preg_split('/[;,]+/', $batchSetting))
+            ->map(fn ($e) => trim((string) $e))
+            ->filter()
+            ->values();
+    }
+
+    if ($recipients->isEmpty()) {
+        $expirySetting = DB::table('system_settings')
             ->where('setting_key', 'expiry_email_recipients')
             ->value('setting_value');
 
-        if (is_string($settingRecipients) && trim($settingRecipients) !== '') {
-            $recipients = collect(preg_split('/[;,]+/', $settingRecipients))
+        if (is_string($expirySetting) && trim($expirySetting) !== '') {
+            $recipients = collect(preg_split('/[;,]+/', $expirySetting))
                 ->map(fn ($e) => trim((string) $e))
                 ->filter()
-                ->values()
-                ->all();
+                ->values();
         }
     }
+
+    if ($recipients->isEmpty()) {
+        $recipients = DB::table('users as u')
+            ->join('user_roles as ur', 'u.user_id', '=', 'ur.user_id')
+            ->join('roles as r', 'ur.role_id', '=', 'r.role_id')
+            ->where('u.is_active', true)
+            ->whereIn('r.role_name', ['super_admin', 'inventory_manager'])
+            ->distinct()
+            ->pluck('u.email')
+            ->filter()
+            ->values();
+    }
+
+    $recipients = $recipients->all();
 
     // Fetch all plans due today that are still in 'planned' status
     $query = DB::table('distribution_plan_schedules as dps')
