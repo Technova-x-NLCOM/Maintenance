@@ -17,6 +17,7 @@ import {
 } from '../../../services/batch-distribution.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { RecipeTypeOption, RecipeTypeService } from '../../../services/recipe-type.service';
 
 interface EditableTemplateLine {
   item_id: number;
@@ -98,12 +99,16 @@ export class BatchDistributionComponent implements OnInit {
     distribution_type: DistributionType;
     base_unit_count: number;
     notes: string;
+    recipe_type_id: number | null;
   } = {
     template_name: '',
     distribution_type: 'feeding_program',
     base_unit_count: 100,
     notes: '',
+    recipe_type_id: null,
   };
+
+  recipeTypeOptions: RecipeTypeOption[] = [];
 
   lineDraftItemId: number | null = null;
   lineDraftQuantityPerBase = 1;
@@ -244,6 +249,7 @@ export class BatchDistributionComponent implements OnInit {
     private batchService: BatchDistributionService,
     private cdr: ChangeDetectorRef,
     private toast: ToastService,
+    private recipeTypeService: RecipeTypeService,
   ) {}
 
   ngOnInit(): void {
@@ -251,6 +257,7 @@ export class BatchDistributionComponent implements OnInit {
     this.loadItemOptions();
     this.loadPlans();
     this.buildCalendar();
+    this.loadRecipeTypeOptions();
   }
 
   ngOnDestroy(): void {
@@ -259,6 +266,18 @@ export class BatchDistributionComponent implements OnInit {
     this.clearToastTimeout();
     this.loadTemplatesSub?.unsubscribe();
     this.loadItemOptionsSub?.unsubscribe();
+  }
+
+  loadRecipeTypeOptions(): void {
+    this.recipeTypeService.getOptions().subscribe({
+      next: (res) => {
+        this.recipeTypeOptions = res.data;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Non-critical: fail silently, dropdown will just be empty
+      },
+    });
   }
 
   get selectedDistributionType(): DistributionType {
@@ -821,6 +840,7 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: 'feeding_program',
       base_unit_count: 100,
       notes: '',
+      recipe_type_id: null,
     };
     this.templateLines = [];
     this.lineDraftItemId = null;
@@ -849,6 +869,7 @@ export class BatchDistributionComponent implements OnInit {
           distribution_type: details.template.distribution_type,
           base_unit_count: details.template.base_unit_count,
           notes: details.template.notes ?? '',
+          recipe_type_id: details.template.recipe_type_id ?? null,
         };
 
         this.templateLines = details.items.map((item) => ({
@@ -1093,6 +1114,7 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: this.templateForm.distribution_type,
       base_unit_count: Math.floor(Number(this.templateForm.base_unit_count)),
       notes: this.templateForm.notes.trim(),
+      recipe_type_id: this.templateForm.recipe_type_id ?? null,
       items: this.templateLines.map((line) => ({
         item_id: line.item_id,
         quantity_per_base: Number(line.quantity_per_base),
@@ -1121,6 +1143,7 @@ export class BatchDistributionComponent implements OnInit {
           distribution_type: template.distribution_type,
           base_unit_count: template.base_unit_count,
           notes: template.notes ?? '',
+          recipe_type_id: template.recipe_type_id ?? null,
         };
 
         this.templateLines = response.data.items.map((item) => ({
@@ -1678,8 +1701,7 @@ export class BatchDistributionComponent implements OnInit {
     }
 
     if (action === 'delete') {
-      this.removePlanLocal(plan.plan_id);
-      this.toast.success('Plan deleted.');
+      this.deletePlan(plan);
       this.closePlanConfirm();
       return;
     }
@@ -2090,6 +2112,8 @@ export class BatchDistributionComponent implements OnInit {
       created_at: details.template.created_at ?? '',
       updated_at: details.template.updated_at ?? '',
       item_count: details.items.length,
+      recipe_type_id: details.template.recipe_type_id ?? null,
+      recipe_type_name: details.template.recipe_type_name ?? null,
     };
   }
 
@@ -2481,6 +2505,7 @@ export class BatchDistributionComponent implements OnInit {
       distribution_type: 'feeding_program',
       base_unit_count: 100,
       notes: '',
+      recipe_type_id: null,
     };
     this.templateLines = [];
     this.lineDraftItemId = null;
@@ -2644,8 +2669,25 @@ export class BatchDistributionComponent implements OnInit {
 
   // Plan actions
   deletePlan(plan: ProgramPlanSummary): void {
-    this.toast.show('success', `Deleted plan: ${plan.week_label}`);
-    this.loadPlans();
+    if (this.executingPlanId) {
+      return;
+    }
+
+    this.executingPlanId = plan.plan_id;
+    this.batchService.deleteProgramPlan(plan.plan_id).subscribe({
+      next: (response) => {
+        this.executingPlanId = null;
+        this.toast.success(response.message || `Deleted plan: ${plan.week_label}`);
+        this.removePlanLocal(plan.plan_id);
+        this.loadPlans();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.executingPlanId = null;
+        this.toast.error(err?.error?.message || 'Failed to delete plan.');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // API methods

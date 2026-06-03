@@ -16,6 +16,8 @@ export interface BatchDistributionTemplateSummary {
   created_at: string;
   updated_at: string;
   item_count: number;
+  recipe_type_id: number | null;
+  recipe_type_name: string | null;
 }
 
 export interface BatchDistributionItemOption {
@@ -37,6 +39,7 @@ export interface BatchDistributionTemplatePayload {
   distribution_type: DistributionType;
   base_unit_count: number;
   notes?: string;
+  recipe_type_id?: number | null;
   items: BatchDistributionTemplateItemInput[];
 }
 
@@ -51,6 +54,8 @@ export interface BatchDistributionTemplateDetails {
     is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    recipe_type_id: number | null;
+    recipe_type_name: string | null;
   };
   items: Array<{
     item_id: number;
@@ -384,6 +389,13 @@ export class BatchDistributionService {
     return this.http.post<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
       `${this.baseUrl}/program-plans/${planId}/issue-only`,
       payload,
+      { headers: this.getHeaders() }
+    );
+  }
+
+  deleteProgramPlan(planId: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(
+      `${this.baseUrl}/program-plans/${planId}`,
       { headers: this.getHeaders() }
     );
   }

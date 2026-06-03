@@ -14,6 +14,7 @@ class BatchDistributionController extends Controller
     {
         $query = DB::table('distribution_templates as dt')
             ->leftJoin('distribution_template_items as dti', 'dt.template_id', '=', 'dti.template_id')
+            ->leftJoin('recipe_types as rt', 'dt.recipe_type_id', '=', 'rt.recipe_type_id')
             ->select(
                 'dt.template_id',
                 'dt.template_name',
@@ -21,6 +22,8 @@ class BatchDistributionController extends Controller
                 'dt.base_unit_count',
                 'dt.notes',
                 'dt.is_active',
+                'dt.recipe_type_id',
+                'rt.name as recipe_type_name',
                 'dt.created_at',
                 'dt.updated_at',
                 DB::raw('COUNT(dti.template_item_id) as item_count')
@@ -32,6 +35,8 @@ class BatchDistributionController extends Controller
                 'dt.base_unit_count',
                 'dt.notes',
                 'dt.is_active',
+                'dt.recipe_type_id',
+                'rt.name',
                 'dt.created_at',
                 'dt.updated_at'
             )
@@ -103,9 +108,15 @@ class BatchDistributionController extends Controller
 
     public function showTemplate(int $templateId)
     {
-        $template = DB::table('distribution_templates')
-            ->select('template_id', 'template_name', 'distribution_type', 'base_unit_count', 'notes', 'is_active', 'created_at', 'updated_at')
-            ->where('template_id', $templateId)
+        $template = DB::table('distribution_templates as dt')
+            ->leftJoin('recipe_types as rt', 'dt.recipe_type_id', '=', 'rt.recipe_type_id')
+            ->select(
+                'dt.template_id', 'dt.template_name', 'dt.distribution_type',
+                'dt.base_unit_count', 'dt.notes', 'dt.is_active',
+                'dt.recipe_type_id', 'rt.name as recipe_type_name',
+                'dt.created_at', 'dt.updated_at'
+            )
+            ->where('dt.template_id', $templateId)
             ->first();
 
         if (!$template) {
@@ -142,6 +153,7 @@ class BatchDistributionController extends Controller
                     'distribution_type' => $validated['distribution_type'],
                     'base_unit_count' => (int) $validated['base_unit_count'],
                     'notes' => $this->nullIfEmpty($validated['notes'] ?? null),
+                    'recipe_type_id' => isset($validated['recipe_type_id']) ? (int) $validated['recipe_type_id'] : null,
                     'is_active' => true,
                     'created_by' => $createdBy,
                     'created_at' => now(),
@@ -197,6 +209,7 @@ class BatchDistributionController extends Controller
                         'distribution_type' => $validated['distribution_type'],
                         'base_unit_count' => (int) $validated['base_unit_count'],
                         'notes' => $this->nullIfEmpty($validated['notes'] ?? null),
+                        'recipe_type_id' => isset($validated['recipe_type_id']) ? (int) $validated['recipe_type_id'] : null,
                         'updated_at' => now(),
                     ]);
 
@@ -582,6 +595,7 @@ class BatchDistributionController extends Controller
             'distribution_type' => ['required', Rule::in(['feeding_program', 'relief_goods'])],
             'base_unit_count' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
+            'recipe_type_id' => ['nullable', 'integer', 'exists:recipe_types,recipe_type_id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'integer', 'distinct', 'exists:items,item_id'],
             'items.*.quantity_per_base' => ['required', 'numeric', 'min:0.0001'],

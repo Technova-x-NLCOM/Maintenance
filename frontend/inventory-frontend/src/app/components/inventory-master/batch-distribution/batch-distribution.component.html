@@ -334,6 +334,9 @@
             <div class="recipe-content">
               <div class="recipe-name">{{ template.template_name }}</div>
               <div class="recipe-meta">{{ template.distribution_type_label }} • {{ template.base_unit_count }} batch • {{ template.item_count }} ingredients</div>
+              <div class="recipe-meta recipe-classification" *ngIf="template.recipe_type_name">
+                <span class="recipe-type-chip">{{ template.recipe_type_name }}</span>
+              </div>
             </div>
             <div class="recipe-actions">
               <button class="btn btn-primary btn-sm" type="button" (click)="runRecipe(template)">▶ Run</button>
@@ -796,6 +799,9 @@
           <div class="info-item">
             <strong>Standard Batch Size:</strong> {{ selectedTemplateForDetails?.base_unit_count }}
           </div>
+          <div class="info-item" *ngIf="selectedTemplateForDetails?.recipe_type_name">
+            <strong>Recipe Classification:</strong> {{ selectedTemplateForDetails?.recipe_type_name }}
+          </div>
         </div>
 
         <div class="ingredients-table" *ngIf="selectedTemplateDetails">
@@ -980,6 +986,15 @@
                 <option value="feeding_program">Feeding Program</option>
                 <option value="relief_goods">Relief Goods Pack</option>
               </select>
+            </label>
+
+            <label>
+              <span>Recipe Classification</span>
+              <select class="form-control" [(ngModel)]="templateForm.recipe_type_id">
+                <option [ngValue]="null">— None —</option>
+                <option *ngFor="let rt of recipeTypeOptions" [ngValue]="rt.recipe_type_id">{{ rt.name }}</option>
+              </select>
+              <small class="form-help">Optional category used to group recipes by type.</small>
             </label>
 
             <label>

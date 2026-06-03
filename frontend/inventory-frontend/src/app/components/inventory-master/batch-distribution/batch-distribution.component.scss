@@ -2732,6 +2732,21 @@ label span {
   color: #64748b;
 }
 
+.recipe-classification {
+  margin-top: 4px;
+}
+
+.recipe-type-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #dbeafe;
+  color: #1d4ed8;
+  letter-spacing: 0.02em;
+}
+
 .recipe-actions {
   display: flex;
   align-items: center;
