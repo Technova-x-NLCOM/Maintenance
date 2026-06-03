@@ -239,7 +239,8 @@ export class BatchDistributionComponent implements OnInit, OnDestroy {
     this.schedulingCalculation = null;
     this.planForm = {
       template_id: template.template_id,
-      week_label: `${template.template_name} Batch`,
+      // Pre-fill with template name as a suggested title — user can change it
+      week_label: template.template_name,
       planned_date: this.formatDateForApi(new Date()),
       target_unit_count: template.base_unit_count,
       preferred_location_id: null,

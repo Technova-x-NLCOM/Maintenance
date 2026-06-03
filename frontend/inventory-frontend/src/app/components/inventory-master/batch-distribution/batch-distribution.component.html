@@ -496,6 +496,11 @@
                 <input class="form-control" [value]="schedulingTemplate?.template_name || ''" readonly />
               </label>
               <label>
+                <span>Batch Title *</span>
+                <input type="text" class="form-control" [(ngModel)]="planForm.week_label" maxlength="50" placeholder="e.g. Week 3 Feeding, June Relief Pack" />
+                <small class="form-help">This will be the name shown on the schedule card and used as the issuance destination.</small>
+              </label>
+              <label>
                 <span>{{ planTargetCountLabel }} *</span>
                 <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
               </label>

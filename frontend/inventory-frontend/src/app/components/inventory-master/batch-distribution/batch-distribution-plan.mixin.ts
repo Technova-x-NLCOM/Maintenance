@@ -368,6 +368,7 @@ export abstract class BatchDistributionPlanMixin {
 
   validateScheduleStep(): void {
     if (!this.planForm.template_id) { this.toast.error('Please select a recipe.'); return; }
+    if (!this.planForm.week_label.trim()) { this.toast.error('Please enter a batch title.'); return; }
     if (!this.schedulePlannedDate) { this.toast.error('Please select a planned date.'); return; }
     const target = Math.floor(Number(this.planForm.target_unit_count));
     if (!Number.isFinite(target) || target <= 0) { this.toast.error('Target people must be greater than zero.'); return; }
@@ -382,17 +383,15 @@ export abstract class BatchDistributionPlanMixin {
     if (!this.planForm.template_id) return;
     const target = Math.floor(Number(this.planForm.target_unit_count));
     this.savingPlan = true;
-    const weekLabel = (this.schedulingTemplate?.template_name || 'Scheduled Batch').trim();
-    const stitchedNotes = [
-      this.scheduleNotes ? this.scheduleNotes : '',
-    ].filter(Boolean).join(' | ');
+    // week_label is the user-typed batch title from the form
+    const weekLabel = (this.planForm.week_label.trim() || this.schedulingTemplate?.template_name || 'Scheduled Batch').trim();
     this.batchService.createProgramPlan({
       template_id: this.planForm.template_id,
       week_label: weekLabel.slice(0, 50),
       planned_date: this.schedulePlannedDate,
       target_unit_count: target,
       preferred_location_id: this.planForm.preferred_location_id ?? undefined,
-      notes: stitchedNotes || undefined,
+      notes: this.scheduleNotes.trim() || undefined,
     }).subscribe({
       next: () => {
         this.savingPlan = false;
