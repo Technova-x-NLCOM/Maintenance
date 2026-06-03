@@ -207,6 +207,14 @@ export interface ProgramPlanUpdatePayload {
   issue_notes?: string;
 }
 
+export interface ProgramPlanScheduleUpdatePayload {
+  template_id: number;
+  week_label: string;
+  planned_date: string;
+  target_unit_count: number;
+  notes?: string;
+}
+
 export interface ProgramPlanFinalCheckPayload {
   procured_items?: Array<{
     item_id: number;
@@ -390,6 +398,17 @@ export class BatchDistributionService {
       `${this.baseUrl}/program-plans/${planId}/issue-only`,
       payload,
       { headers: this.getHeaders() }
+    );
+  }
+
+  updateProgramPlanSchedule(
+    planId: number,
+    payload: ProgramPlanScheduleUpdatePayload,
+  ): Observable<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }> {
+    return this.http.put<{ success: boolean; message: string; data: ProgramPlanDetailsResponse }>(
+      `${this.baseUrl}/program-plans/${planId}`,
+      payload,
+      { headers: this.getHeaders() },
     );
   }
 

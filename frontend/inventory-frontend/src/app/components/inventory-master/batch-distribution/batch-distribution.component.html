@@ -54,7 +54,7 @@
             <div class="toolbar-field">
               <label for="scheduleFilter">Status</label>
               <select id="scheduleFilter" class="form-control" [(ngModel)]="scheduleFilter">
-                <option value="upcoming">Upcoming</option>
+                <option value="upcoming">Upcoming(default)</option>
                 <option value="completed">Completed</option>
                 <option value="all">All Status</option>
               </select>
@@ -186,7 +186,7 @@
                 </div>
 
                 <div class="plan-card-actions">
-                  <button class="btn btn-secondary btn-sm" type="button" (click)="selectPlan(plan)">Details</button>
+                  <button class="btn btn-secondary btn-sm" type="button" (click)="viewPlanDetails(plan)">View Details</button>
                   <button
                     class="btn btn-primary btn-sm"
                     type="button"
@@ -812,6 +812,89 @@
     </div>
   </div>
 
+  <!-- Schedule Details Modal -->
+  <div class="modal-overlay plan-detail-overlay" *ngIf="showPlanDetailsModal" (click)="closePlanDetailModal()">
+    <div class="modal-card plan-detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="plan-detail-modal-title">
+          <h2>{{ selectedPlanDetails?.plan?.week_label || 'Schedule Details' }}</h2>
+          <span class="status-badge" *ngIf="selectedPlanDetails?.plan as plan" [ngClass]="getPlanBadge(plan).className">
+            {{ getPlanBadge(plan).label }}
+          </span>
+        </div>
+        <button
+          type="button"
+          class="btn-close app-modal-close"
+          (click)="closePlanDetailModal()"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="empty" *ngIf="loadingPlanDetails">Loading schedule details...</p>
+
+        <ng-container *ngIf="!loadingPlanDetails && selectedPlanDetails as details">
+          <div class="recipe-info">
+            <div class="info-item">
+              <strong>Recipe:</strong> {{ details.plan.template_name }}
+            </div>
+            <div class="info-item">
+              <strong>Planned Date:</strong> {{ details.plan.planned_date }}
+            </div>
+            <div class="info-item">
+              <strong>Target:</strong> {{ details.plan.target_unit_count }}
+            </div>
+            <div class="info-item" *ngIf="details.plan.notes">
+              <strong>Notes:</strong> {{ details.plan.notes }}
+            </div>
+          </div>
+
+          <div class="recipe-info">
+            <div class="info-item">
+              <strong>Items:</strong> {{ details.inventory_check.summary.line_count }}
+            </div>
+            <div class="info-item">
+              <strong>Shortages:</strong> {{ details.inventory_check.summary.insufficient_items_count }}
+            </div>
+            <div class="info-item">
+              <strong>Can Proceed:</strong> {{ details.inventory_check.summary.can_proceed ? 'Yes' : 'No' }}
+            </div>
+          </div>
+
+          <div class="ingredients-table">
+            <h4>Ingredient Requirements</h4>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Required</th>
+                    <th>In Stock</th>
+                    <th>Shortage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let row of details.inventory_check.items" [class.has-shortage]="row.has_shortage">
+                    <td>{{ row.item_code }} - {{ row.item_description }}</td>
+                    <td>{{ row.required_quantity_for_issuance }}</td>
+                    <td>{{ row.current_stock }}</td>
+                    <td>{{ row.shortage_quantity }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-cancel" type="button" (click)="closePlanDetailModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Ingredient Details Modal -->
   <div class="modal-overlay" *ngIf="showIngredientModal" (click)="closeIngredientModal()">
     <div class="modal-card ingredient-modal" (click)="$event.stopPropagation()">
@@ -838,7 +921,7 @@
             <strong>Standard Batch Size:</strong> {{ selectedTemplateForDetails?.base_unit_count }}
           </div>
           <div class="info-item" *ngIf="selectedTemplateForDetails?.recipe_type_name">
-            <strong>Recipe Classification:</strong> {{ selectedTemplateForDetails?.recipe_type_name }}
+            <strong>Recipe Type:</strong> {{ selectedTemplateForDetails?.recipe_type_name }}
           </div>
         </div>
 
@@ -1034,15 +1117,7 @@
             </label>
 
             <label>
-              <span>Recipe Type *</span>
-              <select class="form-control" [(ngModel)]="templateForm.distribution_type" required>
-                <option value="feeding_program">Feeding Program</option>
-                <option value="relief_goods">Relief Goods Pack</option>
-              </select>
-            </label>
-
-            <label>
-              <span>Recipe Classification</span>
+              <span>Recipe Type</span>
               <select class="form-control" [(ngModel)]="templateForm.recipe_type_id">
                 <option [ngValue]="null">— None —</option>
                 <option *ngFor="let rt of recipeTypeOptions" [ngValue]="rt.recipe_type_id">{{ rt.name }}</option>
@@ -1060,7 +1135,7 @@
                 placeholder="100"
                 required
               />
-              <small class="form-help">{{ templateForm.distribution_type === 'relief_goods' ? 'Number of packs' : 'Number of servings' }} this recipe makes</small>
+              <small class="form-help">Number of servings this recipe makes</small>
             </label>
 
             <label class="full">
@@ -1122,18 +1197,6 @@
                   />
                 </div>
 
-                <div class="notes-input">
-                  <label for="ingredient-notes">Notes (Optional)</label>
-                  <input
-                    id="ingredient-notes"
-                    type="text"
-                    class="form-control"
-                    [(ngModel)]="lineDraftNotes"
-                    placeholder="Preparation notes..."
-                    maxlength="200"
-                  />
-                </div>
-
                 <div class="add-button-container">
                   <button
                     type="button"
@@ -1157,7 +1220,6 @@
                         <th>Ingredient</th>
                         <th>{{ perUnitLabel }}</th>
                         <th>Current Stock</th>
-                        <th>Notes</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -1171,7 +1233,6 @@
                         </td>
                         <td>{{ line.quantity_per_base }}</td>
                         <td>{{ line.current_stock || 0 }}</td>
-                        <td>{{ line.notes || '-' }}</td>
                         <td>
                           <button
                             type="button"
@@ -1212,25 +1273,5 @@
     </div>
   </div>
 
-  <!-- Save Confirmation Dialog -->
-  <div class="modal-overlay" *ngIf="showSaveConfirmDialog" (click)="handleSaveConfirmation(false)">
-    <div class="modal-card save-confirm-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Recipe Saved Successfully!</h2>
-      </div>
-      <div class="modal-body">
-        <p>Your recipe "{{ pendingSavedTemplate?.template_name }}" has been saved.</p>
-        <p>Would you like to run a calculation with this recipe now?</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-cancel" type="button" (click)="handleSaveConfirmation(false)">
-          Done
-        </button>
-        <button class="btn btn-primary" type="button" (click)="handleSaveConfirmation(true)">
-          Calculate & Run
-        </button>
-      </div>
-    </div>
-  </div>
 </div>
 

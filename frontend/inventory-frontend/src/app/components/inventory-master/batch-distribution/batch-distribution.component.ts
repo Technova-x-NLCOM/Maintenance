@@ -148,8 +148,7 @@ export class BatchDistributionComponent implements OnInit {
   planProcuredLines: EditableProcuredLine[] = [];
   planIssueSummary: ProgramPlanDetailsResponse['issuance'] | null = null;
   planWizardStep: 1 | 2 | 3 = 1;
-  showSaveConfirmDialog = false;
-  pendingSavedTemplate: BatchDistributionTemplateSummary | null = null;
+  showPlanDetailsModal = false;
   showScheduleDialog = false;
   scheduleDialogStep: 1 | 2 = 1;
   showRecipeSidebar = false;
@@ -1171,8 +1170,10 @@ export class BatchDistributionComponent implements OnInit {
 
         this.toast.success('Template saved successfully.');
         this.loadTemplates();
-        this.pendingSavedTemplate = this.buildTemplateSummary(response.data);
-        this.showSaveConfirmDialog = true;
+        this.showTemplateForm = false;
+        this.isEditingTemplate = false;
+        this.showNewRecipeModal = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.savingTemplate = false;
@@ -1180,24 +1181,6 @@ export class BatchDistributionComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  handleSaveConfirmation(shouldCalculate: boolean): void {
-    this.showSaveConfirmDialog = false;
-    this.showTemplateForm = false;
-    this.isEditingTemplate = false;
-    this.showNewRecipeModal = false;
-
-    const template = this.pendingSavedTemplate;
-    this.pendingSavedTemplate = null;
-    if (!template) {
-      return;
-    }
-
-    if (shouldCalculate) {
-      this.openCalculator();
-      this.selectTemplate(template);
-    }
   }
 
   selectTemplate(summary: BatchDistributionTemplateSummary): void {
@@ -1743,6 +1726,13 @@ export class BatchDistributionComponent implements OnInit {
     this.closePlanConfirm();
   }
 
+  viewPlanDetails(plan: ProgramPlanSummary): void {
+    this.closePlanMenu();
+    this.selectedPlanId = plan.plan_id;
+    this.showPlanDetailsModal = true;
+    this.loadPlanDetails(plan.plan_id);
+  }
+
   selectPlan(plan: ProgramPlanSummary): void {
     this.closePlanMenu();
     
@@ -2175,49 +2165,42 @@ export class BatchDistributionComponent implements OnInit {
       return;
     }
 
+    const planId = this.editingPlanId;
     this.savingPlan = true;
 
-    const template = this.templates.find((t) => t.template_id === this.planForm.template_id);
-    this.plans = this.plans.map((plan) => {
-      if (plan.plan_id !== this.editingPlanId) {
-        return plan;
-      }
-
-      return {
-        ...plan,
+    this.batchService
+      .updateProgramPlanSchedule(planId, {
         template_id: this.planForm.template_id as number,
-        template_name: template?.template_name ?? plan.template_name,
-        distribution_type: template?.distribution_type ?? plan.distribution_type,
-        base_unit_count: template?.base_unit_count ?? plan.base_unit_count,
         week_label: this.planForm.week_label.trim(),
         planned_date: this.planForm.planned_date,
         target_unit_count: targetCount,
-        notes: this.planForm.notes.trim() || null,
-      };
-    });
+        notes: this.planForm.notes.trim() || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          this.savingPlan = false;
+          this.applyPlanUpdate(response.data.plan);
 
-    if (this.selectedPlanDetails && this.selectedPlanDetails.plan.plan_id === this.editingPlanId) {
-      this.selectedPlanDetails = {
-        ...this.selectedPlanDetails,
-        plan: {
-          ...this.selectedPlanDetails.plan,
-          template_id: this.planForm.template_id as number,
-          template_name: template?.template_name ?? this.selectedPlanDetails.plan.template_name,
-          distribution_type: template?.distribution_type ?? this.selectedPlanDetails.plan.distribution_type,
-          base_unit_count: template?.base_unit_count ?? this.selectedPlanDetails.plan.base_unit_count,
-          week_label: this.planForm.week_label.trim(),
-          planned_date: this.planForm.planned_date,
-          target_unit_count: targetCount,
-          notes: this.planForm.notes.trim() || null,
+          if (this.selectedPlanId === planId) {
+            this.selectedPlanDetails = response.data;
+            this.planIssueSummary = response.data.issuance ?? null;
+            this.seedRemainingLinesFromCurrentDetails();
+            this.seedProcuredLinesFromCurrentDetails();
+            this.syncPlanWizardStep(response.data.plan.status);
+          }
+
+          this.toast.success(response.message || 'Schedule updated successfully.');
+          this.buildCalendar();
+          this.loadStockReadinessForPlans();
+          this.closeScheduleDialog();
+          this.cdr.detectChanges();
         },
-      };
-    }
-
-    this.toast.success('Schedule updated successfully.');
-    this.savingPlan = false;
-    this.buildCalendar();
-    this.closeScheduleDialog();
-    this.cdr.detectChanges();
+        error: (err) => {
+          this.savingPlan = false;
+          this.toast.error(err?.error?.message || 'Failed to update schedule.');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   private applyPlanUpdate(plan: ProgramPlanSummary): void {
@@ -2382,6 +2365,7 @@ export class BatchDistributionComponent implements OnInit {
   }
 
   closePlanDetailModal(): void {
+    this.showPlanDetailsModal = false;
     this.selectedPlanId = null;
     this.selectedPlanDetails = null;
     this.planIssueSummary = null;
