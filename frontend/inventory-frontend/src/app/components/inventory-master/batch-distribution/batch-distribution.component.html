@@ -118,7 +118,7 @@
                   <strong>{{ plan.week_label }}</strong>
                   <div class="card-top-right">
                     <span class="status-badge" [ngClass]="getPlanBadge(plan).className" *ngIf="getPlanBadge(plan) as badge">
-                      {{ plan.status === 'completed' ? 'COMPLETED' : 'UPCOMING' }}
+                      {{ badge.label }}
                     </span>
                     <div class="template-menu plan-menu" *ngIf="plan.status !== 'completed'">
                       <button 
@@ -134,21 +134,19 @@
                         </svg>
                       </button>
                       <div class="kebab-menu" *ngIf="openPlanMenuId === plan.plan_id">
-                        <button type="button" (click)="reserveStockForPlan(plan)">
+                        <button
+                          type="button"
+                          (click)="reserveStockForPlan(plan)"
+                          [disabled]="!canAllocateEarly(plan) || reservingPlanId === plan.plan_id"
+                          *ngIf="plan.status === 'planned' && canAllocateEarly(plan)"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
                           </svg>
-                          Reserve Stock
-                        </button>
-                        <button type="button" (click)="releaseReservedStock(plan)" *ngIf="isStockReserved(plan)">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                            <path d="M7 11V7a5 5 0 0 1 5-5v0a5 5 0 0 1 5 5v4"></path>
-                            <line x1="9" y1="9" x2="15" y2="15"></line>
-                            <line x1="15" y1="9" x2="9" y2="15"></line>
-                          </svg>
-                          Release Reserved Stock
+                          {{
+                            reservingPlanId === plan.plan_id ? 'Allocating...' : 'Allocate Stock'
+                          }}
                         </button>
                         <button type="button" (click)="editSchedule(plan)">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -173,15 +171,18 @@
                 </div>
                 <div class="template-meta">Planned: {{ plan.planned_date }}</div>
 
-                <div class="stock-readiness" *ngIf="getStockReadiness(plan.plan_id) as readiness">
+                <div class="stock-readiness" *ngIf="plan.status === 'planned' && getStockReadiness(plan.plan_id) as readiness">
                   <div class="stock-readiness-bar-container">
                     <div class="stock-readiness-bar" [ngClass]="getStockReadinessBarClass(readiness.percentage)" [style.width.%]="readiness.percentage"></div>
                   </div>
                   <div class="stock-readiness-text">
-                    Stock Readiness: {{ readiness.loading ? 'Loading...' : (readiness.percentage + '%') }}
+                    Stock Readiness: {{ getStockReadinessLabel(plan.plan_id) }}
                   </div>
-                  <div class="items-needing-restock" *ngIf="readiness.percentage < 100 && !readiness.loading">
-                    <small class="text-warning">{{ getItemsNeedingRestockCount(plan.plan_id) }} items need restock</small>
+                  <div class="items-needing-restock" *ngIf="getItemsNeedingRestockCount(plan.plan_id) > 0 && !readiness.loading">
+                    <small class="text-warning">{{ getItemsNeedingRestockCount(plan.plan_id) }} ingredient(s) short for this schedule</small>
+                  </div>
+                  <div class="items-needing-restock" *ngIf="planBlocksRunAndAllocate(plan) && !readiness.loading">
+                    <small class="text-warning">Run and allocate are blocked until stock is sufficient.</small>
                   </div>
                 </div>
 
@@ -191,11 +192,21 @@
                     class="btn btn-primary btn-sm"
                     type="button"
                     (click)="startExecutionFlow(plan)"
-                    [disabled]="!isPlanExecutable(plan) || executingPlanId === plan.plan_id"
-                    *ngIf="plan.status === 'planned'"
+                    [disabled]="!canRunBatch(plan) || executingPlanId === plan.plan_id"
+                    [attr.title]="getRunBatchDisabledReason(plan) || null"
+                    *ngIf="showRunBatchAction(plan)"
+                  >
+                    {{ getRunBatchButtonLabel(plan) }}
+                  </button>
+                  <button
+                    class="btn btn-outline btn-sm"
+                    type="button"
+                    (click)="reserveStockForPlan(plan)"
+                    [disabled]="!canAllocateEarly(plan) || reservingPlanId === plan.plan_id"
+                    *ngIf="canAllocateEarly(plan)"
                   >
                     {{
-                      executingPlanId === plan.plan_id ? 'Executing...' : '▶ Execute'
+                      reservingPlanId === plan.plan_id ? 'Allocating...' : 'Allocate Early'
                     }}
                   </button>
                   <button
@@ -314,24 +325,23 @@
         </button>
       </div>
       
-      <select class="form-control" [(ngModel)]="templateTypeFilter" (change)="onTemplateFilterChange()">
-        <option value="all">All Types</option>
-        <option value="feeding_program">Feeding Programs</option>
-        <option value="relief_goods">Relief Goods Packs</option>
+      <select class="form-control" [(ngModel)]="templateRecipeTypeFilter" (change)="onTemplateFilterChange()">
+        <option [ngValue]="'all'">All Recipe Types</option>
+        <option *ngFor="let rt of recipeTypeOptions" [ngValue]="rt.recipe_type_id">{{ rt.name }}</option>
       </select>
     </div>
     
     <!-- Loading state -->
     <p class="empty" *ngIf="loadingTemplates">Loading recipes...</p>
     
-    <!-- Recipes list with pagination -->
-    <div class="recipes-list-container" *ngIf="!loadingTemplates">
+    <!-- Recipes list with lazy loading -->
+    <div
+      class="recipes-list-container"
+      *ngIf="!loadingTemplates"
+      (scroll)="onRecipeListScroll($event)"
+    >
       <div *ngIf="templates.length > 0">
-        <div class="recipe-row" *ngFor="let template of paginatedRecipes">
-          <div class="recipe-icon">
-            <span *ngIf="template.distribution_type === 'feeding_program'">🍽</span>
-            <span *ngIf="template.distribution_type === 'relief_goods'">📦</span>
-          </div>
+        <div class="recipe-row" *ngFor="let template of visibleRecipes">
           <div class="recipe-content">
             <div class="recipe-name">{{ template.template_name }}</div>
             <div class="recipe-meta">{{ template.distribution_type_label }} • {{ template.base_unit_count }} batch • {{ template.item_count }} ingredients</div>
@@ -394,19 +404,8 @@
         </div>
       </div>
       
-      <!-- Recipe pagination -->
-      <div class="pagination-row" *ngIf="totalRecipePages > 1">
-        <div class="pagination-controls">
-          <button class="btn btn-secondary btn-sm" type="button" (click)="goToPreviousRecipePage()" [disabled]="currentRecipePage <= 1">
-            ‹ Prev
-          </button>
-          <span class="page-info">{{ currentRecipePage }} / {{ totalRecipePages }}</span>
-          <button class="btn btn-secondary btn-sm" type="button" (click)="goToNextRecipePage()" [disabled]="currentRecipePage >= totalRecipePages">
-            Next ›
-          </button>
-        </div>
-      </div>
-      
+      <p class="recipe-list-status muted" *ngIf="hasMoreRecipes">Scroll for more recipes</p>
+
       <p class="empty" *ngIf="templates.length === 0">No recipes found.</p>
     </div>
   </aside>
@@ -440,7 +439,7 @@
               <input type="text" class="form-control" [(ngModel)]="planForm.week_label" maxlength="50" />
             </label>
             <label>
-              <span>Target Servings *</span>
+              <span>{{ planTargetCountLabel }} *</span>
               <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
             </label>
             <label>
@@ -459,7 +458,7 @@
                 <input class="form-control" [value]="schedulingTemplate?.template_name || ''" readonly />
               </label>
               <label>
-                <span>Target Servings *</span>
+                <span>{{ planTargetCountLabel }} *</span>
                 <input type="number" min="1" class="form-control" [(ngModel)]="planForm.target_unit_count" />
               </label>
               <label>
@@ -467,12 +466,12 @@
                 <input type="date" class="form-control" [(ngModel)]="schedulePlannedDate" />
               </label>
               <label>
-                <span>Destination *</span>
+                <span>Destination</span>
                 <input type="text" class="form-control" [(ngModel)]="scheduleDestination" maxlength="150" />
               </label>
               <label>
-                <span>Reason</span>
-                <input type="text" class="form-control" [(ngModel)]="scheduleReason" maxlength="250" />
+                <span>Reason *</span>
+                <input type="text" class="form-control" [(ngModel)]="scheduleReason" maxlength="250" required />
               </label>
               <label class="full">
                 <span>Notes</span>
@@ -505,7 +504,8 @@
               </table>
             </div>
             <p class="text-danger" *ngIf="scheduleHasWarning">
-              Warning: one or more ingredients will go below zero after this schedule.
+              Warning: one or more ingredients are short for this schedule. You can still create it, but
+              <strong>Run Batch</strong> and <strong>Allocate</strong> stay disabled until stock readiness reaches 100%.
             </p>
           </div>
 
@@ -537,7 +537,7 @@
     <div class="modal-card execution-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div class="execution-header">
-          <h2>Execute Distribution</h2>
+          <h2>{{ executionModalTitle }}</h2>
           <div class="step-indicator">
             <div class="step" [class.active]="executionStep >= 1" [class.completed]="executionStep > 1">1</div>
             <div class="step-connector" [class.active]="executionStep > 1"></div>
@@ -567,8 +567,10 @@
           </div>
         </div>
 
+        <p class="empty" *ngIf="loadingExecutionDetails">Loading batch details...</p>
+
         <!-- Step 1: Stock Check -->
-        <div class="execution-step" *ngIf="executionStep === 1">
+        <div class="execution-step" *ngIf="executionStep === 1 && !loadingExecutionDetails">
           <div class="wizard-header">
             <div class="step-indicator">Step 1 of 3</div>
             <div class="step-title">Stock Check</div>
@@ -615,14 +617,14 @@
           </div>
         </div>
 
-        <!-- Step 2: Fill Gaps -->
+        <!-- Step 2: Procure & Issue -->
         <div class="execution-step" *ngIf="executionStep === 2">
           <div class="wizard-header">
             <div class="step-indicator">Step 2 of 3</div>
-            <div class="step-title">Fill Gaps</div>
+            <div class="step-title">Procure &amp; Issue</div>
           </div>
 
-          <p class="step-help">Fill the stock shortages before proceeding with execution.</p>
+          <p class="step-help">Record quantities procured for shortages, then issue ingredients to the distribution destination.</p>
 
           <div class="gap-filling-form">
             <div class="shortage-item" *ngFor="let item of getShortageItems(); trackBy: trackByItemId">
@@ -635,8 +637,7 @@
                   <span>Qty Brought In</span>
                   <input 
                     type="number" 
-                    min="0" 
-                    [max]="item.shortage_quantity"
+                    min="0"
                     class="form-control" 
                     [(ngModel)]="gapFillData[item.item_id]"
                     (input)="updateGapFillProgress()"
@@ -650,8 +651,12 @@
 
             <div class="gap-fill-additional">
               <label>
-                <span>Destination</span>
-                <input type="text" class="form-control" [(ngModel)]="executionDestination" placeholder="Where items were procured">
+                <span>Issue Destination</span>
+                <input type="text" class="form-control" [(ngModel)]="executionDestination" placeholder="e.g. Feeding site, kitchen, barangay" maxlength="150" />
+              </label>
+              <label>
+                <span>Reason <span class="text-danger">*</span></span>
+                <input type="text" class="form-control" [(ngModel)]="executionReason" placeholder="e.g. Week 3 feeding program" maxlength="250" />
               </label>
               <label>
                 <span>Notes</span>
@@ -670,11 +675,11 @@
           </div>
         </div>
 
-        <!-- Step 3: Execute -->
-        <div class="execution-step" *ngIf="executionStep === 3">
+        <!-- Step 3: Complete -->
+        <div class="execution-step" *ngIf="executionStep === 3 && !loadingExecutionDetails">
           <div class="wizard-header">
             <div class="step-indicator">Step 3 of 3</div>
-            <div class="step-title">Execute</div>
+            <div class="step-title">Complete Batch</div>
           </div>
 
           <div class="final-confirmation">
@@ -683,60 +688,61 @@
               <div class="summary-grid">
                 <div><strong>Recipe:</strong> {{ selectedPlanForExecution?.template_name }}</div>
                 <div><strong>Target Count:</strong> {{ selectedPlanForExecution?.target_unit_count }}</div>
-                <div><strong>Destination:</strong> {{ executionDestination || 'Not specified' }}</div>
-                <div><strong>Reason:</strong> {{ executionReason || selectedPlanForExecution?.week_label }}</div>
-                <div *ngIf="executionNotes"><strong>Notes:</strong> {{ executionNotes }}</div>
+                <div *ngIf="executionIssuanceSummary?.reference_number">
+                  <strong>Issuance Ref:</strong> {{ executionIssuanceSummary?.reference_number }}
+                </div>
+                <div *ngIf="executionStockIssued" class="status-success">Stock has been issued for this batch.</div>
               </div>
             </div>
 
-            <div class="requirements-check">
-              <div *ngIf="canProceedWithExecution" class="requirements-met">
-                <div class="status-success">✅ All requirements are met</div>
-                
-                <div class="stock-deductions-preview">
-                  <h6>Stock Deductions</h6>
-                  <div class="table-wrap compact-table">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>Item</th>
-                          <th>Current Stock</th>
-                          <th>Will Deduct</th>
-                          <th>New Stock</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let item of executionStockCheck?.items">
-                          <td>{{ item.item_code }}</td>
-                          <td>{{ item.current_stock }}</td>
-                          <td class="text-warning">-{{ item.required_quantity_for_issuance }}</td>
-                          <td [class.text-success]="item.current_stock - item.required_quantity_for_issuance >= 0">
-                            {{ item.current_stock - item.required_quantity_for_issuance }}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+            <div *ngIf="!executionStockIssued" class="issue-stock-section">
+              <p class="step-help">Issue ingredients from inventory before recording leftovers.</p>
+              <label>
+                <span>Issue Destination</span>
+                <input type="text" class="form-control" [(ngModel)]="executionDestination" placeholder="Where ingredients are sent" maxlength="150" />
+              </label>
+              <label>
+                <span>Reason <span class="text-danger">*</span></span>
+                <input type="text" class="form-control" [(ngModel)]="executionReason" maxlength="250" />
+              </label>
+              <label>
+                <span>Notes</span>
+                <textarea class="form-control" rows="2" [(ngModel)]="executionNotes"></textarea>
+              </label>
+            </div>
 
-                <div class="execution-warning">
-                  ⚠️ <strong>Warning:</strong> This action will deduct stock and mark as completed. Cannot be undone.
-                </div>
+            <div *ngIf="executionStockIssued" class="remainder-section">
+              <h5>Record Leftovers</h5>
+              <p class="step-help">Enter quantities returned to inventory after distribution (0 if none).</p>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Leftover Qty</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let line of executionRemainderLines">
+                      <td>{{ line.item_code }} - {{ line.item_description }}</td>
+                      <td>
+                        <input
+                          type="number"
+                          min="0"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="line.remaining_quantity"
+                        >
+                      </td>
+                      <td>
+                        <input type="text" class="form-control form-control-sm" [(ngModel)]="line.notes" placeholder="Optional">
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
-              <div *ngIf="!canProceedWithExecution" class="requirements-not-met">
-                <div class="status-error">⚠️ Cannot proceed: Some items still insufficient</div>
-                
-                <div class="shortage-list">
-                  <div *ngFor="let item of getShortageItems()" class="shortage-item-summary">
-                    <span class="status-badge status-shortage">⚠ Short</span>
-                    {{ item.item_code }} - Required: {{ item.required_quantity_for_issuance }}, Available: {{ item.current_stock }}
-                  </div>
-                </div>
-
-                <div class="execution-error">
-                  ❌ <strong>Error:</strong> Execution blocked. Ensure all requirements met.
-                </div>
+              <div class="execution-warning">
+                Completing stores leftovers back into inventory and marks this schedule as done.
               </div>
             </div>
           </div>
@@ -745,7 +751,7 @@
 
       <div class="modal-footer execution-footer">
         <!-- Step 1 Actions -->
-        <div *ngIf="executionStep === 1" class="execution-actions">
+        <div *ngIf="executionStep === 1 && !loadingExecutionDetails" class="execution-actions">
           <button class="btn btn-cancel" type="button" (click)="closeExecutionModal()">Cancel</button>
           <button 
             class="btn btn-primary" 
@@ -753,23 +759,15 @@
             (click)="proceedToFillGaps()" 
             *ngIf="executionHasShortages"
           >
-            Fill Gaps First →
-          </button>
-          <button 
-            class="btn btn-warning" 
-            type="button" 
-            (click)="skipToExecute()" 
-            *ngIf="executionHasShortages"
-          >
-            Skip to Execute →
+            Procure Shortages →
           </button>
           <button 
             class="btn btn-primary" 
             type="button" 
-            (click)="proceedToExecute()" 
+            (click)="proceedToCompleteStep()" 
             *ngIf="!executionHasShortages"
           >
-            Proceed to Execute →
+            Continue to Complete →
           </button>
         </div>
 
@@ -779,33 +777,33 @@
           <button 
             class="btn btn-primary" 
             type="button" 
-            (click)="confirmAndProceed()"
-            [disabled]="!allGapsFilled"
+            (click)="confirmProcurementAndIssue()"
+            [disabled]="!canCompleteProcurementStep"
           >
-            Confirm & Proceed →
+            {{ executionIssuingStock ? 'Issuing...' : 'Receive & Issue →' }}
           </button>
         </div>
 
         <!-- Step 3 Actions -->
-        <div *ngIf="executionStep === 3" class="execution-actions">
-          <button class="btn btn-cancel" type="button" (click)="goBackToPreviousStep()">← Back</button>
+        <div *ngIf="executionStep === 3 && !loadingExecutionDetails" class="execution-actions">
+          <button class="btn btn-cancel" type="button" (click)="goBackToPreviousStep()" [disabled]="executionStockIssued && isStockAllocated(selectedPlanForExecution!)">← Back</button>
+          <button 
+            class="btn btn-primary" 
+            type="button" 
+            (click)="issueStockForExecution()"
+            [disabled]="!canIssueOnCompleteStep"
+            *ngIf="!executionStockIssued"
+          >
+            {{ executionIssuingStock ? 'Issuing...' : 'Issue Ingredients' }}
+          </button>
           <button 
             class="btn btn-primary btn-execute" 
             type="button" 
-            (click)="executeDistribution()"
-            [disabled]="!canProceedWithExecution || executingDistribution"
-            *ngIf="canProceedWithExecution"
+            (click)="completeBatchExecution()"
+            [disabled]="!canSubmitBatchCompletion"
+            *ngIf="executionStockIssued"
           >
-            {{ executingDistribution ? 'Executing...' : '✓ Execute Distribution' }}
-          </button>
-          <button 
-            class="btn btn-disabled" 
-            type="button"
-            disabled
-            *ngIf="!canProceedWithExecution"
-            (click)="showStockShortageAlert()"
-          >
-            ❌ Cannot Execute (Stock Shortage)
+            {{ executingDistribution ? 'Marking as complete...' : 'Mark as complete' }}
           </button>
         </div>
       </div>
@@ -979,69 +977,32 @@
 
       <div class="modal-body">
         <div class="reservations-overview">
-          <h4>Stock Reservations Overview</h4>
-          <div class="table-wrap">
+          <h4>Allocated Batches</h4>
+          <p class="step-help" *ngIf="stockReservations.length === 0">No batches have allocated stock yet. Use Allocate Stock when readiness is 100%.</p>
+          <div class="table-wrap" *ngIf="stockReservations.length > 0">
             <table>
               <thead>
                 <tr>
-                  <th>Ingredient</th>
-                  <th>Unit</th>
-                  <th>Total Stock</th>
-                  <th>Reserved</th>
-                  <th>Available</th>
+                  <th>Batch</th>
+                  <th>Recipe</th>
+                  <th>Planned Date</th>
+                  <th>Target</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let reservation of stockReservations" [class.insufficient]="reservation.available <= 0">
-                  <td>{{ reservation.item_code }} - {{ reservation.item_description }}</td>
-                  <td>{{ reservation.unit || '-' }}</td>
+                <tr *ngFor="let reservation of stockReservations">
+                  <td>{{ reservation.item_code }}</td>
+                  <td>{{ reservation.item_description }}</td>
+                  <td>{{ reservation.unit }}</td>
                   <td>{{ reservation.total_stock }}</td>
-                  <td class="text-warning">{{ reservation.reserved_amount }}</td>
-                  <td [class.text-danger]="reservation.available <= 0" [class.text-success]="reservation.available > 0">
-                    {{ reservation.available }}
-                  </td>
+                  <td class="text-success">{{ reservation.reserved_amount }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <div class="reservations-details" *ngIf="selectedReservationDetails">
-          <h4>Reservations by Schedule</h4>
-          <div class="reservations-list">
-            <div class="reservation-group" *ngFor="let group of groupedReservations">
-              <div class="group-header">
-                <h5>{{ group.item_name }}</h5>
-              </div>
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Schedule Label</th>
-                      <th>Planned Date</th>
-                      <th>Reserved Amount</th>
-                      <th>Running Total</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let reservation of group.reservations">
-                      <td>{{ reservation.schedule_label }}</td>
-                      <td>{{ reservation.planned_date }}</td>
-                      <td>{{ reservation.reserved_amount }}</td>
-                      <td>{{ reservation.running_total }}</td>
-                      <td>
-                        <button class="btn btn-sm btn-outline" type="button" (click)="releaseReservation(reservation)">
-                          Release
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="modal-footer">
@@ -1061,7 +1022,7 @@
         <button class="btn btn-cancel" type="button" (click)="closeTemplateConfirm()">
           {{ templateConfirmDialog.cancelText }}
         </button>
-        <button class="btn btn-primary" type="button" (click)="confirmTemplateDeleteAction()">
+        <button class="btn btn-primary" type="button" (click)="confirmTemplateDialogAction()">
           {{ templateConfirmDialog.confirmText }}
         </button>
       </div>
@@ -1090,7 +1051,7 @@
   <div class="modal-overlay" *ngIf="showNewRecipeModal" (click)="closeNewRecipeModal()">
     <div class="modal-card new-recipe-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>{{ isEditingTemplate ? 'Edit Recipe' : 'Create New Recipe' }}</h2>
+        <h2>{{ recipeModalTitle }}</h2>
         <button
           type="button"
           class="btn-close app-modal-close"
@@ -1102,7 +1063,17 @@
       </div>
 
       <div class="modal-body new-recipe-body">
-        <div class="recipe-form-content" *ngIf="showTemplateForm">
+        <p class="empty" *ngIf="loadingRecipeModal">Loading recipe copy...</p>
+
+        <div class="recipe-modal-notice" *ngIf="templateModalMode === 'duplicate' && !loadingRecipeModal">
+          <p>
+            Draft copy of <strong>{{ duplicateSourceTemplateName }}</strong>.
+            Review the name and ingredients, then click <strong>Save Duplicate</strong> to add it to your recipe list.
+            Closing or canceling discards this copy.
+          </p>
+        </div>
+
+        <div class="recipe-form-content" *ngIf="showTemplateForm && !loadingRecipeModal">
           <div class="form-grid">
             <label>
               <span>Recipe Name *</span>
@@ -1152,6 +1123,13 @@
 
           <div class="recipe-ingredients-section">
             <h3>Ingredients</h3>
+
+            <div class="recipe-modal-notice recipe-stock-warning" *ngIf="templateHasStockWarning">
+              <p>
+                <strong>{{ templateStockWarningCount }}</strong> ingredient(s) need more stock than is available for a
+                standard batch ({{ templateForm.base_unit_count }} units). You can still save this recipe.
+              </p>
+            </div>
             
             <!-- Add Ingredient Form -->
             <div class="ingredient-add-form">
@@ -1220,11 +1198,12 @@
                         <th>Ingredient</th>
                         <th>{{ perUnitLabel }}</th>
                         <th>Current Stock</th>
+                        <th>After</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let line of templateLines; index as i">
+                      <tr *ngFor="let line of templateLines; index as i" [class.has-shortage]="templateLineExceedsStock(line)">
                         <td>
                           <div class="ingredient-info">
                             <div class="ingredient-code">{{ getItemOptionById(line.item_id)?.item_code }}</div>
@@ -1233,6 +1212,7 @@
                         </td>
                         <td>{{ line.quantity_per_base }}</td>
                         <td>{{ line.current_stock || 0 }}</td>
+                        <td [class.text-danger]="templateLineExceedsStock(line)">{{ templateLineStockAfter(line) }}</td>
                         <td>
                           <button
                             type="button"
@@ -1265,9 +1245,9 @@
           class="btn btn-primary"
           type="button"
           (click)="saveTemplate()"
-          [disabled]="savingTemplate || !templateForm.template_name.trim() || templateLines.length === 0"
+          [disabled]="savingTemplate || loadingRecipeModal || !templateForm.template_name.trim() || templateLines.length === 0"
         >
-          {{ savingTemplate ? 'Saving...' : (isEditingTemplate ? 'Update Recipe' : 'Create Recipe') }}
+          {{ recipeModalSaveLabel }}
         </button>
       </div>
     </div>

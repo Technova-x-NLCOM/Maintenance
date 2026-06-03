@@ -81,13 +81,6 @@ class DistributionPlanController extends Controller
             ], 422);
         }
 
-        if ($template->distribution_type !== 'feeding_program') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only feeding program templates are allowed for weekly plan scheduling.',
-            ], 422);
-        }
-
         $user = auth('api')->user();
         $createdBy = $user?->user_id ?? auth()->id();
 
@@ -161,52 +154,43 @@ class DistributionPlanController extends Controller
             ], 404);
         }
 
-        $items = $this->loadTemplateItems((int) $plan->template_id);
-        
-        if (empty($items)) {
+        $checkData = $this->buildInventoryCheckData($plan);
+        $lineCount = (int) $checkData['summary']['line_count'];
+        $insufficientCount = (int) $checkData['summary']['insufficient_items_count'];
+
+        if ($lineCount === 0) {
+            $message = $checkData['summary']['error'] ?? 'Template not configured with items.';
+
             return response()->json([
                 'success' => false,
-                'message' => 'Template not configured with items.',
+                'message' => $message,
                 'error' => 'template_not_configured',
                 'data' => [
+                    'plan_id' => (int) $plan->plan_id,
                     'required' => 0,
                     'available' => 0,
+                    'line_count' => 0,
+                    'ready_line_count' => 0,
+                    'insufficient_items_count' => 0,
                     'percentage' => 0,
+                    'can_proceed' => false,
+                    'status' => 'insufficient',
                 ],
             ], 422);
         }
 
-        $baseUnitCount = (int) $plan->base_unit_count;
-        $targetUnitCount = (int) $plan->target_unit_count;
+        $readyLineCount = $lineCount - $insufficientCount;
+        // Per-ingredient readiness: 100% only when every line can cover its required quantity.
+        $percentage = (int) round(($readyLineCount / $lineCount) * 100);
 
-        if ($baseUnitCount <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Template base unit count must be greater than zero.',
-                'data' => [
-                    'required' => 0,
-                    'available' => 0,
-                    'percentage' => 0,
-                ],
-            ], 422);
-        }
-
-        $multiplier = $targetUnitCount / $baseUnitCount;
         $totalRequired = 0;
-        $totalAvailable = 0;
-
-        foreach ($items as $line) {
-            $requiredExact = round(((float) $line['quantity_per_base']) * $multiplier, 4);
-            $requiredForIssuance = (int) ceil($requiredExact);
+        $totalCovered = 0;
+        foreach ($checkData['items'] as $line) {
+            $requiredForIssuance = (int) $line['required_quantity_for_issuance'];
             $available = (int) $line['current_stock'];
-
             $totalRequired += $requiredForIssuance;
-            $totalAvailable += min($requiredForIssuance, $available);
+            $totalCovered += min($requiredForIssuance, $available);
         }
-
-        $percentage = $totalRequired > 0 
-            ? (int) round(($totalAvailable / $totalRequired) * 100) 
-            : 100;
 
         return response()->json([
             'success' => true,
@@ -214,8 +198,12 @@ class DistributionPlanController extends Controller
             'data' => [
                 'plan_id' => (int) $plan->plan_id,
                 'required' => $totalRequired,
-                'available' => $totalAvailable,
+                'available' => $totalCovered,
+                'line_count' => $lineCount,
+                'ready_line_count' => $readyLineCount,
+                'insufficient_items_count' => $insufficientCount,
                 'percentage' => $percentage,
+                'can_proceed' => (bool) $checkData['summary']['can_proceed'],
                 'status' => $percentage >= 100 ? 'ready' : ($percentage >= 50 ? 'partial' : 'insufficient'),
             ],
         ]);
@@ -336,8 +324,8 @@ class DistributionPlanController extends Controller
             'procured_items.*.item_id' => ['required_with:procured_items', 'integer', 'distinct', 'exists:items,item_id'],
             'procured_items.*.quantity_brought' => ['required_with:procured_items', 'integer', 'min:1'],
             'procured_items.*.notes' => ['nullable', 'string'],
-            'issue_destination' => ['required', 'string', 'max:255'],
-            'issue_reason' => ['nullable', 'string', 'max:255'],
+            'issue_destination' => ['nullable', 'string', 'max:255'],
+            'issue_reason' => ['required', 'string', 'max:255'],
             'issue_notes' => ['nullable', 'string'],
         ]);
 
@@ -444,8 +432,8 @@ class DistributionPlanController extends Controller
                 $plan,
                 $checkData,
                 (int) $performedBy,
-                trim((string) $validated['issue_destination']),
-                $validated['issue_reason'] ?? null,
+                trim((string) ($validated['issue_destination'] ?? $plan->week_label)),
+                trim((string) $validated['issue_reason']),
                 $validated['issue_notes'] ?? null
             );
 
@@ -761,8 +749,8 @@ class DistributionPlanController extends Controller
         }
 
         $validated = $request->validate([
-            'issue_destination' => ['required', 'string', 'max:255'],
-            'issue_reason' => ['nullable', 'string', 'max:255'],
+            'issue_destination' => ['nullable', 'string', 'max:255'],
+            'issue_reason' => ['required', 'string', 'max:255'],
             'issue_notes' => ['nullable', 'string'],
         ]);
 
@@ -787,8 +775,8 @@ class DistributionPlanController extends Controller
                 $plan,
                 $checkData,
                 (int) $performedBy,
-                trim((string) $validated['issue_destination']),
-                $validated['issue_reason'] ?? null,
+                trim((string) ($validated['issue_destination'] ?? $plan->week_label)),
+                trim((string) $validated['issue_reason']),
                 $validated['issue_notes'] ?? null
             );
 
@@ -843,13 +831,6 @@ class DistributionPlanController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Selected template is inactive or not found.',
-            ], 422);
-        }
-
-        if ($template->distribution_type !== 'feeding_program') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Only feeding program templates are allowed for weekly plan scheduling.',
             ], 422);
         }
 

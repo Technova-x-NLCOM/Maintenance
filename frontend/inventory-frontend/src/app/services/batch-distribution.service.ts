@@ -115,7 +115,7 @@ export interface BatchDistributionIssueResponse {
   }>;
 }
 
-export type ProgramPlanStatus = 'planned' | 'completed' | 'cancelled';
+export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'ready' | 'completed' | 'cancelled';
 
 export interface ProgramPlanSummary {
   plan_id: number;
@@ -202,8 +202,8 @@ export interface ProgramPlanCreatePayload {
 }
 
 export interface ProgramPlanUpdatePayload {
-  issue_destination: string;
-  issue_reason?: string;
+  issue_destination?: string;
+  issue_reason: string;
   issue_notes?: string;
 }
 
@@ -221,8 +221,8 @@ export interface ProgramPlanFinalCheckPayload {
     quantity_brought: number;
     notes?: string;
   }>;
-  issue_destination: string;
-  issue_reason?: string;
+  issue_destination?: string;
+  issue_reason: string;
   issue_notes?: string;
 }
 
@@ -255,15 +255,15 @@ export class BatchDistributionService {
     });
   }
 
-  listTemplates(search?: string, distributionType?: DistributionType): Observable<{ success: boolean; message: string; data: BatchDistributionTemplateSummary[] }> {
+  listTemplates(search?: string, recipeTypeId?: number): Observable<{ success: boolean; message: string; data: BatchDistributionTemplateSummary[] }> {
     let params = new HttpParams();
 
     if (search && search.trim()) {
       params = params.set('search', search.trim());
     }
 
-    if (distributionType) {
-      params = params.set('distribution_type', distributionType);
+    if (recipeTypeId != null) {
+      params = params.set('recipe_type_id', String(recipeTypeId));
     }
 
     return this.http.get<{ success: boolean; message: string; data: BatchDistributionTemplateSummary[] }>(
@@ -427,8 +427,36 @@ export class BatchDistributionService {
     );
   }
 
-  getStockReadiness(planId: number): Observable<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }> {
-    return this.http.get<{ success: boolean; message: string; data: { plan_id: number; required: number; available: number; percentage: number; status: string } }>(
+  getStockReadiness(planId: number): Observable<{
+    success: boolean;
+    message: string;
+    data: {
+      plan_id: number;
+      required: number;
+      available: number;
+      line_count: number;
+      ready_line_count: number;
+      insufficient_items_count: number;
+      percentage: number;
+      can_proceed: boolean;
+      status: string;
+    };
+  }> {
+    return this.http.get<{
+      success: boolean;
+      message: string;
+      data: {
+        plan_id: number;
+        required: number;
+        available: number;
+        line_count: number;
+        ready_line_count: number;
+        insufficient_items_count: number;
+        percentage: number;
+        can_proceed: boolean;
+        status: string;
+      };
+    }>(
       `${this.baseUrl}/program-plans/${planId}/stock-readiness`,
       { headers: this.getHeaders() }
     );
