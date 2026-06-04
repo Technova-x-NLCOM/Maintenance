@@ -80,17 +80,24 @@
       </div>
     </section>
 
-    <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()">
-      <div class="modal-box" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <div>
-            <div class="modal-eyebrow">{{ editingId ? 'Edit Storage Location' : 'Create Storage Location' }}</div>
-            <h3>{{ editingId ? 'Update details' : 'New location' }}</h3>
-          </div>
-          <button class="modal-close" (click)="closeForm()">×</button>
+    <div
+      class="app-modal-overlay app-modal-overlay--sidebar-offset"
+      *ngIf="showForm"
+      (click)="bounceLocForm()"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div class="app-modal app-modal--md loc-form-modal" (click)="$event.stopPropagation()">
+        <div class="app-modal-header">
+          <h2 class="app-modal-title">{{ editingId ? 'Edit Storage Location' : 'New Storage Location' }}</h2>
+          <button class="app-modal-close-btn" type="button" (click)="closeForm()" [disabled]="saving" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
         </div>
 
-        <div class="modal-body">
+        <div class="app-modal-body">
           <div class="field-group code-group">
             <label>Generated code</label>
             <div class="code-display">{{ form.location_code }}</div>
@@ -123,9 +130,9 @@
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button class="btn btn-secondary" (click)="closeForm()">Cancel</button>
-          <button class="btn btn-primary btn-strong" (click)="save()" [disabled]="saving || !form.location_name.trim()">
+        <div class="app-modal-footer">
+          <button class="btn btn-secondary" type="button" (click)="closeForm()" [disabled]="saving">Cancel</button>
+          <button class="btn btn-primary btn-strong" type="button" (click)="save()" [disabled]="saving || !form.location_name.trim()">
             {{ saving ? (editingId ? 'Saving...' : 'Creating...') : (editingId ? 'Save changes' : 'Create location') }}
           </button>
         </div>

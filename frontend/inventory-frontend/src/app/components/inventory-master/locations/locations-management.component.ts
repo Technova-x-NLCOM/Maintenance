@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MaintenanceService } from '../../../services/maintenance.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 interface LocationRow {
   location_id: number;
@@ -117,7 +118,15 @@ export class LocationsManagementComponent implements OnInit {
     };
   }
 
+  bounceLocForm(): void {
+    ModalUtils.bounce('.loc-form-modal');
+  }
+
   closeForm(): void {
+    if (this.saving) {
+      ModalUtils.bounce('.loc-form-modal');
+      return;
+    }
     this.showForm = false;
     this.editingId = null;
   }
