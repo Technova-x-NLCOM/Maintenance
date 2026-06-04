@@ -48,6 +48,8 @@ export interface InventoryManagerStats {
   totalCategories: number;
   expiringItems: number;
   activeBatches: number;
+  schedulesToday?: number;
+  overdueSchedules?: number;
   trends?: InventoryManagerTrends;
 }
 
@@ -69,6 +71,33 @@ export interface SystemAlert {
   severity: 'critical' | 'warning' | 'info';
   created_at: string;
   acknowledged: boolean;
+}
+
+export interface DashboardKpi {
+  out_of_stock_items: number;
+  below_reorder_items: number;
+  expiring_critical: number;
+  expiring_warning: number;
+  scheduled_today: number;
+  shortfall_today: number;
+  overdue_schedules: number;
+  total_active_stock: number;
+  in_this_month: number;
+  out_this_month: number;
+  auto_allocations_month: number;
+  discrepancy_this_month: number;
+  shortage_variance_month: number;
+  surplus_variance_month: number;
+  discrepancy_trend: Array<{ month: string; surplus: number; shortage: number }>;
+  upcoming_plans: Array<{
+    plan_id: number;
+    week_label: string;
+    planned_date: string;
+    status: string;
+    target_unit_count: number;
+    auto_allocated: boolean;
+    template_name: string;
+  }>;
 }
 
 type TrendDirection = 'up' | 'down' | 'steady';
@@ -111,11 +140,12 @@ interface PaginatedApiResponse<T> {
   styleUrl: './inventory-manager-dashboard.component.scss'
 })
 export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('categoryChart') categoryChartRef?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('discrepancyChart') categoryChartRef?: ElementRef<HTMLCanvasElement>;
   @ViewChild('movementChart') movementChartRef?: ElementRef<HTMLCanvasElement>;
 
   user: User | null = null;
   stats: InventoryManagerStats | null = null;
+  kpi: DashboardKpi | null = null;
   recentActivity: AuditLogEntry[] = [];
   systemAlerts: SystemAlert[] = [];
   readonly cardPreviewLimit = 3;
@@ -124,7 +154,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   loading = true;
   readonly skeletonCards = Array.from({ length: 4 });
   private routerSubscription: Subscription | null = null;
-  private categoryChart: Chart<'doughnut'> | null = null;
+  private categoryChart: Chart<'bar'> | null = null;
   private movementChart: Chart<'line'> | null = null;
 
   stockTrend: KpiTrend = {
@@ -144,45 +174,27 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     description: 'No change this month'
   };
 
-  categoryDonutData: ChartData<'doughnut'> = {
+  discrepancyChartData: ChartData<'bar'> = {
     labels: [],
     datasets: [
-      {
-        data: [],
-        backgroundColor: [],
-        borderColor: '#ffffff',
-        borderWidth: 2,
-        hoverOffset: 6
-      }
+      { label: 'Surplus',  data: [], backgroundColor: 'rgba(22,163,74,0.75)',  borderColor: '#16a34a', borderWidth: 1, borderRadius: 4 },
+      { label: 'Shortage', data: [], backgroundColor: 'rgba(220,38,38,0.75)', borderColor: '#dc2626', borderWidth: 1, borderRadius: 4 }
     ]
   };
 
-  readonly categoryDonutOptions: ChartOptions<'doughnut'> = {
+  readonly discrepancyChartOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '64%',
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { ticks: { color: '#51627d' }, grid: { display: false } },
+      y: { beginAtZero: true, ticks: { color: '#51627d', precision: 0 }, grid: { color: '#e2e8f0' } }
+    },
     plugins: {
-      legend: {
-        position: 'right',
-        labels: {
-          color: '#243349',
-          usePointStyle: true,
-          boxWidth: 10,
-          padding: 16
-        }
-      },
+      legend: { position: 'bottom', labels: { color: '#243349', usePointStyle: true, boxWidth: 10 } },
       tooltip: {
         backgroundColor: '#0f172a',
-        callbacks: {
-          label: (context: TooltipItem<'doughnut'>) => {
-            const label = context.label || '';
-            const value = Number(context.raw) || 0;
-            const total = context.dataset.data.reduce((sum: number, point: number) => sum + Number(point || 0), 0);
-            const percent = total ? Math.round((value / total) * 100) : 0;
-            return `${label}: ${value} items (${percent}% of stock)`;
-          },
-          afterLabel: () => 'Click a legend item to show or hide a category.'
-        }
+        callbacks: { label: (ctx: TooltipItem<'bar'>) => `${ctx.dataset.label}: ${ctx.raw} units` }
       }
     }
   };
@@ -271,22 +283,17 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   ) {}
 
   get topPriorityMessage(): string {
-    if (!this.stats) {
-      return 'Loading inventory priorities...';
-    }
-
-    if (this.stats.pendingAlerts > 0) {
-      return `${this.stats.pendingAlerts} alert(s) require immediate inventory follow-up.`;
-    }
-
-    if (this.stats.expiringItems > 0) {
-      return `${this.stats.expiringItems} item(s) are approaching expiration and should be rotated.`;
-    }
-
-    if (this.stats.lowStockItems > 0) {
-      return `${this.stats.lowStockItems} item(s) are below stock threshold.`;
-    }
-
+    if (!this.stats && !this.kpi) return 'Loading inventory priorities...';
+    const outOfStock   = this.kpi?.out_of_stock_items  ?? 0;
+    const overdue      = this.kpi?.overdue_schedules   ?? 0;
+    const expCritical  = this.kpi?.expiring_critical   ?? 0;
+    const dueToday     = this.kpi?.scheduled_today     ?? 0;
+    const belowReorder = this.kpi?.below_reorder_items ?? 0;
+    if (outOfStock   > 0) return `${outOfStock} item(s) are completely out of stock — restock immediately.`;
+    if (overdue      > 0) return `${overdue} overdue schedule(s) need to be run or cancelled.`;
+    if (expCritical  > 0) return `${expCritical} batch(es) expire within 7 days — rotate or write off.`;
+    if (dueToday     > 0) return `${dueToday} distribution schedule(s) are due today.`;
+    if (belowReorder > 0) return `${belowReorder} item(s) are below reorder level — plan procurement.`;
     return 'Inventory operations are currently stable.';
   }
 
@@ -395,15 +402,20 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
       return of([] as TransactionRecord[]);
     }));
 
-    forkJoin([stats$, activity$, alerts$, stockReport$, transactions$]).subscribe({
-      next: ([stats, activity, alerts, stockReport, transactions]) => {
+    const kpi$ = this.http
+      .get<{ success: boolean; data: DashboardKpi }>(`${this.API_URL}/dashboard/kpi`, { headers: this.getAuthHeaders() })
+      .pipe(catchError(() => of(null)));
+
+    forkJoin([stats$, activity$, alerts$, kpi$, transactions$]).subscribe({
+      next: ([stats, activity, alerts, kpiRes, transactions]) => {
         this.ngZone.run(() => {
           this.stats = stats;
           this.recentActivity = activity;
           this.systemAlerts = alerts;
+          this.kpi = (kpiRes as any)?.data ?? null;
           this.applyTrendsFromStats(stats.trends);
           this.updateAlertTrendIndicators(alerts);
-          this.applyLiveChartData(stockReport, transactions);
+          this.applyLiveChartData([], transactions);
           this.refreshCharts();
           this.loading = false;
           this.cdr.detectChanges();
@@ -519,14 +531,48 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
     return log.log_id;
   }
 
+  // ── Schedule/KPI helpers ────────────────────────────────────────────────────
+
+  getScheduleRowClass(plan: DashboardKpi['upcoming_plans'][number]): string {
+    const today = new Date().toISOString().split('T')[0];
+    if (plan.planned_date < today)   return 'row-overdue';
+    if (plan.planned_date === today) return 'row-today';
+    if (plan.status === 'ready')     return 'row-ready';
+    if (plan.status === 'completed') return 'row-completed';
+    return '';
+  }
+
+  formatPlanDay(dateStr: string): string {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { day: '2-digit' });
+  }
+
+  formatPlanMonth(dateStr: string): string {
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short' });
+  }
+
+  getPlanStatusLabel(status: string): string {
+    const map: Record<string, string> = {
+      planned: 'Planned', checked_pre: 'Pre-checked',
+      ready: 'Allocated', completed: 'Done', cancelled: 'Cancelled'
+    };
+    return map[status] ?? status;
+  }
+
+  getPlanStatusChip(status: string): string {
+    const map: Record<string, string> = {
+      planned: 'chip-planned', checked_pre: 'chip-checked',
+      ready: 'chip-ready', completed: 'chip-completed', cancelled: 'chip-cancelled'
+    };
+    return map[status] ?? '';
+  }
+
   private renderCharts(): void {
     this.applyResponsiveChartOptions();
-
     if (this.categoryChartRef?.nativeElement) {
       this.categoryChart = new Chart(this.categoryChartRef.nativeElement, {
-        type: 'doughnut',
-        data: this.categoryDonutData,
-        options: this.categoryDonutOptions
+        type: 'bar',
+        data: this.discrepancyChartData,
+        options: this.discrepancyChartOptions
       });
     }
 
@@ -541,7 +587,7 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
 
   private refreshCharts(): void {
     if (this.categoryChart) {
-      this.categoryChart.data = this.categoryDonutData;
+      this.categoryChart.data = this.discrepancyChartData;
       this.categoryChart.update();
     }
 
@@ -552,19 +598,9 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private applyResponsiveChartOptions(): void {
-    const isMobile = window.innerWidth <= 768;
-
-    if (this.categoryDonutOptions?.plugins?.legend) {
-      this.categoryDonutOptions.plugins.legend.position = isMobile ? 'bottom' : 'right';
-      if (this.categoryDonutOptions.plugins.legend.labels) {
-        this.categoryDonutOptions.plugins.legend.labels.padding = isMobile ? 10 : 16;
-        this.categoryDonutOptions.plugins.legend.labels.boxWidth = isMobile ? 8 : 10;
-      }
-    }
-
     const xScale = this.stockMovementOptions?.scales?.['x'];
     if (xScale?.ticks) {
-      xScale.ticks.maxTicksLimit = isMobile ? 4 : 8;
+      xScale.ticks.maxTicksLimit = window.innerWidth <= 768 ? 4 : 8;
     }
   }
 
@@ -704,56 +740,24 @@ export class InventoryManagerDashboardComponent implements OnInit, AfterViewInit
   }
 
   private applyLiveChartData(stockReportRows: StockReportRecord[], transactions: TransactionRecord[]): void {
-    const categoryTotals = new Map<string, number>();
-    stockReportRows.forEach(row => {
-      const key = row.category_name || 'Uncategorized';
-      const current = Number(row.current_stock) || 0;
-      categoryTotals.set(key, (categoryTotals.get(key) || 0) + current);
-    });
+    // Discrepancy bar chart — driven by kpi.discrepancy_trend
+    if (this.kpi?.discrepancy_trend?.length) {
+      this.discrepancyChartData = {
+        labels: this.kpi.discrepancy_trend.map(d => d.month),
+        datasets: [
+          { label: 'Surplus',  data: this.kpi.discrepancy_trend.map(d => d.surplus),  backgroundColor: 'rgba(22,163,74,0.75)',  borderColor: '#16a34a', borderWidth: 1, borderRadius: 4 },
+          { label: 'Shortage', data: this.kpi.discrepancy_trend.map(d => d.shortage), backgroundColor: 'rgba(220,38,38,0.75)', borderColor: '#dc2626', borderWidth: 1, borderRadius: 4 }
+        ]
+      };
+    }
 
-    const sortedCategories = Array.from(categoryTotals.entries())
-      .filter(([, total]) => total > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6);
-
-    const categoryPalette = ['#0891b2', '#16a34a', '#f59e0b', '#4f46e5', '#f97316', '#14b8a6'];
-    this.categoryDonutData = {
-      labels: sortedCategories.map(([name]) => name),
-      datasets: [
-        {
-          data: sortedCategories.map(([, total]) => total),
-          backgroundColor: sortedCategories.map((_, index) => categoryPalette[index % categoryPalette.length]),
-          borderColor: '#ffffff',
-          borderWidth: 2,
-          hoverOffset: 6
-        }
-      ]
-    };
-
+    // Line chart: 30-day IN vs OUT
     const { labels, itemsIn, itemsOut } = this.build30DayMovementSeries(transactions);
     this.stockMovementData = {
       labels,
       datasets: [
-        {
-          label: 'Items in',
-          data: itemsIn,
-          borderColor: '#0ea5e9',
-          backgroundColor: 'rgba(14, 165, 233, 0.16)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        },
-        {
-          label: 'Items out',
-          data: itemsOut,
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239, 68, 68, 0.11)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 0,
-          pointHoverRadius: 4
-        }
+        { label: 'Items in',  data: itemsIn,  borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.16)', fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4 },
+        { label: 'Items out', data: itemsOut, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.11)',  fill: true, tension: 0.3, pointRadius: 0, pointHoverRadius: 4 }
       ]
     };
   }

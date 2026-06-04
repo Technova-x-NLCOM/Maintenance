@@ -843,3 +843,267 @@ $danger: #b91c1c;
     min-height: 320px;
   }
 }
+
+// ── Section labels ────────────────────────────────────────────────────────────
+.section-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-light;
+  padding: 4px 2px 0;
+  flex-shrink: 0;
+}
+
+// ── Hero quick-action buttons ─────────────────────────────────────────────────
+.hero-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  background: #fff;
+  color: $text-medium;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+
+  &:hover {
+    border-color: #bfd6f7;
+    color: $primary-color;
+    background: #eef4ff;
+  }
+}
+
+// ── Action-required KPI row ───────────────────────────────────────────────────
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+
+  @media (max-width: 1399px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 680px)  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 380px)  { grid-template-columns: 1fr; }
+}
+
+.kpi-card {
+  border-radius: 10px;
+  border: 1px solid $border-color;
+  padding: 11px 12px;
+  background: $bg-card;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 4px 10px rgba(16, 33, 63, 0.04);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(16, 33, 63, 0.09);
+  }
+
+  .kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    svg { width: 18px; height: 18px; }
+  }
+
+  .kpi-body {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+
+    .kpi-value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      line-height: 1;
+      color: $text-dark;
+    }
+    .kpi-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: $text-medium;
+      margin-top: 2px;
+    }
+    .kpi-hint {
+      font-size: 0.67rem;
+      color: $text-light;
+      margin-top: 2px;
+
+      &.hint-warn { color: $warning; font-weight: 600; }
+    }
+  }
+
+  // State variants
+  &.kpi-critical {
+    border-color: #fecaca;
+    background: linear-gradient(135deg, #fff7f7 0%, $bg-card 100%);
+    .kpi-icon { background: rgba(185, 28, 28, 0.1); svg { stroke: $danger; } }
+    .kpi-value { color: $danger; }
+  }
+  &.kpi-warning {
+    border-color: #fed7aa;
+    background: linear-gradient(135deg, #fff9f2 0%, $bg-card 100%);
+    .kpi-icon { background: rgba(180, 83, 9, 0.1); svg { stroke: $warning; } }
+    .kpi-value { color: $warning; }
+  }
+  &.kpi-info {
+    border-color: #bfdbfe;
+    background: linear-gradient(135deg, #f5f9ff 0%, $bg-card 100%);
+    .kpi-icon { background: rgba(29, 78, 216, 0.1); svg { stroke: $primary-color; } }
+    .kpi-value { color: $primary-color; }
+  }
+  &.kpi-ok {
+    border-color: #bbf7d0;
+    background: linear-gradient(135deg, #f0fdf4 0%, $bg-card 100%);
+    .kpi-icon { background: rgba(15, 118, 110, 0.1); svg { stroke: $success; } }
+    .kpi-value { color: $success; }
+  }
+}
+
+// Skeleton KPI row
+.skeleton-kpi-row {
+  .skeleton-kpi {
+    height: 78px;
+    border-radius: 10px;
+    border: 1px solid $border-color;
+    background: linear-gradient(110deg, #f2f7ff 8%, #fff 18%, #f2f7ff 33%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+  }
+}
+
+// ── Stat card: batches variant ────────────────────────────────────────────────
+.stat-card.batches .stat-icon {
+  background: rgba(124, 58, 237, 0.12);
+  svg { stroke: #7c3aed; }
+}
+
+// ── Upcoming schedule timeline ────────────────────────────────────────────────
+.schedule-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.schedule-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+  padding-right: 2px;
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: #f1f5f9; }
+  &::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+}
+
+.schedule-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid #e7eef7;
+  background: #f9fbff;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.14s, background 0.14s;
+
+  &:hover    { border-color: #bfd6f7; background: #f0f6ff; }
+  &.row-overdue  { border-color: #fecaca; background: #fff7f7; }
+  &.row-today    { border-color: #fde68a; background: #fffbeb; }
+  &.row-ready    { border-color: #bbf7d0; background: #f0fdf4; }
+  &.row-completed { border-color: #c7d2fe; background: #eef2ff; }
+}
+
+.schedule-date-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #edf4ff;
+  border-radius: 7px;
+  padding: 4px 5px;
+  min-width: 40px;
+}
+
+.schedule-day {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: $text-dark;
+  line-height: 1;
+}
+
+.schedule-month {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: $text-light;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.schedule-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.schedule-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: $text-dark;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-sub {
+  font-size: 0.66rem;
+  color: $text-light;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-chips {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sched-chip {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.chip-planned   { background: #fef3c7; color: #92400e; }
+.chip-checked   { background: #dbeafe; color: #1d4ed8; }
+.chip-ready     { background: #dcfce7; color: #166534; }
+.chip-completed { background: #a5b4fc; color: #1e1b4b; }
+.chip-cancelled { background: #fee2e2; color: #991b1b; }
+.chip-auto      { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
