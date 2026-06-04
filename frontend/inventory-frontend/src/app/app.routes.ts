@@ -28,6 +28,7 @@ import { ItemTransferComponent } from './components/item-transfer/item-transfer.
 import { StorageMaintenanceComponent } from './components/storage-maintenance/storage-maintenance.component';
 import { SystemUsersComponent } from './components/system-users/system-users.component';
 import { AuditLogComponent } from './components/audit-log/audit-log.component';
+import { ScheduledBatchesComponent } from './components/monitoring/scheduled-batches/scheduled-batches.component';
 import { permissionGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -66,7 +67,7 @@ export const routes: Routes = [
       { path: 'monitoring/storage-inventory', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
       { path: 'monitoring/discrepancy', component: DiscrepancyMonitoringComponent },
-      { path: 'monitoring/scheduled-batches', redirectTo: 'inventory/batch-distribution', pathMatch: 'full' },
+      { path: 'monitoring/scheduled-batches', component: ScheduledBatchesComponent },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },
