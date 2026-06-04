@@ -132,32 +132,8 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 }
 
-// Modal overlay
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.55);
-  backdrop-filter: blur(2px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-  animation: modalFadeIn 0.18s ease;
-}
-
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
+// Modal overlay and keyframes from global _modals.scss.
+// .location-form-modal and .modal-confirm keep their component-specific sizing.
 .location-form-modal {
   background: white;
   border-radius: 16px;
@@ -170,7 +146,7 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: modalSlideIn 0.22s ease;
+  animation: appModalIn 0.22s ease;
 
   .form-panel-header {
     flex-shrink: 0;
@@ -230,7 +206,7 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   width: 100%;
   padding: 28px;
   text-align: center;
-  animation: modalSlideIn 0.22s ease;
+  animation: appModalIn 0.22s ease;
 }
 
 .confirm-icon-wrap {
@@ -326,17 +302,6 @@ $shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
   }
 }
 
@@ -1406,7 +1371,7 @@ tr:hover td {
   }
 
   // Modal adjustments for mobile
-  .modal-overlay {
+  .app-modal-overlay {
     padding: 12px;
   }
 
@@ -1682,7 +1647,7 @@ tr:hover td {
     max-width: 500px;
   }
 
-  .modal-overlay {
+  .app-modal-overlay {
     align-items: flex-start;
     padding-top: 20px;
   }
@@ -1741,7 +1706,7 @@ tr:hover td {
   }
 
   .drawer,
-  .modal-overlay {
+  .app-modal-overlay {
     display: none !important;
   }
 }

@@ -196,54 +196,20 @@
   font-size: 12px;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
+// Modal overlay, shell, and keyframes from global _modals.scss.
+// .modal-box keeps its component-specific max-width below.
 .modal-box {
+  max-width: 720px;
   background: #fff;
   border-radius: 16px;
   width: 100%;
-  max-width: 720px;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
   display: flex;
   flex-direction: column;
   max-height: 90vh;
 }
 
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 1.5rem 1rem;
-  border-bottom: 1px solid #e2e8f0;
-
-  h2 { margin: 0; font-size: 1.1rem; color: #0f172a; }
-
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    line-height: 1;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 0 4px;
-    &:hover { color: #334155; }
-  }
-}
-
-.modal-body {
-  padding: 1.25rem 1.5rem;
-  overflow-y: auto;
-  flex: 1;
-}
+// modal-header, modal-body, modal-footer from global _modals.scss
 
 .selected-item-box {
   display: grid;
@@ -335,13 +301,6 @@
   font-size: 13px;
 }
 
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e2e8f0;
-}
 
 @media (max-width: 900px) {
   .form-row {

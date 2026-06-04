@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
+import { ModalUtils } from '../../shared/utils/modal.utils';
 import { getApiBaseUrl } from '../../services/api-base';
 
 type MaintenanceStatus = 'pending' | 'active' | 'restoring' | 'completed' | 'cancelled';
@@ -147,7 +148,21 @@ export class StorageMaintenanceComponent implements OnInit {
     this.showCreateModal = true;
   }
 
-  closeCreate(): void { if (this.saving) return; this.showCreateModal = false; }
+  bounceCreateModal(): void {
+    ModalUtils.bounce('.sm-create-modal');
+  }
+
+  bounceDetailModal(): void {
+    ModalUtils.bounce('.sm-detail-modal');
+  }
+
+  closeCreate(): void {
+    if (this.saving) {
+      ModalUtils.bounce('.sm-create-modal');
+      return;
+    }
+    this.showCreateModal = false;
+  }
 
   get tempLocationOptions(): LocationOption[] {
     return this.locations.filter(l => l.location_id !== this.form.location_id);
@@ -205,7 +220,14 @@ export class StorageMaintenanceComponent implements OnInit {
     });
   }
 
-  closeDetail(): void { if (this.actionSaving) return; this.showDetailModal = false; this.confirmAction = null; }
+  closeDetail(): void {
+    if (this.actionSaving) {
+      ModalUtils.bounce('.sm-detail-modal');
+      return;
+    }
+    this.showDetailModal = false;
+    this.confirmAction = null;
+  }
 
   setConfirm(action: 'start' | 'restore' | 'cancel'): void { this.confirmAction = action; }
   cancelConfirm(): void { this.confirmAction = null; }

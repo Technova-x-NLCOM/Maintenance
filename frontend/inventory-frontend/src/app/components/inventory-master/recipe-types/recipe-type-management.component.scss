@@ -183,21 +183,19 @@
   }
 
   &.btn-danger {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+    background: #dc2626;
     color: #fff;
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    
-    &:hover:not(:disabled) { 
-      background: linear-gradient(135deg, #b91c1c 0%, #991b1b 50%, #7f1d1d 100%);
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
-      transform: translateY(-1px);
+    border: none;
+    box-shadow: none;
+    text-shadow: none;
+
+    &:hover:not(:disabled) {
+      background: #b91c1c;
+      box-shadow: none;
+      transform: none;
     }
 
-    &:active {
-      transform: translateY(0);
-      box-shadow: 0 1px 4px rgba(220, 38, 38, 0.4);
-    }
+    &:active { transform: none; }
   }
 }
 
@@ -344,41 +342,8 @@ th {
   color: #475569;
 }
 
-/* ── Modals ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-}
-
-.modal-content,
-.modal-confirm {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
-}
-
-.modal-content.form-modal {
-  width: min(600px, 100%);
-}
-
-.form-panel-header {
-  padding: 18px 22px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-  color: #fff;
-
-  .panel-title { font-size: 1.1rem; }
-}
-
-.modal-body-scroll {
-  padding: 20px 22px;
-}
+// ── Modal styles from global _modals.scss (app-modal-overlay, app-modal, etc.)
+// Only component-specific form layout overrides below.
 
 .form-grid {
   display: grid;
@@ -423,32 +388,6 @@ textarea {
 }
 
 textarea { resize: vertical; }
-
-.form-actions,
-.confirm-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 22px 22px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.modal-confirm {
-  padding: 24px;
-  width: min(480px, 100%);
-  overflow: visible;
-}
-
-.confirm-body {
-  margin: 10px 0 0;
-  color: #475569;
-  line-height: 1.5;
-}
-
-.confirm-footer {
-  border-top: none;
-  padding: 20px 0 0;
-}
 
 .count {
   font-size: 0.9rem;

@@ -10,6 +10,7 @@ import {
 } from '../../services/inventory-item.service';
 import { ToastService } from '../../services/toast.service';
 import { ToastComponent } from '../../shared/toast/toast.component';
+import { ModalUtils } from '../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-stock-adjustment',
@@ -126,6 +127,10 @@ export class StockAdjustmentComponent implements OnInit {
   }
 
   closeAdjustmentModal(): void {
+    if (this.saving) {
+      ModalUtils.bounce('.adj-modal');
+      return;
+    }
     this.showAdjustmentModal = false;
   }
 
