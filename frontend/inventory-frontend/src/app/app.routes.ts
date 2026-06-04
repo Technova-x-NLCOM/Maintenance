@@ -17,6 +17,7 @@ import { ItemRegistrationUpdatesComponent } from './components/inventory-master/
 import { OperationTypeManagementComponent } from './components/inventory-master/operations-type/operation-type-management.component';
 import { RecipeTypeManagementComponent } from './components/inventory-master/recipe-types/recipe-type-management.component';
 import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
+import { RecipeCalculationPreviewComponent } from './components/inventory-master/recipe-calculation-preview/recipe-calculation-preview.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
@@ -54,6 +55,7 @@ export const routes: Routes = [
       { path: 'inventory/recipe-types', component: RecipeTypeManagementComponent },
       { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
+      { path: 'inventory/recipe-preview', component: RecipeCalculationPreviewComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
       { path: 'inventory/discrepancy', component: DiscrepancyUpdateComponent },

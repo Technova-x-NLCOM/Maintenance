@@ -1,0 +1,297 @@
+<div class="rcp-page">
+  <app-toast></app-toast>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-text">
+      <h1>Recipe Calculation Preview</h1>
+      <p class="subtitle">
+        Select a recipe, enter a target count, and instantly see the ingredient breakdown with
+        stock status. This page is read-only — no stock is modified.
+      </p>
+    </div>
+  </div>
+
+  <div class="rcp-layout">
+
+    <!-- ── LEFT: Recipe list ────────────────────────────────────────────── -->
+    <aside class="recipes-sidebar">
+      <div class="sidebar-header">
+        <h2>Recipes</h2>
+        <span class="recipe-count" *ngIf="!loadingTemplates">{{ filteredTemplates.length }}</span>
+      </div>
+
+      <!-- Search + filter -->
+      <div class="sidebar-controls">
+        <div class="search-input-group">
+          <span class="search-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          </span>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Search recipes..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            aria-label="Search recipes"
+          />
+          <button
+            type="button"
+            class="btn-clear-search"
+            *ngIf="searchQuery.trim()"
+            (click)="clearSearch()"
+            aria-label="Clear search"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <select
+          class="form-control"
+          [(ngModel)]="recipeTypeFilter"
+          (change)="onFilterChange()"
+          aria-label="Filter by recipe type"
+        >
+          <option [ngValue]="'all'">All Recipe Types</option>
+          <option *ngFor="let rt of recipeTypeOptions" [ngValue]="rt.recipe_type_id">
+            {{ rt.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Loading -->
+      <p class="state-msg" *ngIf="loadingTemplates">Loading recipes...</p>
+
+      <!-- Recipe rows -->
+      <div class="recipe-list" *ngIf="!loadingTemplates">
+        <button
+          type="button"
+          class="recipe-row"
+          *ngFor="let template of filteredTemplates"
+          [class.selected]="isSelectedTemplate(template)"
+          (click)="selectTemplate(template)"
+          [attr.aria-pressed]="isSelectedTemplate(template)"
+        >
+          <div class="recipe-row-body">
+            <div class="recipe-name">{{ template.template_name }}</div>
+            <div class="recipe-meta">
+              {{ template.distribution_type_label }}
+              &bull;
+              Base: {{ template.base_unit_count }}
+              &bull;
+              {{ template.item_count }} ingredient{{ template.item_count !== 1 ? 's' : '' }}
+            </div>
+            <div class="recipe-type-chip-row" *ngIf="template.recipe_type_name">
+              <span class="recipe-type-chip">{{ template.recipe_type_name }}</span>
+            </div>
+          </div>
+          <svg
+            class="recipe-chevron"
+            xmlns="http://www.w3.org/2000/svg"
+            width="14" height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <p class="state-msg" *ngIf="filteredTemplates.length === 0">No recipes match your search.</p>
+      </div>
+    </aside>
+
+    <!-- ── RIGHT: Calculator + results ─────────────────────────────────── -->
+    <main class="calculator-pane">
+
+      <!-- Empty state — no template selected -->
+      <div class="empty-state" *ngIf="!selectedTemplate">
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+            <rect x="9" y="3" width="6" height="4" rx="2"></rect>
+            <line x1="9" y1="12" x2="15" y2="12"></line>
+            <line x1="9" y1="16" x2="13" y2="16"></line>
+          </svg>
+        </div>
+        <p class="empty-state-title">Select a recipe to preview</p>
+        <p class="empty-state-sub">
+          Choose any recipe from the list on the left, enter a target count, and click
+          <strong>Calculate</strong> to see the full ingredient breakdown.
+        </p>
+      </div>
+
+      <!-- Calculator panel — template selected -->
+      <ng-container *ngIf="selectedTemplate as tpl">
+
+        <!-- Template header -->
+        <div class="selected-recipe-header">
+          <div class="selected-recipe-info">
+            <h2 class="selected-recipe-name">{{ tpl.template_name }}</h2>
+            <div class="selected-recipe-meta">
+              <span>{{ tpl.distribution_type_label }}</span>
+              <span class="sep">&bull;</span>
+              <span>Base unit count: <strong>{{ tpl.base_unit_count }}</strong></span>
+              <span class="sep">&bull;</span>
+              <span>{{ tpl.item_count }} ingredient{{ tpl.item_count !== 1 ? 's' : '' }}</span>
+              <span *ngIf="tpl.recipe_type_name" class="sep">&bull;</span>
+              <span *ngIf="tpl.recipe_type_name" class="recipe-type-chip">{{ tpl.recipe_type_name }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="clearSelection()">
+            Change recipe
+          </button>
+        </div>
+
+        <!-- Target count form -->
+        <div class="calc-form">
+          <label class="calc-label" for="targetCount">
+            <span>Target count</span>
+            <span class="calc-label-hint">Number of people / units to prepare for</span>
+          </label>
+          <div class="calc-input-row">
+            <input
+              id="targetCount"
+              type="number"
+              class="form-control calc-input"
+              min="1"
+              [(ngModel)]="targetUnitCount"
+              (keydown.enter)="runCalculation()"
+              aria-label="Target unit count"
+            />
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="runCalculation()"
+              [disabled]="calculating || targetUnitCount < 1"
+            >
+              <span *ngIf="!calculating">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                Calculate
+              </span>
+              <span *ngIf="calculating">Calculating...</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Calculating spinner -->
+        <p class="state-msg calculating-msg" *ngIf="calculating">
+          <svg class="spin-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+          Running calculation...
+        </p>
+
+        <!-- Results -->
+        <ng-container *ngIf="calculation as calc">
+
+          <!-- Summary strip -->
+          <div class="summary-strip" [class.summary-has-shortage]="shortageCount > 0">
+
+            <div class="summary-pill">
+              <span class="pill-label">Target</span>
+              <strong>{{ calc.target_unit_count }}</strong>
+            </div>
+
+            <div class="summary-pill">
+              <span class="pill-label">Multiplier</span>
+              <strong>× {{ calc.multiplier | number:'1.0-4' }}</strong>
+            </div>
+
+            <div class="summary-pill">
+              <span class="pill-label">Ingredients</span>
+              <strong>{{ calc.summary.line_count }}</strong>
+            </div>
+
+            <div class="summary-pill">
+              <span class="pill-label">Total Required</span>
+              <strong>{{ calc.summary.total_required_quantity_for_issuance }}</strong>
+            </div>
+
+            <div class="summary-pill summary-pill--ok" *ngIf="shortageCount === 0">
+              <span class="pill-label">Stock Status</span>
+              <strong class="text-ok">✓ All items sufficient</strong>
+            </div>
+
+            <div class="summary-pill summary-pill--shortage" *ngIf="shortageCount > 0">
+              <span class="pill-label">Shortages</span>
+              <strong class="text-shortage">{{ shortageCount }} item{{ shortageCount !== 1 ? 's' : '' }} short</strong>
+            </div>
+
+          </div>
+
+          <!-- Ingredient table -->
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Ingredient</th>
+                  <th scope="col">Unit</th>
+                  <th scope="col" class="col-num">Per Base</th>
+                  <th scope="col" class="col-num">Required</th>
+                  <th scope="col" class="col-num">In Stock</th>
+                  <th scope="col" class="col-num">Shortage</th>
+                  <th scope="col" class="col-status">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let item of calc.items"
+                  [class.row-shortage]="item.has_shortage"
+                  [class.row-ok]="!item.has_shortage"
+                >
+                  <td>
+                    <span class="item-code">{{ item.item_code }}</span>
+                    <span class="item-desc">{{ item.item_description }}</span>
+                  </td>
+                  <td class="text-muted">{{ item.measurement_unit || '—' }}</td>
+                  <td class="col-num">{{ item.quantity_per_base }}</td>
+                  <td class="col-num">{{ item.required_quantity_for_issuance }}</td>
+                  <td class="col-num">{{ item.current_stock }}</td>
+                  <td class="col-num shortage-qty" [class.text-shortage]="item.has_shortage">
+                    {{ item.has_shortage ? item.shortage_quantity : '—' }}
+                  </td>
+                  <td class="col-status">
+                    <span class="status-badge" [ngClass]="stockStatusClass(item)" [attr.aria-label]="stockStatusLabel(item)">
+                      {{ stockStatusLabel(item) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Legend -->
+          <div class="legend-row">
+            <span class="legend-item">
+              <span class="legend-dot legend-dot--green"></span> Sufficient stock
+            </span>
+            <span class="legend-item">
+              <span class="legend-dot legend-dot--red"></span> Shortage — additional stock needed
+            </span>
+            <span class="legend-note">This preview does not modify any stock or create schedules.</span>
+          </div>
+
+        </ng-container>
+      </ng-container>
+
+    </main>
+  </div>
+</div>
