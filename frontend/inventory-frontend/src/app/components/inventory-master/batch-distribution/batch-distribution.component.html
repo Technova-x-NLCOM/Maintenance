@@ -1066,44 +1066,6 @@
     </div>
   </div>
 
-  <!-- Recipe Delete Confirmation Dialog -->
-  <div
-    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
-    *ngIf="templateConfirmDialog.open"
-    (click)="closeTemplateConfirm()"
-  >
-    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
-      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
-      </div>
-      <h2 class="app-confirm-title">{{ templateConfirmDialog.title }}</h2>
-      <p class="app-confirm-body">{{ templateConfirmDialog.message }}</p>
-      <div class="app-confirm-footer">
-        <button class="btn btn-cancel" type="button" (click)="closeTemplateConfirm()">{{ templateConfirmDialog.cancelText }}</button>
-        <button class="app-btn-danger" type="button" (click)="confirmTemplateDialogAction()">{{ templateConfirmDialog.confirmText }}</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Schedule Confirmation Dialog -->
-  <div
-    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
-    *ngIf="planConfirmDialog.open"
-    (click)="closePlanConfirm()"
-  >
-    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
-      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
-      </div>
-      <h2 class="app-confirm-title">{{ planConfirmDialog.title }}</h2>
-      <p class="app-confirm-body">{{ planConfirmDialog.message }}</p>
-      <div class="app-confirm-footer">
-        <button class="btn btn-cancel" type="button" (click)="closePlanConfirm()">{{ planConfirmDialog.cancelText }}</button>
-        <button class="app-btn-danger" type="button" (click)="confirmPlanAction()">{{ planConfirmDialog.confirmText }}</button>
-      </div>
-    </div>
-  </div>
-
   <!-- New Recipe Modal -->
   <div
     class="app-modal-overlay app-modal-overlay--sidebar-offset"
@@ -1304,6 +1266,44 @@
         >
           {{ recipeModalSaveLabel }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipe Delete Confirmation Dialog — rendered last so it always sits above all other modals -->
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
+    *ngIf="templateConfirmDialog.open"
+    (click)="closeTemplateConfirm()"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <h2 class="app-confirm-title">{{ templateConfirmDialog.title }}</h2>
+      <p class="app-confirm-body">{{ templateConfirmDialog.message }}</p>
+      <div class="app-confirm-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeTemplateConfirm()">{{ templateConfirmDialog.cancelText }}</button>
+        <button class="app-btn-danger" type="button" (click)="confirmTemplateDialogAction()">{{ templateConfirmDialog.confirmText }}</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Confirmation Dialog — rendered last so it always sits above all other modals -->
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
+    *ngIf="planConfirmDialog.open"
+    (click)="closePlanConfirm()"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <h2 class="app-confirm-title">{{ planConfirmDialog.title }}</h2>
+      <p class="app-confirm-body">{{ planConfirmDialog.message }}</p>
+      <div class="app-confirm-footer">
+        <button class="btn btn-cancel" type="button" (click)="closePlanConfirm()">{{ planConfirmDialog.cancelText }}</button>
+        <button class="app-btn-danger" type="button" (click)="confirmPlanAction()">{{ planConfirmDialog.confirmText }}</button>
       </div>
     </div>
   </div>

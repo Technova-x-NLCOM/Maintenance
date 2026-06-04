@@ -131,7 +131,7 @@ export abstract class BatchDistributionTemplateMixin {
   }
 
   get perUnitLabel(): string {
-    return this.selectedDistributionType === 'relief_goods' ? 'Qty per Pack' : 'Qty per Person';
+    return this.selectedDistributionType === 'relief_goods' ? 'Qty' : 'Qty';
   }
 
   get targetUnitNounPlural(): string {
