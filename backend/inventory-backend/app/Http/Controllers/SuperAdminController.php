@@ -66,6 +66,22 @@ class SuperAdminController extends Controller
                 $expiringItems = 0;
             }
 
+            // Schedules due today
+            $schedulesToday = 0;
+            $overdueSchedules = 0;
+            try {
+                $today = now()->toDateString();
+                $schedulesToday = \Illuminate\Support\Facades\Schema::hasTable('distribution_plan_schedules')
+                    ? DB::table('distribution_plan_schedules')->whereDate('planned_date', $today)->whereIn('status', ['planned','checked_pre'])->count()
+                    : 0;
+                $overdueSchedules = \Illuminate\Support\Facades\Schema::hasTable('distribution_plan_schedules')
+                    ? DB::table('distribution_plan_schedules')->whereDate('planned_date', '<', $today)->whereIn('status', ['planned','checked_pre'])->count()
+                    : 0;
+            } catch (\Exception $e) {
+                $schedulesToday = 0;
+                $overdueSchedules = 0;
+            }
+
             $trends = app(DashboardTrendService::class)->inventoryTrends();
 
             return response()->json([
@@ -77,6 +93,8 @@ class SuperAdminController extends Controller
                 'pendingAlerts' => $pendingAlerts,
                 'totalCategories' => $totalCategories,
                 'expiringItems' => $expiringItems,
+                'schedulesToday' => $schedulesToday,
+                'overdueSchedules' => $overdueSchedules,
                 'trends' => $trends,
             ]);
         } catch (\Exception $e) {
@@ -89,6 +107,8 @@ class SuperAdminController extends Controller
                 'pendingAlerts' => 0,
                 'totalCategories' => 0,
                 'expiringItems' => 0,
+                'schedulesToday' => 0,
+                'overdueSchedules' => 0,
                 'trends' => [
                     'items' => ['current' => 0, 'previous' => 0],
                     'transactions' => ['current' => 0, 'previous' => 0],
