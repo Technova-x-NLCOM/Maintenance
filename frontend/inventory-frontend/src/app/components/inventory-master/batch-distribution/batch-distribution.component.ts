@@ -28,6 +28,7 @@ import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { RecipeTypeService } from '../../../services/recipe-type.service';
 import { InventoryItemService } from '../../../services/inventory-item.service';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 import { BatchDistributionTemplateMixin } from './batch-distribution-template.mixin';
 import { BatchDistributionPlanMixin } from './batch-distribution-plan.mixin';
@@ -261,6 +262,24 @@ export class BatchDistributionComponent implements OnInit, OnDestroy {
       remaining_quantity: 0,
       notes: '',
     }));
+  }
+
+  // ── bounce guards ────────────────────────────────────────────────────────
+  /** Bounce any modal by selector. Used by backdrop (click) handlers. */
+  bounceModal(selector: string): void {
+    ModalUtils.bounce(selector);
+  }
+
+  bounceScheduleDialog(): void {
+    ModalUtils.bounce('.bd-schedule-modal');
+  }
+
+  bounceExecutionModal(): void {
+    ModalUtils.bounce('.bd-execution-modal');
+  }
+
+  bounceNewRecipeModal(): void {
+    ModalUtils.bounce('.bd-new-recipe-modal');
   }
 
   // ── global click handler ─────────────────────────────────────────────────

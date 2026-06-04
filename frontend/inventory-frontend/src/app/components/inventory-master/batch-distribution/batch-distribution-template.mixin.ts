@@ -21,6 +21,7 @@ import { ToastService } from '../../../services/toast.service';
 import { RecipeTypeOption, RecipeTypeService } from '../../../services/recipe-type.service';
 import { InventoryItemService } from '../../../services/inventory-item.service';
 import { EditableTemplateLine, TemplateConfirmDialog } from './batch-distribution-types';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 export abstract class BatchDistributionTemplateMixin {
   // ── injected dependencies (provided by concrete component) ──────────────
@@ -534,6 +535,10 @@ export abstract class BatchDistributionTemplateMixin {
   }
 
   closeNewRecipeModal(): void {
+    if (this.savingTemplate) {
+      ModalUtils.bounce('.bd-new-recipe-modal');
+      return;
+    }
     this.showNewRecipeModal = false;
     this.showTemplateForm = false;
     this.isEditingTemplate = false;

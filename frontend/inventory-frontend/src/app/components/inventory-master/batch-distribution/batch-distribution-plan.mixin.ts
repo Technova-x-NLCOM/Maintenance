@@ -21,6 +21,7 @@ import {
   PlanConfirmDialog,
   StockReadinessEntry,
 } from './batch-distribution-types';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 export abstract class BatchDistributionPlanMixin {
   protected abstract batchService: BatchDistributionService;
@@ -349,6 +350,10 @@ export abstract class BatchDistributionPlanMixin {
   }
 
   closeScheduleDialog(): void {
+    if (this.savingPlan) {
+      ModalUtils.bounce('.bd-schedule-modal');
+      return;
+    }
     this.showScheduleDialog = false;
     this.savingPlan = false;
     this.planDialogMode = 'create';
