@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { getApiBaseUrl } from './api-base';
 
-export type ExportReportType = 'stock_report' | 'transaction_history' | 'discrepancy_monitoring';
+export type ExportReportType = 'stock_report' | 'transaction_history' | 'discrepancy_monitoring' | 'schedule_monitoring';
 export type ExportFormat = 'excel' | 'pdf';
 
 @Injectable({ providedIn: 'root' })

@@ -348,6 +348,10 @@ Artisan::command('schedule:auto-allocate-plans {--dry-run}', function () {
             try {
                 $issuanceSummary = null;
 
+                // Build location breakdown BEFORE issuing — stock is still intact here.
+                // After issuePlanItems() the batches are depleted and the query returns empty.
+                $locationBreakdown = $planService->buildLocationBreakdown($plan, $checkData['items']);
+
                 DB::transaction(function () use ($plan, $checkData, $planService, &$issuanceSummary) {
                     $issuanceSummary = $planService->issuePlanItems(
                         $plan,
@@ -378,8 +382,10 @@ Artisan::command('schedule:auto-allocate-plans {--dry-run}', function () {
                 $this->info("✓ Auto-allocated: {$plan->week_label} → Ref: {$issuanceSummary['reference_number']}");
                 $allocated++;
 
-                // Send success email
+                // Send success email with the pre-captured location breakdown
                 if (!empty($recipients) && $issuanceSummary !== null) {
+                    $issuanceSummary['location_breakdown'] = $locationBreakdown;
+
                     Mail::to($recipients)->send(
                         new DistributionPlanAllocatedMail($plan, $issuanceSummary, $generatedAt)
                     );

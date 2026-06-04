@@ -17,6 +17,7 @@ import { ItemRegistrationUpdatesComponent } from './components/inventory-master/
 import { OperationTypeManagementComponent } from './components/inventory-master/operations-type/operation-type-management.component';
 import { RecipeTypeManagementComponent } from './components/inventory-master/recipe-types/recipe-type-management.component';
 import { BatchDistributionComponent } from './components/inventory-master/batch-distribution/batch-distribution.component';
+import { RecipeCalculationPreviewComponent } from './components/inventory-master/recipe-calculation-preview/recipe-calculation-preview.component';
 import { ReceivingTransactionComponent } from './components/receiving-transaction/receiving-transaction.component';
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
@@ -27,6 +28,7 @@ import { ItemTransferComponent } from './components/item-transfer/item-transfer.
 import { StorageMaintenanceComponent } from './components/storage-maintenance/storage-maintenance.component';
 import { SystemUsersComponent } from './components/system-users/system-users.component';
 import { AuditLogComponent } from './components/audit-log/audit-log.component';
+import { ScheduledBatchesComponent } from './components/monitoring/scheduled-batches/scheduled-batches.component';
 import { permissionGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -54,6 +56,7 @@ export const routes: Routes = [
       { path: 'inventory/recipe-types', component: RecipeTypeManagementComponent },
       { path: 'inventory/minimum-stock', redirectTo: 'inventory/items', pathMatch: 'full' },
       { path: 'inventory/batch-distribution', component: BatchDistributionComponent },
+      { path: 'inventory/recipe-preview', component: RecipeCalculationPreviewComponent },
       { path: 'inventory/receiving', component: ReceivingTransactionComponent },
       { path: 'inventory/issuance', component: IssuanceTransactionComponent },
       { path: 'inventory/discrepancy', component: DiscrepancyUpdateComponent },
@@ -64,7 +67,7 @@ export const routes: Routes = [
       { path: 'monitoring/storage-inventory', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
       { path: 'monitoring/discrepancy', component: DiscrepancyMonitoringComponent },
-      { path: 'monitoring/scheduled-batches', redirectTo: 'inventory/batch-distribution', pathMatch: 'full' },
+      { path: 'monitoring/scheduled-batches', component: ScheduledBatchesComponent },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
       { path: 'maintenance', component: MaintenanceComponent },
       { path: 'maintenance/:table', component: MaintenanceComponent },

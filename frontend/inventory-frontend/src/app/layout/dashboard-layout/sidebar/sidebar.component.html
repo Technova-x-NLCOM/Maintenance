@@ -62,6 +62,10 @@
           <span class="sub-dot"></span>
           <span class="label">Batch Distribution</span>
         </a>
+        <a routerLink="/dashboard/inventory/recipe-preview" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+          <span class="sub-dot"></span>
+          <span class="label">Recipe Preview</span>
+        </a>
         <a routerLink="/dashboard/inventory/receiving" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Stock Receiving (IN)</span>
@@ -144,6 +148,10 @@
         <a routerLink="/dashboard/monitoring/discrepancy" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
           <span class="sub-dot"></span>
           <span class="label">Discrepancy Log</span>
+        </a>
+        <a routerLink="/dashboard/monitoring/scheduled-batches" routerLinkActive="active" class="nav-sub-item" (click)="closeCollapsedFlyouts()">
+          <span class="sub-dot"></span>
+          <span class="label">Schedule Monitoring</span>
         </a>
       </div>
     </div>

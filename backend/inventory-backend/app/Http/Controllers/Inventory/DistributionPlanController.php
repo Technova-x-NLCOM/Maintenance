@@ -140,8 +140,19 @@ class DistributionPlanController extends Controller
             ], 404);
         }
 
-        $checkData      = $this->buildInventoryCheckData($plan);
-        $locationBreakdown = $this->buildLocationBreakdown($plan, $checkData['items']);
+        $checkData = $this->buildInventoryCheckData($plan);
+
+        // For plans that have already been issued (ready / completed), the live
+        // buildLocationBreakdown() query finds no stock because the batches are
+        // depleted. Instead, read the actual OUT transactions that were recorded
+        // during allocation — they carry from_location_id per line.
+        $issuedStatus = in_array((string) $plan->status, ['ready', 'completed'], true);
+
+        if ($issuedStatus) {
+            $locationBreakdown = $this->buildIssuedLocationBreakdown($plan, $checkData['items']);
+        } else {
+            $locationBreakdown = $this->buildLocationBreakdown($plan, $checkData['items']);
+        }
 
         $remainingItems = DB::table('distribution_plan_remaining_items as dpri')
             ->join('items as i', 'dpri.item_id', '=', 'i.item_id')
@@ -169,6 +180,139 @@ class DistributionPlanController extends Controller
                 'remaining_items'    => $remainingItems,
             ],
         ]);
+    }
+
+    /**
+     * Build the location breakdown from the actual OUT transactions written
+     * during issuance — used when the plan is already in 'ready' or 'completed'
+     * status where live stock is depleted.
+     *
+     * Resolves the issuance reference from (in priority order):
+     *   1. auto_allocation_ref  (set by the auto-allocate command)
+     *   2. completed_reference  (set when manually run/completed)
+     *
+     * Returns the same shape as DistributionPlanService::buildLocationBreakdown()
+     * so the frontend can use either interchangeably.
+     */
+    private function buildIssuedLocationBreakdown(object $plan, array $checkItems): array
+    {
+        if (empty($checkItems)) {
+            return [];
+        }
+
+        // Determine which reference was used when stock was issued
+        $reference = null;
+        if (!empty($plan->auto_allocation_ref)) {
+            $reference = (string) $plan->auto_allocation_ref;
+        } elseif (!empty($plan->completed_reference)) {
+            $reference = (string) $plan->completed_reference;
+        }
+
+        // No reference means we can't look up actual transactions — fall back to
+        // the live breakdown (may be empty, but avoids a hard failure)
+        if ($reference === null) {
+            return $this->buildLocationBreakdown($plan, $checkItems);
+        }
+
+        $hasFromLocation = Schema::hasColumn('inventory_transactions', 'from_location_id');
+
+        // Fetch all OUT transactions for this issuance reference, joined to their
+        // source batch location and item details
+        $txQuery = DB::table('inventory_transactions as t')
+            ->join('items as i', 't.item_id', '=', 'i.item_id')
+            ->where('t.reference_number', $reference)
+            ->where('t.transaction_type', 'OUT')
+            ->orderBy('i.item_description')
+            ->orderBy('t.transaction_id');
+
+        if ($hasFromLocation) {
+            $txQuery->leftJoin('locations as fl', 't.from_location_id', '=', 'fl.location_id')
+                ->select(
+                    't.item_id',
+                    'i.item_code',
+                    'i.item_description',
+                    'i.measurement_unit',
+                    't.quantity',
+                    't.from_location_id as location_id',
+                    'fl.location_name',
+                    'fl.location_code',
+                );
+        } else {
+            // No from_location_id column — join via batch location instead
+            $txQuery->leftJoin('inventory_batches as b', 't.batch_id', '=', 'b.batch_id')
+                ->leftJoin('locations as bl', 'b.location_id', '=', 'bl.location_id')
+                ->select(
+                    't.item_id',
+                    'i.item_code',
+                    'i.item_description',
+                    'i.measurement_unit',
+                    't.quantity',
+                    'b.location_id',
+                    'bl.location_name',
+                    'bl.location_code',
+                );
+        }
+
+        $transactions = $txQuery->get();
+
+        if ($transactions->isEmpty()) {
+            return [];
+        }
+
+        // Resolve preferred location id for tagging
+        $preferredLocId = isset($plan->preferred_location_id)
+            ? (int) $plan->preferred_location_id
+            : null;
+
+        // Build a lookup of required quantities from checkItems
+        $requiredByItem = collect($checkItems)
+            ->keyBy('item_id')
+            ->map(fn ($line) => (int) $line['required_quantity_for_issuance']);
+
+        // Group transactions: item_id → location_id → aggregated quantity
+        $byItem = [];
+
+        foreach ($transactions as $tx) {
+            $itemId  = (int) $tx->item_id;
+            $locKey  = $tx->location_id !== null ? (int) $tx->location_id : 'unassigned';
+
+            if (!isset($byItem[$itemId])) {
+                $byItem[$itemId] = [
+                    'item_id'          => $itemId,
+                    'item_code'        => (string) $tx->item_code,
+                    'item_description' => (string) $tx->item_description,
+                    'measurement_unit' => $tx->measurement_unit ? (string) $tx->measurement_unit : null,
+                    'required'         => $requiredByItem[$itemId] ?? 0,
+                    'unfulfilled'      => 0,
+                    'locations'        => [],
+                ];
+            }
+
+            if (!isset($byItem[$itemId]['locations'][$locKey])) {
+                $isPreferred = $preferredLocId !== null
+                    && $tx->location_id !== null
+                    && (int) $tx->location_id === $preferredLocId;
+
+                $byItem[$itemId]['locations'][$locKey] = [
+                    'location_id'   => $tx->location_id !== null ? (int) $tx->location_id : null,
+                    'location_name' => $tx->location_name ?? 'Unassigned',
+                    'location_code' => $tx->location_code ?? null,
+                    'pull_quantity' => 0,
+                    'available'     => 0,   // stock is gone; field kept for shape compatibility
+                    'is_preferred'  => $isPreferred,
+                    'is_spillover'  => $preferredLocId !== null && !$isPreferred,
+                    'batches'       => [],
+                ];
+            }
+
+            $byItem[$itemId]['locations'][$locKey]['pull_quantity'] += (int) $tx->quantity;
+        }
+
+        // Re-index locations arrays and return
+        return array_values(array_map(function ($item) {
+            $item['locations'] = array_values($item['locations']);
+            return $item;
+        }, $byItem));
     }
 
     public function stockReadiness(int $planId)

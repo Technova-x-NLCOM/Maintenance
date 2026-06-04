@@ -2078,9 +2078,12 @@ label span {
   z-index: 1050;
 }
 
-// Confirm dialogs sit above other modals
+// Confirm dialogs must sit above every other modal in this component.
+// The --sidebar-offset modifier sets z-index: 9999 in _modals.scss via a lower-specificity rule.
+// We use !important here specifically to beat that global rule, since both classes appear on the
+// same element and the global stylesheet wins on cascade order.
 .confirm-overlay {
-  z-index: 1100;
+  z-index: 10500 !important;
 }
 
 // Execution modal sits above confirm dialogs
