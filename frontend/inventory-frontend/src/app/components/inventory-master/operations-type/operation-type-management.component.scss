@@ -100,9 +100,32 @@
 }
 
 .btn-danger {
-  padding: 10px 16px;
   background: #dc2626;
   color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #b91c1c; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
+.btn-sm.btn-danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) { background: #b91c1c; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 .btn-cancel,
@@ -171,35 +194,8 @@ th {
   margin-top: 18px;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-}
-
-.modal-content,
-.modal-confirm {
-  width: min(760px, 100%);
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.2);
-}
-
-.form-panel-header {
-  padding: 18px 22px;
-  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-  color: #fff;
-}
-
-.modal-body-scroll {
-  padding: 20px 22px;
-}
+// Modal styles from global _modals.scss (app-modal-overlay, app-modal, etc.)
+// Component-specific form layout below.
 
 .form-grid {
   display: grid;
@@ -221,6 +217,8 @@ input[type='text'], select, textarea {
   border-radius: 10px;
   padding: 11px 12px;
   background: #fff;
+  box-sizing: border-box;
+  &:focus { outline: none; border-color: #2563eb; }
 }
 
 .checkbox-row {
@@ -229,21 +227,4 @@ input[type='text'], select, textarea {
   gap: 10px;
 }
 
-.form-actions,
-.confirm-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 22px 22px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.modal-confirm {
-  padding: 22px;
-  width: min(520px, 100%);
-}
-
-.confirm-body {
-  margin: 12px 0 0;
-  color: #475569;
-}
+textarea { resize: vertical; }

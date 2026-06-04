@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import { OperationTypeRow, OperationTypeService } from '../../../services/operation-type.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-operation-type-management',
@@ -145,7 +146,17 @@ export class OperationTypeManagementComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
+  bounceForm(): void {
+    if (this.saving) {
+      ModalUtils.bounce('.op-form-modal');
+    }
+  }
+
   closeForm(): void {
+    if (this.saving) {
+      ModalUtils.bounce('.op-form-modal');
+      return;
+    }
     this.showForm = false;
     this.editingOperationTypeId = null;
     this.cdr.markForCheck();
@@ -192,6 +203,10 @@ export class OperationTypeManagementComponent implements OnInit, OnDestroy {
   }
 
   cancelDeleteConfirm(): void {
+    if (this.deleteLoading) {
+      ModalUtils.bounceConfirm();
+      return;
+    }
     this.showDeleteConfirm = false;
     this.deleteTarget = null;
     this.cdr.markForCheck();
