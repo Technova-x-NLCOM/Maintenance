@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { getApiBaseUrl } from '../../../services/api-base';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 export interface DiscrepancyItem {
   item_id: number;
@@ -175,7 +176,10 @@ export class DiscrepancyUpdateComponent implements OnInit {
   }
 
   closeModal(): void {
-    if (this.saving) return;
+    if (this.saving) {
+      ModalUtils.bounce('.disc-modal');
+      return;
+    }
     this.showModal = false;
     this.attemptedSubmit = false;
   }
@@ -239,12 +243,7 @@ export class DiscrepancyUpdateComponent implements OnInit {
   onEscape(): void { if (this.showModal && !this.saving) this.closeModal(); }
 
   bounceModal(): void {
-    const el = document.querySelector<HTMLElement>('.modal-box');
-    if (!el) return;
-    el.animate(
-      [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(0.97)' }, { transform: 'scale(1.01)' }, { transform: 'scale(1)' }],
-      { duration: 380, easing: 'ease' }
-    );
+    ModalUtils.bounce('.modal-box');
   }
 
   private authHeaders(): HttpHeaders {

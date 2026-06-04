@@ -104,16 +104,21 @@
   </section>
 </div>
 
-<!-- Discrepancy Details Modal (mirrors receiving modal pattern) -->
-<div class="modal-overlay" *ngIf="showModal" (click)="bounceModal()">
-  <div class="modal-box" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Record Discrepancy</h2>
-      <button class="modal-close app-modal-close" (click)="closeModal()"
-        [disabled]="saving" aria-label="Close">×</button>
+<!-- Discrepancy Details Modal -->
+<div
+  class="app-modal-overlay app-modal-overlay--sidebar-offset"
+  *ngIf="showModal"
+  (click)="bounceModal()"
+>
+  <div class="app-modal app-modal--lg disc-modal" (click)="$event.stopPropagation()">
+    <div class="app-modal-header">
+      <h2 class="app-modal-title">Record Discrepancy</h2>
+      <button class="app-modal-close-btn" (click)="closeModal()" [disabled]="saving" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
 
-    <div class="modal-body" *ngIf="selectedItem">
+    <div class="app-modal-body" *ngIf="selectedItem">
 
       <!-- Selected item summary -->
       <div class="selected-item-box">
@@ -212,7 +217,7 @@
 
     </div><!-- /modal-body -->
 
-    <div class="modal-footer">
+    <div class="app-modal-footer">
       <button class="btn btn-secondary" type="button"
         (click)="closeModal()" [disabled]="saving">Cancel</button>
       <button class="btn btn-primary" type="button"
