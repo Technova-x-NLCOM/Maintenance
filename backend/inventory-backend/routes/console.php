@@ -352,7 +352,7 @@ Artisan::command('schedule:auto-allocate-plans {--dry-run}', function () {
                     $issuanceSummary = $planService->issuePlanItems(
                         $plan,
                         $checkData,
-                        0, // system user — 0 means automated
+                        $planService->resolveSystemUserId(), // system-automated actor
                         'Auto-allocated for ' . $plan->week_label,
                         'Auto-allocation',
                         null,

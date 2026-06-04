@@ -166,12 +166,14 @@ class DistributionPlanService
     public function issuePlanItems(
         object $plan,
         array $checkData,
-        int $performedBy,
+        ?int $performedBy,
         string $destination,
         ?string $reason,
         ?string $notes,
         string $referencePrefix = 'PLAN'
     ): array {
+        // Resolve a valid user ID — column is NOT NULL in the DB
+        $actorId = $performedBy ?? $this->resolveSystemUserId();
         $reference      = $referencePrefix . '-' . now()->format('YmdHis') . '-' . strtoupper(substr((string) uniqid(), -4));
         $issuedLines    = [];
         $totalIssued    = 0;
@@ -209,7 +211,7 @@ class DistributionPlanService
 
                     $txInsert = $this->buildTransactionInsert(
                         $itemId, $batch->batch_id, $deduct,
-                        $reference, $reason, $notes, $destination, $performedBy, $plan
+                        $reference, $reason, $notes, $destination, $actorId, $plan
                     );
                     if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
                         $txInsert['from_location_id'] = (int) $batch->location_id;
@@ -248,7 +250,7 @@ class DistributionPlanService
 
                     $txInsert = $this->buildTransactionInsert(
                         $itemId, $batch->batch_id, $deduct,
-                        $reference, $reason, $notes, $destination, $performedBy, $plan
+                        $reference, $reason, $notes, $destination, $actorId, $plan
                     );
                     if (Schema::hasColumn('inventory_transactions', 'from_location_id')) {
                         $txInsert['from_location_id'] = $batch->location_id ? (int) $batch->location_id : null;
@@ -548,5 +550,38 @@ class DistributionPlanService
             'performed_by'     => $performedBy,
             'created_at'       => now(),
         ];
+    }
+
+    /**
+     * Resolve a system-level user ID for automated operations (e.g. auto-allocation).
+     * Returns the first active super_admin user, falling back to the first active user.
+     * Throws if the users table is empty — something is seriously wrong in that case.
+     */
+    public function resolveSystemUserId(): int
+    {
+        // Try the first active super_admin
+        $id = DB::table('users as u')
+            ->join('user_roles as ur', 'u.user_id', '=', 'ur.user_id')
+            ->join('roles as r', 'ur.role_id', '=', 'r.role_id')
+            ->where('u.is_active', true)
+            ->where('r.role_name', 'super_admin')
+            ->orderBy('u.user_id')
+            ->value('u.user_id');
+
+        if ($id !== null) {
+            return (int) $id;
+        }
+
+        // Fall back to any active user
+        $id = DB::table('users')
+            ->where('is_active', true)
+            ->orderBy('user_id')
+            ->value('user_id');
+
+        if ($id !== null) {
+            return (int) $id;
+        }
+
+        throw new \RuntimeException('No active users found in the system. Cannot assign performed_by for auto-allocation.');
     }
 }

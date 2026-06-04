@@ -903,7 +903,7 @@ class DistributionPlanController extends Controller
     private function issuePlanItems(
         object $plan,
         array $checkData,
-        int $performedBy,
+        ?int $performedBy,
         string $destination,
         ?string $reason,
         ?string $notes
