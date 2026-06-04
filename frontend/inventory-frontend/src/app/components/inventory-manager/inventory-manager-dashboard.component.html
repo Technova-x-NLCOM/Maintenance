@@ -1,174 +1,208 @@
 <div class="dashboard-wrapper">
+
+  <!-- ── Hero ──────────────────────────────────────────────────────── -->
   <div class="hero-panel">
     <div class="welcome-header">
       <div class="welcome-text">
         <h1>{{ user?.first_name || 'Inventory Manager' }}, good to see you</h1>
-        <p class="subtitle">Track stock health, execute inventory workflows, and clear operational bottlenecks.</p>
+        <p class="subtitle">{{ topPriorityMessage }}</p>
       </div>
     </div>
   </div>
 
-  <div class="stats-grid" *ngIf="!loading; else loadingStats">
-    <a class="stat-card inventory" routerLink="/dashboard/inventory/items" aria-label="Go to inventory items">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-          <line x1="12" y1="22.08" x2="12" y2="12"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalItems || 0 }}</span>
-        <span class="stat-label">Inventory Items</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(stockTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ stockTrend.direction === 'down' ? '▼' : stockTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ stockTrend.description }}
-        </span>
-        <span class="stat-sub warning" *ngIf="(stats?.lowStockItems || 0) > 0">{{ stats?.lowStockItems }} low stock needs review</span>
-        <span class="stat-sub" *ngIf="(stats?.lowStockItems || 0) === 0">Stock levels are stable</span>
-      </div>
-    </a>
+  <ng-container *ngIf="!loading; else loadingAll">
 
-    <a class="stat-card transactions" routerLink="/dashboard/monitoring/transaction-history" aria-label="Go to transaction history">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.totalTransactions || 0 }}</span>
-        <span class="stat-label">Transactions</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(transactionTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ transactionTrend.direction === 'down' ? '▼' : transactionTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ transactionTrend.description }}
-        </span>
-        <span class="stat-sub">{{ stats?.myTransactions || 0 }} handled by you this month</span>
-      </div>
-    </a>
+    <!-- ── Row 1: Action-Required KPIs ─────────────────────────────── -->
+    <div class="section-label">Needs Attention</div>
+    <div class="kpi-row">
 
-    <a class="stat-card batches" routerLink="/dashboard/inventory/batch-distribution" aria-label="Go to batch distribution">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.activeBatches || 0 }}</span>
-        <span class="stat-label">Active Batches</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(batchTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ batchTrend.direction === 'down' ? '▼' : batchTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ batchTrend.description }}
-        </span>
-        <span class="stat-sub">{{ stats?.totalCategories || 0 }} categories involved</span>
-      </div>
-    </a>
-
-    <a class="stat-card alerts" routerLink="/dashboard/inventory/items" aria-label="Go to inventory alerts context">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-          <line x1="12" y1="9" x2="12" y2="13"/>
-          <line x1="12" y1="17" x2="12.01" y2="17"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <span class="stat-value">{{ stats?.pendingAlerts || 0 }}</span>
-        <span class="stat-label">Pending Alerts</span>
-        <span class="trend-chip" [ngClass]="getTrendClass(alertsTrend.direction)">
-          <span class="trend-arrow" aria-hidden="true">{{ alertsTrend.direction === 'down' ? '▼' : alertsTrend.direction === 'steady' ? '•' : '▲' }}</span>
-          {{ alertsTrend.description }}
-        </span>
-        <span class="stat-sub warning" *ngIf="(stats?.expiringItems || 0) > 0">{{ stats?.expiringItems }} items expiring soon</span>
-        <span class="stat-sub" *ngIf="(stats?.expiringItems || 0) === 0">No expiring inventory risk</span>
-      </div>
-    </a>
-  </div>
-
-  <ng-template #loadingStats>
-    <div class="stats-grid skeleton-grid" aria-label="Loading dashboard summary">
-      <div class="skeleton-card" *ngFor="let _ of skeletonCards"></div>
-    </div>
-  </ng-template>
-
-  <div class="content-grid" *ngIf="!loading; else loadingPanels">
-    <div class="card system-alerts">
-      <div class="card-header">
-        <h2 class="card-title">
-          Inventory Alerts
-          <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
-        </h2>
-        <a class="view-all-link" [routerLink]="alertsViewAllRoute" aria-label="View all inventory alerts">View all</a>
-      </div>
-      <p class="card-description">Jump to the right workflow directly from each inventory alert.</p>
-      <div class="alerts-list" *ngIf="systemAlerts.length; else noAlerts">
-        <a class="alert-item" *ngFor="let alert of visibleSystemAlerts; trackBy: trackByAlert" [ngClass]="getAlertClass(alert.severity)" [routerLink]="getAlertRoute(alert)">
-          <div class="alert-icon">
-            <svg *ngIf="alert.severity === 'critical'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <svg *ngIf="alert.severity === 'warning'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <svg *ngIf="alert.severity === 'info'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-          </div>
-          <div class="alert-content">
-            <span class="alert-message">{{ alert.message }}</span>
-            <span class="alert-time">{{ getRelativeTime(alert.created_at) }}</span>
-          </div>
-          <svg class="alert-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M5 12h14"/>
-            <path d="m12 5 7 7-7 7"/>
-          </svg>
-        </a>
-        <p class="list-footer" *ngIf="hiddenSystemAlertsCount > 0">
-          {{ hiddenSystemAlertsCount }} more alert{{ hiddenSystemAlertsCount > 1 ? 's' : '' }} available.
-          <a [routerLink]="alertsViewAllRoute">See all alerts</a>
-        </p>
-      </div>
-      <ng-template #noAlerts>
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          <span>You are all caught up!</span>
-          <p>There are no active inventory alerts right now.</p>
+      <a class="kpi-card" [class.kpi-critical]="(kpi?.expiring_critical ?? 0) > 0" [class.kpi-ok]="(kpi?.expiring_critical ?? 0) === 0"
+        routerLink="/dashboard/monitoring/stock-report" aria-label="Batches expiring within 7 days">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
         </div>
-      </ng-template>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.expiring_critical ?? 0 }}</span>
+          <span class="kpi-label">Expiring ≤ 7 Days</span>
+          <span class="kpi-hint">Rotate or write off now</span>
+        </div>
+      </a>
+
+      <a class="kpi-card" [class.kpi-warning]="(kpi?.overdue_schedules ?? 0) > 0" [class.kpi-ok]="(kpi?.overdue_schedules ?? 0) === 0"
+        routerLink="/dashboard/monitoring/scheduled-batches" aria-label="Overdue schedules">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.overdue_schedules ?? 0 }}</span>
+          <span class="kpi-label">Overdue Schedules</span>
+          <span class="kpi-hint">Planned date passed, not run</span>
+        </div>
+      </a>
+
+      <a class="kpi-card" [class.kpi-info]="(kpi?.scheduled_today ?? 0) > 0" [class.kpi-ok]="(kpi?.scheduled_today ?? 0) === 0"
+        routerLink="/dashboard/monitoring/scheduled-batches" aria-label="Schedules due today">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.scheduled_today ?? 0 }}</span>
+          <span class="kpi-label">Due Today</span>
+          <span class="kpi-hint" [class.hint-warn]="(kpi?.shortfall_today ?? 0) > 0">
+            {{ (kpi?.shortfall_today ?? 0) > 0 ? (kpi?.shortfall_today) + ' with shortfall' : 'All have sufficient stock' }}
+          </span>
+        </div>
+      </a>
+
+      <a class="kpi-card" [class.kpi-warning]="(kpi?.discrepancy_this_month ?? 0) > 0" [class.kpi-ok]="(kpi?.discrepancy_this_month ?? 0) === 0"
+        routerLink="/dashboard/monitoring/discrepancy" aria-label="Discrepancies this month">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.discrepancy_this_month ?? 0 }}</span>
+          <span class="kpi-label">Discrepancies</span>
+          <span class="kpi-hint">Stock count adjustments this month</span>
+        </div>
+      </a>
+
+      <a class="kpi-card" [class.kpi-critical]="(kpi?.shortage_variance_month ?? 0) > 0" [class.kpi-ok]="(kpi?.shortage_variance_month ?? 0) === 0"
+        routerLink="/dashboard/monitoring/discrepancy" aria-label="Shortage variance this month">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.shortage_variance_month ?? 0 }}</span>
+          <span class="kpi-label">Shortage Variance</span>
+          <span class="kpi-hint">Units found missing this month</span>
+        </div>
+      </a>
+
+      <a class="kpi-card" [class.kpi-info]="(kpi?.surplus_variance_month ?? 0) > 0" [class.kpi-ok]="(kpi?.surplus_variance_month ?? 0) === 0"
+        routerLink="/dashboard/monitoring/discrepancy" aria-label="Surplus variance this month">
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value">{{ kpi?.surplus_variance_month ?? 0 }}</span>
+          <span class="kpi-label">Surplus Variance</span>
+          <span class="kpi-hint">Extra units found this month</span>
+        </div>
+      </a>
+
     </div>
 
-    <div class="card chart-card donut-card">
-      <h2 class="card-title">Inventory Distribution by Category</h2>
-      <p class="card-description">This shows how your total stock is split. Click a legend label to hide or show that category.</p>
-      <div class="chart-area">
-        <canvas #categoryChart></canvas>
+    <!-- ── Row 3: Upcoming Schedules + Alerts ──────────────────────── -->
+    <div class="content-grid">
+
+      <!-- Upcoming schedule timeline -->
+      <div class="card schedule-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            Upcoming Schedules
+            <span class="badge" *ngIf="(kpi?.upcoming_plans?.length ?? 0) > 0">{{ kpi?.upcoming_plans?.length }}</span>
+          </h2>
+          <a class="view-all-link" routerLink="/dashboard/monitoring/scheduled-batches">View all</a>
+        </div>
+        <p class="card-description">Next 14 days — click any row to open the schedule monitor.</p>
+
+        <div class="schedule-timeline" *ngIf="(kpi?.upcoming_plans?.length ?? 0) > 0; else noSchedules">
+          <a class="schedule-row" *ngFor="let plan of kpi?.upcoming_plans"
+            routerLink="/dashboard/monitoring/scheduled-batches"
+            [ngClass]="getScheduleRowClass(plan)">
+            <div class="schedule-date-col">
+              <span class="schedule-day">{{ formatPlanDay(plan.planned_date) }}</span>
+              <span class="schedule-month">{{ formatPlanMonth(plan.planned_date) }}</span>
+            </div>
+            <div class="schedule-body">
+              <span class="schedule-name">{{ plan.week_label }}</span>
+              <span class="schedule-sub">{{ plan.template_name }} · {{ plan.target_unit_count }} people</span>
+            </div>
+            <div class="schedule-chips">
+              <span class="sched-chip" [ngClass]="getPlanStatusChip(plan.status)">{{ getPlanStatusLabel(plan.status) }}</span>
+              <span class="sched-chip chip-auto" *ngIf="plan.auto_allocated" title="Auto-allocated by system">🤖</span>
+            </div>
+          </a>
+        </div>
+
+        <ng-template #noSchedules>
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>No upcoming schedules</span>
+            <p>No batches planned in the next 14 days.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Inventory Alerts -->
+      <div class="card system-alerts">
+        <div class="card-header">
+          <h2 class="card-title">
+            Inventory Alerts
+            <span class="badge" *ngIf="systemAlerts.length">{{ systemAlerts.length }}</span>
+          </h2>
+          <a class="view-all-link" [routerLink]="alertsViewAllRoute">View all</a>
+        </div>
+        <p class="card-description">Jump to the right workflow directly from each alert.</p>
+        <div class="alerts-list" *ngIf="systemAlerts.length; else noAlerts">
+          <a class="alert-item" *ngFor="let alert of visibleSystemAlerts; trackBy: trackByAlert"
+            [ngClass]="getAlertClass(alert.severity)" [routerLink]="getAlertRoute(alert)">
+            <div class="alert-icon">
+              <svg *ngIf="alert.severity === 'critical'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <svg *ngIf="alert.severity === 'warning'"  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg *ngIf="alert.severity === 'info'"     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </div>
+            <div class="alert-content">
+              <span class="alert-message">{{ alert.message }}</span>
+              <span class="alert-time">{{ getRelativeTime(alert.created_at) }}</span>
+            </div>
+            <svg class="alert-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+          <p class="list-footer" *ngIf="hiddenSystemAlertsCount > 0">
+            {{ hiddenSystemAlertsCount }} more alert{{ hiddenSystemAlertsCount > 1 ? 's' : '' }}.
+            <a [routerLink]="alertsViewAllRoute">See all</a>
+          </p>
+        </div>
+        <ng-template #noAlerts>
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>All clear!</span>
+            <p>No active inventory alerts right now.</p>
+          </div>
+        </ng-template>
       </div>
     </div>
-  </div>
 
-  <div class="visualizations-grid" *ngIf="!loading">
-    <div class="card chart-card movement-card-full">
-      <h2 class="card-title">Stock Movement (Items In vs Items Out)</h2>
-      <p class="card-description">Daily movement over the last 30 days. Hover to see the exact number of incoming and outgoing items.</p>
-      <div class="chart-area chart-area-wide">
-        <canvas #movementChart></canvas>
+    <!-- ── Row 4: Charts ────────────────────────────────────────────── -->
+    <div class="content-grid">
+      <div class="card chart-card">
+        <h2 class="card-title">Discrepancy Trend — Last 6 Months</h2>
+        <p class="card-description">Monthly surplus vs shortage variance from physical stock counts.</p>
+        <div class="chart-area">
+          <canvas #discrepancyChart></canvas>
+        </div>
+      </div>
+      <div class="card chart-card">
+        <h2 class="card-title">Stock Movement — Last 30 Days</h2>
+        <p class="card-description">Daily IN vs OUT quantities. Hover for exact values.</p>
+        <div class="chart-area">
+          <canvas #movementChart></canvas>
+        </div>
       </div>
     </div>
-  </div>
 
-  <ng-template #loadingPanels>
+  </ng-container>
+
+  <!-- ── Loading skeleton ─────────────────────────────────────────── -->
+  <ng-template #loadingAll>
+    <div class="section-label">Needs Attention</div>
+    <div class="kpi-row skeleton-kpi-row">
+      <div class="skeleton-kpi" *ngFor="let _ of [1,2,3,4,5,6]"></div>
+    </div>
     <div class="content-grid">
       <div class="panel-skeleton"></div>
       <div class="panel-skeleton"></div>
     </div>
   </ng-template>
+
 </div>

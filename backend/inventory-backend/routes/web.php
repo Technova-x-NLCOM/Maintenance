@@ -113,6 +113,15 @@ Route::middleware('throttle:system-api')->group(function () {
         });
 
 
+    // Dashboard KPI (shared — both super_admin and inventory_manager)
+    Route::prefix('api/dashboard')
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api'])->group(function () {
+                Route::get('kpi', [\App\Http\Controllers\DashboardKpiController::class, 'kpi']);
+            });
+        });
+
     // Inventory Manager Dashboard API routes
     Route::prefix('api/inventory-manager')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
