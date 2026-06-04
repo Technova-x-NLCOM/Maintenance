@@ -13,13 +13,24 @@
   <app-toast></app-toast>
 
   <!-- Location Form Modal -->
-  <div class="modal-overlay" *ngIf="showLocationForm">
-    <div class="modal-content location-form-modal" (click)="$event.stopPropagation()">
-      <div class="form-panel-header">
-        <h2 class="panel-title">{{ editingLocationId ? 'Edit location' : 'Add new location' }}</h2>
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showLocationForm"
+    (click)="bounceLocationForm()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="app-modal app-modal--md location-form-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ editingLocationId ? 'Edit location' : 'Add new location' }}</h2>
+        <button class="app-modal-close-btn" type="button" (click)="closeLocationForm()" [disabled]="savingLocation" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
-      <div class="modal-body-scroll">
+      <div class="app-modal-body">
         <div class="form-grid">
           <div class="full-width code-display-field">
             <span class="field-label">Generated code</span>
@@ -29,22 +40,12 @@
 
           <label class="full-width">
             <span>Location name <em>*</em></span>
-            <input
-              type="text"
-              [(ngModel)]="locationForm.location_name"
-              placeholder="e.g. Main Pantry"
-              maxlength="100"
-            />
+            <input type="text" [(ngModel)]="locationForm.location_name" placeholder="e.g. Main Pantry" maxlength="100" />
           </label>
 
           <label>
             <span>Location type</span>
-            <input
-              type="text"
-              [(ngModel)]="locationForm.location_type"
-              placeholder="e.g. Shelves, Rack, Room"
-              maxlength="50"
-            />
+            <input type="text" [(ngModel)]="locationForm.location_type" placeholder="e.g. Shelves, Rack, Room" maxlength="50" />
           </label>
 
           <label class="checkbox-row">
@@ -54,27 +55,15 @@
 
           <label class="full-width">
             <span>Description (optional)</span>
-            <textarea
-              rows="2"
-              [(ngModel)]="locationForm.description"
-              placeholder="Short note about the storage location"
-              maxlength="500"
-            ></textarea>
-            <div class="character-counter">
-              {{ (locationForm.description || '').length }} / 500
-            </div>
+            <textarea rows="2" [(ngModel)]="locationForm.description" placeholder="Short note about the storage location" maxlength="500"></textarea>
+            <div class="character-counter">{{ (locationForm.description || '').length }} / 500</div>
           </label>
         </div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn-cancel" type="button" (click)="closeLocationForm()">Cancel</button>
-        <button
-          class="btn-primary"
-          type="button"
-          (click)="saveLocation()"
-          [disabled]="savingLocation || !locationForm.location_name.trim()"
-        >
+      <div class="app-modal-footer">
+        <button class="btn-cancel" type="button" (click)="closeLocationForm()" [disabled]="savingLocation">Cancel</button>
+        <button class="btn-primary" type="button" (click)="saveLocation()" [disabled]="savingLocation || !locationForm.location_name.trim()">
           {{ savingLocation ? 'Saving...' : editingLocationId ? 'Save changes' : 'Add location' }}
         </button>
       </div>
@@ -82,31 +71,29 @@
   </div>
 
   <!-- Delete Confirmation Modal -->
-  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
-    <div
-      class="modal-confirm"
-      (click)="$event.stopPropagation()"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-location-title"
-    >
-      <div class="confirm-icon-wrap confirm-icon-danger" aria-hidden="true">
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showDeleteConfirm"
+    (click)="cancelDeleteConfirm()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="9" />
-          <line x1="12" y1="7" x2="12" y2="13" />
-          <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="9"/>
+          <line x1="12" y1="7" x2="12" y2="13"/>
+          <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>
         </svg>
       </div>
-      <h2 class="confirm-title" id="delete-location-title">Confirm Deletion</h2>
-      <p class="confirm-body">
+      <h2 class="app-confirm-title">Confirm Deletion</h2>
+      <p class="app-confirm-body">
         Are you sure you want to delete this location
         <strong *ngIf="deleteTarget">"{{ deleteTarget.location_name }}"</strong>?
       </p>
-      <div class="confirm-footer">
-        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">
-          Cancel
-        </button>
-        <button type="button" class="btn-danger" (click)="confirmDeleteLocation()" [disabled]="deleteLoading">
+      <div class="app-confirm-footer">
+        <button type="button" class="btn-cancel" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">Cancel</button>
+        <button type="button" class="app-btn-danger" (click)="confirmDeleteLocation()" [disabled]="deleteLoading">
           {{ deleteLoading ? 'Deleting...' : 'Delete' }}
         </button>
       </div>
@@ -268,8 +255,8 @@
     </div>
   </section>
 
-  <!-- Slide-Out Drawer for Inventory -->
-  <div class="modal-overlay" *ngIf="isDrawerOpen" (click)="closeDrawer()"></div>
+  <!-- Slide-out Drawer backdrop (not a modal — uses its own overlay) -->
+  <div class="drawer-backdrop" *ngIf="isDrawerOpen" (click)="closeDrawer()"></div>
   
   <div class="drawer" [class.drawer-open]="isDrawerOpen" *ngIf="isDrawerOpen">
     <!-- Drawer Header -->

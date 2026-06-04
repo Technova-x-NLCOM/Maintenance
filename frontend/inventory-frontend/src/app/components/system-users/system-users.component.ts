@@ -8,6 +8,7 @@ import { catchError } from 'rxjs/operators';
 import { UserManagementService, SystemUserDto } from '../../services/user-management.service';
 import { RbacService, Role } from '../../rbac/services/rbac.service';
 import { AuthService, User } from '../../services/auth.service';
+import { ModalUtils } from '../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-system-users',
@@ -258,18 +259,7 @@ export class SystemUsersComponent implements OnInit {
   }
 
   bounceModal(selector: string): void {
-    const el = document.querySelector<HTMLElement>(`.${selector}`);
-    if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    ModalUtils.bounce(`.${selector}`);
   }
 
   private resetPasswordVisibility(): void {

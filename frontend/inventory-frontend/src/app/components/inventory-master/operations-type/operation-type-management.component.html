@@ -1,7 +1,6 @@
 <div class="operation-type-management-page">
   <header class="page-header header-condensed">
     <div class="header-text">
-      <div class="eyebrow">Inventory Creation</div>
       <h1 class="page-title">Operations Type</h1>
       <p class="subtitle">
         Define the in and out operation labels used by receiving and issuance workflows.
@@ -12,13 +11,24 @@
 
   <app-toast></app-toast>
 
-  <div class="modal-overlay" *ngIf="showForm">
-    <div class="modal-content form-modal" (click)="$event.stopPropagation()">
-      <div class="form-panel-header">
-        <h2 class="panel-title">{{ editingOperationTypeId ? 'Edit operation type' : 'Add new operation type' }}</h2>
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showForm"
+    (click)="bounceForm()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="app-modal app-modal--md op-form-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ editingOperationTypeId ? 'Edit operation type' : 'Add new operation type' }}</h2>
+        <button class="app-modal-close-btn" type="button" (click)="closeForm()" [disabled]="saving" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
-      <div class="modal-body-scroll">
+      <div class="app-modal-body">
         <div class="form-grid">
           <label class="full-width">
             <span>Operation name <em>*</em></span>
@@ -45,8 +55,8 @@
         </div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn-cancel" type="button" (click)="closeForm()">Cancel</button>
+      <div class="app-modal-footer">
+        <button class="btn-cancel" type="button" (click)="closeForm()" [disabled]="saving">Cancel</button>
         <button class="btn-primary" type="button" (click)="saveOperationType()" [disabled]="saving || !formData.operation_name.trim()">
           {{ saving ? 'Saving...' : editingOperationTypeId ? 'Save changes' : 'Add operation type' }}
         </button>
@@ -54,16 +64,29 @@
     </div>
   </div>
 
-  <div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDeleteConfirm()">
-    <div class="modal-confirm" (click)="$event.stopPropagation()">
-      <h2 class="confirm-title">Confirm Deletion</h2>
-      <p class="confirm-body">
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showDeleteConfirm"
+    (click)="cancelDeleteConfirm()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="9" />
+          <line x1="12" y1="7" x2="12" y2="13" />
+          <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </div>
+      <h2 class="app-confirm-title">Confirm Deletion</h2>
+      <p class="app-confirm-body">
         Are you sure you want to delete
         <strong *ngIf="deleteTarget">"{{ deleteTarget.operation_name }}"</strong>?
       </p>
-      <div class="confirm-footer">
-        <button type="button" class="btn-ghost" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">Cancel</button>
-        <button type="button" class="btn-danger" (click)="confirmDeleteOperationType()" [disabled]="deleteLoading">
+      <div class="app-confirm-footer">
+        <button type="button" class="btn-cancel" (click)="cancelDeleteConfirm()" [disabled]="deleteLoading">Cancel</button>
+        <button type="button" class="app-btn-danger" (click)="confirmDeleteOperationType()" [disabled]="deleteLoading">
           {{ deleteLoading ? 'Deleting...' : 'Delete' }}
         </button>
       </div>

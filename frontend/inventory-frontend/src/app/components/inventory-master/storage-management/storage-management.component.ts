@@ -6,6 +6,7 @@ import { InventoryItemService } from '../../../services/inventory-item.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
 import { StorageInventoryItem } from '../../monitoring/monitoring.models';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 interface LocationRow {
   location_id: number;
@@ -230,7 +231,17 @@ export class StorageManagementComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  bounceLocationForm(): void {
+    if (this.savingLocation) {
+      ModalUtils.bounce('.location-form-modal');
+    }
+  }
+
   closeLocationForm(): void {
+    if (this.savingLocation) {
+      ModalUtils.bounce('.location-form-modal');
+      return;
+    }
     this.showLocationForm = false;
     this.editingLocationId = null;
     this.cdr.markForCheck();
@@ -287,7 +298,10 @@ export class StorageManagementComponent implements OnInit {
   }
 
   cancelDeleteConfirm(): void {
-    if (this.deleteLoading) return;
+    if (this.deleteLoading) {
+      ModalUtils.bounceConfirm();
+      return;
+    }
     this.showDeleteConfirm = false;
     this.deleteTarget = null;
     this.cdr.markForCheck();

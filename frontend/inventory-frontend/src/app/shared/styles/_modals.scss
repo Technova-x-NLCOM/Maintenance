@@ -1,0 +1,425 @@
+// Forward the Google Fonts URL so it appears in the CSS output
+// when _modals.scss is loaded via @use from styles.scss
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
+$_modal-primary: #2563eb;
+$_modal-primary-dark: #1d4ed8;
+$_modal-gradient: linear-gradient(135deg, #2f4c88 0%, #1d4ed8 60%, #2563eb 100%);
+$_modal-shadow:
+  0 24px 64px rgba(2, 6, 23, 0.22),
+  0 4px 16px rgba(2, 6, 23, 0.08);
+$_modal-border: #e2e8f0;
+$_modal-bg-footer: #f8fafc;
+$_modal-radius: 16px;
+$_modal-text: #0f172a;
+$_modal-muted: #64748b;
+$_danger: #dc2626;
+$_success: #059669;
+
+// ── Keyframes ─────────────────────────────────────────────────────────────────
+@keyframes appModalOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes appModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes appModalBounce {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.05);
+  }
+  50% {
+    transform: scale(0.97);
+  }
+  75% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+  box-sizing: border-box;
+  animation: appModalOverlayIn 0.18s ease;
+
+  // Sidebar-aware: overlay only covers the main content column
+  &.app-modal-overlay--sidebar-offset {
+    z-index: 9999;
+
+    @media (min-width: 769px) {
+      left: var(--app-sidebar-width, 280px);
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: auto;
+      height: auto;
+    }
+  }
+}
+
+// ── Modal shell ───────────────────────────────────────────────────────────────
+.app-modal {
+  background: #fff;
+  border-radius: $_modal-radius;
+  box-shadow: $_modal-shadow;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: appModalIn 0.22s ease;
+  width: 100%;
+  max-width: 680px; // default = --md
+  max-height: calc(100vh - 48px);
+
+  // When the bounce guard triggers from TS, this class is toggled
+  &.app-modal--bounce {
+    animation: appModalBounce 0.4s ease;
+  }
+
+  // ── Size modifiers ──────────────────────────────────────
+  &.app-modal--sm {
+    max-width: 480px;
+  }
+  &.app-modal--md {
+    max-width: 680px;
+  }
+  &.app-modal--lg {
+    max-width: 860px;
+  }
+  &.app-modal--xl {
+    max-width: 980px;
+  }
+  &.app-modal--full {
+    max-width: 1100px;
+  }
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.app-modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px 16px;
+  background: $_modal-gradient;
+  border-bottom: none;
+
+  .app-modal-title {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-modal-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    color: #fff;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+
+    svg {
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// ── Scrollable body ───────────────────────────────────────────────────────────
+.app-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+}
+
+// ── Sticky footer ─────────────────────────────────────────────────────────────
+.app-modal-footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid $_modal-border;
+  background: $_modal-bg-footer;
+}
+
+// ── Inline alert inside a modal ───────────────────────────────────────────────
+.app-modal-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+
+  &.app-modal-alert--error {
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid $_danger;
+    color: #b91c1c;
+  }
+
+  &.app-modal-alert--success {
+    background: rgba(5, 150, 105, 0.08);
+    border: 1px solid $_success;
+    color: #047857;
+  }
+
+  &.app-modal-alert--info {
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid $_modal-primary;
+    color: #1e40af;
+  }
+}
+
+// ── Confirmation / delete dialog ──────────────────────────────────────────────
+// Usage: <div class="app-modal-overlay"><div class="app-modal-confirm"> ... </div></div>
+.app-modal-confirm {
+  background: #fff;
+  border-radius: $_modal-radius;
+  box-shadow: $_modal-shadow;
+  max-width: 420px;
+  width: 100%;
+  padding: 28px;
+  text-align: center;
+  animation: appModalIn 0.22s ease;
+
+  &.app-modal--bounce {
+    animation: appModalBounce 0.4s ease;
+  }
+
+  .app-confirm-icon-wrap {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+
+    svg {
+      width: 30px;
+      height: 30px;
+    }
+
+    &.app-confirm-icon--danger {
+      background: #fef2f2;
+      color: $_danger;
+      svg {
+        stroke: $_danger;
+      }
+    }
+
+    &.app-confirm-icon--success {
+      background: #f0fdf4;
+      color: #16a34a;
+      svg {
+        stroke: #16a34a;
+      }
+    }
+
+    &.app-confirm-icon--warning {
+      background: #fffbeb;
+      color: #d97706;
+      svg {
+        stroke: #d97706;
+      }
+    }
+  }
+
+  .app-confirm-title {
+    margin: 0 0 10px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: $_modal-text;
+  }
+
+  .app-confirm-body {
+    margin: 0 0 24px;
+    font-size: 0.9375rem;
+    color: $_modal-muted;
+    line-height: 1.55;
+
+    strong {
+      color: $_modal-text;
+      font-weight: 600;
+    }
+  }
+
+  .app-confirm-footer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+}
+
+// ── Utility: danger action button ─────────────────────────────────────────────
+// Re-exported here so confirm dialogs don't need extra imports
+.app-btn-danger {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: $_danger;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover:not(:disabled) {
+    background: #b91c1c;
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// =============================================================================
+// LEGACY CLASS ALIASES
+// =============================================================================
+// These classes were used in older components before the global modal system.
+// They now extend the global tokens so both old and new class names behave
+// identically. Component SCSS modal blocks can be removed incrementally —
+// the styles here guarantee the UI stays consistent in the meantime.
+// =============================================================================
+
+// Overlay aliases
+.modal-backdrop,
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+  box-sizing: border-box;
+  animation: appModalOverlayIn 0.18s ease;
+}
+
+// Shell aliases
+.modal-panel,
+.modal-box,
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.22),
+    0 4px 16px rgba(2, 6, 23, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: appModalIn 0.22s ease;
+  width: 100%;
+  max-width: 680px;
+  max-height: calc(100vh - 48px);
+}
+
+// Body alias
+.modal-scroll-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  min-height: 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+}
+
+// Confirmation dialog alias
+.modal-confirm {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 24px 64px rgba(2, 6, 23, 0.22),
+    0 4px 16px rgba(2, 6, 23, 0.08);
+  max-width: 420px;
+  width: 100%;
+  padding: 28px;
+  text-align: center;
+  animation: appModalIn 0.22s ease;
+}
+
+// Bounce animation alias (CSS class-based; TS uses ModalUtils.bounce() instead)
+.modal-bounce {
+  animation: appModalBounce 0.4s ease;
+}

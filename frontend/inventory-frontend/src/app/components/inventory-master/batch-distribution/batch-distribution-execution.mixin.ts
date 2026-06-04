@@ -13,6 +13,7 @@ import {
 } from '../../../services/batch-distribution.service';
 import { ToastService } from '../../../services/toast.service';
 import { EditableRemainingLine } from './batch-distribution-types';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 export abstract class BatchDistributionExecutionMixin {
   protected abstract batchService: BatchDistributionService;
@@ -100,6 +101,10 @@ export abstract class BatchDistributionExecutionMixin {
   }
 
   closeExecutionModal(): void {
+    if (this.executingDistribution || this.executionIssuingStock) {
+      ModalUtils.bounce('.bd-execution-modal');
+      return;
+    }
     this.showExecutionModal = false;
     this.executionStep = 1;
     this.selectedPlanForExecution = null;

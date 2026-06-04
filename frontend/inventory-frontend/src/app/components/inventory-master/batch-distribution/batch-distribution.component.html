@@ -438,21 +438,20 @@
     </div>
   </aside>
 
-  <div class="modal-overlay" *ngIf="showScheduleDialog" (click)="closeScheduleDialog()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ isPlanDialogEditing ? 'Edit Schedule' : (scheduleDialogStep === 1 ? 'Schedule Batch' : 'Validate Requirements') }}</h2>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closeScheduleDialog()"
-          aria-label="Close"
-        >
-          ×
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showScheduleDialog"
+    (click)="bounceScheduleDialog()"
+  >
+    <div class="app-modal app-modal--lg bd-schedule-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ isPlanDialogEditing ? 'Edit Schedule' : (scheduleDialogStep === 1 ? 'Schedule Batch' : 'Validate Requirements') }}</h2>
+        <button type="button" class="app-modal-close-btn" (click)="closeScheduleDialog()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
-      <div class="modal-body">
+      <div class="app-modal-body">
         <ng-container *ngIf="scheduleDialogStep === 1">
           <div class="form-grid" *ngIf="isPlanDialogEditing; else createScheduleForm">
             <label>
@@ -534,7 +533,7 @@
                   <tr>
                     <th>Ingredient</th>
                     <th>Unit</th>
-                    <th>Qty per Person</th>
+                    <th>Quantity</th>
                     <th>Required</th>
                     <th>In Stock</th>
                     <th>After</th>
@@ -566,30 +565,25 @@
         </ng-container>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-cancel" type="button" (click)="closeScheduleDialog()">
-          Cancel
-        </button>
+      <div class="app-modal-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeScheduleDialog()">Cancel</button>
         <button class="btn btn-primary" type="button" (click)="submitPlanDialog()" [disabled]="savingPlan">
-          {{
-            savingPlan
-              ? 'Saving...'
-              : (isPlanDialogEditing
-                ? 'Save Changes'
-                : (scheduleDialogStep === 2 ? (scheduleHasWarning ? 'Schedule With Warning' : 'Schedule') : 'Next'))
-          }}
+          {{ savingPlan ? 'Saving...' : (isPlanDialogEditing ? 'Save Changes' : (scheduleDialogStep === 2 ? (scheduleHasWarning ? 'Schedule With Warning' : 'Schedule') : 'Next')) }}
         </button>
       </div>
     </div>
   </div>
 
   <!-- 3-Step Execution Modal -->
-  <div class="modal-overlay execution-modal-overlay" *ngIf="showExecutionModal" (click)="closeExecutionModal()">
-    <div class="modal-card execution-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset execution-modal-overlay"
+    *ngIf="showExecutionModal"
+    (click)="bounceExecutionModal()"
+  >
+    <div class="app-modal app-modal--xl bd-execution-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
         <div class="execution-header">
-          <h2>{{ executionModalTitle }}</h2>
-          <!-- Step dots: only show Step 2 (gap fill) when shortages exist -->
+          <h2 class="app-modal-title">{{ executionModalTitle }}</h2>
           <div class="step-indicator" *ngIf="executionHasShortages">
             <div class="step" [class.active]="executionStep >= 1" [class.completed]="executionStep > 1">1</div>
             <div class="step-connector" [class.active]="executionStep > 1"></div>
@@ -603,17 +597,12 @@
             <div class="step" [class.active]="executionStep >= 3" [class.completed]="executionStep > 3">2</div>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closeExecutionModal()"
-          aria-label="Close"
-        >
-          ×
+        <button type="button" class="app-modal-close-btn" (click)="closeExecutionModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
 
-      <div class="modal-body execution-modal-body">
+      <div class="app-modal-body execution-modal-body">
         <!-- Plan Summary -->
         <div class="plan-summary" *ngIf="selectedPlanForExecution">
           <h4>{{ selectedPlanForExecution.week_label }}</h4>
@@ -786,7 +775,7 @@
         </div>
       </div>
 
-      <div class="modal-footer execution-footer">
+      <div class="app-modal-footer execution-footer">
         <!-- Step 1 Actions -->
         <div *ngIf="executionStep === 1 && !loadingExecutionDetails" class="execution-actions">
           <button class="btn btn-cancel" type="button" (click)="closeExecutionModal()">Cancel</button>
@@ -839,26 +828,21 @@
   </div>
 
   <!-- Schedule Details Modal -->
-  <div class="modal-overlay plan-detail-overlay" *ngIf="showPlanDetailsModal" (click)="closePlanDetailModal()">
-    <div class="modal-card plan-detail-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div class="plan-detail-modal-title">
-          <h2>{{ selectedPlanDetails?.plan?.week_label || 'Schedule Details' }}</h2>
-          <span class="status-badge" *ngIf="selectedPlanDetails?.plan as plan" [ngClass]="getPlanBadge(plan).className">
-            {{ getPlanBadge(plan).label }}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closePlanDetailModal()"
-          aria-label="Close"
-        >
-          ×
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset plan-detail-overlay"
+    *ngIf="showPlanDetailsModal"
+    (click)="bounceModal('.bd-plan-detail-modal')"
+  >
+    <div class="app-modal app-modal--xl bd-plan-detail-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ selectedPlanDetails?.plan?.week_label || 'Schedule Details' }}
+          <span class="status-badge ms-2" *ngIf="selectedPlanDetails?.plan as plan" [ngClass]="getPlanBadge(plan).className">{{ getPlanBadge(plan).label }}</span>
+        </h2>
+        <button type="button" class="app-modal-close-btn" (click)="closePlanDetailModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-
-      <div class="modal-body">
+      <div class="app-modal-body">
         <p class="empty" *ngIf="loadingPlanDetails">Loading schedule details...</p>
 
         <ng-container *ngIf="!loadingPlanDetails && selectedPlanDetails as details">
@@ -965,33 +949,26 @@
         </ng-container>
       </div>
 
-      <div class="modal-footer">
+      <div class="app-modal-footer">
         <button class="btn btn-cancel" type="button" (click)="closePlanDetailModal()">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Ingredient Details Modal -->
-  <div class="modal-overlay" *ngIf="showIngredientModal" (click)="closeIngredientModal()">
-    <div class="modal-card ingredient-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <div class="ingredient-modal-title">
-          <h2>{{ selectedTemplateForDetails?.template_name }}</h2>
-          <span class="recipe-type-badge" [ngClass]="'badge-' + selectedTemplateForDetails?.distribution_type">
-            {{ selectedTemplateForDetails?.distribution_type_label }}
-          </span>
-        </div>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closeIngredientModal()"
-          aria-label="Close"
-        >
-          ×
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showIngredientModal"
+    (click)="closeIngredientModal()"
+  >
+    <div class="app-modal app-modal--lg bd-ingredient-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ selectedTemplateForDetails?.template_name }}</h2>
+        <button type="button" class="app-modal-close-btn" (click)="closeIngredientModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-
-      <div class="modal-body">
+      <div class="app-modal-body">
         <div class="recipe-info">
           <div class="info-item">
             <strong>Target People:</strong> {{ selectedTemplateForDetails?.base_unit_count }}
@@ -1009,7 +986,7 @@
                 <tr>
                   <th>Item Name</th>
                   <th>Unit</th>
-                  <th>Qty per Person</th>
+                  <th>Quantity</th>
                   <th>Per 100 People</th>
                   <th>Current Stock</th>
                   <th>Status</th>
@@ -1034,28 +1011,26 @@
         </div>
       </div>
 
-      <div class="modal-footer">
+      <div class="app-modal-footer">
         <button class="btn btn-cancel" type="button" (click)="closeIngredientModal()">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Stock Allocation Modal -->
-  <div class="modal-overlay" *ngIf="showStockAllocationModal" (click)="closeStockAllocationModal()">
-    <div class="modal-card stock-allocation-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>Stock Reservations</h2>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closeStockAllocationModal()"
-          aria-label="Close"
-        >
-          ×
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showStockAllocationModal"
+    (click)="closeStockAllocationModal()"
+  >
+    <div class="app-modal app-modal--lg bd-stock-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">Stock Reservations</h2>
+        <button type="button" class="app-modal-close-btn" (click)="closeStockAllocationModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-
-      <div class="modal-body">
+      <div class="app-modal-body">
         <div class="reservations-overview">
           <h4>Allocated Batches</h4>
           <p class="step-help" *ngIf="stockReservations.length === 0">No batches have allocated stock yet. Use Allocate Stock when readiness is 100%.</p>
@@ -1085,64 +1060,64 @@
 
       </div>
 
-      <div class="modal-footer">
+      <div class="app-modal-footer">
         <button class="btn btn-cancel" type="button" (click)="closeStockAllocationModal()">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Recipe Delete Confirmation Dialog -->
-  <div class="modal-overlay confirm-overlay" *ngIf="templateConfirmDialog.open" (click)="closeTemplateConfirm()">
-    <div class="modal-card confirm-card" (click)="$event.stopPropagation()">
-      <div class="confirm-body">
-        <h2>{{ templateConfirmDialog.title }}</h2>
-        <p>{{ templateConfirmDialog.message }}</p>
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
+    *ngIf="templateConfirmDialog.open"
+    (click)="closeTemplateConfirm()"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
       </div>
-      <div class="confirm-actions">
-        <button class="btn btn-cancel" type="button" (click)="closeTemplateConfirm()">
-          {{ templateConfirmDialog.cancelText }}
-        </button>
-        <button class="btn btn-primary" type="button" (click)="confirmTemplateDialogAction()">
-          {{ templateConfirmDialog.confirmText }}
-        </button>
+      <h2 class="app-confirm-title">{{ templateConfirmDialog.title }}</h2>
+      <p class="app-confirm-body">{{ templateConfirmDialog.message }}</p>
+      <div class="app-confirm-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeTemplateConfirm()">{{ templateConfirmDialog.cancelText }}</button>
+        <button class="app-btn-danger" type="button" (click)="confirmTemplateDialogAction()">{{ templateConfirmDialog.confirmText }}</button>
       </div>
     </div>
   </div>
 
-  <!-- Confirmation Dialog -->
-  <div class="modal-overlay confirm-overlay" *ngIf="planConfirmDialog.open" (click)="closePlanConfirm()">
-    <div class="modal-card confirm-card" (click)="$event.stopPropagation()">
-      <div class="confirm-body">
-        <h2>{{ planConfirmDialog.title }}</h2>
-        <p>{{ planConfirmDialog.message }}</p>
+  <!-- Schedule Confirmation Dialog -->
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
+    *ngIf="planConfirmDialog.open"
+    (click)="closePlanConfirm()"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/></svg>
       </div>
-      <div class="confirm-actions">
-        <button class="btn btn-cancel" type="button" (click)="closePlanConfirm()">
-          {{ planConfirmDialog.cancelText }}
-        </button>
-        <button class="btn btn-primary" type="button" (click)="confirmPlanAction()">
-          {{ planConfirmDialog.confirmText }}
-        </button>
+      <h2 class="app-confirm-title">{{ planConfirmDialog.title }}</h2>
+      <p class="app-confirm-body">{{ planConfirmDialog.message }}</p>
+      <div class="app-confirm-footer">
+        <button class="btn btn-cancel" type="button" (click)="closePlanConfirm()">{{ planConfirmDialog.cancelText }}</button>
+        <button class="app-btn-danger" type="button" (click)="confirmPlanAction()">{{ planConfirmDialog.confirmText }}</button>
       </div>
     </div>
   </div>
 
   <!-- New Recipe Modal -->
-  <div class="modal-overlay" *ngIf="showNewRecipeModal" (click)="closeNewRecipeModal()">
-    <div class="modal-card new-recipe-modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h2>{{ recipeModalTitle }}</h2>
-        <button
-          type="button"
-          class="btn-close app-modal-close"
-          (click)="closeNewRecipeModal()"
-          aria-label="Close"
-        >
-          ×
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset"
+    *ngIf="showNewRecipeModal"
+    (click)="bounceNewRecipeModal()"
+  >
+    <div class="app-modal app-modal--xl bd-new-recipe-modal" (click)="$event.stopPropagation()">
+      <div class="app-modal-header">
+        <h2 class="app-modal-title">{{ recipeModalTitle }}</h2>
+        <button type="button" class="app-modal-close-btn" (click)="closeNewRecipeModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-
-      <div class="modal-body new-recipe-body">
+      <div class="new-recipe-body app-modal-body">
         <p class="empty" *ngIf="loadingRecipeModal">Loading recipe copy...</p>
 
         <div class="recipe-modal-notice" *ngIf="templateModalMode === 'duplicate' && !loadingRecipeModal">
@@ -1319,10 +1294,8 @@
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-cancel" type="button" (click)="closeNewRecipeModal()">
-          Cancel
-        </button>
+      <div class="app-modal-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeNewRecipeModal()">Cancel</button>
         <button
           class="btn btn-primary"
           type="button"

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { finalize, timeout } from 'rxjs/operators';
+import { ModalUtils } from '../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-admin-login',
@@ -121,15 +122,7 @@ export class AdminLoginComponent implements OnInit {
   }
 
   bounceModal() {
-    const el = document.querySelector<HTMLElement>('.modal-panel');
-    if (!el) return;
-    el.animate([
-      { transform: 'scale(1)' },
-      { transform: 'scale(1.05)' },
-      { transform: 'scale(0.97)' },
-      { transform: 'scale(1.02)' },
-      { transform: 'scale(1)' },
-    ], { duration: 400, easing: 'ease' });
+    ModalUtils.bounce('.modal-panel');
   }
 
   submitSetPassword() {

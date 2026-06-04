@@ -9,6 +9,7 @@ import {
   ReceivingTransactionResponse,
   LocationOption,
 } from '../../services/inventory-item.service';
+import { ModalUtils } from '../../shared/utils/modal.utils';
 
 interface OperationTypeOption {
   operation_type_id: number;
@@ -122,6 +123,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
 
   closeReceivingModal(): void {
     if (this.saving) {
+      ModalUtils.bounce('.rcv-modal');
       return;
     }
     this.attemptedAddToList = false;
@@ -154,18 +156,7 @@ export class ReceivingTransactionComponent implements OnInit, OnDestroy {
   }
 
   bounceModal(selector: string): void {
-    const el = document.querySelector<HTMLElement>(`.${selector}`);
-    if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    ModalUtils.bounce(`.${selector}`);
   }
 
   constructor(
