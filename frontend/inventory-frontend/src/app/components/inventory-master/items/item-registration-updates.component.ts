@@ -18,6 +18,7 @@ import {
   ImportResult,
   ImportRow,
 } from './excel-import/excel-import.component';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-item-registration-updates',
@@ -644,18 +645,7 @@ export class ItemRegistrationUpdatesComponent implements OnInit, OnDestroy {
   }
 
   bounceModal(selector: string): void {
-    const el = document.querySelector<HTMLElement>(`.${selector}`);
-    if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    ModalUtils.bounce(`.${selector}`);
   }
 
   onImageSelected(event: Event): void {

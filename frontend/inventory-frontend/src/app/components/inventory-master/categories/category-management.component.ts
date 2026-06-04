@@ -9,6 +9,7 @@ import {
 } from '../../../services/inventory-category.service';
 import { ToastService } from '../../../services/toast.service';
 import { ToastComponent } from '../../../shared/toast/toast.component';
+import { ModalUtils } from '../../../shared/utils/modal.utils';
 
 @Component({
   selector: 'app-category-management',
@@ -267,18 +268,7 @@ export class CategoryManagementComponent implements OnInit, OnDestroy {
   }
 
   bounceModal(selector: string): void {
-    const el = document.querySelector<HTMLElement>(`.${selector}`);
-    if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    ModalUtils.bounce(`.${selector}`);
   }
 
   save(): void {

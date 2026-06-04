@@ -10,6 +10,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
+import { ModalUtils } from '../../../../shared/utils/modal.utils';
 
 export interface ImportColumn {
   key: string;
@@ -120,18 +121,7 @@ export class ExcelImportComponent implements OnChanges, OnDestroy {
   // ── Modal behaviour ───────────────────────────────────────────────────────
 
   bounceModal(selector: string): void {
-    const el = document.querySelector<HTMLElement>(`.${selector}`);
-    if (!el) return;
-    el.animate(
-      [
-        { transform: 'scale(1)' },
-        { transform: 'scale(1.05)' },
-        { transform: 'scale(0.97)' },
-        { transform: 'scale(1.02)' },
-        { transform: 'scale(1)' },
-      ],
-      { duration: 400, easing: 'ease' },
-    );
+    ModalUtils.bounce(`.${selector}`);
   }
 
   close(): void {
