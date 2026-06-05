@@ -60,7 +60,7 @@ class AuthController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[^\\s]+$/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S+$/',
                     'confirmed',
                 ],
             ], [
@@ -116,7 +116,7 @@ class AuthController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S+$/',
                 ],
                 'password_confirmation' => [
                     'required',
@@ -638,7 +638,7 @@ class AuthController extends Controller
                     'string',
                     'min:8',
                     'max:255',
-                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S+$/',
                     'confirmed',
                 ],
             ], [
@@ -650,7 +650,7 @@ class AuthController extends Controller
                 'password.required' => 'New password is required.',
                 'password.min' => 'Password must be at least 8 characters long.',
                 'password.max' => 'Password cannot exceed 255 characters.',
-                'password.regex' => 'Password must contain uppercase, lowercase, number, and a special character (@$!%*?&).',
+                'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
                 'password_confirmation.required' => 'Password confirmation is required.',
                 'password_confirmation.same' => 'Password confirmation does not match the password.',
             ]);
