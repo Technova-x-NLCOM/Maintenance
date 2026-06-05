@@ -20,7 +20,7 @@ describe('LoginComponent (unit)', () => {
     expect(component).toBeTruthy();
     expect(component.loginForm).toBeDefined();
     expect(component.forgotPasswordForm).toBeDefined();
-    expect(component.setPasswordForm).toBeDefined();
+    // setPasswordForm has been removed - no longer testing it
   });
 
   it('toggles password visibility', () => {

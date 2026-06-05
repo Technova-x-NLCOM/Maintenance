@@ -50,7 +50,6 @@
               id="password"
               formControlName="password"
               class="form-control"
-              (focus)="checkFirstTimeUser()"
             />
             <button
               type="button"
@@ -128,7 +127,9 @@
     </div>
   </div>
 
-  <!-- Set Initial Password Modal -->
+  <!-- Set Initial Password Modal - DISABLED -->
+  <!-- The modal has been removed to prevent interrupting user login -->
+  <!--
   <div class="modal-backdrop" *ngIf="showSetPasswordModal" (click)="bounceModal()">
     <div class="modal-panel" (click)="$event.stopPropagation()">
       <div class="modal-head">
@@ -151,6 +152,7 @@
           />
           <small class="validation-error" *ngIf="setPasswordForm.get('password')?.touched && setPasswordForm.get('password')?.invalid">
             <span *ngIf="setPasswordForm.get('password')?.errors?.['required']">Password is required.</span>
+            <span *ngIf="setPasswordForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters long.</span>
             <span *ngIf="setPasswordForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters long.</span>
             <span *ngIf="setPasswordForm.get('password')?.errors?.['pattern']">Password must contain uppercase, lowercase, number, and a special character.</span>
           </small>
@@ -196,6 +198,7 @@
       </button>
     </div>
   </div>
+  -->
 
   <!-- Loading Modal -->
   <div class="loading-overlay" *ngIf="isLoading">

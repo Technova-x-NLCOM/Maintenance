@@ -19,15 +19,7 @@ export class AdminLoginComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  // Set password modal
-  showSetPasswordModal = false;
-  setPasswordForm!: FormGroup;
-  setPasswordError = '';
-  setPasswordLoading = false;
-  showSetPwd = false;
-  showSetPwdConfirm = false;
-  passwordNeedsSet = false;
-  checkingFirstTimeUser = false;
+  // Set password modal functionality removed - no longer needed
 
   toastVisible = false;
   toastMessage = '';
@@ -74,10 +66,7 @@ export class AdminLoginComponent implements OnInit {
       identifier: ['', [Validators.required]],
       password: ['', [Validators.required]]
     });
-    this.setPasswordForm = this.fb.group({
-      password: ['', [Validators.required, Validators.minLength(8), Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])[\S]+$/)]],
-      password_confirmation: ['', [Validators.required]],
-    });
+
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]]
     });
@@ -87,82 +76,7 @@ export class AdminLoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  checkFirstTimeUser() {
-    if (this.showSetPasswordModal || this.checkingFirstTimeUser) {
-      return;
-    }
-
-    const identifier = this.loginForm.get('identifier')?.value?.trim();
-    if (!identifier) return;
-
-    this.checkingFirstTimeUser = true;
-    this.authService.checkPasswordSet(identifier)
-      .pipe(
-        timeout(10000),
-        finalize(() => {
-          this.checkingFirstTimeUser = false;
-        })
-      )
-      .subscribe({
-        next: (res) => {
-          this.passwordNeedsSet = !res.password_set;
-          // Only trigger from password field interaction, never from identifier input activity.
-          if (!res.password_set && document.activeElement?.id === 'password') {
-            this.showSetPasswordModal = true;
-            this.setPasswordError = '';
-            this.setPasswordForm.reset();
-            this.cdr.detectChanges();
-          }
-        },
-        error: () => {
-          this.passwordNeedsSet = false;
-        },
-        complete: () => {}
-      });
-  }
-
-  bounceModal() {
-    ModalUtils.bounce('.modal-panel');
-  }
-
-  submitSetPassword() {
-    if (this.setPasswordForm.invalid) return;
-    const password = (this.setPasswordForm.get('password')?.value || '').trim();
-    const password_confirmation = (this.setPasswordForm.get('password_confirmation')?.value || '').trim();
-    if (password !== password_confirmation) {
-      this.setPasswordError = 'Passwords do not match.';
-      return;
-    }
-    const identifier = this.loginForm.get('identifier')?.value?.trim();
-    if (!identifier) {
-      this.setPasswordError = 'Please enter your username or email first.';
-      return;
-    }
-
-    this.setPasswordLoading = true;
-    this.setPasswordError = '';
-    this.authService.setInitialPassword(identifier, password, password_confirmation)
-      .pipe(
-        timeout(15000),
-        finalize(() => {
-          this.setPasswordLoading = false;
-        })
-      )
-      .subscribe({
-        next: () => {
-          this.showSetPasswordModal = false;
-          this.passwordNeedsSet = false;
-          this.setPasswordForm.reset();
-          this.showToast('Password set successfully. Please log in with your new password.', 'success');
-        },
-        error: (err) => {
-          this.setPasswordError = err.name === 'TimeoutError'
-            ? 'Request timed out. Please check your connection and try again.'
-            : (err.error?.message || 'Failed to set password. Please try again.');
-        },
-        complete: () => {}
-      });
-  }
+  // Set password modal functionality removed
 
   onSubmit() {
     const identifier = (this.loginForm.get('identifier')?.value || '').trim();

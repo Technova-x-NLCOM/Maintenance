@@ -19,16 +19,7 @@ describe('AdminLoginComponent (unit)', () => {
     expect(component.showPassword).toBe(!before);
   });
 
-  it('submitSetPassword validates mismatch and missing identifier', () => {
-    component.setPasswordForm.patchValue({ password: 'abc12345', password_confirmation: 'different' });
-    component.submitSetPassword();
-    expect(component.setPasswordError).toBe('Passwords do not match.');
-
-    component.setPasswordForm.patchValue({ password: 'abc12345', password_confirmation: 'abc12345' });
-    component.loginForm.patchValue({ identifier: '' });
-    component.submitSetPassword();
-    expect(component.setPasswordError).toContain('Please enter your username');
-  });
+  // Tests for removed set password functionality have been removed
 
   it('onSubmit shows toast when fields missing', () => {
     spyOn(component, 'showToast');
