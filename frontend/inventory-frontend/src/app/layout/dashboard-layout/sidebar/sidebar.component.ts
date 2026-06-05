@@ -225,7 +225,8 @@ export class SidebarComponent implements OnInit {
       url.includes('/dashboard/monitoring/stock-report') ||
       url.includes('/dashboard/monitoring/storage-inventory') ||
       url.includes('/dashboard/monitoring/transaction-history') ||
-      url.includes('/dashboard/monitoring/scheduled-batches')
+      url.includes('/dashboard/monitoring/scheduled-batches') ||
+      url.includes('/dashboard/audit-log')
     ) {
       this.openGroups.add('monitoring');
       return;
