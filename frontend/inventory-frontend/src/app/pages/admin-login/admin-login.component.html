@@ -39,7 +39,6 @@
             placeholder="Enter your password"
             class="form-control"
             autocomplete="current-password"
-            (focus)="checkFirstTimeUser()"
           />
           <button
             type="button"
@@ -111,7 +110,9 @@
     </div>
   </div>
 
-<!-- Set Initial Password Modal -->
+<!-- Set Initial Password Modal - DISABLED -->
+<!-- The modal has been removed to prevent interrupting user login -->
+<!--
 <div class="modal-backdrop" *ngIf="showSetPasswordModal" (click)="bounceModal()">
   <div class="modal-panel" (click)="$event.stopPropagation()">
     <div class="modal-head">
@@ -150,6 +151,7 @@
     </button>
   </div>
 </div>
+-->
 
 <!-- Loading Modal -->
 <div class="loading-overlay" *ngIf="isLoading">
