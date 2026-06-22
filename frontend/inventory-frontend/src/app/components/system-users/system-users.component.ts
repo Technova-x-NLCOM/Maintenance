@@ -59,7 +59,7 @@ export class SystemUsersComponent implements OnInit {
     username: '',
     email: '',
     contact_info: '',
-    role: 'inventory_manager' as 'super_admin' | 'inventory_manager',
+    role: 'inventory_manager' as string,
     password: '',
     password_confirmation: '',
     is_active: true,
@@ -134,9 +134,8 @@ export class SystemUsersComponent implements OnInit {
     }).subscribe({
       next: ({ users, roles }) => {
         this.users = users || [];
-        this.roles = (roles || []).filter((r) =>
-          ['super_admin', 'inventory_manager'].includes(r.role_name),
-        );
+        // Show all roles from the DB — no hardcoded filter
+        this.roles = roles || [];
         this.activePage = 1;
         this.inactivePage = 1;
         this.loading = false;
@@ -236,10 +235,7 @@ export class SystemUsersComponent implements OnInit {
       username: u.username,
       email: u.email,
       contact_info: u.contact_info || '',
-      role:
-        u.role_name === 'super_admin' || u.role_name === 'inventory_manager'
-          ? u.role_name
-          : 'inventory_manager',
+      role: (u.role_name || 'inventory_manager') as any,
       password: '',
       password_confirmation: '',
       is_active: u.is_active,
@@ -451,7 +447,7 @@ export class SystemUsersComponent implements OnInit {
       username: '',
       email: '',
       contact_info: '',
-      role: 'inventory_manager',
+      role: this.roles.find(r => r.role_name !== 'super_admin')?.role_name ?? 'inventory_manager',
       password: '',
       password_confirmation: '',
       is_active: true,

@@ -3,7 +3,7 @@
     <div class="page-titles">
       <p class="eyebrow">Access Control</p>
       <h2>Roles & Permissions</h2>
-      <p class="subtitle">Assign CRUD access per role. Super admin is locked for safety.</p>
+      <p class="subtitle">Toggle permission access per role. Super admin is locked.</p>
     </div>
     <div class="page-actions" *ngIf="hasManageRoles()">
       <button class="primary create-role-trigger" (click)="openCreateModal()" [disabled]="savingNewRole">
@@ -17,13 +17,6 @@
   <div *ngIf="error" class="state state-error">{{ error }}</div>
 
   <div *ngIf="!loading && !error" style="display: contents">
-    <div class="legend">
-      <span class="legend-item"><span class="dot create"></span>C · Create</span>
-      <span class="legend-item"><span class="dot read"></span>R · Read</span>
-      <span class="legend-item"><span class="dot update"></span>U · Update</span>
-      <span class="legend-item"><span class="dot delete"></span>D · Delete</span>
-    </div>
-
     <div class="roles-grid">
       <div
         class="role-card"
@@ -31,14 +24,13 @@
         [class.editing]="editingRoleId === role.role_id"
         [class.protected]="role.role_name === 'super_admin'"
       >
+        <!-- Card header -->
         <div class="role-header">
           <div>
             <p class="eyebrow">Role</p>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+            <div class="role-title-row">
               <h3>{{ role.display_name || role.role_name }}</h3>
-              <span *ngIf="role.role_name === 'super_admin'" class="badge protected"
-                >Protected</span
-              >
+              <span *ngIf="role.role_name === 'super_admin'" class="badge protected">Protected</span>
               <span *ngIf="editingRoleId === role.role_id" class="badge live">Editing</span>
             </div>
           </div>
@@ -66,15 +58,13 @@
 
         <p class="desc" *ngIf="role.description">{{ role.description }}</p>
 
+        <!-- Permissions list -->
         <div class="table-wrapper">
           <table class="perms-table">
             <thead>
               <tr>
                 <th>Permission</th>
-                <th class="center">C</th>
-                <th class="center">R</th>
-                <th class="center">U</th>
-                <th class="center">D</th>
+                <th class="center">Access</th>
               </tr>
             </thead>
             <tbody>
@@ -83,82 +73,21 @@
                   <div class="perm-name-text">{{ perm.display_name || perm.permission_name }}</div>
                 </td>
                 <td class="center">
-                  <ng-container *ngIf="editingRoleId === role.role_id; else viewCreate">
-                    <label class="switch">
+                  <!-- Edit mode: toggle switch -->
+                  <ng-container *ngIf="editingRoleId === role.role_id; else viewMode">
+                    <label class="switch" [attr.aria-label]="'Toggle ' + (perm.display_name || perm.permission_name)">
                       <input
                         type="checkbox"
-                        [checked]="editPermissions[perm.permission_id]?.can_create"
-                        (change)="toggleFlag(perm.permission_id, 'can_create')"
+                        [checked]="editGranted[perm.permission_id]"
+                        (change)="toggleGranted(perm.permission_id)"
                       />
                       <span class="slider"></span>
                     </label>
                   </ng-container>
-                  <ng-template #viewCreate>
-                    <span
-                      class="flag-chip"
-                      [class.on]="pivotFor(role, perm.permission_id)?.can_create"
-                    >
-                      {{ pivotFor(role, perm.permission_id)?.can_create ? 'On' : 'Off' }}
-                    </span>
-                  </ng-template>
-                </td>
-                <td class="center">
-                  <ng-container *ngIf="editingRoleId === role.role_id; else viewRead">
-                    <label class="switch">
-                      <input
-                        type="checkbox"
-                        [checked]="editPermissions[perm.permission_id]?.can_read"
-                        (change)="toggleFlag(perm.permission_id, 'can_read')"
-                      />
-                      <span class="slider"></span>
-                    </label>
-                  </ng-container>
-                  <ng-template #viewRead>
-                    <span
-                      class="flag-chip"
-                      [class.on]="pivotFor(role, perm.permission_id)?.can_read"
-                    >
-                      {{ pivotFor(role, perm.permission_id)?.can_read ? 'On' : 'Off' }}
-                    </span>
-                  </ng-template>
-                </td>
-                <td class="center">
-                  <ng-container *ngIf="editingRoleId === role.role_id; else viewUpdate">
-                    <label class="switch">
-                      <input
-                        type="checkbox"
-                        [checked]="editPermissions[perm.permission_id]?.can_update"
-                        (change)="toggleFlag(perm.permission_id, 'can_update')"
-                      />
-                      <span class="slider"></span>
-                    </label>
-                  </ng-container>
-                  <ng-template #viewUpdate>
-                    <span
-                      class="flag-chip"
-                      [class.on]="pivotFor(role, perm.permission_id)?.can_update"
-                    >
-                      {{ pivotFor(role, perm.permission_id)?.can_update ? 'On' : 'Off' }}
-                    </span>
-                  </ng-template>
-                </td>
-                <td class="center">
-                  <ng-container *ngIf="editingRoleId === role.role_id; else viewDelete">
-                    <label class="switch">
-                      <input
-                        type="checkbox"
-                        [checked]="editPermissions[perm.permission_id]?.can_delete"
-                        (change)="toggleFlag(perm.permission_id, 'can_delete')"
-                      />
-                      <span class="slider"></span>
-                    </label>
-                  </ng-container>
-                  <ng-template #viewDelete>
-                    <span
-                      class="flag-chip"
-                      [class.on]="pivotFor(role, perm.permission_id)?.can_delete"
-                    >
-                      {{ pivotFor(role, perm.permission_id)?.can_delete ? 'On' : 'Off' }}
+                  <!-- View mode: on/off chip -->
+                  <ng-template #viewMode>
+                    <span class="flag-chip" [class.on]="isGranted(role, perm.permission_id)">
+                      {{ isGranted(role, perm.permission_id) ? 'On' : 'Off' }}
                     </span>
                   </ng-template>
                 </td>
@@ -170,13 +99,14 @@
     </div>
   </div>
 
+  <!-- Create Role Modal -->
   <div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreateModal()">
     <div class="modal create-role-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>
           <p class="eyebrow">New role</p>
           <h3>Create Role</h3>
-          <p class="modal-subtitle">Add a new role before assigning permissions.</p>
+          <p class="modal-subtitle">Add a new role, then use Edit to assign permissions.</p>
         </div>
         <button class="icon-button" type="button" (click)="closeCreateModal()" [disabled]="savingNewRole" aria-label="Close dialog">×</button>
       </div>
@@ -197,9 +127,8 @@
               minlength="2"
               maxlength="60"
             />
-            <small class="field-help">Use lowercase letters, numbers, and underscores.</small>
+            <small class="field-help">Lowercase letters, numbers, and underscores.</small>
           </label>
-
           <label class="field">
             <span class="field-label">Display name</span>
             <input
@@ -209,22 +138,19 @@
               placeholder="Inventory Supervisor"
               maxlength="120"
             />
-            <small class="field-help">This is the friendly label shown in the UI.</small>
+            <small class="field-help">Friendly label shown in the UI.</small>
           </label>
         </div>
-
         <label class="field field-full">
           <span class="field-label">Description</span>
           <textarea
             name="description"
             [(ngModel)]="newRole.description"
-            rows="4"
+            rows="3"
             placeholder="Describe what this role can do"
             maxlength="255"
           ></textarea>
-          <small class="field-help">Optional, but useful for admins reviewing access later.</small>
         </label>
-
         <div class="modal-actions">
           <button class="ghost" type="button" (click)="closeCreateModal()" [disabled]="savingNewRole">Cancel</button>
           <button class="primary" type="submit" [disabled]="!canSubmitCreateRole || createRoleForm.invalid">

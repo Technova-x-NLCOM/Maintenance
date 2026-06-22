@@ -17,14 +17,16 @@ export class RolesComponent implements OnInit {
   currentRole: Role | null = null;
   loading = false;
   error: string | null = null;
-  // create role modal
+
+  // Create role modal
   showCreateModal = false;
   newRole: { role_name: string; display_name?: string; description?: string; is_system_role?: boolean } = { role_name: '', is_system_role: true };
   savingNewRole = false;
   createRoleError: string | null = null;
-  // editing state per role
+
+  // Editing state: permissionId → granted (true/false)
   editingRoleId: number | null = null;
-  editPermissions: { [permissionId: number]: { can_create: boolean; can_read: boolean; can_update: boolean; can_delete: boolean } } = {};
+  editGranted: { [permissionId: number]: boolean } = {};
   savingRoles: { [roleId: number]: boolean } = {};
 
   constructor(private rbac: RbacService, private cdr: ChangeDetectorRef) {}
@@ -36,7 +38,11 @@ export class RolesComponent implements OnInit {
   loadRoles(): void {
     this.loading = true;
     this.error = null;
-    forkJoin({ roles: this.rbac.getRoles(), permissions: this.rbac.getPermissions(), currentRole: this.rbac.getCurrentRole() }).subscribe({
+    forkJoin({
+      roles: this.rbac.getRoles(),
+      permissions: this.rbac.getPermissions(),
+      currentRole: this.rbac.getCurrentRole()
+    }).subscribe({
       next: ({ roles, permissions, currentRole }) => {
         this.currentRole = currentRole || null;
         this.roles = roles || [];
@@ -56,13 +62,15 @@ export class RolesComponent implements OnInit {
     return this.rbac.roleHasPermission(this.currentRole || undefined, 'manage_roles');
   }
 
-  openCreateModal() {
+  // ── Create modal ──────────────────────────────────────────────────────────
+
+  openCreateModal(): void {
     this.createRoleError = null;
     this.newRole = { role_name: '', is_system_role: true };
     this.showCreateModal = true;
   }
 
-  closeCreateModal() {
+  closeCreateModal(): void {
     this.showCreateModal = false;
     this.createRoleError = null;
   }
@@ -71,12 +79,9 @@ export class RolesComponent implements OnInit {
     return !!this.newRole.role_name?.trim() && !this.savingNewRole;
   }
 
-  submitCreateRole() {
+  submitCreateRole(): void {
     const roleName = this.newRole.role_name.trim();
-    if (!roleName) {
-      this.createRoleError = 'Role name is required';
-      return;
-    }
+    if (!roleName) { this.createRoleError = 'Role name is required'; return; }
     this.createRoleError = null;
     this.savingNewRole = true;
     this.rbac.createRole({
@@ -93,77 +98,71 @@ export class RolesComponent implements OnInit {
       error: (err) => {
         this.savingNewRole = false;
         const details = err?.error;
-        const validationMessage = details?.errors
-          ? Object.values(details.errors).flat().join(' ')
-          : null;
-        const serverMsg = details?.message || validationMessage || (details ? JSON.stringify(details) : null);
-        this.createRoleError = serverMsg || err?.message || 'Failed to create role';
+        const validationMsg = details?.errors ? Object.values(details.errors).flat().join(' ') : null;
+        this.createRoleError = details?.message || validationMsg || err?.message || 'Failed to create role';
         this.cdr.detectChanges();
       }
     });
   }
 
-  startEdit(role: Role) {
-    // Do not allow editing super_admin
-    if (role.role_name === 'super_admin') {
-      return;
-    }
-    this.editingRoleId = role.role_id;
-    this.editPermissions = {};
-    // Initialize all known permissions; default to false if role doesn't have it in DB
-    const attached = new Map<number, Permission>();
-    (role.permissions || []).forEach(p => attached.set(p.permission_id, p));
+  // ── Permission editing ────────────────────────────────────────────────────
 
+  startEdit(role: Role): void {
+    if (role.role_name === 'super_admin') return;
+    this.editingRoleId = role.role_id;
+    this.editGranted = {};
+
+    const attached = new Set((role.permissions || []).map(p => p.permission_id));
     (this.permissions || []).forEach(perm => {
-      const existing = attached.get(perm.permission_id);
-      this.editPermissions[perm.permission_id] = {
-        can_create: !!existing?.pivot?.can_create,
-        // Default missing perms to false (no access) as requested
-        can_read: !!existing?.pivot?.can_read,
-        can_update: !!existing?.pivot?.can_update,
-        can_delete: !!existing?.pivot?.can_delete,
-      };
+      // A permission is considered "granted" if it exists on the role (any flag true)
+      const pivot = (role.permissions || []).find(p => p.permission_id === perm.permission_id)?.pivot;
+      const hasAny = pivot
+        ? !!(pivot.can_create || pivot.can_read || pivot.can_update || pivot.can_delete)
+        : false;
+      this.editGranted[perm.permission_id] = attached.has(perm.permission_id) && hasAny;
     });
     this.cdr.detectChanges();
   }
 
-  cancelEdit() {
+  cancelEdit(): void {
     this.editingRoleId = null;
-    this.editPermissions = {};
+    this.editGranted = {};
   }
 
-  toggleFlag(permissionId: number, flag: 'can_create' | 'can_read' | 'can_update' | 'can_delete') {
-    if (!this.editPermissions[permissionId]) return;
-    this.editPermissions[permissionId][flag] = !this.editPermissions[permissionId][flag];
+  toggleGranted(permissionId: number): void {
+    if (!(permissionId in this.editGranted)) return;
+    this.editGranted[permissionId] = !this.editGranted[permissionId];
   }
 
-  saveRolePermissions(role: Role) {
+  saveRolePermissions(role: Role): void {
     if (!this.editingRoleId || this.editingRoleId !== role.role_id) return;
     this.savingRoles[role.role_id] = true;
-    const attachedIds = new Set((role.permissions || []).map(p => p.permission_id));
-    const updates = Object.keys(this.editPermissions).map(async pidStr => {
+
+    const attached = new Set((role.permissions || []).map(p => p.permission_id));
+    const allFlags = { can_create: true, can_read: true, can_update: true, can_delete: true };
+    const noFlags  = { can_create: false, can_read: false, can_update: false, can_delete: false };
+
+    const updates = Object.keys(this.editGranted).map(async pidStr => {
       const permissionId = Number(pidStr);
-      const flags = this.editPermissions[permissionId];
+      const granted = this.editGranted[permissionId];
       const permMeta = (this.permissions || []).find(p => p.permission_id === permissionId);
       if (!permMeta) return;
 
-      // If role already has this permission, update flags
-      if (attachedIds.has(permissionId)) {
-        await this.rbac.updatePermissionFlags(role.role_id, permissionId, flags).toPromise();
-      } else {
-        // Only attach if any flag is true; otherwise keep as no permission
-        const wantsAny = !!flags.can_create || !!flags.can_read || !!flags.can_update || !!flags.can_delete;
-        if (wantsAny) {
-          await this.rbac.givePermission(role.role_id, permMeta.permission_name, flags).toPromise();
-        }
+      if (attached.has(permissionId)) {
+        // Update existing pivot: set all flags on or all off
+        await this.rbac.updatePermissionFlags(role.role_id, permissionId, granted ? allFlags : noFlags).toPromise();
+      } else if (granted) {
+        // Not yet attached — attach with all flags on
+        await this.rbac.givePermission(role.role_id, permMeta.permission_name, allFlags).toPromise();
       }
+      // If not attached and not granted — nothing to do
     });
 
     Promise.all(updates)
       .then(() => {
         this.savingRoles[role.role_id] = false;
         this.editingRoleId = null;
-        this.editPermissions = {};
+        this.editGranted = {};
         this.loadRoles();
       })
       .catch(err => {
@@ -173,9 +172,12 @@ export class RolesComponent implements OnInit {
       });
   }
 
-  // Helper: find pivot for a role+permission by id
-  pivotFor(role: Role, permissionId: number) {
-    const p = (role.permissions || []).find(x => x.permission_id === permissionId);
-    return p?.pivot;
+  // ── View helpers ──────────────────────────────────────────────────────────
+
+  isGranted(role: Role, permissionId: number): boolean {
+    const pivot = (role.permissions || []).find(p => p.permission_id === permissionId)?.pivot;
+    return pivot
+      ? !!(pivot.can_create || pivot.can_read || pivot.can_update || pivot.can_delete)
+      : false;
   }
 }
