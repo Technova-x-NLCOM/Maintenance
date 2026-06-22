@@ -216,9 +216,17 @@ Route::middleware('throttle:system-api')->group(function () {
             });
         });
 
-    // Inventory Transactions - Receiving (IN)
-    Route::prefix('api/inventory/receiving')
+    // Expiry Monitor
+    Route::prefix('api/inventory/expiry-monitor')
         ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+        ->group(function () {
+            Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
+                Route::get('/', [\App\Http\Controllers\Inventory\ExpiryMonitorController::class, 'index']);
+            });
+        });
+
+    // Inventory Transactions - Receiving (IN)
+    Route::prefix('api/inventory/receiving')        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
         ->group(function () {
             Route::middleware(['auth:api', 'permission:manage_inventory'])->group(function () {
                 Route::get('items', [ReceivingTransactionController::class, 'getReceivingItems']);

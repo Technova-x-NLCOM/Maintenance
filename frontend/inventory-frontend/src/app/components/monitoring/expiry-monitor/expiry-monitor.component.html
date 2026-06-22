@@ -1,0 +1,117 @@
+<div class="em-page">
+  <app-toast></app-toast>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h1>Expiry Monitoring</h1>
+      <p class="subtitle">Track active batches approaching or past their expiry date.</p>
+    </div>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="exportExcel()" [disabled]="!batches.length">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Export
+    </button>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="summary-bar">
+    <button type="button" class="summary-chip chip-all" [class.active]="statusFilter === 'all'" (click)="applyFilter('all')">
+      <span class="chip-count">{{ summary.expired + summary.critical + summary.warning + summary.ok }}</span>
+      <span class="chip-label">Total Tracked</span>
+    </button>
+    <button type="button" class="summary-chip chip-expired" [class.active]="statusFilter === 'expired'" (click)="applyFilter('expired')">
+      <span class="chip-count">{{ summary.expired }}</span>
+      <span class="chip-label">Expired</span>
+    </button>
+    <button type="button" class="summary-chip chip-critical" [class.active]="statusFilter === 'critical'" (click)="applyFilter('critical')">
+      <span class="chip-count">{{ summary.critical }}</span>
+      <span class="chip-label">Critical ≤7 days</span>
+    </button>
+    <button type="button" class="summary-chip chip-warning" [class.active]="statusFilter === 'warning'" (click)="applyFilter('warning')">
+      <span class="chip-count">{{ summary.warning }}</span>
+      <span class="chip-label">Warning 8–30 days</span>
+    </button>
+    <button type="button" class="summary-chip chip-ok" [class.active]="statusFilter === 'ok'" (click)="applyFilter('ok')">
+      <span class="chip-count">{{ summary.ok }}</span>
+      <span class="chip-label">OK &gt;30 days</span>
+    </button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <div class="search-group">
+      <span class="search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </span>
+      <input type="text" class="form-control search-input" placeholder="Search item, batch, location..." [(ngModel)]="searchTerm" (input)="onSearchInput()" aria-label="Search"/>
+      <button type="button" class="btn-clear-search" *ngIf="searchTerm" (click)="clearSearch()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="filter-meta">
+      <span class="record-count" *ngIf="!loading">{{ total }} record{{ total !== 1 ? 's' : '' }}</span>
+      <span class="record-count loading-text" *ngIf="loading">Loading…</span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="loading-row" *ngIf="loading">Loading expiry data...</div>
+
+    <div class="table-wrap" *ngIf="!loading">
+      <table *ngIf="batches.length > 0; else empty">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Batch</th>
+            <th>Location</th>
+            <th class="col-num">Quantity</th>
+            <th>Expiry Date</th>
+            <th class="col-num">Days</th>
+            <th class="col-status">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let b of batches" [ngClass]="'row-' + b.expiry_status">
+            <td>
+              <span class="item-code">{{ b.item_code }}</span>
+              <span class="item-desc">{{ b.item_description }}</span>
+            </td>
+            <td class="text-muted">{{ b.batch_number ?? '—' }}</td>
+            <td>
+              <span *ngIf="b.location_name">
+                {{ b.location_name }}<span class="text-muted" *ngIf="b.location_code"> ({{ b.location_code }})</span>
+              </span>
+              <span class="text-muted" *ngIf="!b.location_name">—</span>
+            </td>
+            <td class="col-num">{{ b.quantity }}<span class="uom-inline" *ngIf="b.measurement_unit"> {{ b.measurement_unit }}</span></td>
+            <td>{{ b.expiry_date }}</td>
+            <td class="col-num days-cell" [ngClass]="'days-' + b.expiry_status">{{ daysLabel(b.days_until_expiry) }}</td>
+            <td class="col-status">
+              <span class="status-badge" [ngClass]="statusClass(b.expiry_status)">{{ statusLabel(b.expiry_status) }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #empty>
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <p>No batches match the current filter.</p>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="!loading && lastPage > 1">
+      <button class="page-btn" (click)="load(1)" [disabled]="page === 1">&laquo;</button>
+      <button class="page-btn" (click)="load(page - 1)" [disabled]="page === 1">&lsaquo;</button>
+      <button class="page-btn" *ngFor="let p of pageRange(page, lastPage)" [class.active]="p === page" (click)="load(p)">{{ p }}</button>
+      <button class="page-btn" (click)="load(page + 1)" [disabled]="page === lastPage">&rsaquo;</button>
+      <button class="page-btn" (click)="load(lastPage)" [disabled]="page === lastPage">&raquo;</button>
+      <span class="page-info">Page {{ page }} of {{ lastPage }}</span>
+    </div>
+  </div>
+</div>

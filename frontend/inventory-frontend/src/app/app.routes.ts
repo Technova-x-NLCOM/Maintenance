@@ -22,6 +22,7 @@ import { ReceivingTransactionComponent } from './components/receiving-transactio
 import { IssuanceTransactionComponent } from './components/issuance-transaction/issuance-transaction.component';
 import { StockReportComponent } from './components/monitoring/stock-report/stock-report.component';
 import { TransactionHistoryComponent } from './components/monitoring/transaction-history/transaction-history.component';
+import { ExpiryMonitorComponent } from './components/monitoring/expiry-monitor/expiry-monitor.component';
 import { DiscrepancyUpdateComponent } from './components/discrepancy/discrepancy-update/discrepancy-update.component';
 import { DiscrepancyMonitoringComponent } from './components/discrepancy/discrepancy-monitoring/discrepancy-monitoring.component';
 import { ItemTransferComponent } from './components/item-transfer/item-transfer.component';
@@ -66,6 +67,7 @@ export const routes: Routes = [
       { path: 'monitoring/stock-report', component: StockReportComponent },
       { path: 'monitoring/storage-inventory', redirectTo: 'inventory/storage-management', pathMatch: 'full' },
       { path: 'monitoring/transaction-history', component: TransactionHistoryComponent },
+      { path: 'monitoring/expiry', component: ExpiryMonitorComponent },
       { path: 'monitoring/discrepancy', component: DiscrepancyMonitoringComponent },
       { path: 'monitoring/scheduled-batches', component: ScheduledBatchesComponent },
       { path: 'audit-log', component: AuditLogComponent, canActivate: [permissionGuard('view_audit')] },
