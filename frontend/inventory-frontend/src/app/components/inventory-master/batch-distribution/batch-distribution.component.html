@@ -532,7 +532,6 @@
                 <thead>
                   <tr>
                     <th>Ingredient</th>
-                    <th>Unit</th>
                     <th>Quantity</th>
                     <th>Required</th>
                     <th>In Stock</th>
@@ -542,12 +541,11 @@
                 <tbody>
                   <tr *ngFor="let row of details.items" [class.has-shortage]="(row.current_stock - getRowRequiredQuantity(row)) < 0">
                     <td>{{ row.item_code }} - {{ row.item_description }}</td>
-                    <td class="text-muted">{{ row.measurement_unit || '—' }}</td>
-                    <td>{{ row.quantity_per_base }}</td>
-                    <td>{{ getRowRequiredQuantity(row) }}</td>
-                    <td>{{ row.current_stock }}</td>
+                    <td>{{ row.quantity_per_base }}<span class="uom-inline" *ngIf="row.measurement_unit"> {{ row.measurement_unit }}</span></td>
+                    <td>{{ getRowRequiredQuantity(row) }}<span class="uom-inline" *ngIf="row.measurement_unit"> {{ row.measurement_unit }}</span></td>
+                    <td>{{ row.current_stock }}<span class="uom-inline" *ngIf="row.measurement_unit"> {{ row.measurement_unit }}</span></td>
                     <td [class.text-danger]="(row.current_stock - getRowRequiredQuantity(row)) < 0">
-                      {{ row.current_stock - getRowRequiredQuantity(row) }}
+                      {{ row.current_stock - getRowRequiredQuantity(row) }}<span class="uom-inline" *ngIf="row.measurement_unit"> {{ row.measurement_unit }}</span>
                     </td>
                   </tr>
                 </tbody>
@@ -628,7 +626,6 @@
                 <thead>
                   <tr>
                     <th>Item</th>
-                    <th>Unit</th>
                     <th>Required</th>
                     <th>In Stock</th>
                     <th>Status</th>
@@ -637,9 +634,8 @@
                 <tbody>
                   <tr *ngFor="let item of executionStockCheck.items" [class.shortage-row]="item.has_shortage">
                     <td>{{ item.item_code }} - {{ item.item_description }}</td>
-                    <td class="text-muted">{{ item.measurement_unit || '—' }}</td>
-                    <td>{{ item.required_quantity_for_issuance }}</td>
-                    <td>{{ item.current_stock }}</td>
+                    <td>{{ item.required_quantity_for_issuance }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
+                    <td>{{ item.current_stock }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
                     <td>
                       <span class="status-badge" [ngClass]="item.has_shortage ? 'status-shortage' : 'status-ok'">
                         {{ item.has_shortage ? '⚠ Short ' + item.shortage_quantity : '✓ OK' }}

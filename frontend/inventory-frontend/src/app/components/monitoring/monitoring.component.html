@@ -93,10 +93,7 @@
             <th>Item Code</th>
             <th>Description</th>
             <th>Category</th>
-            <th>UoM</th>
             <th class="num-col">Current Stock</th>
-            <th class="num-col">Total IN</th>
-            <th class="num-col">Total OUT</th>
             <th class="num-col">Reorder Level</th>
             <th>Status</th>
           </tr>
@@ -106,11 +103,8 @@
             <td class="code-cell">{{ item.item_code }}</td>
             <td>{{ item.item_description }}</td>
             <td>{{ item.category_name || '—' }}</td>
-            <td>{{ item.measurement_unit || '—' }}</td>
-            <td class="num-col">{{ item.current_stock }}</td>
-            <td class="num-col in-val">+{{ item.total_in }}</td>
-            <td class="num-col out-val">-{{ item.total_out }}</td>
-            <td class="num-col">{{ item.reorder_level }}</td>
+            <td class="num-col">{{ item.current_stock }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
+            <td class="num-col">{{ item.reorder_level }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
             <td>
               <span class="status-badge" [class.low]="isLowStock(item)" [class.ok]="!isLowStock(item)">
                 {{ isLowStock(item) ? 'Low Stock' : 'OK' }}
@@ -179,7 +173,6 @@
             <th>Description</th>
             <th>Batch</th>
             <th class="num-col">Qty</th>
-            <th>UoM</th>
             <th>Destination / Reason</th>
             <th>Performed By</th>
             <th>Date</th>
@@ -196,8 +189,7 @@
             <td>{{ tx.item_code }}</td>
             <td>{{ tx.item_description }}</td>
             <td>{{ tx.batch_number || '—' }}</td>
-            <td class="num-col">{{ tx.quantity }}</td>
-            <td>{{ tx.measurement_unit || '—' }}</td>
+            <td class="num-col">{{ tx.quantity }}<span class="uom-inline" *ngIf="tx.measurement_unit"> {{ tx.measurement_unit }}</span></td>
             <td>{{ tx.destination || tx.reason || '—' }}</td>
             <td>{{ tx.performed_by_name }}</td>
             <td class="date-cell">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>

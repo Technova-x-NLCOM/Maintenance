@@ -243,7 +243,6 @@
               <thead>
                 <tr>
                   <th scope="col">Ingredient</th>
-                  <th scope="col">Unit</th>
                   <th scope="col" class="col-num">Per Base</th>
                   <th scope="col" class="col-num">Required</th>
                   <th scope="col" class="col-num">In Stock</th>
@@ -261,12 +260,11 @@
                     <span class="item-code">{{ item.item_code }}</span>
                     <span class="item-desc">{{ item.item_description }}</span>
                   </td>
-                  <td class="text-muted">{{ item.measurement_unit || '—' }}</td>
-                  <td class="col-num">{{ item.quantity_per_base }}</td>
-                  <td class="col-num">{{ item.required_quantity_for_issuance }}</td>
-                  <td class="col-num">{{ item.current_stock }}</td>
+                  <td class="col-num">{{ item.quantity_per_base }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
+                  <td class="col-num">{{ item.required_quantity_for_issuance }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
+                  <td class="col-num">{{ item.current_stock }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
                   <td class="col-num shortage-qty" [class.text-shortage]="item.has_shortage">
-                    {{ item.has_shortage ? item.shortage_quantity : '—' }}
+                    {{ item.has_shortage ? item.shortage_quantity : '—' }}<span class="uom-inline" *ngIf="item.has_shortage && item.measurement_unit"> {{ item.measurement_unit }}</span>
                   </td>
                   <td class="col-status">
                     <span class="status-badge" [ngClass]="stockStatusClass(item)" [attr.aria-label]="stockStatusLabel(item)">

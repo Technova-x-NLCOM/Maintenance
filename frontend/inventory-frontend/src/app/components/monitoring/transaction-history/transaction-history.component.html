@@ -65,7 +65,6 @@
             <th>Batch</th>
             <th>Location</th>
             <th class="num-col">Qty</th>
-            <th>UoM</th>
             <th>Destination / Reason</th>
             <th>Performed By</th>
             <th>Date</th>
@@ -95,8 +94,7 @@
             <td data-label="Description">{{ tx.item_description }}</td>
             <td data-label="Batch">{{ tx.batch_number || '—' }}</td>
             <td data-label="Location">{{ tx.batch_location_name || tx.from_location_name || tx.to_location_name || '—' }}</td>
-            <td class="num-col" data-label="Qty">{{ tx.quantity }}</td>
-            <td data-label="UoM">{{ tx.measurement_unit || '—' }}</td>
+            <td class="num-col" data-label="Qty">{{ tx.quantity }}<span class="uom-inline" *ngIf="tx.measurement_unit"> {{ tx.measurement_unit }}</span></td>
             <td data-label="Destination / Reason">{{ tx.destination || tx.reason || '—' }}</td>
             <td data-label="Performed By">{{ tx.performed_by_name }}</td>
             <td class="date-cell" data-label="Date">{{ tx.transaction_date | date:'MMM d, y, h:mm a' }}</td>

@@ -272,7 +272,6 @@
               <thead>
                 <tr>
                   <th scope="col">Ingredient</th>
-                  <th scope="col" class="col-num">Unit</th>
                   <th scope="col" class="col-num">Required</th>
                   <th scope="col" class="col-num">In Stock</th>
                   <th scope="col" class="col-num">Shortage</th>
@@ -289,16 +288,10 @@
                     <span class="item-code">{{ item.item_code }}</span>
                     <span class="item-desc">{{ item.item_description }}</span>
                   </td>
-                  <td class="col-num text-muted">{{ item.measurement_unit ?? '—' }}</td>
-                  <td class="col-num">{{ item.required_quantity_for_issuance }}</td>
-                  <td class="col-num">{{ item.current_stock }}</td>
+                  <td class="col-num">{{ item.required_quantity_for_issuance }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
+                  <td class="col-num">{{ item.current_stock }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
                   <td class="col-num shortage-cell" [class.has-shortage-val]="item.has_shortage">
-                    {{ item.has_shortage ? item.shortage_quantity : '—' }}
-                  </td>
-                  <td class="col-status">
-                    <span class="status-badge" [class.badge-ok]="!item.has_shortage" [class.badge-shortage]="item.has_shortage">
-                      {{ item.has_shortage ? 'Shortage' : 'OK' }}
-                    </span>
+                    {{ item.has_shortage ? item.shortage_quantity : '—' }}<span class="uom-inline" *ngIf="item.has_shortage && item.measurement_unit"> {{ item.measurement_unit }}</span>
                   </td>
                 </tr>
               </tbody>
@@ -314,7 +307,6 @@
               <thead>
                 <tr>
                   <th scope="col">Ingredient</th>
-                  <th scope="col" class="col-num">Unit</th>
                   <th scope="col" class="col-num">Qty Issued</th>
                 </tr>
               </thead>
@@ -324,8 +316,7 @@
                     <span class="item-code">{{ item.item_code }}</span>
                     <span class="item-desc">{{ item.item_description }}</span>
                   </td>
-                  <td class="col-num text-muted">{{ item.measurement_unit ?? '—' }}</td>
-                  <td class="col-num">{{ item.required_quantity_for_issuance }}</td>
+                  <td class="col-num">{{ item.required_quantity_for_issuance }}<span class="uom-inline" *ngIf="item.measurement_unit"> {{ item.measurement_unit }}</span></td>
                 </tr>
               </tbody>
             </table>
@@ -417,8 +408,7 @@
                 <tr>
                   <th scope="col">Item</th>
                   <th scope="col" class="col-num">Qty Returned</th>
-                  <th scope="col">Notes</th>
-                </tr>
+                  <th scope="col">Notes</th>                </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let r of d.remaining_items">
@@ -426,7 +416,7 @@
                     <span class="item-code">{{ r.item_code }}</span>
                     <span class="item-desc">{{ r.item_description }}</span>
                   </td>
-                  <td class="col-num">{{ r.remaining_quantity }}</td>
+                  <td class="col-num">{{ r.remaining_quantity }}<span class="uom-inline" *ngIf="r.measurement_unit"> {{ r.measurement_unit }}</span></td>
                   <td class="text-muted">{{ r.notes ?? '—' }}</td>
                 </tr>
               </tbody>

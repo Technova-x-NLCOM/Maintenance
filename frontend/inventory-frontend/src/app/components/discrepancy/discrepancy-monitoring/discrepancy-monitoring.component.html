@@ -69,7 +69,6 @@
             <th>Description</th>
             <th>Location</th>
             <th class="num-col">Variance</th>
-            <th>UoM</th>
             <th>Reason</th>
             <th>Performed By</th>
             <th>Date</th>
@@ -88,9 +87,8 @@
             <td data-label="Location">{{ r.batch_location_name ?? r.from_location_name ?? '—' }}</td>
             <td class="num-col variance-col" data-label="Variance"
               [class.positive]="r.quantity > 0" [class.negative]="r.quantity < 0">
-              {{ r.quantity > 0 ? '+' : '' }}{{ r.quantity }}
+              {{ r.quantity > 0 ? '+' : '' }}{{ r.quantity }}<span class="uom-inline" *ngIf="r.measurement_unit"> {{ r.measurement_unit }}</span>
             </td>
-            <td data-label="UoM">{{ r.measurement_unit || '—' }}</td>
             <td data-label="Reason">{{ r.reason || '—' }}</td>
             <td data-label="Performed By">{{ r.performed_by_name }}</td>
             <td class="date-cell" data-label="Date">{{ r.transaction_date | date:'MMM d, y, h:mm a' }}</td>

@@ -237,3 +237,13 @@ img {
   height: 1rem;
   stroke-width: 2.4;
 }
+
+// ── Unit of measurement inline suffix ────────────────────────────────────────
+// Shown directly after a quantity number in the same table cell, e.g. "25 kg"
+.uom-inline {
+  font-size: 0.78em;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 2px;
+  letter-spacing: 0.01em;
+}
