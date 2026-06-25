@@ -165,6 +165,22 @@
             <span class="readiness-label" *ngIf="!r.loading">{{ r.percentage }}% ready</span>
             <span class="readiness-label skeleton" *ngIf="r.loading">Checking...</span>
           </div>
+
+          <!-- Cancel button for overdue plans -->
+          <div class="plan-card-footer" *ngIf="isOverdue(plan)" (click)="$event.stopPropagation()">
+            <button
+              type="button"
+              class="btn-cancel-plan"
+              [disabled]="cancellingPlanId === plan.plan_id"
+              (click)="openCancelConfirm(plan, $event)"
+              title="Cancel this overdue schedule"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              {{ cancellingPlanId === plan.plan_id ? 'Cancelling...' : 'Cancel Schedule' }}
+            </button>
+          </div>
         </button>
 
         <p class="state-msg" *ngIf="filteredPlans.length === 0">No schedules match the current filters.</p>
@@ -428,4 +444,30 @@
 
     </main>
   </div>
+
+  <!-- ── Cancel overdue confirmation dialog ────────────────────────────── -->
+  <div
+    class="app-modal-overlay app-modal-overlay--sidebar-offset confirm-overlay"
+    *ngIf="showCancelConfirm"
+    (click)="closeCancelConfirm()"
+  >
+    <div class="app-modal-confirm" (click)="$event.stopPropagation()">
+      <div class="app-confirm-icon-wrap app-confirm-icon--danger" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <h2 class="app-confirm-title">Cancel Overdue Schedule?</h2>
+      <p class="app-confirm-body" *ngIf="cancelTargetPlan">
+        "<strong>{{ cancelTargetPlan.week_label }}</strong>" was due on
+        <strong>{{ cancelTargetPlan.planned_date }}</strong> and was never run.
+        Cancelling it will remove it from the active schedule list. This cannot be undone.
+      </p>
+      <div class="app-confirm-footer">
+        <button class="btn btn-cancel" type="button" (click)="closeCancelConfirm()">Keep It</button>
+        <button class="app-btn-danger" type="button" (click)="confirmCancelPlan()">Yes, Cancel Schedule</button>
+      </div>
+    </div>
+  </div>
+
 </div>

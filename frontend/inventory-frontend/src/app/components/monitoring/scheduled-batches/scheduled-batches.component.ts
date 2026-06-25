@@ -40,6 +40,11 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
   plans: ProgramPlanSummary[] = [];
   loadingPlans = false;
 
+  // ── cancel overdue ───────────────────────────────────────────────────────
+  cancellingPlanId: number | null = null;
+  showCancelConfirm = false;
+  cancelTargetPlan: ProgramPlanSummary | null = null;
+
   // ── filters ──────────────────────────────────────────────────────────────
   statusFilter: ProgramPlanStatus | '' = '';
   fromDate = '';
@@ -259,6 +264,51 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
 
   totalPullForItem(item: LocationBreakdownItem): number {
     return item.locations.reduce((s, l) => s + l.pull_quantity, 0);
+  }
+
+  // ── Cancel overdue schedule ───────────────────────────────────────────────
+
+  openCancelConfirm(plan: ProgramPlanSummary, event: Event): void {
+    event.stopPropagation(); // don't trigger selectPlan
+    this.cancelTargetPlan = plan;
+    this.showCancelConfirm = true;
+    this.cdr.markForCheck();
+  }
+
+  closeCancelConfirm(): void {
+    this.cancelTargetPlan = null;
+    this.showCancelConfirm = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmCancelPlan(): void {
+    if (!this.cancelTargetPlan) return;
+    const plan = this.cancelTargetPlan;
+    this.cancellingPlanId = plan.plan_id;
+    this.showCancelConfirm = false;
+    this.cdr.markForCheck();
+
+    const sub = this.batchService.deleteProgramPlan(plan.plan_id).subscribe({
+      next: () => {
+        this.cancellingPlanId = null;
+        this.cancelTargetPlan = null;
+        // If this was the selected plan, clear it
+        if (this.selectedPlanId === plan.plan_id) {
+          this.selectedPlanId = null;
+          this.selectedPlan = null;
+        }
+        this.toast.show('success', `"${plan.week_label}" has been cancelled.`);
+        this.applyFilters();
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.cancellingPlanId = null;
+        this.cancelTargetPlan = null;
+        this.toast.error(err?.error?.message || 'Failed to cancel the schedule.');
+        this.cdr.markForCheck();
+      },
+    });
+    this.plansSub = sub;
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
