@@ -1,3 +1,5 @@
+@use "sass:color";
+
 $primary:      #2563eb;
 $primary-dark: #1d4ed8;
 $success:      #16a34a;
@@ -186,13 +188,13 @@ $shadow:       0 4px 12px rgba(0,0,0,0.06);
 .btn-success {
   background: $success;
   color: #fff;
-  &:hover:not(:disabled) { background: darken($success, 6%); }
+  &:hover:not(:disabled) { background: color.adjust($success, $lightness: -6%); }
 }
 
 .btn-danger {
   background: $danger;
   color: #fff;
-  &:hover:not(:disabled) { background: darken($danger, 6%); }
+  &:hover:not(:disabled) { background: color.adjust($danger, $lightness: -6%); }
 }
 
 .btn-ghost {

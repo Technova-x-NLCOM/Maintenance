@@ -24,7 +24,7 @@ export interface CreateUserPayload {
   first_name: string;
   last_name: string;
   contact_info?: string | null;
-  role?: 'super_admin' | 'inventory_manager';
+  role?: string;
   is_active?: boolean;
 }
 
@@ -34,7 +34,7 @@ export interface UpdateUserPayload {
   first_name?: string;
   last_name?: string;
   contact_info?: string | null;
-  role?: 'super_admin' | 'inventory_manager';
+  role?: string;
   password?: string;
   password_confirmation?: string;
   is_active?: boolean;
