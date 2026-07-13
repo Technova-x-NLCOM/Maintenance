@@ -1229,6 +1229,11 @@
   color: #1d4ed8;
 }
 
+.status-reserved {
+  background: #ede9fe;
+  color: #4c1d95;
+}
+
 .status-cancelled {
   background: #f1efe8;
   color: #5f5e5a;
@@ -1350,6 +1355,11 @@
 .tag-planned {
   background: #fef3c7;
   color: #92400e;
+}
+
+.tag-reserved {
+  background: #ede9fe;
+  color: #4c1d95;
 }
 
 .tag-cancelled {

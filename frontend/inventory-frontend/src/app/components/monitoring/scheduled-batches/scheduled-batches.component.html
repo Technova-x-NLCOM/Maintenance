@@ -65,6 +65,7 @@
         <option value="">All Statuses</option>
         <option value="planned">Planned</option>
         <option value="checked_pre">Pre-checked</option>
+        <option value="reserved">Reserved</option>
         <option value="ready">Stock Allocated</option>
         <option value="completed">Completed</option>
         <option value="cancelled">Cancelled</option>
@@ -265,10 +266,14 @@
         </ng-container>
 
         <!-- Allocated notice for ready / completed / cancelled — stock already issued, no live check needed -->
-        <div class="allocated-notice" *ngIf="d.plan.status === 'ready' || d.plan.status === 'completed' || d.plan.status === 'cancelled'">
+        <div class="allocated-notice" *ngIf="d.plan.status === 'reserved' || d.plan.status === 'ready' || d.plan.status === 'completed' || d.plan.status === 'cancelled'">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
           </svg>
+          <span *ngIf="d.plan.status === 'reserved'">
+            Stock has been <strong>reserved early</strong> for this batch — items have been issued from storage.
+            The plan will automatically become ready to run on <strong>{{ d.plan.planned_date }}</strong>.
+          </span>
           <span *ngIf="d.plan.status === 'ready'">
             Stock has already been issued for this batch. The ingredient quantities shown below reflect what was required — current warehouse stock is not re-checked.
           </span>
@@ -315,8 +320,8 @@
           </div>
         </div>
 
-        <!-- ── Section: Issued Ingredients (ready / completed) ──────────── -->
-        <div class="section-block" *ngIf="(d.plan.status === 'ready' || d.plan.status === 'completed') && d.inventory_check.items.length > 0">
+        <!-- ── Section: Issued Ingredients (reserved / ready / completed) ──────────── -->
+        <div class="section-block" *ngIf="(d.plan.status === 'reserved' || d.plan.status === 'ready' || d.plan.status === 'completed') && d.inventory_check.items.length > 0">
           <h3 class="section-title">Issued Ingredients</h3>
           <div class="table-wrap">
             <table>

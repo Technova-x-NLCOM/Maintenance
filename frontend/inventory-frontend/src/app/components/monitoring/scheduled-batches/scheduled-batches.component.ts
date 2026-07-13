@@ -227,28 +227,31 @@ export class ScheduledBatchesComponent implements OnInit, OnDestroy {
 
   statusLabel(status: string): string {
     const map: Record<string, string> = {
-      planned: 'Planned',
+      planned:     'Planned',
       checked_pre: 'Pre-checked',
-      ready: 'Stock Allocated',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
+      reserved:    'Reserved',
+      ready:       'Stock Allocated',
+      completed:   'Completed',
+      cancelled:   'Cancelled',
     };
     return map[status] ?? status;
   }
 
   statusClass(status: string): string {
     const map: Record<string, string> = {
-      planned: 'tag-planned',
+      planned:     'tag-planned',
       checked_pre: 'tag-checked',
-      ready: 'tag-ready',
-      completed: 'tag-completed',
-      cancelled: 'tag-cancelled',
+      reserved:    'tag-reserved',
+      ready:       'tag-ready',
+      completed:   'tag-completed',
+      cancelled:   'tag-cancelled',
     };
     return map[status] ?? 'tag-default';
   }
 
   isOverdue(plan: ProgramPlanSummary): boolean {
-    if (plan.status === 'completed' || plan.status === 'cancelled') return false;
+    if (plan.status === 'completed' || plan.status === 'cancelled' ||
+        plan.status === 'reserved'  || plan.status === 'ready') return false;
     return new Date(plan.planned_date) < new Date(new Date().toDateString());
   }
 

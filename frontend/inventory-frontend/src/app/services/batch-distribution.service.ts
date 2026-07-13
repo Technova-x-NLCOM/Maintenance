@@ -115,7 +115,7 @@ export interface BatchDistributionIssueResponse {
   }>;
 }
 
-export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'ready' | 'completed' | 'cancelled';
+export type ProgramPlanStatus = 'planned' | 'checked_pre' | 'reserved' | 'ready' | 'completed' | 'cancelled';
 
 export interface LocationBatchBreakdown {
   batch_id: number;

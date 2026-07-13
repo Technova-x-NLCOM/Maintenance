@@ -87,7 +87,7 @@ export abstract class BatchDistributionPlanMixin {
   openPlanMenuId: number | null = null;
   executingPlanId: number | null = null;
   expandedPlanId: number | null = null;
-  scheduleFilter: 'upcoming' | 'completed' | 'all' = 'upcoming';
+  scheduleFilter: 'upcoming' | 'reserved' | 'completed' | 'all' = 'upcoming';
 
   planViewMode: 'list' | 'calendar' = 'list';
   calendarCurrentDate: Date = new Date();
@@ -151,6 +151,7 @@ export abstract class BatchDistributionPlanMixin {
   get displayedPlans(): ProgramPlanSummary[] {
     let filtered = this.filteredPlans;
     if (this.scheduleFilter === 'upcoming') filtered = filtered.filter((p) => p.status !== 'completed' && p.status !== 'cancelled');
+    else if (this.scheduleFilter === 'reserved') filtered = filtered.filter((p) => p.status === 'reserved');
     else if (this.scheduleFilter === 'completed') filtered = filtered.filter((p) => p.status === 'completed');
     return filtered;
   }
@@ -180,8 +181,10 @@ export abstract class BatchDistributionPlanMixin {
 
   // ── plan status helpers ──────────────────────────────────────────────────
 
-  isStockAllocated(plan: ProgramPlanSummary): boolean { return plan.status === 'ready'; }
-  isStockReserved(plan: ProgramPlanSummary): boolean { return this.isStockAllocated(plan); }
+  // 'reserved' = stock earmarked early, waiting for planned date → cron promotes to 'ready'
+  // 'ready'    = planned date arrived, stock is out, manager can now complete the batch
+  isStockAllocated(plan: ProgramPlanSummary): boolean { return plan.status === 'reserved' || plan.status === 'ready'; }
+  isStockReserved(plan: ProgramPlanSummary): boolean  { return plan.status === 'reserved'; }
 
   hasPlanFullStockReadiness(plan: ProgramPlanSummary): boolean {
     // Already allocated — no need to check
@@ -210,8 +213,8 @@ export abstract class BatchDistributionPlanMixin {
 
   showRunBatchAction(plan: ProgramPlanSummary): boolean {
     if (plan.status === 'completed' || plan.status === 'cancelled') return false;
-    if (!['planned', 'checked_pre', 'ready'].includes(plan.status)) return false;
-    // Stock-allocated plans can be run at any time (stock was already reserved early)
+    if (!['planned', 'checked_pre', 'reserved', 'ready'].includes(plan.status)) return false;
+    // Stock-allocated plans (reserved or ready) can be run at any time
     if (this.isStockAllocated(plan)) return true;
     // Otherwise only show Run Batch on or after the planned date
     return this.isPlanRunDateReached(plan);
@@ -243,12 +246,15 @@ export abstract class BatchDistributionPlanMixin {
   isPlanExecutable(plan: ProgramPlanSummary): boolean { return this.canRunBatch(plan); }
 
   getRunBatchButtonLabel(plan: ProgramPlanSummary): string {
+    if (plan.status === 'reserved') return '📦 Reserved — Run on Date';
     return this.isStockAllocated(plan) ? 'Mark as complete' : '▶ Run Batch';
   }
 
   isPlanOverdue(plan: ProgramPlanSummary): boolean {
     if (plan.status === 'completed' || plan.status === 'cancelled') return false;
-    return this.normalizeDate(plan.planned_date) < this.normalizeDate(new Date().toISOString().slice(0, 10)) && plan.status !== 'ready';
+    // reserved and ready both have stock already out — not overdue
+    if (plan.status === 'reserved' || plan.status === 'ready') return false;
+    return this.normalizeDate(plan.planned_date) < this.normalizeDate(new Date().toISOString().slice(0, 10));
   }
 
   isPlanLocked(plan: ProgramPlanSummary): boolean {
@@ -258,16 +264,24 @@ export abstract class BatchDistributionPlanMixin {
   getPlanBadge(plan: ProgramPlanSummary): { label: string; className: string; icon: string } {
     if (this.isPlanOverdue(plan)) return { label: 'Overdue', className: 'status-overdue', icon: 'ti-alert-circle' };
     switch (plan.status) {
-      case 'cancelled': return { label: 'Cancelled', className: 'status-cancelled', icon: 'ti-ban' };
-      case 'completed': return { label: 'Completed', className: 'status-completed', icon: 'ti-circle-check' };
-      case 'ready': return { label: 'Stock Allocated', className: 'status-ready', icon: 'ti-package' };
-      case 'checked_pre': return { label: 'Pre-checked', className: 'status-checked-pre', icon: 'ti-clipboard-check' };
-      default: return { label: 'Planned', className: 'status-planned', icon: 'ti-clock' };
+      case 'cancelled':    return { label: 'Cancelled',      className: 'status-cancelled',    icon: 'ti-ban' };
+      case 'completed':    return { label: 'Completed',      className: 'status-completed',    icon: 'ti-circle-check' };
+      case 'ready':        return { label: 'Stock Allocated', className: 'status-ready',        icon: 'ti-package' };
+      case 'reserved':     return { label: 'Reserved',       className: 'status-reserved',     icon: 'ti-lock' };
+      case 'checked_pre':  return { label: 'Pre-checked',    className: 'status-checked-pre',  icon: 'ti-clipboard-check' };
+      default:             return { label: 'Planned',        className: 'status-planned',      icon: 'ti-clock' };
     }
   }
 
   getPlanStatusClass(status: ProgramPlanStatus | string): string {
-    const map: Record<string, string> = { planned: 'tag-planned', checked_pre: 'tag-checked-pre', ready: 'tag-ready', cancelled: 'tag-cancelled', completed: 'tag-completed' };
+    const map: Record<string, string> = {
+      planned:     'tag-planned',
+      checked_pre: 'tag-checked-pre',
+      reserved:    'tag-reserved',
+      ready:       'tag-ready',
+      cancelled:   'tag-cancelled',
+      completed:   'tag-completed',
+    };
     return map[status] ?? '';
   }
 

@@ -58,6 +58,7 @@
   .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-top: 2px; }
 
   &.chip-planned  { border-color: #fde68a; background: #fffbeb; .stat-value { color: #92400e; } }
+  &.chip-reserved { border-color: #c4b5fd; background: #f5f3ff; .stat-value { color: #4c1d95; } }
   &.chip-ready    { border-color: #bbf7d0; background: #f0fdf4; .stat-value { color: #166534; } }
   &.chip-completed { border-color: #a5b4fc; background: #eef2ff; .stat-value { color: #3730a3; } }
   &.chip-cancelled { border-color: #fecaca; background: #fef2f2; .stat-value { color: #991b1b; } }
@@ -631,6 +632,7 @@ tbody tr {
 
 .tag-planned   { background: #fef3c7; color: #92400e; }
 .tag-checked   { background: #dbeafe; color: #1d4ed8; }
+.tag-reserved  { background: #ede9fe; color: #4c1d95; }
 .tag-ready     { background: #dcfce7; color: #166534; }
 .tag-completed { background: #a5b4fc; color: #1e1b4b; }
 .tag-cancelled { background: #fee2e2; color: #991b1b; }
