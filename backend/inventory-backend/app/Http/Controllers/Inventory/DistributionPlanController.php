@@ -142,11 +142,11 @@ class DistributionPlanController extends Controller
 
         $checkData = $this->buildInventoryCheckData($plan);
 
-        // For plans that have already been issued (ready / completed), the live
+        // For plans that have already been issued (reserved / ready / completed), the live
         // buildLocationBreakdown() query finds no stock because the batches are
         // depleted. Instead, read the actual OUT transactions that were recorded
         // during allocation — they carry from_location_id per line.
-        $issuedStatus = in_array((string) $plan->status, ['ready', 'completed'], true);
+        $issuedStatus = in_array((string) $plan->status, ['reserved', 'ready', 'completed'], true);
 
         if ($issuedStatus) {
             $locationBreakdown = $this->buildIssuedLocationBreakdown($plan, $checkData['items']);
@@ -393,7 +393,7 @@ class DistributionPlanController extends Controller
         if ((string) $plan->status !== 'planned') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only upcoming planned batches can be reserved.',
+                'message' => 'Only planned (not yet allocated) batches can have stock reserved.',
             ], 422);
         }
 
@@ -428,19 +428,23 @@ class DistributionPlanController extends Controller
                 $validated['notes'] ?? 'Reserved from Recipe & Distribution'
             );
 
+            $updateData = [
+                // Stock is earmarked early — use 'reserved' status.
+                // The cron will promote to 'ready' on the planned date.
+                'status'         => 'reserved',
+                'final_check_at' => now(),
+                'updated_at'     => now(),
+            ];
+
             DB::table('distribution_plan_schedules')
                 ->where('plan_id', $planId)
-                ->update([
-                    'status' => 'ready',
-                    'final_check_at' => now(),
-                    'updated_at' => now(),
-                ]);
+                ->update($updateData);
         });
 
         $response = $this->show($planId);
         $payload = $response->getData(true);
         $payload['data']['issuance'] = $issuanceSummary;
-        $payload['message'] = 'Inventory reserved successfully using FIFO allocation.';
+        $payload['message'] = 'Stock reserved successfully. It will be marked as ready on the planned date.';
 
         return response()->json($payload, $response->status());
     }
@@ -1014,7 +1018,7 @@ class DistributionPlanController extends Controller
         if (in_array($plan->status, ['ready', 'completed'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only planned or cancelled schedules can be deleted.',
+                'message' => 'Only planned, pre-checked, or reserved schedules can be deleted. Ready and completed plans cannot be deleted.',
             ], 422);
         }
 

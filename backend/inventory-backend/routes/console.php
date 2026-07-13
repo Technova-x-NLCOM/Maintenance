@@ -231,6 +231,59 @@ Artisan::command('alerts:send-expiry-email {--days=} {--to=*} {--dry-run}', func
     ->dailyAt('08:00');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Promote reserved → ready on planned date
+// Runs daily at 00:05. For each plan where:
+//   status = 'reserved', planned_date <= today
+// → sets status = 'ready' so managers see it as actionable
+// ─────────────────────────────────────────────────────────────────────────────
+Artisan::command('schedule:promote-reserved-plans {--dry-run}', function () {
+    $isDryRun = (bool) $this->option('dry-run');
+    $today    = now()->toDateString();
+
+    $query = DB::table('distribution_plan_schedules as dps')
+        ->join('distribution_templates as dt', 'dps.template_id', '=', 'dt.template_id')
+        ->whereDate('dps.planned_date', '<=', $today)
+        ->where('dps.status', 'reserved');
+
+    if (Schema::hasColumn('distribution_plan_schedules', 'is_deleted')) {
+        $query->where('dps.is_deleted', false);
+    }
+
+    $plans = $query->get(['dps.plan_id', 'dps.week_label', 'dps.planned_date']);
+
+    if ($plans->isEmpty()) {
+        $this->info("No reserved plans due today ({$today}) or earlier. Nothing to promote.");
+        return self::SUCCESS;
+    }
+
+    $this->info("Found {$plans->count()} reserved plan(s) to promote to 'ready'.");
+
+    foreach ($plans as $plan) {
+        if ($isDryRun) {
+            $this->line("[DRY RUN] Would promote: {$plan->week_label} (Plan #{$plan->plan_id}) — date: {$plan->planned_date}");
+            continue;
+        }
+
+        DB::table('distribution_plan_schedules')
+            ->where('plan_id', $plan->plan_id)
+            ->update([
+                'status'     => 'ready',
+                'updated_at' => now(),
+            ]);
+
+        $this->info("✓ Promoted to ready: {$plan->week_label} (Plan #{$plan->plan_id})");
+    }
+
+    if (!$isDryRun) {
+        $this->info("Done. {$plans->count()} plan(s) promoted.");
+    }
+
+    return self::SUCCESS;
+})
+    ->purpose('Promote reserved distribution plans to ready status when their planned date arrives.')
+    ->dailyAt('00:05');
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Auto-allocate scheduled distribution plans
 // Runs daily at 00:01. For each plan where:
 //   status = 'planned', planned_date = today
